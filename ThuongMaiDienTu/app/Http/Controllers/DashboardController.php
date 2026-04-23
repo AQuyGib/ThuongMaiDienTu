@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cashbook;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
