@@ -14,7 +14,7 @@
     <div class="container header-content">
         <a href="/" class="logo">
             <i class="fa-solid fa-bolt"></i>
-            Tech<span>Zone</span>
+            DIENMAY<span>PRO</span>
         </a>
 
         <div class="search-bar">

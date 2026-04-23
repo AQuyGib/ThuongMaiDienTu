@@ -8,8 +8,8 @@ class HomeController extends Controller
 {
     public function index()
     {
-        // Hiện tại trả về view tĩnh để demo UI
-        // Khi kết nối Database, có thể query Product::all() truyền vào đây.
-        return view('home');
+        // Lấy danh sách sản phẩm mới nhất, tối đa 8 sản phẩm
+        $products = \App\Models\Product::orderBy('product_id', 'desc')->take(8)->get();
+        return view('home', compact('products'));
     }
 }
