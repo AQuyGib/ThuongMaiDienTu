@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -8,12 +10,15 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 |
 | Chứa toàn bộ các route liên quan đến trang quản trị (CMS/ERP).
-| Các route này thường có tiền tố /admin và yêu cầu quyền admin.
+| Các route này có tiền tố /admin và sử dụng name prefix admin.
+|
+| Lưu ý: Hiện tại chưa thêm middleware auth vì hệ thống đăng nhập
+| sẽ được xây dựng sau. Khi hoàn tất Auth, thêm ->middleware('auth')
 |
 */
 
-Route::get('/', function () {
-    return "Trang Dashboard Admin";
-});
+// Dashboard
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-// Thêm các route quản lý sản phẩm, đơn hàng... tại đây
+// CRUD Tài khoản (Users)
+Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
