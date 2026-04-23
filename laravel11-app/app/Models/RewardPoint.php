@@ -1,0 +1,16 @@
+<?php
+namespace App\Models;
+use Illuminate\Database\Eloquent\Model;
+
+class RewardPoint extends Model {
+    protected $primaryKey = 'point_id';
+    public $timestamps = false;
+    protected $guarded = [];
+
+    public function user() {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    public function order() {
+        return $this->belongsTo(Order::class, 'order_id');
+    }
+}

@@ -1,0 +1,16 @@
+<?php
+namespace App\Models;
+use Illuminate\Database\Eloquent\Model;
+
+class Order extends Model {
+    protected $primaryKey = 'order_id';
+    public $timestamps = false;
+    protected $guarded = [];
+
+    public function user() {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    public function details() {
+        return $this->hasMany(OrderDetail::class, 'order_id');
+    }
+}
