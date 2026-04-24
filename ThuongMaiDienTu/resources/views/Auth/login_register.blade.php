@@ -6,7 +6,6 @@ use App\Models\User;
 $error_message = '';
 $success_message = '';
 
-
 $active_tab = 'login'; // Luôn mặc định là đăng nhập khi vào trang hoặc load lại (GET)
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $active_tab = isset($_POST['register_submit']) ? 'login' : 'register';
@@ -30,11 +29,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $error_message = "Tài khoản của bạn đã bị khóa.";
             } elseif ($user->is_2fa_enabled) {
                 session(['temp_user_id' => $user->user_id]);
-                return redirect()->route('auth.sms');
+                // Ép chuyển hướng trong View
+                redirect()->route('auth.sms')->send();
+                exit; 
             } else {
                 Auth::login($user);
-                $success_message = "Đăng nhập thành công! Đang chuyển hướng...";
-                return redirect()->intended('/');
+                // Ép chuyển hướng về trang home
+                redirect()->route('home')->send();
+                exit; 
             }
         } else {
             $error_message = "Email hoặc mật khẩu không chính xác.";
@@ -50,22 +52,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $password = $_POST['password'];
         $password_confirmation = $_POST['password_confirmation'];
 
-        if ($password !== $password_confirmation) {
+        // Kiểm tra tính hợp lệ cơ bản
+        if (empty($full_name) || empty($email) || empty($password)) {
+            $error_message = "Vui lòng điền đầy đủ các trường bắt buộc.";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error_message = "Định dạng email không hợp lệ.";
+        } elseif (strlen($password) < 8) {
+            $error_message = "Mật khẩu phải có ít nhất 8 ký tự.";
+        } elseif ($password !== $password_confirmation) {
             $error_message = "Mật khẩu xác nhận không khớp.";
         } elseif (User::where('email', $email)->exists()) {
-            $error_message = "Email này đã được sử dụng.";
+            $error_message = "Email này đã được sử dụng. Vui lòng chọn email khác.";
         } else {
-            User::create([
-                'full_name' => $full_name,
-                'email' => $email,
-                'password_hash' => Hash::make($password),
-                'is_2fa_enabled' => 0,
-                'role_id' => 2,
-                'status' => 'Active',
-                'member_tier' => 'Dong'
-            ]);
+            try {
+                $user = User::create([
+                    'full_name' => $full_name,
+                    'email' => $email,
+                    'password_hash' => Hash::make($password),
+                    'is_2fa_enabled' => 0,
+                    'role_id' => 2, // Mặc định là khách hàng
+                    'status' => 'Active',
+                    'member_tier' => 'Dong'
+                ]);
 
-            return redirect()->route('login_register', ['registered' => 'true', 'tab' => 'login']);
+                // Đăng nhập ngay lập tức sau khi đăng ký thành công
+                Auth::login($user);
+
+                // Ép chuyển hướng thẳng sang trang Home
+                redirect()->route('home')->send();
+                exit;
+            } catch (\Exception $e) {
+                $error_message = "Đã có lỗi xảy ra trong quá trình đăng ký. Vui lòng thử lại sau.";
+            }
         }
     }
 }
