@@ -100,8 +100,8 @@
                 <select name="type" onchange="this.form.submit()"
                         class="border border-slate-200 bg-slate-50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer">
                     <option value="">Tất cả loại</option>
-                    <option value="Income"  {{ request('type') === 'Income'  ? 'selected' : '' }}>🟢 Thu (Income)</option>
-                    <option value="Expense" {{ request('type') === 'Expense' ? 'selected' : '' }}>🔴 Chi (Expense)</option>
+                    <option value="Income"  {{ request('type') === 'Income'  ? 'selected' : '' }}>🟢 Thu </option>
+                    <option value="Expense" {{ request('type') === 'Expense' ? 'selected' : '' }}>🔴 Chi </option>
                 </select>
                 <button type="submit"
                         class="bg-slate-800 hover:bg-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-semibold transition">
