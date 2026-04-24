@@ -89,7 +89,7 @@
             </div>
 
             {{-- Filter --}}
-            <form method="GET" action="{{ route('cashbooks.index') }}"
+            <form method="GET" action="{{ route('cashbooks.index') }}" onsubmit="return validateFilter(this)"
                   class="flex flex-wrap gap-3 bg-white px-5 py-4 rounded-2xl border border-slate-200">
                 <div class="flex items-center gap-2 flex-1 min-w-52 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
                     <i class="fa-solid fa-magnifying-glass text-slate-400 text-sm"></i>
@@ -122,8 +122,16 @@
                         <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fa-solid fa-inbox text-slate-400 text-2xl"></i>
                         </div>
-                        <p class="text-slate-500 font-semibold text-lg">Không có giao dịch nào</p>
-                        <p class="text-slate-400 text-sm mt-1">Nhấn "Thêm giao dịch" để bắt đầu</p>
+                        @if(request('search') || request('type'))
+                            <p class="text-slate-500 font-semibold text-lg">Không tìm thấy kết quả nào</p>
+                            <p class="text-slate-400 text-sm mt-1 mb-4">Thử thay đổi từ khóa hoặc bộ lọc khác</p>
+                            <a href="{{ route('cashbooks.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-xl font-medium transition">
+                                <i class="fa-solid fa-rotate-left"></i> Xóa bộ lọc
+                            </a>
+                        @else
+                            <p class="text-slate-500 font-semibold text-lg">Không có giao dịch nào</p>
+                            <p class="text-slate-400 text-sm mt-1">Nhấn "Thêm giao dịch" để bắt đầu</p>
+                        @endif
                     </div>
                 @else
                     <table class="w-full text-sm">
@@ -338,6 +346,22 @@
     </div>
 </div>
 
+{{-- ══════════════════════════════════════════════════════════
+     MODAL THÔNG BÁO (ALERT)
+══════════════════════════════════════════════════════════ --}}
+<div id="modal-alert" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center relative transform transition-all">
+        <div class="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fa-solid fa-circle-exclamation text-amber-500 text-3xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Chưa nhập thông tin</h3>
+        <p class="text-sm text-slate-500 mb-6 px-2">Vui lòng nhập nội dung tìm kiếm hoặc chọn loại thu/chi trước khi lọc dữ liệu.</p>
+        <button type="button" onclick="closeAlertModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-semibold text-sm transition shadow">
+            Đã hiểu
+        </button>
+    </div>
+</div>
+
 <script>
     function openModal()  { document.getElementById('modal-add').classList.remove('hidden'); }
     function closeModal() { document.getElementById('modal-add').classList.add('hidden'); }
@@ -358,6 +382,9 @@
     }
     function closeEditModal() { document.getElementById('modal-edit').classList.add('hidden'); }
 
+    function openAlertModal() { document.getElementById('modal-alert').classList.remove('hidden'); }
+    function closeAlertModal() { document.getElementById('modal-alert').classList.add('hidden'); }
+
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('-translate-x-full');
     }
@@ -365,6 +392,16 @@
     @if($errors->any())
         openModal();
     @endif
+
+    function validateFilter(form) {
+        const search = form.search.value.trim();
+        const type = form.type.value;
+        if (!search && !type) {
+            openAlertModal();
+            return false;
+        }
+        return true;
+    }
 </script>
 
 </body>
