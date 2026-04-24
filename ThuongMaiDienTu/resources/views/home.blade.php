@@ -69,10 +69,24 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
-        .hero-banner img {
+        .hero-banner .swiper-slide img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+        }
+
+        .hero-banner .swiper-button-next,
+        .hero-banner .swiper-button-prev {
+            color: var(--white);
+            background: rgba(0,0,0,0.3);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transform: scale(0.6);
+        }
+
+        .hero-banner .swiper-pagination-bullet-active {
+            background: var(--primary-color);
         }
 
         /* Section Danh mục nổi bật */
@@ -316,127 +330,243 @@
             font-weight: 600;
             text-align: center;
         }
+
+        /* Category badges cho section sản phẩm */
+        .category-badge {
+            display: inline-block;
+            background: #eef2ff;
+            color: var(--primary-color);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            display: block;
+            color: #ddd;
+        }
     </style>
 @endpush
+
+@php
+    // Map icon cho từng danh mục trong sidebar dọc
+    $sidebarIcons = [
+        'Điện thoại'          => 'fa-mobile-screen-button',
+        'Laptop'              => 'fa-laptop',
+        'Tablet'              => 'fa-tablet-screen-button',
+        'Âm thanh'            => 'fa-headphones',
+        'Đồng hồ thông minh' => 'fa-clock',
+        'Phụ kiện'            => 'fa-keyboard',
+        'Tivi, Màn hình'      => 'fa-tv',
+        'Gia dụng, Smarthome' => 'fa-plug',
+    ];
+
+    $quickLinkIcons = [
+        'Điện thoại'          => 'https://cdn-icons-png.flaticon.com/512/0/191.png',
+        'Laptop'              => 'https://cdn-icons-png.flaticon.com/512/3254/3254096.png',
+        'Tablet'              => 'https://cdn-icons-png.flaticon.com/512/2888/2888728.png',
+        'Đồng hồ thông minh' => 'https://cdn-icons-png.flaticon.com/512/3052/3052562.png',
+        'Âm thanh'            => 'https://cdn-icons-png.flaticon.com/512/2933/2933100.png',
+        'Gia dụng, Smarthome' => 'https://cdn-icons-png.flaticon.com/512/10002/10002279.png',
+        'Phụ kiện'            => 'https://cdn-icons-png.flaticon.com/512/3254/3254215.png',
+        'Tivi, Màn hình'      => 'https://cdn-icons-png.flaticon.com/512/2289/2289243.png',
+    ];
+@endphp
 
 @section('content')
     <div class="container">
         <!-- Hero Section (Menu + Banner) -->
         <div class="hero-section">
-            <!-- Sidebar Menu -->
+            <!-- Sidebar Menu - DỮ LIỆU ĐỘNG TỪ DB -->
             <div class="category-menu">
                 <ul>
-                    <li><a href="#">
-                            <div class="menu-icon"><i class="fa-solid fa-mobile-screen-button main-icon"></i> Điện thoại,
-                                Tablet</div> <i class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                        </a></li>
-                    <li><a href="#">
-                            <div class="menu-icon"><i class="fa-solid fa-laptop main-icon"></i> Laptop</div> <i
-                                class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                        </a></li>
-                    <li><a href="#">
-                            <div class="menu-icon"><i class="fa-solid fa-headphones main-icon"></i> Âm thanh</div> <i
-                                class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                        </a></li>
-                    <li><a href="#">
-                            <div class="menu-icon"><i class="fa-regular fa-clock main-icon"></i> Đồng hồ, Camera</div> <i
-                                class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                        </a></li>
-                    <li><a href="#">
-                            <div class="menu-icon"><i class="fa-solid fa-plug main-icon"></i> Gia dụng, Smarthome</div> <i
-                                class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                        </a></li>
-                    <li><a href="#">
-                            <div class="menu-icon"><i class="fa-solid fa-keyboard main-icon"></i> Phụ kiện, Máy in</div> <i
-                                class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                        </a></li>
-                    <li><a href="#">
-                            <div class="menu-icon"><i class="fa-solid fa-tv main-icon"></i> Tivi, Màn hình</div> <i
-                                class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                        </a></li>
-                    <li><a href="#">
-                            <div class="menu-icon"><i class="fa-solid fa-gamepad main-icon"></i> Thu cũ đổi mới</div> <i
-                                class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                        </a></li>
-                    <li><a href="#">
-                            <div class="menu-icon"><i class="fa-solid fa-tags main-icon"></i> Hàng cũ giá rẻ</div> <i
-                                class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                        </a></li>
-                    <li><a href="#">
-                            <div class="menu-icon"><i class="fa-solid fa-newspaper main-icon"></i> Tin công nghệ</div> <i
-                                class="fa-solid fa-angle-right text-xs text-gray-400"></i>
-                        </a></li>
+                    @foreach($categories as $cat)
+                        <li>
+                            <a href="#">
+                                <div class="menu-icon">
+                                    <i class="fa-solid {{ $sidebarIcons[$cat->name] ?? 'fa-tag' }} main-icon"></i>
+                                    {{ $cat->name }}
+                                </div>
+                                <i class="fa-solid fa-angle-right text-xs text-gray-400"></i>
+                            </a>
+                        </li>
+                    @endforeach
+                    {{-- Các mục tĩnh bổ sung --}}
+                    <li>
+                        <a href="#">
+                            <div class="menu-icon">
+                                <i class="fa-solid fa-gamepad main-icon"></i> Thu cũ đổi mới
+                            </div>
+                            <i class="fa-solid fa-angle-right text-xs text-gray-400"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <div class="menu-icon">
+                                <i class="fa-solid fa-newspaper main-icon"></i> Tin công nghệ
+                            </div>
+                            <i class="fa-solid fa-angle-right text-xs text-gray-400"></i>
+                        </a>
+                    </li>
                 </ul>
             </div>
 
-            <!-- Banner -->
-            <div class="hero-banner">
-                <img src="https://images.unsplash.com/photo-1593640495253-23196b27a87f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
-                    alt="Banner Khuyến Mãi">
+            <!-- Banner Slider (Swiper) -->
+        <div class="hero-banner swiper mySwiper">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide">
+                    <img src="https://images.unsplash.com/photo-1593640495253-23196b27a87f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Khuyến mãi Laptop">
+                </div>
+                <div class="swiper-slide">
+                    <img src="https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="S24 Ultra Giảm Sốc">
+                </div>
+                <div class="swiper-slide">
+                    <img src="https://images.unsplash.com/photo-1605236453806-6ff36851218e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="iPhone 15 Pro Max">
+                </div>
             </div>
+            <!-- Nút điều hướng -->
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-pagination"></div>
+        </div>
         </div>
 
-        <!-- Quick Links -->
+        <!-- Quick Links - DỮ LIỆU ĐỘNG TỪ DB -->
         <div class="quick-links">
-            <a href="#" class="quick-link-item">
-                <img src="https://cdn-icons-png.flaticon.com/512/0/191.png" alt="Phone">
-                <span>Điện thoại</span>
-            </a>
-            <a href="#" class="quick-link-item">
-                <img src="https://cdn-icons-png.flaticon.com/512/3254/3254096.png" alt="Laptop">
-                <span>Laptop</span>
-            </a>
-            <a href="#" class="quick-link-item">
-                <img src="https://cdn-icons-png.flaticon.com/512/2888/2888728.png" alt="Tablet">
-                <span>Tablet</span>
-            </a>
-            <a href="#" class="quick-link-item">
-                <img src="https://cdn-icons-png.flaticon.com/512/3052/3052562.png" alt="Smartwatch">
-                <span>Đồng hồ thông minh</span>
-            </a>
-            <a href="#" class="quick-link-item">
-                <img src="https://cdn-icons-png.flaticon.com/512/2933/2933100.png" alt="Airpods">
-                <span>Tai nghe</span>
-            </a>
-            <a href="#" class="quick-link-item">
-                <img src="https://cdn-icons-png.flaticon.com/512/10002/10002279.png" alt="Smarthome">
-                <span>Smarthome</span>
-            </a>
-            <a href="#" class="quick-link-item">
-                <img src="https://cdn-icons-png.flaticon.com/512/3254/3254215.png" alt="Phụ kiện">
-                <span>Phụ kiện</span>
-            </a>
+            @foreach($categories as $cat)
+                <a href="#" class="quick-link-item">
+                    <img src="{{ $quickLinkIcons[$cat->name] ?? 'https://cdn-icons-png.flaticon.com/512/1261/1261163.png' }}" alt="{{ $cat->name }}">
+                    <span>{{ $cat->name }}</span>
+                </a>
+            @endforeach
         </div>
 
-        <!-- Flash Sale Section -->
-        <div class="flash-sale-section">
-            <div class="flash-sale-header">
-                <div class="flash-title">
-                    <i class="fa-solid fa-bolt"></i> F L A S H S A L E
+        <!-- Flash Sale Section - DỮ LIỆU ĐỘNG TỪ DB -->
+        @if($flashSaleProducts->count())
+            <div class="flash-sale-section">
+                <div class="flash-sale-header">
+                    <div class="flash-title">
+                        <i class="fa-solid fa-bolt"></i> F L A S H S A L E
+                    </div>
+                    <div class="countdown">
+                        <span>Kết thúc trong:</span>
+                        <span class="countdown-box" id="countdown-h">02</span> :
+                        <span class="countdown-box" id="countdown-m">45</span> :
+                        <span class="countdown-box" id="countdown-s">30</span>
+                    </div>
                 </div>
-                <div class="countdown">
-                    <span>Kết thúc trong:</span>
-                    <span class="countdown-box">02</span> :
-                    <span class="countdown-box">45</span> :
-                    <span class="countdown-box">30</span>
+
+                <div class="product-grid">
+                    @foreach($flashSaleProducts as $product)
+                        <a href="#" class="product-card">
+                            <span class="badge-top-left">Trả góp 0%</span>
+                            @if($product->old_price)
+                                @php
+                                    $discount = round((($product->old_price - $product->base_price) / $product->old_price) * 100);
+                                @endphp
+                                @if($discount > 0)
+                                    <span class="badge-top-right">-{{ $discount }}%</span>
+                                @endif
+                            @endif
+
+                            <img src="{{ $product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}"
+                                alt="{{ $product->name }}" class="product-img" loading="lazy">
+
+                            <span class="category-badge">{{ $product->category->name ?? '' }}</span>
+
+                            <h3 class="product-name">{{ $product->name }}</h3>
+                            <div class="product-price">{{ number_format($product->base_price, 0, ',', '.') }}đ</div>
+                            @if($product->old_price)
+                                <div class="product-old-price">{{ number_format($product->old_price, 0, ',', '.') }}đ</div>
+                            @else
+                                <div class="product-old-price" style="visibility: hidden;">0đ</div>
+                            @endif
+
+                            <div class="product-rating">
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star-half-stroke"></i>
+                                <span>({{ rand(10, 500) }})</span>
+                            </div>
+                        </a>
+                    @endforeach
                 </div>
             </div>
+        @endif
 
-            <div class="product-grid">
-                @foreach($products as $product)
+        <!-- Điện thoại nổi bật - DỮ LIỆU ĐỘNG TỪ DB -->
+        @if($phoneProducts->count())
+            <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 class="section-title"><i class="fa-solid fa-mobile-screen-button"></i> ĐIỆN THOẠI NỔI BẬT NHẤT</h2>
+                <a href="#" style="color:var(--primary-color); font-size:14px; font-weight:600;">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
+            </div>
+            <div class="product-grid-white">
+                @foreach($phoneProducts as $product)
                     <a href="#" class="product-card">
                         <span class="badge-top-left">Trả góp 0%</span>
-                        @if($product->old_price)
+                        @if($product->old_price && $product->old_price > $product->base_price)
                             @php
                                 $discount = round((($product->old_price - $product->base_price) / $product->old_price) * 100);
                             @endphp
-                            @if($discount > 0)
-                                <span class="badge-top-right">-{{ $discount }}%</span>
-                            @endif
+                            <span class="badge-top-right">-{{ $discount }}%</span>
                         @endif
 
-                        <img src="{{ $product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}"
-                            alt="{{ $product->name }}" class="product-img">
+                        <img src="{{ $product->thumbnail ?? 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300' }}"
+                            alt="{{ $product->name }}" class="product-img" loading="lazy">
+
+                        <h3 class="product-name">{{ $product->name }}</h3>
+                        <div class="product-price">{{ number_format($product->base_price, 0, ',', '.') }}đ</div>
+                        @if($product->old_price)
+                            <div class="product-old-price">{{ number_format($product->old_price, 0, ',', '.') }}đ</div>
+                        @else
+                            <div class="product-old-price" style="visibility: hidden;">0đ</div>
+                        @endif
+
+                        <div class="product-rating">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <span>({{ rand(10, 500) }})</span>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+
+        <!-- Laptop nổi bật - DỮ LIỆU ĐỘNG TỪ DB -->
+        @if($laptopProducts->count())
+            <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 class="section-title"><i class="fa-solid fa-laptop"></i> LAPTOP GIÁ SỐC</h2>
+                <a href="#" style="color:var(--primary-color); font-size:14px; font-weight:600;">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
+            </div>
+            <div class="product-grid-white">
+                @foreach($laptopProducts as $product)
+                    <a href="#" class="product-card">
+                        @if($product->old_price && $product->old_price > $product->base_price)
+                            @php
+                                $discount = round((($product->old_price - $product->base_price) / $product->old_price) * 100);
+                            @endphp
+                            <span class="badge-top-right">-{{ $discount }}%</span>
+                        @endif
+
+                        <img src="{{ $product->thumbnail ?? 'https://images.unsplash.com/photo-1531297172867-11dcd459d243?w=300' }}"
+                            alt="{{ $product->name }}" class="product-img" loading="lazy">
+
                         <h3 class="product-name">{{ $product->name }}</h3>
                         <div class="product-price">{{ number_format($product->base_price, 0, ',', '.') }}đ</div>
                         @if($product->old_price)
@@ -451,74 +581,57 @@
                             <i class="fa-solid fa-star"></i>
                             <i class="fa-solid fa-star"></i>
                             <i class="fa-solid fa-star-half-stroke"></i>
-                            <span>({{ rand(10, 500) }})</span>
+                            <span>({{ rand(5, 100) }})</span>
                         </div>
                     </a>
                 @endforeach
             </div>
-        </div>
-
-        <!-- Điện thoại nổi bật -->
-        <h2 class="section-title">ĐIỆN THOẠI NỔI BẬT NHẤT</h2>
-        <div class="product-grid-white">
-            <!-- Vòng lặp giả lập 10 sản phẩm -->
-            @for($i = 0; $i < 10; $i++)
-                <a href="#" class="product-card">
-                    <span class="badge-top-left">Trả góp 0%</span>
-                    @if($i % 3 == 0)
-                        <span class="badge-top-right">-10%</span>
-                    @endif
-                    <img src="https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300" alt="Phone"
-                        class="product-img">
-
-                    <!-- Tags -->
-                    <div class="tags-container">
-                        <span class="tag">Màn 120Hz</span>
-                        <span class="tag">Sạc nhanh 65W</span>
-                    </div>
-
-                    <h3 class="product-name">Smartphone Cao Cấp {{ $i + 1 }} - 8GB/256GB - Chính hãng</h3>
-                    <div class="product-price">{{ number_format((rand(8, 25) * 1000000) + 990000, 0, ',', '.') }}đ</div>
-                    <div class="product-old-price">{{ number_format((rand(26, 30) * 1000000) + 990000, 0, ',', '.') }}đ</div>
-                    <div class="product-rating">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <span>({{ rand(10, 500) }})</span>
-                    </div>
-                </a>
-            @endfor
-        </div>
-
-        <!-- Laptop nổi bật -->
-        <h2 class="section-title">LAPTOP GIÁ SỐC</h2>
-        <div class="product-grid-white">
-            @for($i = 0; $i < 5; $i++)
-                <a href="#" class="product-card">
-                    <img src="https://images.unsplash.com/photo-1531297172867-11dcd459d243?w=300" alt="Laptop"
-                        class="product-img">
-
-                    <div class="tags-container">
-                        <span class="tag">Core i5</span>
-                        <span class="tag">RAM 16GB</span>
-                        <span class="tag">SSD 512GB</span>
-                    </div>
-
-                    <h3 class="product-name">Laptop Gaming Mẫu {{ $i + 1 }} 2024 Chính hãng</h3>
-                    <div class="product-price">{{ number_format((rand(15, 30) * 1000000) + 990000, 0, ',', '.') }}đ</div>
-                    <div class="product-old-price">{{ number_format((rand(31, 40) * 1000000) + 990000, 0, ',', '.') }}đ</div>
-                    <div class="product-rating">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star-half-stroke"></i>
-                        <span>({{ rand(5, 100) }})</span>
-                    </div>
-                </a>
-            @endfor
-        </div>
+        @endif
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    // Khởi tạo Swiper Banner
+    document.addEventListener("DOMContentLoaded", function() {
+        if(typeof Swiper !== 'undefined') {
+            var swiper = new Swiper(".mySwiper", {
+                loop: true,
+                autoplay: {
+                    delay: 3000,
+                    disableOnInteraction: false,
+                },
+                pagination: {
+                    el: ".swiper-pagination",
+                    clickable: true,
+                },
+                navigation: {
+                    nextEl: ".swiper-button-next",
+                    prevEl: ".swiper-button-prev",
+                },
+            });
+        }
+    });
+
+    // Countdown timer cho Flash Sale
+    (function() {
+        let totalSeconds = 2 * 3600 + 45 * 60 + 30;
+        const hEl = document.getElementById('countdown-h');
+        const mEl = document.getElementById('countdown-m');
+        const sEl = document.getElementById('countdown-s');
+
+        if (!hEl || !mEl || !sEl) return;
+
+        setInterval(() => {
+            if (totalSeconds <= 0) return;
+            totalSeconds--;
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            hEl.textContent = String(h).padStart(2, '0');
+            mEl.textContent = String(m).padStart(2, '0');
+            sEl.textContent = String(s).padStart(2, '0');
+        }, 1000);
+    })();
+</script>
+@endpush
