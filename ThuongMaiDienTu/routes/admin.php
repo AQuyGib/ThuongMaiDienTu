@@ -18,10 +18,10 @@ Route::get('/', function () {
 })->name('dashboard');
 
 // ===== Quản lý Danh Mục =====
-Route::get('/danhmuc', [CategoryController::class, 'index'])->name('danhmuc.index');
-Route::post('/danhmuc', [CategoryController::class, 'store'])->name('danhmuc.store');
-Route::put('/danhmuc/{id}', [CategoryController::class, 'update'])->name('danhmuc.update');
-Route::delete('/danhmuc/{id}', [CategoryController::class, 'destroy'])->name('danhmuc.destroy');
+Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
+Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
 // ===== Quản lý Sản Phẩm =====
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
