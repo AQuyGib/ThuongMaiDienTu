@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ProductController;
 /*
 |--------------------------------------------------------------------------
 | Admin Routes
@@ -14,6 +15,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return "Trang Dashboard Admin";
-});
+})->name('dashboard');
 
-// Thêm các route quản lý sản phẩm, đơn hàng... tại đây
+// ===== Quản lý Danh Mục =====
+Route::get('/danhmuc', [CategoryController::class, 'index'])->name('danhmuc.index');
+Route::post('/danhmuc', [CategoryController::class, 'store'])->name('danhmuc.store');
+Route::put('/danhmuc/{id}', [CategoryController::class, 'update'])->name('danhmuc.update');
+Route::delete('/danhmuc/{id}', [CategoryController::class, 'destroy'])->name('danhmuc.destroy');
+
+// ===== Quản lý Sản Phẩm =====
+Route::get('/sanpham', [ProductController::class, 'index'])->name('sanpham.index');
+Route::post('/sanpham', [ProductController::class, 'store'])->name('sanpham.store');
+Route::put('/sanpham/{id}', [ProductController::class, 'update'])->name('sanpham.update');
+Route::delete('/sanpham/{id}', [ProductController::class, 'destroy'])->name('sanpham.destroy');
