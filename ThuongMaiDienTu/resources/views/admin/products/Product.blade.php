@@ -246,7 +246,7 @@
     <div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
-                <form action="{{ route('admin.sanpham.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title"><i class="bi bi-plus-circle-fill me-2" style="color:var(--accent);"></i>Thêm Sản Phẩm Mới</h5>
@@ -386,7 +386,7 @@
             document.getElementById('editBrand').value = '';
 
             const form = document.getElementById('editForm');
-            form.action = "{{ url('admin/sanpham') }}/" + id;
+            form.action = "{{ url('admin/products') }}/" + id;
 
             new bootstrap.Modal(document.getElementById('editModal')).show();
         }
@@ -407,7 +407,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     const form = document.getElementById('deleteForm');
-                    form.action = "{{ url('admin/sanpham') }}/" + id;
+                    form.action = "{{ url('admin/products') }}/" + id;
                     form.submit();
                 }
             });

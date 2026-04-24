@@ -26,7 +26,7 @@ class ProductController extends Controller
         $totalProducts = Product::count();
         $totalCategories = Category::count();
 
-        return view('admin.products.QLSanPham', compact(
+        return view('admin.products.Product', compact(
             'products',
             'allCategories',
             'totalProducts',
@@ -60,7 +60,7 @@ class ProductController extends Controller
             'seo_description' => $request->seo_description ?: null,
         ]);
 
-        return redirect()->route('admin.sanpham.index')
+        return redirect()->route('admin.products.index')
             ->with('success', 'Thêm sản phẩm "' . $request->name . '" thành công!');
     }
 
@@ -92,7 +92,7 @@ class ProductController extends Controller
             'seo_description' => $request->seo_description ?: null,
         ]);
 
-        return redirect()->route('admin.sanpham.index')
+        return redirect()->route('admin.products.index')
             ->with('success', 'Cập nhật sản phẩm "' . $request->name . '" thành công!');
     }
 
@@ -106,7 +106,7 @@ class ProductController extends Controller
 
         $product->delete();
 
-        return redirect()->route('admin.sanpham.index')
+        return redirect()->route('admin.products.index')
             ->with('success', 'Xóa sản phẩm "' . $name . '" thành công!');
     }
 }
