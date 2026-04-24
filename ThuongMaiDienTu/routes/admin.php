@@ -24,7 +24,7 @@ Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('cat
 Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
 // ===== Quản lý Sản Phẩm =====
-Route::get('/sanpham', [ProductController::class, 'index'])->name('sanpham.index');
-Route::post('/sanpham', [ProductController::class, 'store'])->name('sanpham.store');
-Route::put('/sanpham/{id}', [ProductController::class, 'update'])->name('sanpham.update');
-Route::delete('/sanpham/{id}', [ProductController::class, 'destroy'])->name('sanpham.destroy');
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
+Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
