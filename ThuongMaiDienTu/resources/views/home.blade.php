@@ -67,6 +67,7 @@
             overflow: hidden;
             position: relative;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            max-height: 380px; /* Thu nhỏ chiều cao của banner */
         }
 
         .hero-banner .swiper-slide img {
