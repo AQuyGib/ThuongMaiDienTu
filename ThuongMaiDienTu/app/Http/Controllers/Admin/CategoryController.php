@@ -21,7 +21,7 @@ class CategoryController extends Controller
         // Thống kê
         $totalCategories = Category::count();
 
-        return view('admin.categories.QLDanhMuc', compact(
+        return view('admin.categories.Category', compact(
             'categories',
             'totalCategories'
         ));
@@ -45,7 +45,7 @@ class CategoryController extends Controller
             'icon' => $request->icon ?: null,
         ]);
 
-        return redirect()->route('admin.danhmuc.index')
+        return redirect()->route('admin.categories.index')
             ->with('success', 'Thêm danh mục "' . $request->name . '" thành công!');
     }
 
@@ -69,7 +69,7 @@ class CategoryController extends Controller
             'icon' => $request->icon ?: null,
         ]);
 
-        return redirect()->route('admin.danhmuc.index')
+        return redirect()->route('admin.categories.index')
             ->with('success', 'Cập nhật danh mục "' . $request->name . '" thành công!');
     }
 
@@ -83,13 +83,13 @@ class CategoryController extends Controller
 
         // Kiểm tra xem danh mục có sản phẩm không
         if ($category->products()->count() > 0) {
-            return redirect()->route('admin.danhmuc.index')
+            return redirect()->route('admin.categories.index')
                 ->with('error', 'Không thể xóa danh mục "' . $name . '" vì đang chứa sản phẩm!');
         }
 
         $category->delete();
 
-        return redirect()->route('admin.danhmuc.index')
+        return redirect()->route('admin.categories.index')
             ->with('success', 'Xóa danh mục "' . $name . '" thành công!');
     }
 }

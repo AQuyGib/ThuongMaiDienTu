@@ -586,7 +586,7 @@
     <div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
-                <form action="{{ route('admin.danhmuc.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.categories.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title"><i class="bi bi-plus-circle-fill me-2"
@@ -698,7 +698,7 @@
 
             // Cập nhật action URL
             const form = document.getElementById('editForm');
-            form.action = "{{ url('admin/danhmuc') }}/" + id;
+            form.action = "{{ url('admin/categories') }}/" + id;
 
             new bootstrap.Modal(document.getElementById('editModal')).show();
         }
@@ -719,7 +719,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     const form = document.getElementById('deleteForm');
-                    form.action = "{{ url('admin/danhmuc') }}/" + id;
+                    form.action = "{{ url('admin/categories') }}/" + id;
                     form.submit();
                 }
             });
