@@ -16,8 +16,8 @@ Route::match(['get', 'post'], '/users', function () {
 Route::get('/', function () {
     return redirect()->route('home');
 });
-
 Route::get('/home', [HomeController::class, 'index'])->name('home');
+Route::get('/auth/{provider}/callback', [App\Http\Controllers\Auth\SocialController::class, 'handleProviderCallback']);
 
 Route::post('/logout', function () {
     Auth::logout();
