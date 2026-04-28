@@ -18,7 +18,6 @@ Route::match(['get', 'post'], '/users', function () {
 Route::get('/', function () {
     return redirect('/Home');
 });
-
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::resource('cashbooks', CashbookController::class);
@@ -27,3 +26,5 @@ Route::post('/logout', function () {
     Auth::logout();
     return redirect('/');
 })->name('logout');
+
+Route::get('/auth/{provider}/callback', [App\Http\Controllers\Auth\SocialController::class, 'handleProviderCallback']);
