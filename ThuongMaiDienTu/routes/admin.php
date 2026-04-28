@@ -27,7 +27,6 @@ Route::resource('users', UserController::class)->except(['create', 'show', 'edit
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
-
 // ===== Quản lý Danh Mục =====
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
