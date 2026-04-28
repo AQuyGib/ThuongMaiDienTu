@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\CartController;
+
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 
@@ -26,9 +26,7 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 // CRUD Tài khoản (Users)
 Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
 
-// Quản lý Giỏ hàng & Phí vận chuyển
-Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
-Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
+
 // ===== Quản lý Danh Mục =====
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');

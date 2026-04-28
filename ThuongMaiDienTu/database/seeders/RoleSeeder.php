@@ -7,7 +7,6 @@ use App\Models\Role;
 
 class RoleSeeder extends Seeder
 {
-    /**
     public function run(): void
     {
         $roles = [
@@ -23,6 +22,5 @@ class RoleSeeder extends Seeder
                 $role
             );
         }
-    }
     }
 }
