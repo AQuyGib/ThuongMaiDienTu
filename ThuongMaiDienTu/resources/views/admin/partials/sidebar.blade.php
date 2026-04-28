@@ -49,7 +49,7 @@
             <i class="fa-solid fa-right-left w-5 text-purple-400"></i> Y/c Đổi Trả
         </a>
 
-        <a href="#"
+        <a href="{{ route('admin.products.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                    {{ request()->routeIs('admin.products*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-box w-5"></i> Sản phẩm
@@ -65,7 +65,7 @@
         @if(Auth::check() && Auth::user()->role_id == 1)
             <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Phân loại</div>
 
-            <a href="#"
+            <a href="{{ route('admin.categories.index') }}"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                            {{ request()->routeIs('admin.categories*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
                 <i class="fa-solid fa-list w-5"></i> Danh mục
