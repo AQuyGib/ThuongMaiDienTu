@@ -23,7 +23,6 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
 // CRUD Tài khoản (Users)
 Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
-
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
