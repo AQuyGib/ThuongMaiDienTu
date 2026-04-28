@@ -17,13 +17,14 @@ use App\Http\Controllers\Admin\ProductController;
 | Lưu ý: Hiện tại chưa thêm middleware auth vì hệ thống đăng nhập
 | sẽ được xây dựng sau. Khi hoàn tất Auth, thêm ->middleware('auth')
 |
-*/
+|*/
 
 // Dashboard
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
 // CRUD Tài khoản (Users)
 Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
+
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');

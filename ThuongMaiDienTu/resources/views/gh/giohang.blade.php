@@ -79,13 +79,9 @@
                         <span class="text-2xl font-bold text-red-600" id="summary-total">38.970.000đ</span>
                     </div>
 
-                    <button id="checkout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mb-3" onclick="proceedToCheckout()">
+                    <button id="checkout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" onclick="proceedToCheckout()">
                         TIẾN HÀNH ĐẶT HÀNG
                     </button>
-                    
-                    <a id="shipping-link" href="{{ route('cart.shipping') }}" class="block w-full text-center border border-blue-600 text-blue-600 font-semibold py-2 rounded-lg hover:bg-blue-50 transition-colors">
-                        <i class="fa-solid fa-calculator mr-1"></i> Tính phí vận chuyển
-                    </a>
                 </div>
             </div>
         </div>
@@ -99,8 +95,29 @@
 
     <!-- Script xử lý Logic -->
     <script>
-        // 1. Dữ liệu lấy từ Database (Thông qua Controller truyền biến $cartItems)
-        let cartData = @json($cartItems);
+        // 1. Dữ liệu giả lập (Trong Laravel, bạn sẽ dùng json($cartItems) để truyền từ Controller sang)
+        let cartData = [
+            {
+                id: 1,
+                name: 'Android Tivi Sony 4K 65 inch KD-65X75K',
+                price: 16990000,
+                quantity: 2,
+                stock: 10,
+                selected: true, // Mặc định được tick
+                image: 'https://cdn.tgdd.vn/Products/Images/1942/274059/sony-kd-65x75k-1.jpg',
+                url: '/san-pham/tivi-sony'
+            },
+            {
+                id: 2,
+                name: 'Tủ lạnh Aqua Inverter 189 lít AQR-T219FA(PB)',
+                price: 4990000,
+                quantity: 1,
+                stock: 5,
+                selected: true, // Mặc định được tick
+                image: 'https://cdn.tgdd.vn/Products/Images/1943/236162/aqua-aqr-t219fa-pb-1.jpg',
+                url: '/san-pham/tu-lanh-aqua'
+            }
+        ];
 
         // Format tiền tệ VNĐ
         const formatMoney = (amount) => {
@@ -212,10 +229,6 @@
             } else {
                 checkoutBtn.disabled = false;
             }
-            
-            // Cập nhật link tính phí vận chuyển với tổng tiền
-            const shippingLink = document.getElementById('shipping-link');
-            shippingLink.href = "{{ route('cart.shipping') }}?total=" + totalMoney;
         };
 
         // Logic check/uncheck tất cả
