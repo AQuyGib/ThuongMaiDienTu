@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\CartController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +25,7 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
 // CRUD Tài khoản (Users)
 Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
+
 // ===== Quản lý Danh Mục =====
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
@@ -35,3 +37,7 @@ Route::get('/products', [ProductController::class, 'index'])->name('products.ind
 Route::post('/products', [ProductController::class, 'store'])->name('products.store');
 Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
 Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+// Quản lý Giỏ hàng & Phí vận chuyển
+Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
+Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
