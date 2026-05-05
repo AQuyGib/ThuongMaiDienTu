@@ -1,93 +1,8 @@
-<?php
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use App\Models\User;
-
-$error_message = '';
-$success_message = '';
-
-$active_tab = 'login'; // Luôn mặc định là đăng nhập khi vào trang hoặc load lại (GET)
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $active_tab = isset($_POST['register_submit']) ? 'login' : 'register';
-}
-
-if (request()->has('registered')) {
-    $success_message = "Đăng ký thành công! Vui lòng đăng nhập.";
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // 1. XỬ LÝ ĐĂNG NHẬP
-    if (isset($_POST['login_submit'])) {
-        $email = trim($_POST['email']);
-        $password = $_POST['password'];
-        $active_tab = 'login';
-
-        $user = User::where('email', $email)->first();
-
-        if ($user && Hash::check($password, $user->password_hash)) {
-            if ($user->status === 'Banned') {
-                $error_message = "Tài khoản của bạn đã bị khóa.";
-            } elseif ($user->is_2fa_enabled) {
-                session(['temp_user_id' => $user->user_id]);
-                // Ép chuyển hướng trong View
-                redirect()->route('auth.sms')->send();
-                exit; 
-            } else {
-                Auth::login($user);
-                // Ép chuyển hướng về trang home
-                redirect()->route('home')->send();
-                exit; 
-            }
-        } else {
-            $error_message = "Email hoặc mật khẩu không chính xác.";
-        }
-    }
-
-    // 2. XỬ LÝ ĐĂNG KÝ
-    if (isset($_POST['register_submit'])) {
-        $active_tab = 'register';
-        
-        $full_name = trim($_POST['full_name']);
-        $email = trim($_POST['email']);
-        $password = $_POST['password'];
-        $password_confirmation = $_POST['password_confirmation'];
-
-        // Kiểm tra tính hợp lệ cơ bản
-        if (empty($full_name) || empty($email) || empty($password)) {
-            $error_message = "Vui lòng điền đầy đủ các trường bắt buộc.";
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error_message = "Định dạng email không hợp lệ.";
-        } elseif (strlen($password) < 8) {
-            $error_message = "Mật khẩu phải có ít nhất 8 ký tự.";
-        } elseif ($password !== $password_confirmation) {
-            $error_message = "Mật khẩu xác nhận không khớp.";
-        } elseif (User::where('email', $email)->exists()) {
-            $error_message = "Email này đã được sử dụng. Vui lòng chọn email khác.";
-        } else {
-            try {
-                $user = User::create([
-                    'full_name' => $full_name,
-                    'email' => $email,
-                    'password_hash' => Hash::make($password),
-                    'is_2fa_enabled' => 0,
-                    'role_id' => 2, // Mặc định là khách hàng
-                    'status' => 'Active',
-                    'member_tier' => 'Dong'
-                ]);
-
-                // Đăng nhập ngay lập tức sau khi đăng ký thành công
-                Auth::login($user);
-
-                // Ép chuyển hướng thẳng sang trang Home
-                redirect()->route('home')->send();
-                exit;
-            } catch (\Exception $e) {
-                $error_message = "Đã có lỗi xảy ra trong quá trình đăng ký. Vui lòng thử lại sau.";
-            }
-        }
-    }
-}
-?>
+@php
+    $error_message = $errors->first('login_error') ?: $errors->first();
+    $success_message = session('success');
+    $active_tab = session('active_tab', 'login');
+@endphp
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -186,7 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <!-- Form Đăng nhập -->
             <div id="formLoginView">
-                <form method="POST" action="">
+                <form method="POST" action="{{ route('login.post') }}">
                     @csrf
                     <div class="form-group">
                         <label for="email">Email</label>
@@ -221,7 +136,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             <!-- Form Đăng ký -->
             <div id="formRegisterView" class="hidden">
-                <form method="POST" action="">
+                <form method="POST" action="{{ route('register.post') }}">
                     @csrf
                     <div class="form-group">
                         <label for="full_name">Họ và tên</label>

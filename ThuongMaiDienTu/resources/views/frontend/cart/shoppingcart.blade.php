@@ -99,39 +99,8 @@
 
     <!-- Script xử lý Logic -->
     <script>
-        // 1. Dữ liệu giả lập (Trong Laravel, bạn sẽ dùng json($cartItems) để truyền từ Controller sang)
-        let cartData = [
-            {
-                id: 1,
-                name: 'Android Tivi Sony 4K 65 inch KD-65X75K',
-                price: 16990000,
-                quantity: 2,
-                stock: 10,
-                selected: true, // Mặc định được tick
-                image: 'https://dienmay247.com.vn/wp-content/uploads/2022/06/google-tivi-sony-4k-65-inch-kd-65x75k.jpg',
-                url: '/san-pham/tivi-sony'
-            },
-            {
-                id: 2,
-                name: 'Tủ lạnh Aqua Inverter 189 lít AQR-T219FA(PB)',
-                price: 4990000,
-                quantity: 1,
-                stock: 5,
-                selected: true, // Mặc định được tick
-                image: 'https://tse3.mm.bing.net/th/id/OIP.LNhrlkGhn21EpGRM9z8O9QHaE8?pid=Api&h=220&P=0',
-                url: '/san-pham/tu-lanh-aqua'
-            },
-            {
-                id: 3,
-                name: 'Bàn ủi khô Philips HD1172',
-                price: 250000,
-                quantity: 1,
-                stock: 20,
-                selected: true, // Mặc định được tick
-                image: 'https://tse1.mm.bing.net/th/id/OIP.bYL3t2qyMzmn77lteNVZxwHaEj?pid=Api&h=220&P=0',
-                url: '/san-pham/ban-ui-philips'
-            }
-        ];
+        // 1. Dữ liệu lấy từ Database (Thông qua Controller truyền biến $cartItems)
+        let cartData = @json($cartItems);
 
         // Format tiền tệ VNĐ
         const formatMoney = (amount) => {

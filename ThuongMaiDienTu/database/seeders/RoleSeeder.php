@@ -3,11 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-<<<<<<< HEAD
 use App\Models\Role;
-=======
-use Illuminate\Support\Facades\DB;
->>>>>>> origin/xuanhoa/Phanquyen
 
 class RoleSeeder extends Seeder
 {
@@ -24,7 +20,7 @@ class RoleSeeder extends Seeder
         ];
 
         foreach ($roles as $role) {
-            \App\Models\Role::updateOrCreate(
+            Role::updateOrCreate(
                 ['role_id' => $role['role_id']],
                 $role
             );
