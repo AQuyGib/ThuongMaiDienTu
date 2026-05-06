@@ -7,6 +7,7 @@ use App\Http\Controllers\CashbookController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\CartController;
 use App\Http\Controllers\Auth\SocialController;
+use App\Http\Controllers\ProductFilterController;
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
@@ -33,3 +34,6 @@ Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.sh
 Route::get('/users', function () {
     return view('PhanQuyen.user');
 })->name('users.index');
+
+// Product Filtering
+Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
