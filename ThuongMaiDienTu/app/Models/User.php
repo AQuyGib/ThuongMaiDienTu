@@ -16,6 +16,11 @@ class User extends Authenticatable {
         return $this->password_hash;
     }
 
+    public function addresses()
+    {
+        return $this->hasMany(UserAddress::class, 'user_id', 'user_id');
+    }
+
     /**
      * Optimistic Locking: Cập nhật user chỉ khi version khớp.
      * Nếu version đã thay đổi (bởi admin khác), trả về false.
