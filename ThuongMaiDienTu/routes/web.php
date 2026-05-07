@@ -36,4 +36,6 @@ Route::get('/users', function () {
 })->name('users.index');
 
 // Product Filtering
+Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
+Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.detail');
 Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
