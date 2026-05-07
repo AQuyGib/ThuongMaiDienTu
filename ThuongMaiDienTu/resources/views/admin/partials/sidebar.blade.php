@@ -15,7 +15,7 @@
 
     {{-- LOGO --}}
     <div class="h-16 flex items-center justify-between px-4 border-b border-slate-700">
-        <a href="{{ route('admin.dashboard') }}"
+        <a href="/"
             class="text-xl font-bold text-yellow-400 flex items-center gap-2 hover:text-white transition">
             <i class="fa-solid fa-bolt-lightning"></i> DIENMAYPRO
         </a>
