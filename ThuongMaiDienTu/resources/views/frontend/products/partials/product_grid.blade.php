@@ -15,10 +15,16 @@
             </div>
 
             <!-- Image Container -->
-            <div class="relative h-48 overflow-hidden bg-gray-100">
-                <img src="{{ asset('uploads/products/' . $product->image) }}" alt="{{ $product->name }}"
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    onerror="this.src='https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80'; this.onerror=null;">
+            <div class="relative h-48 overflow-hidden bg-gray-100 p-4 flex items-center justify-center">
+                @php
+                    $imageUrl = $product->thumbnail;
+                    if (!$imageUrl || !Str::startsWith($imageUrl, 'http')) {
+                        $imageUrl = asset('uploads/products/' . ($product->image ?: 'default.jpg'));
+                    }
+                @endphp
+                <img src="{{ $imageUrl }}" alt="{{ $product->name }}"
+                    class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                    onerror="this.src='https://loremflickr.com/400/400/technology?lock={{ $product->product_id }}'; this.onerror=null;">
                 <!-- Quick Actions -->
                 <div
                     class="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -58,16 +64,18 @@
                     @php
                         // Lấy cấu hình highlights từ danh mục
                         $filterConfig = $product->category->filter_config ?? [];
-                        if (is_string($filterConfig)) $filterConfig = json_decode($filterConfig, true);
-                        
+                        if (is_string($filterConfig))
+                            $filterConfig = json_decode($filterConfig, true);
+
                         $highlightConfig = $filterConfig['highlights'] ?? [];
-                        
+
                         // Parse JSON specifications của sản phẩm
                         $specs = is_string($product->specifications) ? json_decode($product->specifications, true) : ($product->specifications ?? []);
-                        if (!is_array($specs)) $specs = [];
+                        if (!is_array($specs))
+                            $specs = [];
 
                         $highlights = [];
-                        
+
                         if (!empty($highlightConfig)) {
                             // Render theo cấu hình của Admin (VD: ['ram' => 'RAM: ', 'cpu' => 'CPU: '])
                             foreach ($highlightConfig as $key => $prefix) {
@@ -78,13 +86,16 @@
                             }
                         } else {
                             // Fallback nếu danh mục chưa cấu hình highlights
-                            if (isset($specs['ram'])) $highlights[] = 'RAM: ' . (is_array($specs['ram']) ? implode(',', $specs['ram']) : $specs['ram']);
-                            if (isset($specs['rom'])) $highlights[] = 'ROM: ' . (is_array($specs['rom']) ? implode(',', $specs['rom']) : $specs['rom']);
+                            if (isset($specs['ram']))
+                                $highlights[] = 'RAM: ' . (is_array($specs['ram']) ? implode(',', $specs['ram']) : $specs['ram']);
+                            if (isset($specs['rom']))
+                                $highlights[] = 'ROM: ' . (is_array($specs['rom']) ? implode(',', $specs['rom']) : $specs['rom']);
                         }
                     @endphp
 
                     @foreach($highlights as $hl)
-                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">{{ $hl }}</span>
+                        <span
+                            class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">{{ $hl }}</span>
                     @endforeach
                 </div>
 

@@ -3,19 +3,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Product extends Model {
+class Product extends Model
+{
     use SoftDeletes;
     protected $primaryKey = 'product_id';
     public $timestamps = false;
     protected $guarded = [];
 
-    public function category() {
+    public function category()
+    {
         return $this->belongsTo(Category::class, 'category_id');
     }
-    public function productSpecifications() {
+    public function productSpecifications()
+    {
         return $this->hasMany(ProductSpecification::class, 'product_id');
     }
-    public function variants() {
+    public function variants()
+    {
         return $this->hasMany(ProductVariant::class, 'product_id');
     }
 
@@ -35,17 +39,19 @@ class Product extends Model {
     public function scopeFinalPriceBetween($query, $min, $max)
     {
         // Sử dụng base_price làm giá bán thực tế (final_price) để lọc
-        if ($min) $query->where('base_price', '>=', (float)$min);
-        if ($max) $query->where('base_price', '<=', (float)$max);
+        if ($min)
+            $query->where('base_price', '>=', (float) $min);
+        if ($max)
+            $query->where('base_price', '<=', (float) $max);
         return $query;
     }
 
     public function scopeSearchKeyword($query, $keyword)
     {
         if ($keyword) {
-            return $query->where(function($q) use ($keyword) {
+            return $query->where(function ($q) use ($keyword) {
                 $q->where('name', 'LIKE', "%{$keyword}%")
-                  ->orWhere('seo_description', 'LIKE', "%{$keyword}%");
+                    ->orWhere('seo_description', 'LIKE', "%{$keyword}%");
             });
         }
         return $query;
@@ -55,9 +61,9 @@ class Product extends Model {
     {
         if (!empty($specs) && is_array($specs)) {
             foreach ($specs as $key => $values) {
-                $query->where(function($q) use ($key, $values) {
-                    foreach ((array)$values as $value) {
-                        $q->orWhereJsonContains('specifications->'.$key, $value);
+                $query->where(function ($q) use ($key, $values) {
+                    foreach ((array) $values as $value) {
+                        $q->orWhereJsonContains('specifications->' . $key, $value);
                     }
                 });
             }

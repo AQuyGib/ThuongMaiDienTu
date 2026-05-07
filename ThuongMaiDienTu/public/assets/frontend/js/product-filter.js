@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // State management for filters
     const state = {
         filters: {
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ưu tiên lấy category_id từ server (cho route slug-based), fallback URL params
         const urlParams = new URLSearchParams(window.location.search);
         state.filters.category_id = window.__INITIAL_CATEGORY_ID || urlParams.get('category_id') || '';
-        
+
         loadDynamicFilters(state.filters.category_id);
         setupEventListeners();
         updateActiveFilters();
@@ -58,18 +58,18 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(config => {
                 // Giữ lại cấu hình tĩnh (như price, category) và merge cấu hình động
                 filterConfigs = { ...filterConfigs, ...config };
-                
+
                 // Render filter triggers
                 triggersContainer.innerHTML = '';
                 Object.keys(config).forEach(key => {
                     if (key === 'price' || key === 'category' || key === 'highlights') return; // Bỏ qua metadata
-                    
+
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap';
                     btn.dataset.filter = key;
                     btn.innerText = config[key].label;
-                    
+
                     btn.addEventListener('click', (e) => {
                         openFilterPopup(key);
                     });
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const sortValue = e.target.dataset.sort;
                 state.filters.sort = sortValue;
                 document.getElementById('filter-sort').value = sortValue;
-                
+
                 // Update active state of buttons
                 document.querySelectorAll('.sort-btn').forEach(b => {
                     b.classList.remove('bg-red-600', 'text-white', 'border-red-600');
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 e.target.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
                 e.target.classList.add('bg-red-600', 'text-white', 'border-red-600');
-                
+
                 fetchFilteredProducts();
             });
         });
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.addEventListener('click', (e) => {
                 const name = e.target.dataset.name;
                 const value = e.target.dataset.value;
-                
+
                 if (name === 'needs') {
                     if (state.filters.needs.includes(value)) {
                         state.filters.needs = state.filters.needs.filter(v => v !== value);
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         e.target.classList.add('bg-green-600', 'text-white');
                     }
                 }
-                
+
                 syncFormWithState();
                 updateActiveFilters();
                 fetchFilteredProducts();
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const popup = document.createElement('div');
         popup.className = 'filter-popup absolute z-50 bg-white shadow-2xl border border-gray-100 rounded-2xl p-5 w-80 animate-in fade-in zoom-in duration-200 ring-1 ring-black/5';
-        
+
         const triggerBtn = document.querySelector(`[data-filter="${type}"]`);
         const rect = triggerBtn.getBoundingClientRect();
         popup.style.top = `${rect.bottom + window.scrollY + 8}px`;
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function applyPopupFilters(type, popup) {
         const inputs = popup.querySelectorAll('input, select');
-        
+
         inputs.forEach(input => {
             if (input.type === 'checkbox') {
                 if (!state.filters[type]) state.filters[type] = [];
@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
         Object.keys(state.filters).forEach(key => {
             // Loại trừ các key mặc định không phải là filter động
             const excludedKeys = ['category_id', 'min_price', 'max_price', 'sort', 'q', 'needs', 'high_repairability', 'eco_friendly'];
-            
+
             if (!excludedKeys.includes(key) && Array.isArray(state.filters[key])) {
                 state.filters[key].forEach(val => {
                     const input = document.createElement('input');
@@ -329,16 +329,16 @@ document.addEventListener('DOMContentLoaded', function() {
             active.push({ label: 'Danh mục', value: catName, key: 'category_id' });
         }
         if (state.filters.min_price || state.filters.max_price) {
-            active.push({ 
-                label: 'Giá', 
-                value: `${state.filters.min_price || 0}đ - ${state.filters.max_price || '∞'}đ`, 
-                key: 'price' 
+            active.push({
+                label: 'Giá',
+                value: `${state.filters.min_price || 0}đ - ${state.filters.max_price || '∞'}đ`,
+                key: 'price'
             });
         }
         // Hiển thị active filter tags cho các thông số động
         Object.keys(state.filters).forEach(key => {
             const excludedKeys = ['category_id', 'min_price', 'max_price', 'sort', 'q', 'needs', 'high_repairability', 'eco_friendly'];
-            
+
             if (!excludedKeys.includes(key) && Array.isArray(state.filters[key])) {
                 state.filters[key].forEach(val => {
                     // Lấy label từ filterConfigs nếu có
@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (state.filters.needs && Array.isArray(state.filters.needs)) {
             state.filters.needs.forEach(v => {
-                const labels = {'gaming': 'Chơi mượt Genshin', 'student': 'Học Web Dev'};
+                const labels = { 'gaming': 'Chơi mượt Genshin', 'student': 'Học Web Dev' };
                 active.push({ label: 'Nhu cầu', value: labels[v] || v, key: 'needs', val: v });
             });
         }
@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const tag = document.createElement('span');
             tag.className = 'px-3 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer hover:bg-red-100 border border-red-100 transition-all duration-200 shadow-sm';
             tag.innerHTML = `<span>${item.label}: ${item.value}</span> <button class="w-4 h-4 flex items-center justify-center rounded-full bg-red-200 hover:bg-red-300 text-red-700 transition-colors">×</button>`;
-            
+
             tag.querySelector('button').addEventListener('click', (e) => {
                 e.stopPropagation();
                 removeFilter(item.key, item.val);
@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function removeFilter(key, val) {
         if (Array.isArray(state.filters[key])) {
             state.filters[key] = state.filters[key].filter(v => v !== val);
-            
+
             // Also update quick filter UI buttons
             if (key === 'needs') {
                 const btn = document.querySelector(`.quick-filter-btn[data-name="needs"][data-value="${val}"]`);
@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', function() {
             state.filters.max_price = '';
         } else {
             state.filters[key] = '';
-            
+
             // Update UI buttons for eco
             const btn = document.querySelector(`.quick-filter-btn[data-name="${key}"]`);
             if (btn) {
@@ -416,10 +416,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(form);
         const queryString = new URLSearchParams(formData).toString();
         const url = `/products/filter?${queryString}`;
-        
+
         // 1. Cập nhật URL (History API)
         window.history.pushState(null, '', '?' + queryString);
-        
+
         fetchProductsByUrl(url);
     }
 
@@ -427,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (productListContainer) {
             // 2. Skeleton Loading
             let skeletons = '';
-            for(let i=0; i<8; i++) {
+            for (let i = 0; i < 8; i++) {
                 skeletons += `
                 <div class="product-card bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 animate-pulse">
                     <div class="h-48 bg-gray-200 w-full"></div>
@@ -450,17 +450,17 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(url, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(response => response.text())
-        .then(html => {
-            if (productListContainer) productListContainer.innerHTML = html;
-            updateProductCount(html);
-        })
-        .catch(error => {
-            console.error('Lỗi khi lọc:', error);
-            if (productListContainer) {
-                productListContainer.innerHTML = '<p class="text-red-500 text-center py-10">Có lỗi xảy ra khi tải sản phẩm. Vui lòng thử lại.</p>';
-            }
-        });
+            .then(response => response.text())
+            .then(html => {
+                if (productListContainer) productListContainer.innerHTML = html;
+                updateProductCount(html);
+            })
+            .catch(error => {
+                console.error('Lỗi khi lọc:', error);
+                if (productListContainer) {
+                    productListContainer.innerHTML = '<p class="text-red-500 text-center py-10">Có lỗi xảy ra khi tải sản phẩm. Vui lòng thử lại.</p>';
+                }
+            });
     }
 
     function updateProductCount(html) {

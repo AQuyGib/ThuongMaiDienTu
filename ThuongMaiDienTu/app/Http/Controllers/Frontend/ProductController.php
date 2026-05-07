@@ -29,7 +29,7 @@ class ProductController extends Controller
 
         $products = $query->paginate(12);
         $categories = Category::whereNull('parent_id')->get();
-        
+
         return view('frontend.products.index', compact('products', 'categories', 'currentCategory'));
     }
 
@@ -39,7 +39,7 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = Product::findOrFail($id);
-        
+
         return view('frontend.products.show', compact('product'));
     }
 }

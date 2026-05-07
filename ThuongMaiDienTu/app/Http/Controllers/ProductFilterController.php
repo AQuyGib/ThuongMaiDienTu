@@ -20,30 +20,30 @@ class ProductFilterController extends Controller
 
             // Áp dụng các Scope lọc
             $query->filterCategory($request->category_id, $request->category_slug)
-                  ->finalPriceBetween($request->min_price, $request->max_price)
-                  ->searchKeyword($request->q)
-                  ->sortBy($request->get('sort', 'newest'));
+                ->finalPriceBetween($request->min_price, $request->max_price)
+                ->searchKeyword($request->q)
+                ->sortBy($request->get('sort', 'newest'));
 
             // Lấy tất cả thông số gửi lên từ URL thay vì hardcode ram, rom
             // Bỏ các params không phải là thông số kỹ thuật
             $nonSpecKeys = ['category_id', 'category_slug', 'min_price', 'max_price', 'q', 'sort', 'needs', 'eco_friendly', 'high_repairability', 'page'];
             $specs = $request->except($nonSpecKeys);
-            
+
             // Lọc bỏ các mảng/giá trị rỗng
-            $specs = array_filter($specs, function($val) {
+            $specs = array_filter($specs, function ($val) {
                 return !empty($val);
             });
-            
+
             // Xử lý các tag nhu cầu đặc biệt (Độc quyền DIENMAY PRO)
             if ($request->filled('needs')) {
                 // Ví dụ: tag 'gaming' -> cần RAM >= 16GB, GPU mạnh, ...
                 // Ở đây mô phỏng bằng việc map tag sang các điều kiện cấu hình
                 $needs = is_array($request->needs) ? $request->needs : explode(',', $request->needs);
                 if (in_array('gaming', $needs)) {
-                    $query->where(function($q) {
+                    $query->where(function ($q) {
                         $q->orWhereJsonContains('specifications->ram', '16GB')
-                          ->orWhereJsonContains('specifications->ram', '32GB')
-                          ->orWhereJsonContains('specifications->ram', '64GB');
+                            ->orWhereJsonContains('specifications->ram', '32GB')
+                            ->orWhereJsonContains('specifications->ram', '64GB');
                     });
                 }
                 if (in_array('student', $needs)) {
@@ -95,8 +95,8 @@ class ProductFilterController extends Controller
                 'label' => 'Khoảng giá',
                 'type' => 'range',
                 'fields' => [
-                    [ 'label' => 'Từ', 'name' => 'min_price', 'placeholder' => '0' ],
-                    [ 'label' => 'Đến', 'name' => 'max_price', 'placeholder' => '∞' ]
+                    ['label' => 'Từ', 'name' => 'min_price', 'placeholder' => '0'],
+                    ['label' => 'Đến', 'name' => 'max_price', 'placeholder' => '∞']
                 ]
             ];
         }
