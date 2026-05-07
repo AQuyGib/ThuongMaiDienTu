@@ -30,8 +30,9 @@ class SocialController extends Controller
                 'full_name' => $socialUser->getName(),
                 'email' => $socialUser->getEmail(),
                 'password_hash' => bcrypt(Str::random(16)),
-                'role_id' => 2, // Giả sử 2 là Role khách hàng
+                'role_id' => 2, // 2 là Khách hàng
                 'status' => 'Active',
+                'member_tier' => 'Dong',
             ]);
         }
 
