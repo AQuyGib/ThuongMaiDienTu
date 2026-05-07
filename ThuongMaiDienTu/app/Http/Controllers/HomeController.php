@@ -35,11 +35,18 @@ class HomeController extends Controller
             ? Product::with('category')->where('category_id', $catLaptop->category_id)->orderBy('product_id', 'desc')->take(5)->get() 
             : collect();
 
+        // Góc Tin tức & Lifestyle: 5 bài viết mới nhất đã duyệt
+        $latestArticles = \App\Models\Article::where('status', 'approved')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
         return view('home', compact(
             'categories',
             'flashSaleProducts',
             'phoneProducts',
             'laptopProducts',
+            'latestArticles'
         ));
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CartController;
+use App\Http\Controllers\Admin\ArticleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,3 +42,7 @@ Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('pr
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
+
+// ===== Quản lý Bài viết (Articles / Ecosystem) =====
+Route::resource('articles', ArticleController::class);
+Route::post('articles/{id}/approve', [ArticleController::class, 'approve'])->name('articles.approve');
