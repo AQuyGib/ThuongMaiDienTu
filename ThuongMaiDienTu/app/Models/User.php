@@ -6,7 +6,11 @@ class User extends Authenticatable {
     protected $primaryKey = 'user_id';
     const UPDATED_AT = null;
     protected $guarded = [];
-    protected $hidden = ['password_hash', 'two_factor_secret'];
+    protected $hidden = ['password_hash', 'two_factor_secret', 'two_factor_code'];
+    protected $casts = [
+        'two_factor_expires_at' => 'datetime',
+        'is_2fa_enabled' => 'boolean',
+    ];
 
     public function getAuthPassword() {
         return $this->password_hash;

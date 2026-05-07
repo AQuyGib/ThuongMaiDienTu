@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
@@ -39,16 +40,33 @@ class AuthController extends Controller
                 return back()->withErrors(['login_error' => 'Tài khoản của bạn đã bị khóa.'])->withInput();
             }
 
-            // Đăng nhập và lưu session
+            // Kiểm tra 2FA
+            if ($user->is_2fa_enabled) {
+                // Sinh OTP và gửi email
+                $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+                $user->two_factor_code = $otp;
+                $user->two_factor_expires_at = now()->addMinutes(5);
+                $user->save();
+
+                Mail::send('emails.two_factor', ['user' => $user, 'otp' => $otp], function ($m) use ($user) {
+                    $m->to($user->email)->subject('[DienMayPro] Mã xác thực đăng nhập (2FA)');
+                });
+
+                // Lưu vào session để TwoFactorController xử lý
+                session(['2fa_user_id' => $user->user_id, '2fa_remember' => $request->has('remember')]);
+
+                return redirect()->route('2fa.show');
+            }
+
+            // Không có 2FA → đăng nhập bình thường
             Auth::login($user, $request->has('remember'));
             $request->session()->regenerate();
-
-            // Luôn về trang chủ theo yêu cầu của bạn
             return redirect()->route('home');
         }
 
         return back()->withErrors(['login_error' => 'Email hoặc mật khẩu không chính xác.'])->withInput();
     }
+
 
     /**
      * Xử lý đăng ký
