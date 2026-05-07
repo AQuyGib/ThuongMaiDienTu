@@ -38,6 +38,11 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - [x] Khởi tạo các Eloquent Model tương ứng với 20 bảng cơ sở dữ liệu.
 - [x] Khởi tạo cấu trúc thư mục App & Views.
 - [x] Tạo file Seeder để chèn dữ liệu mẫu (Roles & Users).
+- [x] **Nâng cấp Lọc Sản Phẩm Động (Dynamic Filtering):**
+    - Cấu trúc lại Javascript gọi API cấu hình bộ lọc theo từng danh mục.
+    - Cấu trúc Controller nhận các specs động.
+    - Chỉnh sửa Product Model Scope để sử dụng `whereJsonContains` kết hợp filter linh hoạt qua các cột chuẩn hóa.
+    - Cập nhật hiển thị "Điểm nhấn kỹ thuật" linh động trên thẻ sản phẩm.
 - [ ] Tích hợp lấy dữ liệu động từ Database hiển thị ra trang chủ thay cho giao diện demo hiện tại.
 - [ ] **Giai đoạn 2:** Triển khai CRUD Danh mục và CRUD Sản phẩm (kèm biến thể).
 - [ ] **Giai đoạn 2:** Hiển thị sản phẩm lên trang chủ khách hàng (Frontend).

@@ -21,18 +21,20 @@
                     <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="price">Xem theo giá</button>
                     <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="brand">Hãng sản xuất</button>
                     <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="usage">Nhu cầu sử dụng</button>
-                    <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="cpu">CPU</button>
-                    <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="ram">Dung lượng RAM</button>
+                <!-- Dynamic Filter Triggers (Rendered via JS based on Category) -->
+                <div id="dynamic-filter-triggers" class="flex flex-nowrap md:flex-wrap gap-2 items-center overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+                    <!-- JS sẽ inject các nút vào đây, ví dụ: Nút RAM, CPU, Kích thước màn hình... -->
                 </div>
 
-                <!-- Secondary Filter Buttons -->
+                <!-- DienMay Pro Special Filters (Nhu cầu, Kinh tế tuần hoàn) -->
                 <div class="flex flex-nowrap md:flex-wrap gap-2 items-center overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-                    <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="rom">Ổ cứng</button>
-                    <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="gpu">Card đồ họa</button>
-                    <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="screen_size">Kích thước màn hình</button>
-                    <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="resolution">Độ phân giải</button>
-                    <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="special">Tính năng đặc biệt</button>
-                    <button type="button" class="filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-filter="ai">Công nghệ AI</button>
+                    <span class="text-xs font-bold text-gray-400 uppercase mr-2 whitespace-nowrap">Gợi ý nhanh:</span>
+                    <button type="button" class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium text-sm hover:bg-blue-100 border border-blue-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-name="needs" data-value="gaming">🎮 Chơi mượt Genshin</button>
+                    <button type="button" class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium text-sm hover:bg-blue-100 border border-blue-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-name="needs" data-value="student">🎓 Học Web Dev</button>
+                    
+                    <span class="text-xs font-bold text-gray-400 uppercase ml-4 mr-2 whitespace-nowrap hidden md:inline">Kinh tế tuần hoàn:</span>
+                    <button type="button" class="quick-filter-btn px-4 py-2 bg-green-50 text-green-700 rounded-xl font-medium text-sm hover:bg-green-100 border border-green-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-name="high_repairability" data-value="1">🔧 Dễ sửa chữa (9-10đ)</button>
+                    <button type="button" class="quick-filter-btn px-4 py-2 bg-green-50 text-green-700 rounded-xl font-medium text-sm hover:bg-green-100 border border-green-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap" data-name="eco_friendly" data-value="1">🌱 Thân thiện môi trường</button>
                 </div>
             </div>
         </div>
@@ -60,6 +62,7 @@
         <input type="hidden" name="sort" id="filter-sort" value="newest">
         <input type="hidden" name="q" id="filter-q">
         <div id="dynamic-filter-inputs"></div>
+        <div id="quick-filter-inputs"></div>
     </form>
 
     <!-- Filter Popups Container -->
@@ -75,7 +78,11 @@
                     </svg>
                 </div>
                 <h1 class="text-lg font-bold text-gray-800">
-                    Tìm thấy <span id="product-count" class="text-red-600">...</span> sản phẩm
+                    @if($currentCategory)
+                        {{ $currentCategory->name }} — <span id="product-count" class="text-red-600">...</span> sản phẩm
+                    @else
+                        Tìm thấy <span id="product-count" class="text-red-600">...</span> sản phẩm
+                    @endif
                 </h1>
             </div>
             <div class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
@@ -93,6 +100,10 @@
 </div>
 
 @push('scripts')
+    <script>
+        window.__INITIAL_CATEGORY_ID = '{{ $currentCategory->category_id ?? '' }}';
+        window.__INITIAL_CATEGORY_NAME = '{{ $currentCategory->name ?? '' }}';
+    </script>
     <script src="{{ asset('assets/frontend/js/product-filter.js') }}"></script>
 @endpush
 @endsection

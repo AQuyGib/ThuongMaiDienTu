@@ -8,7 +8,10 @@ document.addEventListener('DOMContentLoaded', function() {
             ram: [],
             rom: [],
             sort: 'newest',
-            q: ''
+            q: '',
+            needs: [],
+            high_repairability: '',
+            eco_friendly: ''
         },
         activePopup: null
     };
@@ -21,20 +24,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const productCountDisplay = document.getElementById('product-count');
     const productListContainer = document.getElementById('product-list-container');
 
-    // Filter configurations for popups
-    const filterConfigs = {
-        ram: {
-            label: 'Dung lượng RAM',
-            type: 'checkbox',
-            options: ['8GB', '16GB', '32GB', '64GB'],
-            inputName: 'ram[]'
-        },
-        rom: {
-            label: 'Ổ cứng (ROM)',
-            type: 'checkbox',
-            options: ['128GB', '256GB', '512GB', '1TB'],
-            inputName: 'rom[]'
-        },
+    // Filter configurations will be populated dynamically from the server
+    let filterConfigs = {
         price: {
             label: 'Khoảng giá',
             type: 'range',
@@ -42,17 +33,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 { label: 'Từ', name: 'min_price', placeholder: '0' },
                 { label: 'Đến', name: 'max_price', placeholder: '∞' }
             ]
-        },
-        category: {
-            label: 'Danh mục',
-            type: 'select',
-            options: [] // Will be populated from server or initial page load
         }
     };
 
     function init() {
+        // Ưu tiên lấy category_id từ server (cho route slug-based), fallback URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        state.filters.category_id = window.__INITIAL_CATEGORY_ID || urlParams.get('category_id') || '';
+        
+        loadDynamicFilters(state.filters.category_id);
         setupEventListeners();
         updateActiveFilters();
+    }
+
+    function loadDynamicFilters(categoryId) {
+        const triggersContainer = document.getElementById('dynamic-filter-triggers');
+        if (!triggersContainer) return;
+
+        // Nếu không có category, có thể load filter mặc định (id = 0) hoặc bỏ qua
+        const fetchUrl = categoryId ? `/api/categories/${categoryId}/filters` : '/api/categories/0/filters';
+
+        fetch(fetchUrl)
+            .then(res => res.json())
+            .then(config => {
+                // Giữ lại cấu hình tĩnh (như price, category) và merge cấu hình động
+                filterConfigs = { ...filterConfigs, ...config };
+                
+                // Render filter triggers
+                triggersContainer.innerHTML = '';
+                Object.keys(config).forEach(key => {
+                    if (key === 'price' || key === 'category' || key === 'highlights') return; // Bỏ qua metadata
+                    
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'filter-trigger px-4 py-2 bg-gray-50 text-gray-600 rounded-xl font-medium text-sm hover:bg-white hover:text-red-600 hover:border-red-100 border border-transparent hover:shadow-sm transition-all duration-200 whitespace-nowrap';
+                    btn.dataset.filter = key;
+                    btn.innerText = config[key].label;
+                    
+                    btn.addEventListener('click', (e) => {
+                        openFilterPopup(key);
+                    });
+
+                    triggersContainer.appendChild(btn);
+                });
+            })
+            .catch(err => console.error("Error loading filters:", err));
     }
 
     function setupEventListeners() {
@@ -79,6 +104,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.target.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
                 e.target.classList.add('bg-red-600', 'text-white', 'border-red-600');
                 
+                fetchFilteredProducts();
+            });
+        });
+
+        // Quick filter buttons (needs, eco, etc)
+        document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const name = e.target.dataset.name;
+                const value = e.target.dataset.value;
+                
+                if (name === 'needs') {
+                    if (state.filters.needs.includes(value)) {
+                        state.filters.needs = state.filters.needs.filter(v => v !== value);
+                        e.target.classList.remove('bg-blue-600', 'text-white');
+                        e.target.classList.add('bg-blue-50', 'text-blue-700');
+                    } else {
+                        state.filters.needs.push(value);
+                        e.target.classList.remove('bg-blue-50', 'text-blue-700');
+                        e.target.classList.add('bg-blue-600', 'text-white');
+                    }
+                } else {
+                    if (state.filters[name] === value) {
+                        state.filters[name] = '';
+                        e.target.classList.remove('bg-green-600', 'text-white');
+                        e.target.classList.add('bg-green-50', 'text-green-700');
+                    } else {
+                        state.filters[name] = value;
+                        e.target.classList.remove('bg-green-50', 'text-green-700');
+                        e.target.classList.add('bg-green-600', 'text-white');
+                    }
+                }
+                
+                syncFormWithState();
+                updateActiveFilters();
                 fetchFilteredProducts();
             });
         });
@@ -220,22 +279,55 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('filter-q').value = state.filters.q;
 
         dynamicInputsContainer.innerHTML = '';
-        ['ram', 'rom'].forEach(key => {
-            state.filters[key].forEach(val => {
+        Object.keys(state.filters).forEach(key => {
+            // Loại trừ các key mặc định không phải là filter động
+            const excludedKeys = ['category_id', 'min_price', 'max_price', 'sort', 'q', 'needs', 'high_repairability', 'eco_friendly'];
+            
+            if (!excludedKeys.includes(key) && Array.isArray(state.filters[key])) {
+                state.filters[key].forEach(val => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = `${key}[]`;
+                    input.value = val;
+                    dynamicInputsContainer.appendChild(input);
+                });
+            }
+        });
+
+        // Add needs arrays explicitly
+        if (state.filters.needs && state.filters.needs.length > 0) {
+            state.filters.needs.forEach(val => {
                 const input = document.createElement('input');
                 input.type = 'hidden';
-                input.name = key === 'ram' ? 'ram[]' : 'rom[]';
+                input.name = 'needs[]';
                 input.value = val;
                 dynamicInputsContainer.appendChild(input);
             });
-        });
+        }
+
+        const quickFilterContainer = document.getElementById('quick-filter-inputs');
+        if (quickFilterContainer) {
+            quickFilterContainer.innerHTML = '';
+            ['high_repairability', 'eco_friendly'].forEach(key => {
+                if (state.filters[key]) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = state.filters[key];
+                    quickFilterContainer.appendChild(input);
+                }
+            });
+        }
     }
 
     function updateActiveFilters() {
         activeFiltersContainer.innerHTML = '';
         const active = [];
 
-        if (state.filters.category_id) active.push({ label: 'Danh mục', value: state.filters.category_id, key: 'category_id' });
+        if (state.filters.category_id) {
+            const catName = (state.filters.category_id == window.__INITIAL_CATEGORY_ID) ? window.__INITIAL_CATEGORY_NAME : state.filters.category_id;
+            active.push({ label: 'Danh mục', value: catName, key: 'category_id' });
+        }
         if (state.filters.min_price || state.filters.max_price) {
             active.push({ 
                 label: 'Giá', 
@@ -243,8 +335,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 key: 'price' 
             });
         }
-        state.filters.ram.forEach(v => active.push({ label: 'RAM', value: v, key: 'ram', val: v }));
-        state.filters.rom.forEach(v => active.push({ label: 'ROM', value: v, key: 'rom', val: v }));
+        // Hiển thị active filter tags cho các thông số động
+        Object.keys(state.filters).forEach(key => {
+            const excludedKeys = ['category_id', 'min_price', 'max_price', 'sort', 'q', 'needs', 'high_repairability', 'eco_friendly'];
+            
+            if (!excludedKeys.includes(key) && Array.isArray(state.filters[key])) {
+                state.filters[key].forEach(val => {
+                    // Lấy label từ filterConfigs nếu có
+                    const label = filterConfigs[key] ? filterConfigs[key].label : key.toUpperCase();
+                    active.push({ label: label, value: val, key: key, val: val });
+                });
+            }
+        });
+
+        if (state.filters.needs && Array.isArray(state.filters.needs)) {
+            state.filters.needs.forEach(v => {
+                const labels = {'gaming': 'Chơi mượt Genshin', 'student': 'Học Web Dev'};
+                active.push({ label: 'Nhu cầu', value: labels[v] || v, key: 'needs', val: v });
+            });
+        }
+        if (state.filters.high_repairability) active.push({ label: 'Eco', value: 'Dễ sửa chữa', key: 'high_repairability' });
+        if (state.filters.eco_friendly) active.push({ label: 'Eco', value: 'Thân thiện môi trường', key: 'eco_friendly' });
 
         active.forEach(item => {
             const tag = document.createElement('span');
@@ -271,11 +382,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function removeFilter(key, val) {
         if (Array.isArray(state.filters[key])) {
             state.filters[key] = state.filters[key].filter(v => v !== val);
+            
+            // Also update quick filter UI buttons
+            if (key === 'needs') {
+                const btn = document.querySelector(`.quick-filter-btn[data-name="needs"][data-value="${val}"]`);
+                if (btn) {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('bg-blue-50', 'text-blue-700');
+                }
+            }
         } else if (key === 'price') {
             state.filters.min_price = '';
             state.filters.max_price = '';
         } else {
             state.filters[key] = '';
+            
+            // Update UI buttons for eco
+            const btn = document.querySelector(`.quick-filter-btn[data-name="${key}"]`);
+            if (btn) {
+                btn.classList.remove('bg-green-600', 'text-white');
+                btn.classList.add('bg-green-50', 'text-green-700');
+            }
         }
         syncFormWithState();
         updateActiveFilters();
@@ -290,18 +417,34 @@ document.addEventListener('DOMContentLoaded', function() {
         const queryString = new URLSearchParams(formData).toString();
         const url = `/products/filter?${queryString}`;
         
+        // 1. Cập nhật URL (History API)
+        window.history.pushState(null, '', '?' + queryString);
+        
         fetchProductsByUrl(url);
     }
 
     function fetchProductsByUrl(url) {
         if (productListContainer) {
-            productListContainer.innerHTML = `
-                <div class="flex justify-center items-center py-20">
-                    <div class="flex flex-col items-center gap-3">
-                        <div class="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                        <p class="text-gray-500 animate-pulse">Đang cập nhật sản phẩm...</p>
+            // 2. Skeleton Loading
+            let skeletons = '';
+            for(let i=0; i<8; i++) {
+                skeletons += `
+                <div class="product-card bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 animate-pulse">
+                    <div class="h-48 bg-gray-200 w-full"></div>
+                    <div class="p-4 space-y-3">
+                        <div class="h-3 bg-gray-200 rounded w-1/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div class="flex gap-2">
+                            <div class="h-6 bg-gray-200 rounded w-12"></div>
+                            <div class="h-6 bg-gray-200 rounded w-12"></div>
+                        </div>
+                        <div class="h-6 bg-gray-200 rounded w-1/3"></div>
+                        <div class="h-8 bg-gray-200 rounded w-full mt-4"></div>
                     </div>
                 </div>`;
+            }
+            productListContainer.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">${skeletons}</div>`;
         }
 
         fetch(url, {

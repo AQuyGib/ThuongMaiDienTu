@@ -12,12 +12,25 @@ class ProductController extends Controller
     /**
      * Hiển thị danh sách sản phẩm.
      */
-    public function index()
+    public function index($categorySlug = null)
     {
-        $products = Product::paginate(12);
-        $categories = Category::all();
+        $currentCategory = null;
+
+        if ($categorySlug) {
+            $currentCategory = Category::where('slug', $categorySlug)->first();
+        } elseif (request('category_id')) {
+            $currentCategory = Category::find(request('category_id'));
+        }
+
+        $query = Product::whereNull('deleted_at');
+        if ($currentCategory) {
+            $query->where('category_id', $currentCategory->category_id);
+        }
+
+        $products = $query->paginate(12);
+        $categories = Category::whereNull('parent_id')->get();
         
-        return view('frontend.products.index', compact('products', 'categories'));
+        return view('frontend.products.index', compact('products', 'categories', 'currentCategory'));
     }
 
     /**

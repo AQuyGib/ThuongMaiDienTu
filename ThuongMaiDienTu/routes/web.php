@@ -37,5 +37,7 @@ Route::get('/users', function () {
 
 // Product Filtering
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
-Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.detail');
 Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
+Route::get('/products/{categorySlug}', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.category');
+Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.detail');
+Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'getCategoryFilters'])->name('api.categories.filters');
