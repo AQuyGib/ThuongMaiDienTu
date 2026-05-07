@@ -470,7 +470,7 @@
 
                 <div class="product-grid">
                     @foreach($flashSaleProducts as $product)
-                        <a href="#" class="product-card">
+                        <a href="{{ route('product.show', $product->product_id) }}" class="product-card">
                             <span class="badge-top-left">Trả góp 0%</span>
                             @if($product->old_price)
                                 @php
@@ -516,7 +516,7 @@
             </div>
             <div class="product-grid-white">
                 @foreach($phoneProducts as $product)
-                    <a href="#" class="product-card">
+                    <a href="{{ route('product.show', $product->product_id) }}" class="product-card">
                         <span class="badge-top-left">Trả góp 0%</span>
                         @if($product->old_price && $product->old_price > $product->base_price)
                             @php
@@ -557,7 +557,7 @@
             </div>
             <div class="product-grid-white">
                 @foreach($laptopProducts as $product)
-                    <a href="#" class="product-card">
+                    <a href="{{ route('product.show', $product->product_id) }}" class="product-card">
                         @if($product->old_price && $product->old_price > $product->base_price)
                             @php
                                 $discount = round((($product->old_price - $product->base_price) / $product->old_price) * 100);

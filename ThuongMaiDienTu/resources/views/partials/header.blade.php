@@ -79,10 +79,24 @@
                 <i class="fa-solid fa-truck-fast"></i>
                 <span>Tra cứu đơn</span>
             </a>
-            <a href="{{ route('cart.index') }}" class="action-item">
+            <a href="{{ route('cart.index') }}" class="action-item" style="position: relative;">
                 <i class="fa-solid fa-cart-shopping"></i>
+                <span id="headerCartBadge" style="position: absolute; top: 0px; right: 8px; background: #d70018; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 10px; display: none;">0</span>
                 <span>Giỏ hàng</span>
             </a>
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    let userId = '{{ Auth::id() ?? "guest" }}';
+                    let savedCount = localStorage.getItem('cartCount_' + userId);
+                    if(savedCount && parseInt(savedCount) > 0) {
+                        let badge = document.getElementById('headerCartBadge');
+                        if(badge) {
+                            badge.innerText = savedCount;
+                            badge.style.display = 'block';
+                        }
+                    }
+                });
+            </script>
             @auth
                 <div class="action-item relative group" style="position: relative;">
                     <a href="/profile" style="display:flex; flex-direction:column; align-items:center;">

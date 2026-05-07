@@ -7,6 +7,8 @@ use App\Http\Controllers\CashbookController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\CartController;
 use App\Http\Controllers\Auth\SocialController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReviewController;
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
@@ -23,6 +25,8 @@ Route::get('/', function () {
     return redirect()->route('home');
 });
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
+Route::get('/san-pham/{id}', [ProductController::class, 'show'])->name('product.show');
+Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 
 // Modules
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
