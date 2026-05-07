@@ -9,6 +9,9 @@ class Product extends Model
     protected $primaryKey = 'product_id';
     public $timestamps = false;
     protected $guarded = [];
+    protected $casts = [
+        'specifications' => 'array',
+    ];
 
     public function category()
     {
