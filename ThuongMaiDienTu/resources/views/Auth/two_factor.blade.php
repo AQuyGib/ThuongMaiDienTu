@@ -84,41 +84,42 @@
         .form-desc { font-size:14px; color:var(--text-muted); margin-bottom:28px; line-height:1.6; }
         .form-desc strong { color:var(--text-dark); }
 
-        /* OTP 6 ô riêng biệt */
-        .otp-row { display:flex; gap:10px; margin-bottom:24px; }
+        /* OTP Input - Chỉnh lại cho vừa khung hình */
+        .otp-row { display:flex; gap:12px; margin-bottom:32px; justify-content: center; }
         .otp-input {
-            flex:1; height:60px; text-align:center; font-size:24px; font-weight:800;
-            background:var(--bg-input); border:2px solid var(--border-input); border-radius:14px;
-            color:var(--tech-dark); transition:all 0.2s; outline:none; caret-color:var(--tech-blue);
+            width: 54px; height: 64px; text-align:center; font-size:28px; font-weight:800;
+            background:var(--bg-input); border:2.5px solid var(--border-input); border-radius:16px;
+            color:var(--tech-dark); transition:all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            outline:none; caret-color:var(--tech-blue);
         }
-        .otp-input:focus { border-color:var(--tech-blue); background:#fff; box-shadow:0 0 0 4px rgba(59,130,246,0.1); transform:scale(1.05); }
+        .otp-input:focus { border-color:var(--tech-blue); background:#fff; box-shadow:0 8px 20px rgba(59,130,246,0.15); transform:scale(1.08); }
         .otp-input.filled { border-color:#22c55e; background:#f0fdf4; }
 
-        /* Hidden real input */
         #otp-hidden { position:absolute; opacity:0; pointer-events:none; }
 
         .btn-verify {
-            width:100%; padding:15px;
+            width:100%; padding:16px;
             background:linear-gradient(90deg,var(--tech-blue),#2563eb);
-            color:#fff; border:none; border-radius:12px;
-            font-size:16px; font-weight:700; cursor:pointer;
-            transition:all 0.3s; box-shadow:0 8px 20px rgba(59,130,246,0.3);
-            display:flex; align-items:center; justify-content:center; gap:8px;
+            color:#fff; border:none; border-radius:14px;
+            font-size:16px; font-weight:800; cursor:pointer;
+            transition:all 0.3s; box-shadow:0 10px 25px rgba(59,130,246,0.3);
+            display:flex; align-items:center; justify-content:center; gap:10px;
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        .btn-verify:hover { transform:translateY(-2px); box-shadow:0 12px 25px rgba(59,130,246,0.4); }
-        .btn-verify:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+        .btn-verify:hover:not(:disabled) { transform:translateY(-3px); box-shadow:0 15px 30px rgba(59,130,246,0.4); }
+        .btn-verify:disabled { opacity:0.6; cursor:not-allowed; transform:none; filter: grayscale(0.5); }
 
-        .resend-row { display:flex; align-items:center; justify-content:space-between; margin-top:18px; font-size:13px; }
-        .resend-btn { background:none; border:none; color:var(--tech-blue); font-weight:700; cursor:pointer; font-size:13px; transition:opacity 0.2s; font-family:inherit; padding:0; }
-        .resend-btn:hover { opacity:0.7; }
-        .resend-btn:disabled { color:var(--text-muted); cursor:not-allowed; }
+        .resend-row { display:flex; align-items:center; justify-content:space-between; margin-top:24px; font-size:13px; font-weight: 500; }
+        .resend-btn { background:none; border:none; color:var(--tech-blue); font-weight:800; cursor:pointer; font-size:13px; transition:opacity 0.2s; font-family:inherit; padding:0; }
+        .resend-btn:hover { text-decoration: underline; }
+        .resend-btn:disabled { color:var(--text-muted); cursor:not-allowed; text-decoration: none; }
 
-        .timer { color:var(--text-muted); font-weight:600; }
+        .timer { color:var(--text-muted); font-weight:700; }
         .timer.urgent { color:#ef4444; }
 
-        .alert { padding:12px; border-radius:12px; margin-bottom:18px; font-size:14px; text-align:center; font-weight:600; }
-        .alert-danger { background:#fef2f2; color:#dc2626; border:1px solid #fecaca; }
-        .alert-success { background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; }
+        .alert { padding:14px; border-radius:14px; margin-bottom:20px; font-size:14px; text-align:center; font-weight:700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .alert-danger { background:#fef2f2; color:#dc2626; border:1.5px solid #fecaca; }
+        .alert-success { background:#ecfdf5; color:#059669; border:1.5px solid #a7f3d0; }
     </style>
 </head>
 <body>
@@ -166,7 +167,7 @@
     <!-- FORM PANEL -->
     <div class="form-panel">
         <div class="shield-icon">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 <polyline points="9 12 11 14 15 10"/>
             </svg>
@@ -174,41 +175,45 @@
 
         <h2 class="form-title">Nhập mã xác thực</h2>
         <p class="form-desc">
-            Mã OTP gồm <strong>6 chữ số</strong> đã được gửi đến<br>
-            <strong>{{ $user->email ?? '' }}</strong>
+            Mã OTP gồm <strong>6 chữ số</strong> đã được gửi đến:<br>
+            <strong>{{ $user->email ?? 'tài khoản của bạn' }}</strong>
         </p>
 
         @if($errors->any())
-            <div class="alert alert-danger">{{ $errors->first() }}</div>
+            <div class="alert alert-danger">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                {{ $errors->first() }}
+            </div>
         @endif
         @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
+            <div class="alert alert-success">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                {{ session('success') }}
+            </div>
         @endif
 
         <form method="POST" action="{{ route('2fa.verify') }}" id="otp-form">
             @csrf
             <input type="hidden" name="otp" id="otp-hidden">
 
-            <!-- 6 ô OTP riêng biệt -->
             <div class="otp-row">
                 @for($i = 0; $i < 6; $i++)
-                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                    <input type="text" class="otp-input" maxlength="1" inputmode="numeric" autocomplete="off" placeholder="·">
                 @endfor
             </div>
 
             <button type="submit" class="btn-verify" id="btn-verify" disabled>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                 Xác minh & Đăng nhập
             </button>
         </form>
 
         <div class="resend-row">
             <span style="color:var(--text-muted)">Không nhận được mã?</span>
-            <div style="display:flex;align-items:center;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;">
                 <span class="timer" id="timer">Gửi lại sau <strong id="countdown">60</strong>s</span>
                 <form method="POST" action="{{ route('2fa.send') }}" style="display:inline;">
                     @csrf
-                    <button class="resend-btn" id="resend-btn" disabled>Gửi lại</button>
+                    <button type="submit" class="resend-btn" id="resend-btn" disabled>Gửi lại</button>
                 </form>
             </div>
         </div>
@@ -240,10 +245,13 @@ boxes.forEach((box, i) => {
             boxes[i - 1].value = '';
             boxes[i - 1].classList.remove('filled');
             syncHidden();
+        } else if (e.key === 'ArrowLeft' && i > 0) {
+            boxes[i - 1].focus();
+        } else if (e.key === 'ArrowRight' && i < 5) {
+            boxes[i + 1].focus();
         }
     });
 
-    // Paste hỗ trợ
     box.addEventListener('paste', e => {
         e.preventDefault();
         const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
@@ -251,15 +259,43 @@ boxes.forEach((box, i) => {
             if (boxes[idx]) { boxes[idx].value = ch; boxes[idx].classList.add('filled'); }
         });
         syncHidden();
-        if (boxes[5]) boxes[5].focus();
+        if (paste.length > 0) boxes[Math.min(paste.length, 5)].focus();
     });
 });
+
+let isSubmitting = false;
 
 function syncHidden() {
     const val = Array.from(boxes).map(b => b.value).join('');
     hidden.value = val;
-    submitBtn.disabled = val.length < 6;
+    submitBtn.disabled = val.length < 6 || isSubmitting;
+    
+    if(val.length === 6 && !isSubmitting) {
+        autoSubmit();
+    }
 }
+
+function autoSubmit() {
+    isSubmitting = true;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác minh...';
+    
+    // Thêm delay nhỏ để UX mượt mà
+    setTimeout(() => {
+        document.getElementById('otp-form').submit();
+    }, 400);
+}
+
+// Xử lý khi nhấn nút thủ công
+document.getElementById('otp-form').addEventListener('submit', function(e) {
+    if (isSubmitting) {
+        e.preventDefault();
+        return;
+    }
+    isSubmitting = true;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác minh...';
+});
 
 /* === Đếm ngược gửi lại === */
 let seconds = 60;
@@ -269,41 +305,43 @@ const resendBtn = document.getElementById('resend-btn');
 
 const timer = setInterval(() => {
     seconds--;
-    countdownEl.textContent = seconds;
+    if(countdownEl) countdownEl.textContent = seconds;
     if (seconds <= 10) timerEl.classList.add('urgent');
     if (seconds <= 0) {
         clearInterval(timer);
-        timerEl.style.display = 'none';
+        timerEl.style.visibility = 'hidden';
         resendBtn.disabled = false;
     }
 }, 1000);
 
 /* === Canvas Particles === */
 const canvas = document.getElementById('particle-canvas');
-const ctx = canvas.getContext('2d');
-function resizeCanvas() { canvas.width = canvas.parentElement.offsetWidth; canvas.height = canvas.parentElement.offsetHeight; }
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+if(canvas) {
+    const ctx = canvas.getContext('2d');
+    function resizeCanvas() { canvas.width = canvas.parentElement.offsetWidth; canvas.height = canvas.parentElement.offsetHeight; }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
-class Particle {
-    constructor() { this.reset(); }
-    reset() {
-        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
-        this.r = Math.random() * 1.6 + 0.4;
-        this.vx = (Math.random() - 0.5) * 0.4; this.vy = (Math.random() - 0.5) * 0.4 - 0.15;
-        this.alpha = Math.random() * 0.4 + 0.1;
-        this.color = Math.random() > 0.5 ? '100,160,255' : '255,220,100';
+    class Particle {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+            this.r = Math.random() * 1.6 + 0.4;
+            this.vx = (Math.random() - 0.5) * 0.4; this.vy = (Math.random() - 0.5) * 0.4 - 0.15;
+            this.alpha = Math.random() * 0.4 + 0.1;
+            this.color = Math.random() > 0.5 ? '100,160,255' : '255,220,100';
+        }
+        update() { this.x += this.vx; this.y += this.vy; if (this.y < -5 || this.x < -5 || this.x > canvas.width + 5) this.reset(); }
+        draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2); ctx.fillStyle=`rgba(${this.color},${this.alpha})`; ctx.fill(); }
     }
-    update() { this.x += this.vx; this.y += this.vy; if (this.y < -5 || this.x < -5 || this.x > canvas.width + 5) this.reset(); }
-    draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2); ctx.fillStyle=`rgba(${this.color},${this.alpha})`; ctx.fill(); }
+    const particles = Array.from({length: 60}, () => new Particle());
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(animate);
+    }
+    animate();
 }
-const particles = Array.from({length: 70}, () => new Particle());
-function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    particles.forEach(p => { p.update(); p.draw(); });
-    requestAnimationFrame(animate);
-}
-animate();
 </script>
 </body>
 </html>
