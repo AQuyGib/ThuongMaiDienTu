@@ -13,8 +13,8 @@
     .breadcrumb a { color: #d70018; text-decoration: none; font-weight: 500; }
     
     /* Main Content */
-    .article-main { background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
-    .article-title { font-size: 28px; font-weight: 800; line-height: 1.4; color: #111827; margin-bottom: 15px; }
+    .article-main { background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); overflow: hidden; }
+    .article-title { font-size: 28px; font-weight: 800; line-height: 1.4; color: #111827; margin-bottom: 15px; overflow-wrap: break-word; }
     
     /* Meta Info */
     .article-meta { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
@@ -29,16 +29,16 @@
     .share-link { background: #6b7280; }
     
     /* Summary */
-    .article-summary { background: #f3f4f6; border-left: 4px solid #d70018; padding: 15px 20px; border-radius: 0 8px 8px 0; font-weight: 600; color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 15px; }
+    .article-summary { background: #f3f4f6; border-left: 4px solid #d70018; padding: 15px 20px; border-radius: 0 8px 8px 0; font-weight: 600; color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 15px; overflow-wrap: break-word; }
     
     /* Content Styling */
-    .article-content { font-size: 16px; line-height: 1.8; color: #333; }
+    .article-content { font-size: 16px; line-height: 1.8; color: #333; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; }
     .article-content p { margin-bottom: 20px; }
-    .article-content h2 { font-size: 22px; font-weight: 700; color: #111827; margin: 30px 0 15px 0; }
-    .article-content h3 { font-size: 18px; font-weight: 700; color: #111827; margin: 25px 0 15px 0; }
+    .article-content h2 { font-size: 22px; font-weight: 700; color: #111827; margin: 30px 0 15px 0; overflow-wrap: break-word; }
+    .article-content h3 { font-size: 18px; font-weight: 700; color: #111827; margin: 25px 0 15px 0; overflow-wrap: break-word; }
     .article-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 15px auto; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     .article-content ul { list-style-type: disc; margin-left: 20px; margin-bottom: 20px; }
-    .article-content li { margin-bottom: 10px; }
+    .article-content li { margin-bottom: 10px; overflow-wrap: break-word; }
 
     /* Ecosystem Banner */
     .ecosystem-banner { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border-radius: 12px; padding: 25px; color: #fff; margin-top: 40px; position: relative; overflow: hidden; }
@@ -135,7 +135,7 @@
             <div>
                 @foreach($recentArticles as $recent)
                 <a href="{{ route('articles.show', $recent->slug) }}" class="sidebar-post">
-                    <img src="{{ $recent->thumbnail ?? 'https://images.unsplash.com/photo-1593640495253-23196b27a87f?w=150' }}" alt="{{ $recent->title }}" class="sp-img">
+                    <img src="{{ $recent->thumbnail ? asset($recent->thumbnail) : 'https://images.unsplash.com/photo-1593640495253-23196b27a87f?w=150' }}" alt="{{ $recent->title }}" class="sp-img">
                     <h4 class="sp-title">{{ $recent->title }}</h4>
                 </a>
                 @endforeach
