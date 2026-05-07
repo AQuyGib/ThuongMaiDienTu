@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CartController;
+use App\Http\Controllers\Admin\SupplierController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,3 +42,9 @@ Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('pr
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
+
+// ===== Quản lý Nhà Cung Cấp =====
+Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+Route::put('/suppliers/{id}', [SupplierController::class, 'update'])->name('suppliers.update');
+Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
