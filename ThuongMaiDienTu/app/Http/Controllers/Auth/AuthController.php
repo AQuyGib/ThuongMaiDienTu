@@ -73,7 +73,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'password_hash' => Hash::make($request->password),
             'is_2fa_enabled' => 0,
-            'role_id' => 3, // Khách hàng
+            'role_id' => 2, // 2 là Khách hàng
             'status' => 'Active',
             'member_tier' => 'Dong'
         ]);
