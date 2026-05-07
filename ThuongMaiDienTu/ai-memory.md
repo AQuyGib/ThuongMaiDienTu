@@ -42,6 +42,7 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - [ ] **Giai đoạn 2:** Triển khai CRUD Danh mục và CRUD Sản phẩm (kèm biến thể).
 - [ ] **Giai đoạn 2:** Hiển thị sản phẩm lên trang chủ khách hàng (Frontend).
 - [ ] Bắt đầu viết logic trong `CartService` và `InventoryService`.
+- [x] Triển khai CRUD Bài viết (Articles) tích hợp ecosystem, gamification & shoppable content.
 
 ## Ghi chú quan trọng:
 - Đã tách Sidebar thành `resources/views/admin/partials/sidebar.blade.php` để team dễ phối hợp.

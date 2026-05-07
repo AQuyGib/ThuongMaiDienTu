@@ -30,6 +30,10 @@ Route::resource('cashbooks', CashbookController::class);
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 
+// Articles & Lifestyle
+Route::get('/lifestyle', [\App\Http\Controllers\ArticleFrontendController::class, 'index'])->name('articles.index');
+Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController::class, 'show'])->name('articles.show');
+
 Route::get('/users', function () {
     return view('PhanQuyen.user');
 })->name('users.index');

@@ -56,8 +56,15 @@
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+            
+            if (window.innerWidth >= 1024) {
+                // Desktop: Ẩn/Hiện sidebar hoàn toàn
+                sidebar.classList.toggle('lg:hidden');
+            } else {
+                // Mobile: Trượt sidebar và overlay
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            }
         }
 
         function closeModal(id) {

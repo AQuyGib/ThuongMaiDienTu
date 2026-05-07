@@ -61,6 +61,12 @@
             <i class="fa-solid fa-palette w-5"></i> Trang chủ
         </a>
 
+        <a href="{{ route('admin.articles.index') }}"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                   {{ request()->routeIs('admin.articles*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+            <i class="fa-solid fa-newspaper w-5 text-green-400"></i> Bài viết & CMS
+        </a>
+
         {{-- ===== NHÓM: PHÂN LOẠI (Chỉ Admin thấy) ===== --}}
         @if(Auth::check() && Auth::user()->role_id == 1)
             <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Phân loại</div>
