@@ -240,9 +240,11 @@
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
-            overflow: hidden;
             height: 40px;
             line-height: 1.4;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
         }
 
         .product-name:hover {
@@ -413,7 +415,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a href="{{ route('articles.index') }}">
                             <div class="menu-icon">
                                 <i class="fa-solid fa-newspaper main-icon"></i> Tin công nghệ
                             </div>
@@ -606,7 +608,7 @@
                                 <img src="{{ $article->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}" alt="{{ $article->title }}" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px;">
                             </div>
                             <div class="news-info" style="padding: 12px;">
-                                <h3 style="font-size: 14px; font-weight: 600; color: #333; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                <h3 style="font-size: 14px; font-weight: 600; color: #333; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word;">
                                     {{ $article->title }}
                                 </h3>
                             </div>

@@ -25,7 +25,7 @@
     
     .featured-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 25px; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%); color: #fff; }
     .featured-badge { display: inline-block; padding: 4px 10px; background: #d70018; color: #fff; font-size: 11px; font-weight: 700; border-radius: 4px; margin-bottom: 10px; text-transform: uppercase; }
-    .featured-title { font-size: 22px; font-weight: 800; line-height: 1.4; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+    .featured-title { font-size: 22px; font-weight: 800; line-height: 1.4; margin-bottom: 10px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); overflow-wrap: break-word; }
     .featured-meta { font-size: 12px; color: #d1d5db; display: flex; align-items: center; gap: 15px; font-weight: 500; }
     
     .featured-main { height: 450px; }
@@ -47,8 +47,8 @@
     .news-item-img { position: relative; padding: 10px 10px 0 10px; }
     .news-item-img img { width: 100%; aspect-ratio: 16/10; object-fit: cover; border-radius: 8px; }
     
-    .news-item-content { padding: 15px; display: flex; flex-direction: column; flex: 1; }
-    .news-item-title { font-size: 15px; font-weight: 700; color: #1f2937; line-height: 1.5; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .news-item-content { padding: 15px; display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+    .news-item-title { font-size: 15px; font-weight: 700; color: #1f2937; line-height: 1.5; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word; }
     .news-item:hover .news-item-title { color: #d70018; }
     
     .news-item-meta { display: flex; justify-content: space-between; align-items: center; margin-top: auto; font-size: 12px; color: #6b7280; font-weight: 500; }
@@ -105,20 +105,49 @@
     </div>
     @endif
 
-    <h2 class="section-title">BÀI VIẾT MỚI NHẤT</h2>
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 class="section-title" style="margin-bottom: 0;">BÀI VIẾT MỚI NHẤT</h2>
+        <a href="{{ route('articles.create') }}" class="btn-post" style="display: flex; align-items: center; gap: 8px; background: #d70018; color: #fff; padding: 10px 20px; border-radius: 8px; font-weight: 700; text-decoration: none; transition: 0.3s; font-size: 14px; box-shadow: 0 4px 10px rgba(215, 0, 24, 0.2);">
+            <i class="fa-solid fa-pen-to-square"></i>
+            VIẾT BÀI
+        </a>
+    </div>
+    
+    <style>
+        .btn-post:hover { background: #b00014; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(215, 0, 24, 0.3); color: #fff; }
+    </style>
     
     <div class="latest-grid">
         @foreach($latestArticles as $article)
             <a href="{{ route('articles.show', $article->slug) }}" class="news-item">
                 <div class="news-item-img">
-                    <img src="{{ $article->thumbnail ?? 'https://images.unsplash.com/photo-1593640495253-23196b27a87f?w=400' }}" alt="{{ $article->title }}">
+                    <img src="{{ $article->thumbnail ? asset($article->thumbnail) : 'https://images.unsplash.com/photo-1593640495253-23196b27a87f?w=400' }}" alt="{{ $article->title }}">
                 </div>
                 <div class="news-item-content">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
+                        @if($article->status === 'pending')
+                            <span style="font-size: 10px; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Chờ duyệt</span>
+                        @endif
+                        
+                        @auth
+                            @if($article->author_id === Auth::id() && $article->author_type === 'customer')
+                                <div class="owner-actions" style="display: flex; gap: 5px;">
+                                    <a href="{{ route('articles.edit', $article->article_id) }}" title="Chỉnh sửa" style="color: #3b82f6; font-size: 14px;"><i class="fa-solid fa-pen-to-square"></i></a>
+                                    <form action="{{ route('articles.destroy', $article->article_id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn rút lại bài viết này?')" style="display: inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" title="Rút lại bài" style="background: none; border: none; padding: 0; color: #ef4444; cursor: pointer; font-size: 14px;"><i class="fa-solid fa-trash-can"></i></button>
+                                    </form>
+                                </div>
+                            @endif
+                        @endauth
+                    </div>
+
                     <h3 class="news-item-title">{{ $article->title }}</h3>
                     <div class="news-item-meta">
                         <div class="author-info">
                             <i class="fa-solid fa-circle-user text-gray-400 text-lg"></i>
-                            <span>{{ substr($article->author->full_name ?? 'Admin', 0, 15) }}</span>
+                            <span>{{ $article->author->full_name ?? 'Khách hàng' }}</span>
                         </div>
                         <span>{{ $article->created_at->format('d/m/Y') }}</span>
                     </div>

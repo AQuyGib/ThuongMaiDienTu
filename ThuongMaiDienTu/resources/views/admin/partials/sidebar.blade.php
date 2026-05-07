@@ -15,7 +15,7 @@
 
     {{-- LOGO --}}
     <div class="h-16 flex items-center justify-between px-4 border-b border-slate-700">
-        <a href="{{ route('admin.dashboard') }}"
+        <a href="/"
             class="text-xl font-bold text-yellow-400 flex items-center gap-2 hover:text-white transition">
             <i class="fa-solid fa-bolt-lightning"></i> DIENMAYPRO
         </a>
@@ -87,6 +87,15 @@
                 class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                            {{ request()->routeIs('admin.vouchers*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
                 <i class="fa-solid fa-ticket w-5"></i> Mã giảm giá
+            </a>
+
+            {{-- ===== NHÓM: KHO HÀNG (Chỉ Admin thấy) ===== --}}
+            <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Kho Hàng</div>
+
+            <a href="{{ route('admin.suppliers.index') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                           {{ request()->routeIs('admin.suppliers*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                <i class="fa-solid fa-building w-5"></i> Nhà cung cấp
             </a>
 
             {{-- ===== NHÓM: HỆ THỐNG (Chỉ Admin thấy) ===== --}}
