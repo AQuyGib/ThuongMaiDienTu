@@ -11,6 +11,8 @@ use App\Http\Controllers\ProductFilterController;
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
+// Alias 'login' bắt buộc cho middleware auth của Laravel
+Route::get('/login', [AuthController::class, 'index'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -18,6 +20,14 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Social Login
 Route::get('/auth/{provider}', [SocialController::class, 'redirectToProvider'])->name('social.login');
 Route::get('/auth/{provider}/callback', [SocialController::class, 'handleProviderCallback']);
+
+// Two-Factor Authentication (2FA)
+use App\Http\Controllers\Auth\TwoFactorController;
+Route::get('/2fa/verify',  [TwoFactorController::class, 'show'])->name('2fa.show');
+Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify');
+Route::post('/2fa/send',   [TwoFactorController::class, 'send'])->name('2fa.send');
+Route::post('/2fa/toggle', [TwoFactorController::class, 'toggle'])->name('2fa.toggle')->middleware('auth');
+Route::get('/security',    [TwoFactorController::class, 'securityPage'])->name('security')->middleware('auth');
 
 // Frontend
 Route::get('/', function () {
