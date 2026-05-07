@@ -83,6 +83,27 @@
                 <i class="fa-solid fa-ticket w-5"></i> Mã giảm giá
             </a>
 
+            {{-- ===== NHÓM: KHO HÀNG (Chỉ Admin thấy) ===== --}}
+            <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Kho Hàng</div>
+
+            <a href="{{ route('admin.suppliers.index') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                           {{ request()->routeIs('admin.suppliers*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                <i class="fa-solid fa-building w-5"></i> Nhà cung cấp
+            </a>
+
+            <a href="{{ route('admin.purchase-orders.index') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                           {{ request()->routeIs('admin.purchase-orders*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                <i class="fa-solid fa-file-invoice w-5"></i> Phiếu nhập kho
+            </a>
+
+            <a href="{{ route('admin.inventory.index') }}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                           {{ request()->routeIs('admin.inventory*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                <i class="fa-solid fa-barcode w-5"></i> Quản lý IMEI
+            </a>
+
             {{-- ===== NHÓM: HỆ THỐNG (Chỉ Admin thấy) ===== --}}
             <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Hệ thống</div>
 

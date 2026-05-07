@@ -6,6 +6,9 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CartController;
+use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\InventoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,3 +44,22 @@ Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('pr
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
+
+// ===== Quản lý Nhà Cung Cấp =====
+Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+Route::put('/suppliers/{id}', [SupplierController::class, 'update'])->name('suppliers.update');
+Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
+
+// ===== Phiếu Nhập Kho =====
+Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create'])->name('purchase-orders.create');
+Route::post('/purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+
+// ===== Quản lý IMEI =====
+Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+Route::put('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.updateStatus');
+
+// API lấy variants theo product (cho form tạo phiếu nhập)
+Route::get('/api/products/{id}/variants', [PurchaseOrderController::class, 'getVariants'])->name('api.product.variants');
