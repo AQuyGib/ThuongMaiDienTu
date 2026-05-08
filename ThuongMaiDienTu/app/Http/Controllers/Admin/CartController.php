@@ -14,23 +14,56 @@ class CartController extends Controller
      */
     public function index()
     {
-        // Lấy 3 sản phẩm đầu tiên từ database để giả lập giỏ hàng
-        $products = Product::limit(3)->get();
+        $cart = session()->get('cart', []);
         
-        $cartItems = $products->map(function($product) {
+        // Chuyển đổi dữ liệu từ session sang format view yêu cầu
+        $cartItems = collect($cart)->map(function($item, $id) {
+            $product = Product::find($id);
+            if (!$product) return null;
             return [
-                'id' => $product->product_id,
+                'id' => $id,
                 'name' => $product->name,
                 'price' => (int)$product->base_price,
-                'quantity' => rand(1, 2),
+                'quantity' => $item['quantity'],
                 'stock' => 10,
                 'selected' => true,
                 'image' => $product->thumbnail,
-                'url' => '#'
+                'url' => route('product.detail', $id)
             ];
-        });
+        })->filter()->values();
 
         return view('frontend.cart.shoppingcart', compact('cartItems'));
+    }
+
+    /**
+     * Thêm sản phẩm vào giỏ hàng.
+     */
+    public function add(Request $request)
+    {
+        $productId = $request->input('product_id');
+        $quantity = $request->input('quantity', 1);
+        $product = Product::findOrFail($productId);
+
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$productId])) {
+            $cart[$productId]['quantity'] += $quantity;
+        } else {
+            $cart[$productId] = [
+                "name" => $product->name,
+                "quantity" => $quantity,
+                "price" => $product->base_price,
+                "image" => $product->thumbnail
+            ];
+        }
+
+        session()->put('cart', $cart);
+
+        if ($request->has('buy_now')) {
+            return redirect()->route('cart.index')->with('success', 'Đã thêm vào giỏ hàng!');
+        }
+
+        return response()->json(['status' => 'success', 'cart_count' => count($cart)]);
     }
 
     /**
