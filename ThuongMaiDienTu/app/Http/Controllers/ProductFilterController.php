@@ -26,7 +26,7 @@ class ProductFilterController extends Controller
 
             // Lấy tất cả thông số gửi lên từ URL thay vì hardcode ram, rom
             // Bỏ các params không phải là thông số kỹ thuật
-            $nonSpecKeys = ['category_id', 'category_slug', 'min_price', 'max_price', 'q', 'sort', 'needs', 'eco_friendly', 'high_repairability', 'page'];
+            $nonSpecKeys = ['category_id', 'category_slug', 'min_price', 'max_price', 'q', 'sort', 'needs', 'eco_friendly', 'high_repairability', 'brand', 'page'];
             $specs = $request->except($nonSpecKeys);
 
             // Lọc bỏ các mảng/giá trị rỗng
@@ -57,6 +57,18 @@ class ProductFilterController extends Controller
             }
             if ($request->filled('high_repairability') && $request->high_repairability == '1') {
                 $query->where('rating', '>=', 4.5); // Tạm thời dùng rating mô phỏng điểm dễ sửa chữa
+            }
+
+            // Lọc theo Hãng sản xuất (Brand)
+            if ($request->filled('brand')) {
+                $brands = (array) $request->brand;
+                $query->where(function ($q) use ($brands) {
+                    foreach ($brands as $brand) {
+                        $q->orWhere('name', 'LIKE', $brand . ' %')
+                            ->orWhere('name', 'LIKE', '% ' . $brand . ' %')
+                            ->orWhere('name', 'LIKE', $brand);
+                    }
+                });
             }
 
             $query->filterBySpecs($specs);
@@ -99,6 +111,27 @@ class ProductFilterController extends Controller
                     ['label' => 'Đến', 'name' => 'max_price', 'placeholder' => '∞']
                 ]
             ];
+        }
+
+        // Tự động bổ sung bộ lọc Hãng sản xuất nếu chưa có
+        if (!isset($config['brand'])) {
+            $brands = Product::where('category_id', $id)
+                ->pluck('name')
+                ->map(function ($name) {
+                    return explode(' ', $name)[0]; // Lấy từ đầu tiên làm thương hiệu (tạm thời)
+                })
+                ->unique()
+                ->values()
+                ->toArray();
+
+            if (!empty($brands)) {
+                $config['brand'] = [
+                    'label' => 'Hãng sản xuất',
+                    'type' => 'checkbox',
+                    'inputName' => 'brand[]',
+                    'options' => $brands
+                ];
+            }
         }
 
         return response()->json($config);

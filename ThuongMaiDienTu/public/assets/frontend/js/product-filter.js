@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Filter trigger buttons
         document.querySelectorAll('.filter-trigger').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const filterType = e.target.dataset.filter;
+                const filterType = e.currentTarget.dataset.filter;
                 openFilterPopup(filterType);
             });
         });
@@ -92,7 +92,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Sort buttons
         document.querySelectorAll('.sort-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const sortValue = e.target.dataset.sort;
+                const sortBtn = e.currentTarget;
+                const sortValue = sortBtn.dataset.sort;
                 state.filters.sort = sortValue;
                 document.getElementById('filter-sort').value = sortValue;
 
@@ -101,8 +102,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     b.classList.remove('bg-red-600', 'text-white', 'border-red-600');
                     b.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
                 });
-                e.target.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
-                e.target.classList.add('bg-red-600', 'text-white', 'border-red-600');
+                sortBtn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+                sortBtn.classList.add('bg-red-600', 'text-white', 'border-red-600');
 
                 fetchFilteredProducts();
             });
@@ -111,28 +112,29 @@ document.addEventListener('DOMContentLoaded', function () {
         // Quick filter buttons (needs, eco, etc)
         document.querySelectorAll('.quick-filter-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const name = e.target.dataset.name;
-                const value = e.target.dataset.value;
+                const filterBtn = e.currentTarget;
+                const name = filterBtn.dataset.name;
+                const value = filterBtn.dataset.value;
 
                 if (name === 'needs') {
                     if (state.filters.needs.includes(value)) {
                         state.filters.needs = state.filters.needs.filter(v => v !== value);
-                        e.target.classList.remove('bg-blue-600', 'text-white');
-                        e.target.classList.add('bg-blue-50', 'text-blue-700');
+                        filterBtn.classList.remove('bg-blue-600', 'text-white');
+                        filterBtn.classList.add('bg-blue-50', 'text-blue-700');
                     } else {
                         state.filters.needs.push(value);
-                        e.target.classList.remove('bg-blue-50', 'text-blue-700');
-                        e.target.classList.add('bg-blue-600', 'text-white');
+                        filterBtn.classList.remove('bg-blue-50', 'text-blue-700');
+                        filterBtn.classList.add('bg-blue-600', 'text-white');
                     }
                 } else {
                     if (state.filters[name] === value) {
                         state.filters[name] = '';
-                        e.target.classList.remove('bg-green-600', 'text-white');
-                        e.target.classList.add('bg-green-50', 'text-green-700');
+                        filterBtn.classList.remove('bg-blue-600', 'text-white');
+                        filterBtn.classList.add('bg-blue-50', 'text-blue-700');
                     } else {
                         state.filters[name] = value;
-                        e.target.classList.remove('bg-green-50', 'text-green-700');
-                        e.target.classList.add('bg-green-600', 'text-white');
+                        filterBtn.classList.remove('bg-blue-50', 'text-blue-700');
+                        filterBtn.classList.add('bg-blue-600', 'text-white');
                     }
                 }
 
@@ -152,8 +154,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     ram: [],
                     rom: [],
                     sort: 'newest',
-                    q: ''
+                    q: '',
+                    needs: [],
+                    high_repairability: '',
+                    eco_friendly: ''
                 };
+
+                // Reset all quick filter buttons UI
+                document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('bg-blue-50', 'text-blue-700');
+                });
+
                 syncFormWithState();
                 updateActiveFilters();
                 fetchFilteredProducts();
@@ -397,11 +409,11 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             state.filters[key] = '';
 
-            // Update UI buttons for eco
+            // Update UI buttons for eco (now using blue theme)
             const btn = document.querySelector(`.quick-filter-btn[data-name="${key}"]`);
             if (btn) {
-                btn.classList.remove('bg-green-600', 'text-white');
-                btn.classList.add('bg-green-50', 'text-green-700');
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-blue-50', 'text-blue-700');
             }
         }
         syncFormWithState();
