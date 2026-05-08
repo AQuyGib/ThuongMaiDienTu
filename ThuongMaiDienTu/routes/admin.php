@@ -3,8 +3,6 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CartController;
 use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\SupplierController;
@@ -46,6 +44,8 @@ Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('pr
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
+Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
+Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');
 
 // ===== Quản lý Bài viết (Articles / Ecosystem) =====
 Route::resource('articles', ArticleController::class);
