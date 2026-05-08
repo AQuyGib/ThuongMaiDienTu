@@ -28,18 +28,25 @@
                 <!-- Quick Actions -->
                 <div
                     class="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    @php
+                        $isWishlisted = false;
+                        if(auth()->check()){
+                            $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'wishlist')->exists();
+                        }
+                    @endphp
                     <button
-                        class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-red-500 hover:text-white transition-colors"
+                        onclick="toggleWishlist(this, {{ $product->product_id }})"
+                        class="wishlist-btn w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-all duration-300 {{ $isWishlisted ? 'text-red-500' : 'text-gray-400' }}"
                         title="Yêu thích">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path
                                 d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                         </svg>
                     </button>
                     <button
-                        class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-blue-500 hover:text-white transition-colors"
+                        class="w-10 h-10 bg-white text-gray-400 rounded-full flex items-center justify-center shadow-md hover:bg-blue-500 hover:text-white transition-all duration-300"
                         title="So sánh">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
@@ -56,7 +63,9 @@
 
                 <!-- Product Name -->
                 <h3 class="text-base font-bold text-gray-800 mb-2 line-clamp-2 min-h-[40px]" title="{{ $product->name }}">
-                    {{ $product->name }}
+                    <a href="{{ route('product.detail', $product->product_id) }}" class="hover:text-blue-600 transition-colors">
+                        {{ $product->name }}
+                    </a>
                 </h3>
 
                 <!-- Specifications Highlight -->
@@ -95,7 +104,7 @@
 
                     @foreach($highlights as $hl)
                         <span
-                            class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">{{ $hl }}</span>
+                            class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">{{ $hl }}</span>
                     @endforeach
                 </div>
 
@@ -148,13 +157,18 @@
                 <!-- Action Buttons -->
                 <div class="flex gap-2">
                     <a href="{{ route('product.detail', $product->product_id) }}"
-                        class="flex-1 bg-blue-600 text-white text-center py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                        class="flex-1 bg-blue-600 text-white text-center py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
                         Xem chi tiết
                     </a>
-                    <button
-                        class="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-                        Mua ngay
-                    </button>
+                    <form action="{{ route('cart.add') }}" method="POST" class="flex-1">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->product_id }}">
+                        <input type="hidden" name="buy_now" value="1">
+                        <button type="submit"
+                            class="w-full bg-gray-100 text-gray-800 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-200 transition-all">
+                            Mua ngay
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -175,3 +189,44 @@
 <div class="mt-8">
     {{ $products->links() }}
 </div>
+
+<script>
+function toggleWishlist(btn, productId) {
+    fetch('{{ route("wishlist.toggle") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ product_id: productId })
+    })
+    .then(response => {
+        if (response.status === 401) {
+            window.location.href = '{{ route("login") }}';
+            return;
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data && data.status === 'added') {
+            btn.classList.remove('text-gray-400');
+            btn.classList.add('text-red-500');
+            showToast('Đã thêm vào danh sách yêu thích!');
+        } else if (data && data.status === 'removed') {
+            btn.classList.remove('text-red-500');
+            btn.classList.add('text-gray-400');
+            showToast('Đã xóa khỏi danh sách yêu thích.');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function showToast(message) {
+    // Implement a simple toast if not exists
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-bounce';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+</script>

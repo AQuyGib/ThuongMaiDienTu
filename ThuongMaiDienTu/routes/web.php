@@ -52,6 +52,8 @@ Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::resource('cashbooks', CashbookController::class);
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/wishlist/toggle', [App\Http\Controllers\WishlistController::class, 'toggle'])->name('wishlist.toggle');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 
 // Articles & Lifestyle
