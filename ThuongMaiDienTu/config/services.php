@@ -47,4 +47,9 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URI'),
     ],
 
+    'tinymce' => [
+        'key' => env('TINYMCE_API_KEY'),
+    ],
+
 ];
+
