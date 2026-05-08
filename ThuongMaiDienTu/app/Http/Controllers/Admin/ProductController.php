@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Category;
 use Illuminate\Http\Request;
 
@@ -14,8 +15,9 @@ class ProductController extends Controller
      */
     public function index()
     {
-        // Lấy danh sách sản phẩm có phân trang, kèm relation category
+        // Lấy danh sách sản phẩm có phân trang, kèm relation category + đếm variants
         $products = Product::with('category')
+            ->withCount('variants')
             ->orderBy('product_id', 'desc')
             ->paginate(10);
 
@@ -25,13 +27,25 @@ class ProductController extends Controller
         // Thống kê
         $totalProducts = Product::count();
         $totalCategories = Category::count();
+        $totalVariants = ProductVariant::count();
 
         return view('admin.products.Product', compact(
             'products',
             'allCategories',
             'totalProducts',
-            'totalCategories'
+            'totalCategories',
+            'totalVariants'
         ));
+    }
+
+    /**
+     * Hiển thị chi tiết sản phẩm + danh sách biến thể
+     */
+    public function show($id)
+    {
+        $product = Product::with(['category', 'variants'])->findOrFail($id);
+
+        return view('admin.products.ProductDetail', compact('product'));
     }
 
     /**
@@ -108,5 +122,91 @@ class ProductController extends Controller
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Xóa sản phẩm "' . $name . '" thành công!');
+    }
+
+    // ================================================================
+    //  VARIANT MANAGEMENT — CRUD biến thể sản phẩm
+    // ================================================================
+
+    /**
+     * Thêm biến thể mới cho sản phẩm
+     */
+    public function storeVariant(Request $request, $productId)
+    {
+        $product = Product::findOrFail($productId);
+
+        $request->validate([
+            'color' => 'nullable|string|max:30',
+            'ram' => 'nullable|string|max:20',
+            'rom_capacity' => 'nullable|string|max:20',
+            'extra_price' => 'required|numeric|min:0',
+            'image_url' => 'nullable|string|max:500',
+        ], [
+            'extra_price.required' => 'Vui lòng nhập giá cộng thêm.',
+            'extra_price.min' => 'Giá cộng thêm phải ≥ 0.',
+        ]);
+
+        ProductVariant::create([
+            'product_id' => $product->product_id,
+            'color' => $request->color ?: null,
+            'ram' => $request->ram ?: null,
+            'rom_capacity' => $request->rom_capacity ?: null,
+            'extra_price' => $request->extra_price,
+            'image_url' => $request->image_url ?: null,
+        ]);
+
+        return redirect()->route('admin.products.show', $productId)
+            ->with('success', 'Thêm biến thể thành công!');
+    }
+
+    /**
+     * Cập nhật biến thể
+     */
+    public function updateVariant(Request $request, $productId, $variantId)
+    {
+        Product::findOrFail($productId);
+
+        $request->validate([
+            'color' => 'nullable|string|max:30',
+            'ram' => 'nullable|string|max:20',
+            'rom_capacity' => 'nullable|string|max:20',
+            'extra_price' => 'required|numeric|min:0',
+            'image_url' => 'nullable|string|max:500',
+        ], [
+            'extra_price.required' => 'Vui lòng nhập giá cộng thêm.',
+            'extra_price.min' => 'Giá cộng thêm phải ≥ 0.',
+        ]);
+
+        $variant = ProductVariant::where('variant_id', $variantId)
+            ->where('product_id', $productId)
+            ->firstOrFail();
+
+        $variant->update([
+            'color' => $request->color ?: null,
+            'ram' => $request->ram ?: null,
+            'rom_capacity' => $request->rom_capacity ?: null,
+            'extra_price' => $request->extra_price,
+            'image_url' => $request->image_url ?: null,
+        ]);
+
+        return redirect()->route('admin.products.show', $productId)
+            ->with('success', 'Cập nhật biến thể thành công!');
+    }
+
+    /**
+     * Xóa biến thể
+     */
+    public function destroyVariant($productId, $variantId)
+    {
+        Product::findOrFail($productId);
+
+        $variant = ProductVariant::where('variant_id', $variantId)
+            ->where('product_id', $productId)
+            ->firstOrFail();
+
+        $variant->delete();
+
+        return redirect()->route('admin.products.show', $productId)
+            ->with('success', 'Xóa biến thể thành công!');
     }
 }

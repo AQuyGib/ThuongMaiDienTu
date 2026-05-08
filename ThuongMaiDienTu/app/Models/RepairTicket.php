@@ -13,4 +13,7 @@ class RepairTicket extends Model {
     public function technician() {
         return $this->belongsTo(User::class, 'technician_id', 'user_id');
     }
+    public function articles() {
+        return $this->hasMany(Article::class, 'related_ticket_id', 'ticket_id');
+    }
 }

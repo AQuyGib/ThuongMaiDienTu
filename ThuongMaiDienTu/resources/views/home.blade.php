@@ -240,9 +240,11 @@
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
-            overflow: hidden;
             height: 40px;
             line-height: 1.4;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
         }
 
         .product-name:hover {
@@ -413,7 +415,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a href="{{ route('articles.index') }}">
                             <div class="menu-icon">
                                 <i class="fa-solid fa-newspaper main-icon"></i> Tin công nghệ
                             </div>
@@ -587,6 +589,37 @@
                     </a>
                 @endforeach
             </div>
+        @endif
+        <!-- Góc Tin tức & Lifestyle - GIỐNG SFORUM -->
+        @if($latestArticles->count())
+            <div class="news-section" style="margin-top: 40px; margin-bottom: 40px;">
+                <div class="news-header" style="display: flex; align-items: center; margin-bottom: 20px;">
+                    <h2 style="font-size: 22px; font-weight: 800; text-transform: uppercase; color: #333; margin: 0;">TIN TỨC</h2>
+                    <span style="color: #ccc; margin: 0 15px; font-size: 20px;">|</span>
+                    <a href="{{ route('articles.index') }}" style="color: #2b6cb0; font-size: 14px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                        Xem tất cả <i class="fa-solid fa-chevron-right" style="font-size: 12px;"></i>
+                    </a>
+                </div>
+
+                <div class="news-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px;">
+                    @foreach($latestArticles as $article)
+                        <a href="{{ route('articles.show', $article->slug) }}" class="news-card" style="background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-decoration: none; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s;">
+                            <div class="news-img-wrapper" style="padding: 10px 10px 0 10px;">
+                                <img src="{{ $article->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}" alt="{{ $article->title }}" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px;">
+                            </div>
+                            <div class="news-info" style="padding: 12px;">
+                                <h3 style="font-size: 14px; font-weight: 600; color: #333; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word;">
+                                    {{ $article->title }}
+                                </h3>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+            <style>
+                .news-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1) !important; }
+                .news-card:hover h3 { color: #d70018 !important; } /* Màu đỏ thương hiệu khi hover */
+            </style>
         @endif
     </div>
 @endsection

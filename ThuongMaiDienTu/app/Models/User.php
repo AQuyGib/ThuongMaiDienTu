@@ -6,10 +6,19 @@ class User extends Authenticatable {
     protected $primaryKey = 'user_id';
     const UPDATED_AT = null;
     protected $guarded = [];
-    protected $hidden = ['password_hash', 'two_factor_secret'];
+    protected $hidden = ['password_hash', 'two_factor_secret', 'two_factor_code'];
+    protected $casts = [
+        'two_factor_expires_at' => 'datetime',
+        'is_2fa_enabled' => 'boolean',
+    ];
 
     public function getAuthPassword() {
         return $this->password_hash;
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(UserAddress::class, 'user_id', 'user_id');
     }
 
     /**
@@ -57,5 +66,8 @@ class User extends Authenticatable {
     }
     public function wishlists() {
         return $this->hasMany(WishlistRecentlyViewed::class, 'user_id');
+    }
+    public function articles() {
+        return $this->hasMany(Article::class, 'author_id');
     }
 }
