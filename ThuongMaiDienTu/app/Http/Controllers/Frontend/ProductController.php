@@ -38,8 +38,13 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        $product = Product::findOrFail($id);
+        $product = Product::with(['category', 'specifications', 'variants'])->findOrFail($id);
 
-        return view('frontend.products.show', compact('product'));
+        $relatedProducts = Product::where('category_id', $product->category_id)
+            ->where('product_id', '<>', $product->product_id)
+            ->take(6)
+            ->get();
+
+        return view('frontend.products.show', compact('product', 'relatedProducts'));
     }
 }

@@ -180,6 +180,11 @@
     $reviews = App\Models\Review::where('product_id', $product->product_id)->orderBy('created_at', 'desc')->get();
     $reviewCount = $reviews->count();
     $avgRating = $reviewCount > 0 ? round($reviews->avg('rating'), 1) : 0;
+
+    $discountPercent = 0;
+    if ($oldPrice > 0 && $oldPrice > $basePrice) {
+        $discountPercent = round((($oldPrice - $basePrice) / $oldPrice) * 100);
+    }
 @endphp
 
 <div class="container">
