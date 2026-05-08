@@ -88,25 +88,34 @@
         {{-- ===== NHÓM: KHO HÀNG ===== --}}
         <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Kho hàng</div>
 
-        <a href="#"
+        <a href="{{ route('admin.suppliers.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                    {{ request()->routeIs('admin.suppliers*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-truck-field w-5"></i> Nhà cung cấp
         </a>
 
-        <a href="#"
+        <a href="{{ route('admin.purchase-orders.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                    {{ request()->routeIs('admin.purchase-orders*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-file-invoice-dollar w-5"></i> Phiếu nhập kho
         </a>
 
-        <a href="#"
+        <a href="{{ route('admin.inventory.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                    {{ request()->routeIs('admin.inventory*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-warehouse w-5"></i> Tồn kho (IMEI)
         </a>
 
-        {{-- ===== NHÓM: TRANG CHỦ & GIAO DIỆN ===== --}}
+        {{-- ===== NHÓM: NỘI DUNG & CMS ===== --}}
+        <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Nội dung</div>
+
+        <a href="{{ route('admin.articles.index') }}"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                   {{ request()->routeIs('admin.articles*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+            <i class="fa-solid fa-newspaper w-5 text-green-400"></i> Bài viết & CMS
+        </a>
+
+        {{-- ===== NHÓM: GIAO DIỆN ===== --}}
         <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Giao diện</div>
 
         <a href="#"
@@ -119,7 +128,7 @@
         @if(Auth::check() && Auth::user()->role_id == 1)
             <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Hệ thống</div>
 
-            <a href="#"
+            <a href="{{ route('admin.users.index') }}"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                                {{ request()->routeIs('admin.users*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
                 <i class="fa-solid fa-users w-5"></i> Tài khoản
