@@ -172,6 +172,6 @@
     @endforelse
 </div>
 
-<div class="mt-8">
-    {{ $products->links() }}
+<div class="mt-8 pagination-container">
+    {{ $products->links('vendor.pagination.custom') }}
 </div>

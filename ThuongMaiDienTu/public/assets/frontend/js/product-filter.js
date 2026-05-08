@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', function () {
             q: '',
             needs: [],
             high_repairability: '',
-            eco_friendly: ''
+            eco_friendly: '',
+            brand: []
         },
         activePopup: null
     };
@@ -27,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Filter configurations will be populated dynamically from the server
     let filterConfigs = {
         price: {
-            label: 'Khoảng giá',
+            label: 'Xem theo giá',
             type: 'range',
             fields: [
                 { label: 'Từ', name: 'min_price', placeholder: '0' },
@@ -44,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
         loadDynamicFilters(state.filters.category_id);
         setupEventListeners();
         updateActiveFilters();
+        attachPaginationEvents();
     }
 
     function loadDynamicFilters(categoryId) {
@@ -148,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (clearAllBtn) {
             clearAllBtn.addEventListener('click', () => {
                 state.filters = {
-                    category_id: '',
+                    category_id: state.filters.category_id, // giữ lại category
                     min_price: '',
                     max_price: '',
                     ram: [],
@@ -157,7 +159,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     q: '',
                     needs: [],
                     high_repairability: '',
-                    eco_friendly: ''
+                    eco_friendly: '',
+                    brand: []
                 };
 
                 // Reset all quick filter buttons UI
@@ -180,76 +183,214 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // ==================== PILL-STYLE FILTER POPUP ====================
+
+    /**
+     * Render một nhóm pill options cho một filter key
+     */
+    function renderPillGroup(filterKey, config) {
+        const options = config.options || [];
+        if (!options.length) return '';
+
+        let html = '<div class="flex flex-wrap gap-2">';
+        options.forEach(opt => {
+            const label = typeof opt === 'object' ? opt.label : opt;
+            const value = typeof opt === 'object' ? opt.value : opt;
+
+            // Kiểm tra trạng thái đã chọn
+            let isSelected = false;
+            if (Array.isArray(state.filters[filterKey])) {
+                isSelected = state.filters[filterKey].includes(value);
+            } else if (state.filters[filterKey] !== undefined) {
+                isSelected = state.filters[filterKey] === value;
+            }
+
+            const selectedClass = isSelected
+                ? 'border-red-500 bg-red-50 text-red-600 font-semibold'
+                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400';
+
+            html += `<button type="button" class="filter-pill px-4 py-2 rounded-lg border text-sm transition-all duration-200 cursor-pointer ${selectedClass}" data-key="${filterKey}" data-value="${value}">${label}</button>`;
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Render phần giá (range inputs)
+     */
+    function renderPriceRange() {
+        const config = filterConfigs.price;
+        if (!config || config.type !== 'range') return '';
+
+        let html = '<div class="grid grid-cols-2 gap-3">';
+        config.fields.forEach(field => {
+            html += `<div>
+                <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">${field.label}</label>
+                <input type="number" name="${field.name}" value="${state.filters[field.name] || ''}" 
+                    placeholder="${field.placeholder}" 
+                    class="popup-price-input w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all duration-200 hover:border-gray-300">
+            </div>`;
+        });
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * Mở popup lọc - 2 chế độ: full panel (Bộ lọc) hoặc single filter
+     */
     function openFilterPopup(type) {
         if (state.activePopup) closePopup();
-
-        let config = filterConfigs[type];
-        if (!config) {
-            config = { label: type.toUpperCase(), type: 'placeholder', options: ['Tùy chọn 1', 'Tùy chọn 2'] };
-        }
-
         state.activePopup = type;
 
+        const isFullPanel = (type === 'filter');
         const popup = document.createElement('div');
-        popup.className = 'filter-popup absolute z-50 bg-white shadow-2xl border border-gray-100 rounded-2xl p-5 w-80 animate-in fade-in zoom-in duration-200 ring-1 ring-black/5';
 
-        const triggerBtn = document.querySelector(`[data-filter="${type}"]`);
-        const rect = triggerBtn.getBoundingClientRect();
-        popup.style.top = `${rect.bottom + window.scrollY + 8}px`;
-        popup.style.left = `${rect.left}px`;
-
-        let content = `<div class="flex justify-between items-center mb-5">
-            <h3 class="font-bold text-gray-900 text-base">${config.label}</h3>
-            <button class="close-popup p-1 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-        </div>`;
-
-        if (config.type === 'checkbox') {
-            content += `<div class="space-y-2 max-h-60 overflow-y-auto mb-4">`;
-            config.options.forEach(opt => {
-                const isChecked = state.filters[type]?.includes(opt) ? 'checked' : '';
-                content += `
-                    <label class="flex items-center gap-3 p-2.5 hover:bg-red-50 rounded-xl cursor-pointer transition-all duration-200 group">
-                        <input type="checkbox" name="${config.inputName}" value="${opt}" ${isChecked} 
-                                class="popup-checkbox w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer">
-                        <span class="text-sm text-gray-600 group-hover:text-red-700 font-medium transition-colors">${opt}</span>
-                    </label>`;
-            });
-            content += `</div>`;
-        } else if (config.type === 'range') {
-            content += `<div class="grid grid-cols-2 gap-3 mb-4">`;
-            config.fields.forEach(field => {
-                content += `
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">${field.label}</label>
-                        <input type="number" name="${field.name}" value="${state.filters[field.name] || ''}" 
-                                placeholder="${field.placeholder}" 
-                                class="popup-input w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all duration-200 hover:border-gray-300">
-                    </div>`;
-            });
-            content += `</div>`;
-        } else if (config.type === 'select') {
-            content += `<select name="category_id" class="popup-input w-full px-3 py-2 border border-gray-200 rounded-xl text-sm mb-4 outline-none focus:ring-2 focus:ring-red-500">
-                <option value="">Tất cả danh mục</option>
-                ${config.options.map(opt => `<option value="${opt.id}" ${state.filters.category_id == opt.id ? 'selected' : ''}>${opt.name}</option>`).join('')}
-            </select>`;
+        // Style popup
+        popup.className = 'filter-popup absolute z-50 bg-white shadow-2xl border border-gray-100 rounded-2xl p-5 ring-1 ring-black/5';
+        if (isFullPanel) {
+            popup.style.width = 'min(750px, calc(100vw - 32px))';
         } else {
-            content += `<div class="text-sm text-gray-500 mb-4 italic">Tính năng này đang được cập nhật...</div>`;
+            popup.style.width = '340px';
         }
 
-        content += `
-            <div class="flex gap-3 mt-6 pt-4 border-t border-gray-100">
-                <button type="button" class="close-popup flex-1 px-4 py-2.5 text-sm font-medium text-gray-500 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200">Đóng</button>
-                <button type="button" class="apply-filter flex-1 px-4 py-2.5 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-md shadow-red-200 transition-all duration-200 active:scale-95">Xem kết quả</button>
+        // Vị trí
+        const triggerBtn = document.querySelector(`[data-filter="${type}"]`);
+        if (!triggerBtn) return;
+        const rect = triggerBtn.getBoundingClientRect();
+        popup.style.top = `${rect.bottom + window.scrollY + 8}px`;
+        popup.style.left = isFullPanel
+            ? `${Math.max(16, rect.left)}px`
+            : `${rect.left}px`;
+
+        // Đảm bảo không tràn phải
+        requestAnimationFrame(() => {
+            const popupRect = popup.getBoundingClientRect();
+            if (popupRect.right > window.innerWidth - 16) {
+                popup.style.left = `${window.innerWidth - popupRect.width - 16}px`;
+            }
+        });
+
+        let content = '';
+
+        if (isFullPanel) {
+            // ===== FULL PANEL: Hiển thị tất cả bộ lọc =====
+            content += `<div class="flex justify-between items-center mb-5">
+                <h3 class="font-bold text-gray-900 text-lg">Bộ lọc nâng cao</h3>
+                <button class="close-popup p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
             </div>`;
+
+            content += '<div class="max-h-[450px] overflow-y-auto pr-1 space-y-5">';
+
+            // Khoảng giá
+            content += `<div>
+                <h4 class="font-semibold text-gray-800 text-sm mb-3">Khoảng giá</h4>
+                ${renderPriceRange()}
+            </div>`;
+
+            // Render tất cả filter configs có options
+            const skipKeys = ['price', 'highlights'];
+            Object.keys(filterConfigs).forEach(key => {
+                if (skipKeys.includes(key)) return;
+                const cfg = filterConfigs[key];
+                if (cfg.options && cfg.options.length > 0) {
+                    content += `<div>
+                        <h4 class="font-semibold text-gray-800 text-sm mb-3">${cfg.label}</h4>
+                        ${renderPillGroup(key, cfg)}
+                    </div>`;
+                }
+            });
+
+            content += '</div>';
+        } else {
+            // ===== SINGLE FILTER POPUP =====
+            let config = filterConfigs[type];
+
+            // Header
+            const label = config ? config.label : type;
+            content += `<div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-900 text-base">${label}</h3>
+                <button class="close-popup p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>`;
+
+            if (config && config.type === 'range') {
+                content += renderPriceRange();
+            } else if (config && config.options && config.options.length > 0) {
+                content += renderPillGroup(type, config);
+            } else {
+                content += '<div class="text-sm text-gray-500 py-4 text-center italic">Tính năng này đang được cập nhật...</div>';
+            }
+        }
+
+        // Footer buttons
+        content += `<div class="flex gap-3 mt-5 pt-4 border-t border-gray-100">
+            <button type="button" class="close-popup flex-1 px-4 py-2.5 text-sm font-medium text-gray-500 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200">Đóng</button>
+            <button type="button" class="apply-filter flex-1 px-4 py-2.5 text-sm font-bold text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-md shadow-red-200 transition-all duration-200 active:scale-95">Xem kết quả</button>
+        </div>`;
 
         popup.innerHTML = content;
         popupsContainer.appendChild(popup);
 
-        popup.querySelector('.close-popup').addEventListener('click', closePopup);
+        // ===== Gắn sự kiện cho pill buttons =====
+        popup.querySelectorAll('.filter-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                const key = pill.dataset.key;
+                const value = pill.dataset.value;
+
+                // Khởi tạo mảng nếu chưa có
+                if (state.filters[key] === undefined) {
+                    state.filters[key] = [];
+                }
+
+                if (Array.isArray(state.filters[key])) {
+                    if (state.filters[key].includes(value)) {
+                        // Bỏ chọn
+                        state.filters[key] = state.filters[key].filter(v => v !== value);
+                        pill.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'font-semibold');
+                        pill.classList.add('border-gray-200', 'bg-white', 'text-gray-700');
+                    } else {
+                        // Chọn
+                        state.filters[key].push(value);
+                        pill.classList.remove('border-gray-200', 'bg-white', 'text-gray-700');
+                        pill.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'font-semibold');
+                    }
+                } else {
+                    // Toggle single value
+                    if (state.filters[key] === value) {
+                        state.filters[key] = '';
+                        pill.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'font-semibold');
+                        pill.classList.add('border-gray-200', 'bg-white', 'text-gray-700');
+                    } else {
+                        // Bỏ chọn pill cũ trong cùng nhóm
+                        popup.querySelectorAll(`.filter-pill[data-key="${key}"]`).forEach(p => {
+                            p.classList.remove('border-red-500', 'bg-red-50', 'text-red-600', 'font-semibold');
+                            p.classList.add('border-gray-200', 'bg-white', 'text-gray-700');
+                        });
+                        state.filters[key] = value;
+                        pill.classList.remove('border-gray-200', 'bg-white', 'text-gray-700');
+                        pill.classList.add('border-red-500', 'bg-red-50', 'text-red-600', 'font-semibold');
+                    }
+                }
+            });
+        });
+
+        // ===== Gắn sự kiện cho price inputs =====
+        popup.querySelectorAll('.popup-price-input').forEach(input => {
+            input.addEventListener('input', () => {
+                state.filters[input.name] = input.value;
+            });
+        });
+
+        // ===== Close & Apply buttons =====
+        popup.querySelectorAll('.close-popup').forEach(btn => btn.addEventListener('click', closePopup));
         popup.querySelector('.apply-filter').addEventListener('click', () => {
-            applyPopupFilters(type, popup);
+            syncFormWithState();
+            updateActiveFilters();
+            fetchFilteredProducts();
+            closePopup();
         });
     }
 
@@ -259,28 +400,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (popup) popup.remove();
             state.activePopup = null;
         }
-    }
-
-    function applyPopupFilters(type, popup) {
-        const inputs = popup.querySelectorAll('input, select');
-
-        inputs.forEach(input => {
-            if (input.type === 'checkbox') {
-                if (!state.filters[type]) state.filters[type] = [];
-                if (input.checked) {
-                    if (!state.filters[type].includes(input.value)) state.filters[type].push(input.value);
-                } else {
-                    state.filters[type] = state.filters[type].filter(v => v !== input.value);
-                }
-            } else {
-                state.filters[input.name] = input.value;
-            }
-        });
-
-        syncFormWithState();
-        updateActiveFilters();
-        fetchFilteredProducts();
-        closePopup();
     }
 
     function syncFormWithState() {
@@ -466,6 +585,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(html => {
                 if (productListContainer) productListContainer.innerHTML = html;
                 updateProductCount(html);
+                attachPaginationEvents();
             })
             .catch(error => {
                 console.error('Lỗi khi lọc:', error);
@@ -481,6 +601,32 @@ document.addEventListener('DOMContentLoaded', function () {
         const doc = parser.parseFromString(html, 'text/html');
         const products = doc.querySelectorAll('.product-card').length;
         productCountDisplay.innerText = products;
+    }
+
+    function attachPaginationEvents() {
+        if (!productListContainer) return;
+        
+        const paginationLinks = productListContainer.querySelectorAll('.ajax-pagination-link');
+        paginationLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.getAttribute('href');
+                if (url) {
+                    // Update URL and fetch products
+                    window.history.pushState(null, '', url);
+                    
+                    // Parse query params to update state
+                    const urlParams = new URLSearchParams(url.split('?')[1]);
+                    
+                    // Keep track of current page in history if needed, but fetchProductsByUrl handles rendering
+                    fetchProductsByUrl(url);
+                    
+                    // Scroll to top of product list
+                    const containerTop = document.getElementById('filter-form').getBoundingClientRect().top + window.scrollY - 100;
+                    window.scrollTo({ top: containerTop, behavior: 'smooth' });
+                }
+            });
+        });
     }
 
     init();
