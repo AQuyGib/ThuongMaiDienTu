@@ -7,6 +7,10 @@ class Category extends Model {
     public $timestamps = false;
     protected $guarded = [];
 
+    protected $casts = [
+        'filter_config' => 'array',
+    ];
+
     public function parent() {
         return $this->belongsTo(Category::class, 'parent_id');
     }
