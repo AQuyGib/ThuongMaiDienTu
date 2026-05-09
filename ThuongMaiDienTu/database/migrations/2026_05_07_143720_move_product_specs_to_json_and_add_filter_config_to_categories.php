@@ -37,10 +37,11 @@ return new class extends Migration
                 ]);
         }
 
-        // 3. Xóa các cột rời rạc đi
-        Schema::table('products', function (Blueprint $table) use ($colsToMove) {
-            $table->dropColumn($colsToMove);
-        });
+        // 3. Xóa các cột rời rạc đi (Tạm thời comment để Seeder chạy được)
+        // Schema::table('products', function (Blueprint $table) use ($colsToMove) {
+        //     $table->dropColumn($colsToMove);
+        // });
+
     }
 
     /**

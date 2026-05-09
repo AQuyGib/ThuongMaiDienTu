@@ -70,22 +70,41 @@
                             <td class="p-4 text-gray-500 text-xs">
                                 {{ $user->created_at ? \Carbon\Carbon::parse($user->created_at)->format('d/m/Y H:i') : '—' }}
                             </td>
-                            <td class="p-4 text-center">
-                                <button onclick='editUser(@json($user))'
-                                    class="text-blue-500 hover:bg-blue-50 w-8 h-8 rounded-full transition" title="Sửa">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                @if(Auth::user()->user_id != $user->user_id)
-                                    <form method="POST" action="{{ route('admin.users.destroy', $user->user_id) }}"
-                                        class="inline-block" onsubmit="return confirmDelete(event)">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-500 hover:bg-red-50 w-8 h-8 rounded-full transition"
-                                            title="Xóa">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </form>
-                                @endif
+                            <td class="p-4">
+                                <div class="flex items-center justify-center gap-2">
+                                    {{-- Nút Sửa --}}
+                                    <button onclick='editUser(@json($user))'
+                                        class="flex items-center justify-center w-9 h-9 text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm hover:shadow-md" 
+                                        title="Chỉnh sửa thông tin">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+
+                                    @if(Auth::user()->user_id != $user->user_id)
+                                        {{-- Nút Xem thiết bị --}}
+                                        <a href="{{ route('admin.users.sessions', $user->user_id) }}" 
+                                            class="flex items-center justify-center w-9 h-9 text-amber-600 bg-amber-50 hover:bg-amber-500 hover:text-white rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
+                                            title="Quản lý thiết bị đang đăng nhập">
+                                            <i class="fa-solid fa-display"></i>
+                                        </a>
+
+                                        {{-- Nút Xóa --}}
+                                        <form method="POST" action="{{ route('admin.users.destroy', $user->user_id) }}"
+                                            class="inline-block" onsubmit="return confirmDelete(event)">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" 
+                                                class="flex items-center justify-center w-9 h-9 text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
+                                                title="Xóa tài khoản">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        {{-- Placeholder cho chính mình --}}
+                                        <div class="w-9 h-9 flex items-center justify-center text-gray-300 cursor-not-allowed" title="Bạn không thể thực hiện thao tác này với chính mình">
+                                            <i class="fa-solid fa-circle-user text-lg"></i>
+                                        </div>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty

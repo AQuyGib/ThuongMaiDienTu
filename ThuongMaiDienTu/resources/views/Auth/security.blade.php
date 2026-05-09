@@ -282,6 +282,58 @@
             </div>
         </div>
 
+        <!-- ── Đăng nhập & Thiết bị ── -->
+        <div class="card animate-up delay-1">
+            <div class="section-title">
+                <i class="fa-solid fa-desktop" style="color: var(--primary);"></i>
+                Thiết bị đang đăng nhập
+            </div>
+            <div class="card-body">
+                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">
+                    Dưới đây là danh sách các thiết bị đã đăng nhập vào tài khoản của bạn. Nếu thấy thiết bị lạ, hãy đăng xuất ngay lập tức.
+                </p>
+
+                <div class="session-list" style="display: flex; flex-direction: column; gap: 16px;">
+                    @foreach($sessions as $session)
+                    <div class="session-item" style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border: 2px solid var(--border-color); border-radius: var(--radius-lg); transition: all 0.3s ease;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 48px; height: 48px; background: var(--primary-light); color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                                @if($session->device == 'iPhone')
+                                    <i class="fa-solid fa-mobile-screen-button"></i>
+                                @elseif($session->device == 'Điện thoại Android')
+                                    <i class="fa-solid fa-mobile-button"></i>
+                                @else
+                                    <i class="fa-solid fa-laptop"></i>
+                                @endif
+                            </div>
+                            <div>
+                                <div style="font-weight: 800; font-size: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                                    {{ $session->platform }} ({{ $session->browser }})
+                                    @if($session->is_current_device)
+                                        <span style="background: var(--success-light); color: #065f46; font-size: 10px; padding: 2px 8px; border-radius: 50px; text-transform: uppercase;">Thiết bị này</span>
+                                    @endif
+                                </div>
+                                <div style="font-size: 13px; color: var(--text-muted);">
+                                    IP: {{ $session->ip_address }} • Hoạt động {{ $session->last_active }}
+                                </div>
+                            </div>
+                        </div>
+
+                        @if(!$session->is_current_device)
+                        <form action="{{ route('security.session.destroy', $session->id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn đăng xuất khỏi thiết bị này?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" style="background: var(--danger-light); color: var(--danger); border: 1px solid #fecaca; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                                Đăng xuất
+                            </button>
+                        </form>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
+
         <div class="card animate-up delay-2">
             <div class="section-title">
                 <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i>

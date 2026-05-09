@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ProductController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +29,9 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
 // CRUD Tài khoản (Users)
 Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
+Route::get('users/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
+Route::delete('users/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
+Route::post('users/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
 
 // ===== Quản lý Danh Mục =====
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');

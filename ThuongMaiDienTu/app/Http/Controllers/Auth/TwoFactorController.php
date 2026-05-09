@@ -7,7 +7,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class TwoFactorController extends Controller
 {
@@ -16,7 +18,64 @@ class TwoFactorController extends Controller
      */
     public function securityPage()
     {
-        return view('Auth.security');
+        $sessions = DB::table('sessions')
+            ->where('user_id', Auth::id())
+            ->get()
+            ->map(function ($session) {
+                $agent = $this->parseUserAgent($session->user_agent);
+                return (object) [
+                    'id' => $session->id,
+                    'ip_address' => $session->ip_address,
+                    'is_current_device' => $session->id === request()->session()->getId(),
+                    'device' => $agent['device'],
+                    'platform' => $agent['os'],
+                    'browser' => $agent['browser'],
+                    'last_active' => Carbon::createFromTimestamp($session->last_activity)->diffForHumans(),
+                ];
+            });
+
+        return view('Auth.security', compact('sessions'));
+    }
+
+    /**
+     * Parse User Agent for basic device info
+     */
+    private function parseUserAgent($userAgent)
+    {
+        $os = "Unknown OS";
+        $browser = "Unknown Browser";
+        $device = "Máy tính";
+
+        if (preg_match('/windows|win32/i', $userAgent)) $os = 'Windows';
+        elseif (preg_match('/macintosh|mac os x/i', $userAgent)) $os = 'Mac OS';
+        elseif (preg_match('/linux/i', $userAgent)) $os = 'Linux';
+        elseif (preg_match('/iphone/i', $userAgent)) { $os = 'iOS'; $device = 'iPhone'; }
+        elseif (preg_match('/android/i', $userAgent)) { $os = 'Android'; $device = 'Điện thoại Android'; }
+
+        if (preg_match('/firefox/i', $userAgent)) $browser = 'Firefox';
+        elseif (preg_match('/chrome/i', $userAgent)) $browser = 'Chrome';
+        elseif (preg_match('/safari/i', $userAgent)) $browser = 'Safari';
+        elseif (preg_match('/msie/i', $userAgent)) $browser = 'Internet Explorer';
+        elseif (preg_match('/edge/i', $userAgent)) $browser = 'Edge';
+        
+        return [
+            'os' => $os,
+            'browser' => $browser,
+            'device' => $device
+        ];
+    }
+
+    /**
+     * Đăng xuất một phiên đăng nhập
+     */
+    public function logoutSession($id)
+    {
+        DB::table('sessions')
+            ->where('id', $id)
+            ->where('user_id', Auth::id())
+            ->delete();
+
+        return back()->with('success', 'Đã đăng xuất thiết bị thành công.');
     }
 
     /**
