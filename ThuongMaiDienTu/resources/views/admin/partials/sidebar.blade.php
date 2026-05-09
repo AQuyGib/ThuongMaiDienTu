@@ -46,7 +46,7 @@
         {{-- ===== NHÓM: QUẢN LÝ BÁN HÀNG ===== --}}
         <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Quản lý Bán Hàng</div>
 
-        <a href="#"
+        <a href="{{ route('admin.orders.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                    {{ request()->routeIs('admin.orders*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-clipboard-list w-5"></i> Đơn hàng
@@ -124,10 +124,10 @@
         {{-- ===== NHÓM: GIAO DIỆN ===== --}}
         <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Giao diện</div>
 
-        <a href="#"
+        <a href="{{ route('admin.settings.theme') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.homepage*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-            <i class="fa-solid fa-palette w-5"></i> Trang chủ
+                   {{ request()->routeIs('admin.settings.theme') ? 'bg-pink-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+            <i class="fa-solid fa-wand-magic-sparkles w-5"></i> Tùy biến Giao diện
         </a>
 
         {{-- ===== NHÓM: HỆ THỐNG (Chỉ Admin thấy) ===== --}}
@@ -140,7 +140,7 @@
                 <i class="fa-solid fa-users w-5"></i> Tài khoản
             </a>
 
-            <a href="#"
+            <a href="{{ route('admin.settings.theme') }}"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg transition
                                {{ request()->routeIs('admin.settings*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
                 <i class="fa-solid fa-gear w-5"></i> Cài đặt
