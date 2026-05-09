@@ -13,6 +13,7 @@ class CashbookController extends Controller
         $cashbooks = Cashbook::query()
             ->search($request->input('search'))
             ->when($request->filled('type'), fn ($q) => $q->ofType($request->type))
+            ->orderByRaw('reference_id IS NULL, reference_id ASC')
             ->orderBy('created_at', 'desc')
             ->paginate(12)
             ->withQueryString();
@@ -21,8 +22,29 @@ class CashbookController extends Controller
         $totalExpense = Cashbook::ofType('Expense')->sum('amount');
         $balance      = $totalIncome - $totalExpense;
 
+        // Dữ liệu biểu đồ 7 ngày gần nhất
+        $chartData = [
+            'labels' => [],
+            'income' => [],
+            'expense' => []
+        ];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $currentDay = \Carbon\Carbon::now('Asia/Ho_Chi_Minh')->subDays($i);
+            $date = $currentDay->format('d/m');
+            $fullDate = $currentDay->toDateString();
+            
+            $chartData['labels'][] = $date;
+            $chartData['income'][] = Cashbook::ofType('Income')
+                ->whereDate('created_at', $fullDate)
+                ->sum('amount');
+            $chartData['expense'][] = Cashbook::ofType('Expense')
+                ->whereDate('created_at', $fullDate)
+                ->sum('amount');
+        }
+
         return view('Cashbook.Cashbook', compact(
-            'cashbooks', 'totalIncome', 'totalExpense', 'balance'
+            'cashbooks', 'totalIncome', 'totalExpense', 'balance', 'chartData'
         ));
     }
 
@@ -30,9 +52,11 @@ class CashbookController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'type'        => 'required|in:Income,Expense',
-            'amount'      => 'required|integer|min:1000',
-            'description' => 'required|string|max:500',
+            'type'         => 'required|in:Income,Expense',
+            'amount'       => 'required|integer|min:1000',
+            'description'  => 'required|string|max:500',
+            'reference_id' => 'nullable|integer',
+            'created_at'   => 'nullable|date',
         ], [
             'type.required'        => 'Vui lòng chọn loại giao dịch.',
             'amount.required'      => 'Vui lòng nhập số tiền.',
@@ -40,9 +64,14 @@ class CashbookController extends Controller
             'description.required' => 'Vui lòng nhập nội dung.',
         ]);
 
-        Cashbook::create($request->only('type', 'amount', 'description'));
+        $data = $request->only('type', 'amount', 'description', 'reference_id');
+        if ($request->filled('created_at')) {
+            $data['created_at'] = $request->created_at;
+        }
 
-        return redirect()->route('cashbooks.index')
+        Cashbook::create($data);
+
+        return redirect()->route('admin.cashbooks.index')
             ->with('success', 'Đã thêm giao dịch thành công!');
     }
 
@@ -53,26 +82,48 @@ class CashbookController extends Controller
     }
 
     /** Cập nhật giao dịch */
-    public function update(Request $request, Cashbook $cashbook)
+    public function update(Request $request, $id)
     {
+        $cashbook = Cashbook::findOrFail($id);
         $request->validate([
-            'type'        => 'required|in:Income,Expense',
-            'amount'      => 'required|integer|min:1000',
-            'description' => 'required|string|max:500',
+            'type'         => 'required|in:Income,Expense',
+            'amount'       => 'required|integer|min:1000',
+            'description'  => 'required|string|max:500',
+            'reference_id' => 'nullable|integer',
+            'created_at'   => 'nullable|date',
         ]);
 
-        $cashbook->update($request->only('type', 'amount', 'description'));
+        $data = $request->only('type', 'amount', 'description', 'reference_id');
+        if ($request->filled('created_at')) {
+            $data['created_at'] = $request->created_at;
+        }
 
-        return redirect()->route('cashbooks.index')
+        $cashbook->update($data);
+
+        return redirect()->route('admin.cashbooks.index')
             ->with('success', 'Đã cập nhật giao dịch!');
     }
 
     /** Xóa giao dịch */
-    public function destroy(Cashbook $cashbook)
+    public function destroy($id)
     {
+        $cashbook = Cashbook::findOrFail($id);
         $cashbook->delete();
 
-        return redirect()->route('cashbooks.index')
+        return redirect()->route('admin.cashbooks.index')
             ->with('success', 'Đã xóa giao dịch.');
+    }
+    /** Xóa nhiều giao dịch cùng lúc */
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        if (empty($ids)) {
+            return redirect()->back()->with('error', 'Vui lòng chọn ít nhất một giao dịch để xóa.');
+        }
+
+        Cashbook::whereIn('cashbook_id', $ids)->delete();
+
+        return redirect()->route('admin.cashbooks.index')
+            ->with('success', 'Đã xóa ' . count($ids) . ' giao dịch được chọn.');
     }
 }

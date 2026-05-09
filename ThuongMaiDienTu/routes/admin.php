@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\CashbookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +72,10 @@ Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->n
 // ===== Quản lý IMEI =====
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 Route::put('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.updateStatus');
+
+// ===== Quản lý Sổ Quỹ (Cashbook) =====
+Route::post('cashbooks/bulk-destroy', [CashbookController::class, 'bulkDestroy'])->name('cashbooks.bulkDestroy');
+Route::resource('cashbooks', CashbookController::class);
 
 // API lấy variants theo product (cho form tạo phiếu nhập)
 Route::get('/api/products/{id}/variants', [PurchaseOrderController::class, 'getVariants'])->name('api.product.variants');

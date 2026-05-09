@@ -81,7 +81,7 @@
         <a href="{{ route('admin.purchase-orders.index') }}" class="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all">
             <i class="fa-solid fa-file-invoice text-indigo-500 group-hover:text-white"></i> Nhập kho
         </a>
-        <a href="{{ route('cashbooks.index') }}" class="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all">
+        <a href="{{ route('admin.cashbooks.index') }}" class="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all">
             <i class="fa-solid fa-wallet text-indigo-500 group-hover:text-white"></i> Sổ quỹ
         </a>
     </div>

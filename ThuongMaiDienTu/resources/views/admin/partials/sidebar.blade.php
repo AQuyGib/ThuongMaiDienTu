@@ -40,9 +40,9 @@
         {{-- ===== NHÓM: QUẢN LÝ BÁN HÀNG ===== --}}
         <div class="text-xs text-slate-400 font-bold mb-4 uppercase tracking-wider">Quản lý Bán Hàng</div>
 
-        <a href="{{ route('cashbooks.index') }}"
+        <a href="{{ route('admin.cashbooks.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->is('cashbooks*') ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                   {{ request()->is('admin/cashbooks*') ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-wallet w-5"></i> Sổ Quỹ
         </a>
 
