@@ -70,4 +70,12 @@ class User extends Authenticatable {
     public function articles() {
         return $this->hasMany(Article::class, 'author_id');
     }
+
+    public function salesOrders() {
+        return $this->hasMany(Order::class, 'staff_id', 'user_id');
+    }
+
+    public function repairTickets() {
+        return $this->hasMany(RepairTicket::class, 'technician_id', 'user_id');
+    }
 }
