@@ -307,7 +307,10 @@
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
                     <button class="btn-wishlist" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
-                        <i class="fa-regular fa-heart" id="wishlistIcon"></i> <span id="wishlistText">Thêm yêu thích</span>
+                        <i class="fa-regular fa-heart" id="wishlistIcon"></i> <span id="wishlistText">Yêu thích</span>
+                    </button>
+                    <button class="btn-wishlist" onclick="addToCompare({{ $product->product_id }})" style="flex:1; justify-content:center; border-color:#0046ab; color:#0046ab;">
+                        <i class="fa-solid fa-scale-balanced"></i> So sánh
                     </button>
                 </div>
             </div>

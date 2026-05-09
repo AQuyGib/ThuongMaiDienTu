@@ -83,3 +83,12 @@ Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name(
 Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
 Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
 Route::delete('/profile/wishlist/{id}', [ProfileController::class, 'removeFromWishlist'])->name('profile.wishlist.destroy');
+
+// Product Compare (So sánh sản phẩm)
+use App\Http\Controllers\CompareController;
+Route::post('/compare/add', [CompareController::class, 'add'])->name('compare.add');
+Route::delete('/compare/remove/{id}', [CompareController::class, 'remove'])->name('compare.remove');
+Route::post('/compare/clear', [CompareController::class, 'clear'])->name('compare.clear');
+Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
+Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');
+Route::get('/api/products/search-compare', [CompareController::class, 'searchCompare'])->name('api.products.search-compare');
