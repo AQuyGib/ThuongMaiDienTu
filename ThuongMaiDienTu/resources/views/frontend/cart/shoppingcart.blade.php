@@ -3,6 +3,7 @@
 @section('title', 'Giỏ hàng của bạn - DIENMAYPRO')
 
 @push('styles')
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Ẩn mũi tên tăng giảm mặc định của input number */
         input[type=number]::-webkit-inner-spin-button, 
@@ -27,8 +28,7 @@
 
 @section('content')
 
-{{-- Sử dụng file header đã tách riêng --}}
-@include('layouts.header')
+
 
 <main class="flex-grow bg-gray-50 min-h-screen">
     <div class="max-w-6xl mx-auto px-4 pb-20 pt-8">
@@ -102,8 +102,7 @@
     </div>
 </main>
 
-{{-- Sử dụng file footer đã tách riêng --}}
-@include('layouts.footer')
+
 
 <!-- Toast Thông báo -->
 <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded-xl shadow-2xl transform transition-all duration-300 translate-y-20 opacity-0 flex items-center gap-3 z-50">
@@ -290,7 +289,7 @@
         const selectedIds = window.cartData.filter(i => i.selected).map(i => i.id);
         if (selectedIds.length > 0) {
             // Chuyển hướng đến trang thanh toán thật của Laravel
-            window.location.href = `{{ url('/checkout') }}?items=${selectedIds.join(',')}`;
+            window.location.href = `{{ url('/pay') }}?items=${selectedIds.join(',')}`;
         }
     };
 

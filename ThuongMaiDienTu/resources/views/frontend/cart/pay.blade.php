@@ -337,6 +337,15 @@
             input.addEventListener('input', checkFormValidity);
         });
 
+        // Xử lý chuyển hướng khi chọn phương thức thanh toán QR
+        form.addEventListener('submit', function(e) {
+            const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
+            if (selectedMethod === 'vnpay' || selectedMethod === 'momo') {
+                e.preventDefault();
+                window.location.href = "{{ route('cart.ai') }}";
+            }
+        });
+
         // Chạy lần đầu lúc tải trang
         checkFormValidity();
     </script>
