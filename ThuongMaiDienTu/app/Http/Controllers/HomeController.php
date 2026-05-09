@@ -15,12 +15,8 @@ class HomeController extends Controller
             ->with('children')
             ->get();
 
-        // Flash Sale: 10 sản phẩm có giá cũ (đang giảm giá), sắp theo % giảm
-        $flashSaleProducts = Product::whereNotNull('old_price')
-            ->whereColumn('old_price', '>', 'base_price')
-            ->orderByRaw('(old_price - base_price) DESC')
-            ->take(10)
-            ->get();
+        // Flash Sale: tạm thời để trống vì chưa có cột old_price trong DB
+        $flashSaleProducts = collect();
 
         // Điện thoại nổi bật: 10 sản phẩm thuộc danh mục "Điện thoại"
         $catDienThoai = Category::where('name', 'Điện thoại')->first();

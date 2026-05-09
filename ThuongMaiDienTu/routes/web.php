@@ -29,6 +29,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 Route::resource('cashbooks', CashbookController::class);
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
+Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 
 Route::get('/users', function () {
     return view('PhanQuyen.user');

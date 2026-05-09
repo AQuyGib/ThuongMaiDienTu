@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thông tin thanh toán - DIENMAYPRO</title>
+@extends('layouts.app')
+
+@section('title', 'Thông tin thanh toán - DIENMAYPRO')
+
+@push('styles')
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Tùy chỉnh radio button */
         .radio-custom:checked + label {
@@ -19,31 +17,10 @@
             opacity: 1;
         }
     </style>
-</head>
-<body class="bg-gray-100 text-gray-800 font-sans pb-12">
+@endpush
 
-    <!-- Header giả lập -->
-    <header class="bg-[#003399] text-white py-3 shadow-md mb-8">
-        <div class="max-w-6xl mx-auto px-4 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <i class="fa-solid fa-bolt text-yellow-400 text-2xl"></i>
-                <span class="text-2xl font-bold text-yellow-400 uppercase tracking-wider">Dienmaypro</span>
-            </div>
-            <div class="hidden md:flex gap-6 font-semibold">
-                <a href="#" class="hover:text-yellow-400"><i class="fa-solid fa-house"></i> TRANG CHỦ</a>
-                <a href="#" class="hover:text-yellow-400"><i class="fa-solid fa-snowflake"></i> MÁY LẠNH</a>
-                <a href="#" class="hover:text-yellow-400"><i class="fa-solid fa-box"></i> TỦ LẠNH</a>
-                <a href="#" class="hover:text-yellow-400"><i class="fa-solid fa-tv"></i> TIVI</a>
-            </div>
-            <div class="flex gap-4">
-                <a href="#" class="hover:text-yellow-400"><i class="fa-solid fa-magnifying-glass"></i> Tra cứu đơn</a>
-                <a href="{{ route('cart.index') }}" class="hover:text-yellow-400 relative">
-                    <i class="fa-solid fa-cart-shopping"></i> Giỏ hàng
-                    <span class="absolute -top-2 -right-2 bg-yellow-400 text-[#003399] text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">2</span>
-                </a>
-            </div>
-        </div>
-    </header>
+@section('content')
+<div class="bg-gray-100 text-gray-800 font-sans pb-12 pt-8">
 
     <div class="max-w-6xl mx-auto px-4">
         <!-- Tiêu đề -->
@@ -254,7 +231,8 @@
             </div>
         </form>
     </div>
-
+</div>
+@push('scripts')
     <script>
         // --- XỬ LÝ MÃ GIẢM GIÁ VÀ TÍNH TỔNG TIỀN ---
         let subtotal = 38970000;
@@ -362,6 +340,5 @@
         // Chạy lần đầu lúc tải trang
         checkFormValidity();
     </script>
-
-</body>
-</html>
+@endpush
+@endsection
