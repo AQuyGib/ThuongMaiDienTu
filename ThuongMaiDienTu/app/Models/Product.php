@@ -16,10 +16,6 @@ class Product extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
-    public function specifications()
-    {
-        return $this->hasMany(ProductSpecification::class, 'product_id');
-    }
     public function productSpecifications()
     {
         return $this->hasMany(ProductSpecification::class, 'product_id');

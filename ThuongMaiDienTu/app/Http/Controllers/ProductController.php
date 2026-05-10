@@ -16,7 +16,7 @@ class ProductController extends Controller
     public function show(int $id)
     {
         // Lấy sản phẩm kèm quan hệ
-        $product = Product::with(['category', 'specifications', 'variants'])
+        $product = Product::with(['category', 'productSpecifications', 'variants'])
             ->findOrFail($id);
 
         // Tính % giảm giá (nếu có)

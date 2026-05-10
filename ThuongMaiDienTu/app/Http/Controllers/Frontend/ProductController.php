@@ -38,7 +38,7 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        $product = Product::with(['category', 'specifications', 'variants'])->findOrFail($id);
+        $product = Product::with(['category', 'productSpecifications', 'variants'])->findOrFail($id);
 
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('product_id', '<>', $product->product_id)

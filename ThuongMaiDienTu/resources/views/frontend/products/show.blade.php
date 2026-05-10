@@ -307,10 +307,7 @@
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
                     <button class="btn-wishlist" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
-                        <i class="fa-regular fa-heart" id="wishlistIcon"></i> <span id="wishlistText">Yêu thích</span>
-                    </button>
-                    <button class="btn-wishlist" onclick="addToCompare({{ $product->product_id }})" style="flex:1; justify-content:center; border-color:#0046ab; color:#0046ab;">
-                        <i class="fa-solid fa-scale-balanced"></i> So sánh
+                        <i class="fa-regular fa-heart" id="wishlistIcon"></i> <span id="wishlistText">Thêm yêu thích</span>
                     </button>
                 </div>
             </div>
@@ -359,11 +356,11 @@
         </div>
 
         {{-- Thông số kỹ thuật --}}
-        @if($product->specifications->count())
+        @if($product->productSpecifications->count())
             <div class="pd-specs">
                 <h2><i class="fa-solid fa-microchip" style="color:#0046ab"></i> Cấu hình chi tiết</h2>
                 <table class="specs-table">
-                    @php $spec = $product->specifications->first(); @endphp
+                    @php $spec = $product->productSpecifications->first(); @endphp
                     @if($spec->cpu_chip)
                         <tr><td>Vi xử lý (CPU)</td><td>{{ $spec->cpu_chip }}</td></tr>
                     @endif
