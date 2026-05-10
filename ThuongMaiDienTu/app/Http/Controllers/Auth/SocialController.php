@@ -20,8 +20,10 @@ class SocialController extends Controller
         try {
             $socialUser = Socialite::driver($provider)->user();
         } catch (\Exception $e) {
-            return redirect()->route('login_register')->with('error', 'Đăng nhập thất bại.');
+            \Illuminate\Support\Facades\Log::error('Social Login Error: ' . $e->getMessage());
+            return redirect()->route('login_register')->with('error', 'Đăng nhập thất bại: ' . $e->getMessage());
         }
+
 
         $user = User::where('email', $socialUser->getEmail())->first();
 

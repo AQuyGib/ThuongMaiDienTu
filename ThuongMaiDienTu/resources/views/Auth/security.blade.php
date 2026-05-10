@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trung tâm Bảo mật - DienMayPro</title>
     
-    <!-- Optimized Vietnamese Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@100;300;400;500;600;700;800;900&family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -57,7 +56,6 @@
             to { transform: translate(120px, 80px) rotate(15deg); }
         }
 
-        /* ── Navbar ── */
         .navbar {
             backdrop-filter: blur(25px);
             -webkit-backdrop-filter: blur(25px);
@@ -75,7 +73,6 @@
         .logo i { color: #f59e0b; }
         .logo span { color: var(--brand-primary); }
 
-        /* ── Layout ── */
         .container { max-width: 1200px; margin: 50px auto; padding: 0 24px; display: grid; grid-template-columns: 1fr 340px; gap: 40px; }
 
         @keyframes reveal {
@@ -84,7 +81,6 @@
         }
         .reveal { animation: reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        /* ── Glass Cards ── */
         .glass-card {
             background: var(--glass-bg);
             backdrop-filter: blur(30px);
@@ -101,15 +97,6 @@
             display: flex; align-items: center; gap: 12px; color: var(--brand-dark);
         }
 
-        /* ── Reason Badges ── */
-        .reason-box {
-            background: white; border-radius: 20px; padding: 25px;
-            border: 1px solid var(--glass-border); margin-top: 20px;
-        }
-        .reason-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; font-weight: 800; color: var(--brand-primary); }
-        .reason-text { font-size: 14px; color: var(--text-muted); line-height: 1.7; }
-
-        /* ── 2FA Toggle ── */
         .mfa-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .mfa-brand { display: flex; align-items: center; gap: 20px; }
         .mfa-icon-box {
@@ -132,28 +119,33 @@
         input:checked + .slider { background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary)); }
         input:checked + .slider:before { transform: translateX(40px); }
 
-        /* ── Score Breakdown ── */
-        .score-list { display: flex; flex-direction: column; gap: 15px; }
-        .score-item { padding: 20px; background: rgba(255,255,255,0.4); border-radius: 20px; border: 1px solid var(--glass-border); }
-        .score-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .score-label { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-        .score-val { font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; }
-        .val-pass { background: #d1fae5; color: #065f46; }
-        .val-fail { background: #fee2e2; color: #991b1b; }
-        .val-warning { background: #fff7ed; color: #9a3412; }
-        .score-desc { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+        .session-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px; background: white; border-radius: 20px;
+            margin-bottom: 12px; border: 1px solid var(--glass-border);
+            transition: all 0.3s;
+        }
+        .session-item:hover { transform: translateX(5px); border-color: var(--brand-primary); }
+        .device-icon {
+            width: 48px; height: 48px; background: #f1f5f9; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--brand-primary);
+        }
 
-        /* ── Sidebar ── */
+        .btn-logout {
+            background: #fee2e2; color: var(--brand-danger); border: none;
+            padding: 8px 16px; border-radius: 10px; font-weight: 700; cursor: pointer;
+            font-size: 13px; transition: all 0.2s;
+        }
+        .btn-logout:hover { background: var(--brand-danger); color: white; }
+
         .score-box { background: var(--brand-dark); color: white; padding: 30px; border-radius: 32px; text-align: center; }
         .score-display { width: 100px; height: 100px; border-radius: 50%; border: 6px solid {{ $tierColor }}; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 20px; }
         .score-num { font-size: 32px; font-weight: 900; }
-        .score-max { font-size: 12px; opacity: 0.5; }
 
-        /* ── Toast ── */
         #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--brand-dark); color: white; padding: 15px 30px; border-radius: 100px; display: flex; align-items: center; gap: 12px; font-weight: 700; opacity: 0; transition: all 0.4s; z-index: 1000; }
         #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-        @media (max-width: 1000px) { .container { grid-template-columns: 1fr; } }
+        @media (max-width: 1000px) { .container { grid-template-columns: 1fr; } .navbar { padding: 0 1rem; } }
     </style>
 </head>
 <body>
@@ -174,7 +166,7 @@
         <div class="main-content">
             <div class="reveal" style="margin-bottom: 40px;">
                 <h1 style="font-size: 46px; font-weight: 900; letter-spacing: -2px; margin-bottom: 10px; background: linear-gradient(to right, #0f172a, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Trung tâm Bảo mật</h1>
-                <p style="color: var(--text-muted); font-size: 18px; max-width: 650px;">Tìm hiểu lý do và cách thức chúng tôi bảo vệ tài sản số của bạn tại DienMayPro.</p>
+                <p style="color: var(--text-muted); font-size: 18px; max-width: 650px;">Quản lý xác thực và các phiên đăng nhập để bảo vệ tài khoản của bạn.</p>
             </div>
 
             {{-- 2FA CARD --}}
@@ -192,90 +184,76 @@
                         <span class="slider"></span>
                     </label>
                 </div>
-
-                <div class="reason-box">
-                    <div class="reason-header"><i class="fa-solid fa-lightbulb"></i> Tại sao bạn nên bật 2FA?</div>
-                    <p class="reason-text">
-                        Mật khẩu chỉ là một lớp bảo vệ mỏng manh. Hacker có thể đánh cắp nó qua Phishing hoặc các vụ rò rỉ dữ liệu lớn. 2FA tạo ra một lớp chắn thứ hai: <strong>Ngay cả khi biết mật khẩu, hacker vẫn không thể truy cập tài khoản</strong> nếu không có mã OTP được gửi riêng đến email của bạn. Đây là tiêu chuẩn vàng để bảo vệ tiền và thông tin cá nhân.
-                    </p>
-                </div>
-            </div>
-
-            {{-- RISK ANALYSIS --}}
-            <div class="glass-card reveal" style="animation-delay: 0.2s;">
-                <h3 class="section-title"><i class="fa-solid fa-chart-pie"></i> Phân tích rủi ro & Lý do</h3>
-                <div class="score-list">
-                    {{-- 2FA Detail --}}
-                    <div class="score-item">
-                        <div class="score-top">
-                            <div class="score-label"><i class="fa-solid {{ $details['2fa']['status'] === 'pass' ? 'fa-circle-check text-green-500' : 'fa-circle-xmark text-rose-500' }}"></i> Xác thực 2 lớp</div>
-                            <span class="score-val val-{{ $details['2fa']['status'] }}">{{ $details['2fa']['status'] === 'pass' ? 'An toàn' : 'Nguy hiểm' }}</span>
-                        </div>
-                        <p class="score-desc"><strong>Lý do:</strong> Tránh rủi ro bị đăng nhập trái phép khi mật khẩu bị lộ. Đây là chốt chặn cuối cùng bảo vệ tài khoản.</p>
-                    </div>
-
-                    {{-- Phone Detail --}}
-                    <div class="score-item">
-                        <div class="score-top">
-                            <div class="score-label"><i class="fa-solid {{ $details['phone']['status'] === 'pass' ? 'fa-circle-check text-green-500' : 'fa-circle-xmark text-rose-500' }}"></i> Số điện thoại liên kết</div>
-                            <span class="score-val val-{{ $details['phone']['status'] }}">{{ $details['phone']['status'] === 'pass' ? 'An toàn' : 'Cần xử lý' }}</span>
-                        </div>
-                        <p class="score-desc"><strong>Lý do:</strong> Là "chìa khóa dự phòng" để khôi phục tài khoản nếu bạn mất quyền truy cập Email hoặc bị hack mật khẩu.</p>
-                    </div>
-
-                    {{-- Password Detail --}}
-                    <div class="score-item">
-                        <div class="score-top">
-                            <div class="score-label"><i class="fa-solid {{ $details['password']['status'] === 'pass' ? 'fa-circle-check text-green-500' : 'fa-circle-exclamation text-amber-500' }}"></i> Độ tươi mới mật khẩu</div>
-                            <span class="score-val val-{{ $details['password']['status'] }}">{{ $details['password']['status'] === 'pass' ? 'Tốt' : 'Cảnh báo' }}</span>
-                        </div>
-                        <p class="score-desc"><strong>Lý do:</strong> Đổi mật khẩu định kỳ giúp vô hiệu hóa các thông tin đăng nhập cũ có thể đã bị rò rỉ trong quá khứ mà bạn không biết.</p>
-                    </div>
+                <div style="background: #f8fafc; padding: 20px; border-radius: 20px; border: 1px solid #e2e8f0; font-size: 14px; color: var(--text-muted);">
+                    <strong>Lưu ý:</strong> Khi bật 2FA, hệ thống sẽ yêu cầu mã OTP gửi qua Email mỗi khi bạn đăng nhập từ thiết bị mới.
                 </div>
             </div>
 
             {{-- SESSION HISTORY --}}
-            <div class="glass-card reveal" style="animation-delay: 0.3s;">
-                <h3 class="section-title"><i class="fa-solid fa-history"></i> Kiểm soát phiên đăng nhập</h3>
-                <div style="background: #eff6ff; padding: 15px; border-radius: 16px; margin-bottom: 20px; font-size: 13px; color: #1e40af; border: 1px solid #bfdbfe;">
-                    <strong>Tại sao cần kiểm tra?</strong> Hãy đối soát IP và thiết bị dưới đây. Nếu thấy thiết bị ở tỉnh thành lạ hoặc trình duyệt bạn không dùng, hãy đổi mật khẩu ngay để ngắt kết nối của kẻ xâm nhập.
-                </div>
+            <div class="glass-card reveal" style="animation-delay: 0.2s;">
+                <h3 class="section-title"><i class="fa-solid fa-desktop"></i> Các thiết bị đang đăng nhập</h3>
+                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 25px;">Nếu bạn thấy thiết bị lạ, hãy đăng xuất ngay lập tức và đổi mật khẩu.</p>
+                
                 @foreach($sessions as $session)
                     <div class="session-item">
                         <div style="display: flex; align-items: center; gap: 15px;">
-                            <div class="device-icon"><i class="fa-solid {{ str_contains($session->user_agent, 'Mobile') ? 'fa-mobile-screen' : 'fa-desktop' }}"></i></div>
+                            <div class="device-icon">
+                                @if($session->device == 'iPhone' || $session->device == 'Điện thoại Android')
+                                    <i class="fa-solid fa-mobile-screen"></i>
+                                @else
+                                    <i class="fa-solid fa-desktop"></i>
+                                @endif
+                            </div>
                             <div>
-                                <p style="font-size: 15px; font-weight: 800;">{{ $session->ip_address }} @if($session->id === session()->getId()) <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:4px; font-size:10px; margin-left:5px; font-weight: 900;">HIỆN TẠI</span> @endif</p>
-                                <span style="font-size: 12px; color: var(--text-muted);">{{ \Carbon\Carbon::createFromTimestamp($session->last_activity)->diffForHumans() }}</span>
+                                <p style="font-size: 15px; font-weight: 800;">
+                                    {{ $session->platform }} ({{ $session->browser }})
+                                    @if($session->is_current_device)
+                                        <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:4px; font-size:10px; margin-left:5px; font-weight: 900;">THIẾT BỊ NÀY</span>
+                                    @endif
+                                </p>
+                                <span style="font-size: 12px; color: var(--text-muted);">IP: {{ $session->ip_address }} • {{ $session->last_active }}</span>
                             </div>
                         </div>
+                        
+                        @if(!$session->is_current_device)
+                            <form action="{{ route('security.session.destroy', $session->id) }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-logout">Đăng xuất</button>
+                            </form>
+                        @endif
                     </div>
                 @endforeach
             </div>
         </div>
 
         {{-- SIDEBAR --}}
-        <div class="side-stack reveal" style="animation-delay: 0.4s;">
+        <div class="side-stack reveal" style="animation-delay: 0.3s;">
             <div class="score-box">
                 <div class="score-display"><span class="score-num">{{ $score }}</span><span class="score-max">/100</span></div>
-                <h4 style="font-size: 18px; font-weight: 800; margin-bottom: 5px;">Chỉ số An toàn</h4>
-                <p style="font-size: 14px; font-weight: 700; color: {{ $tierColor }}; margin-bottom: 20px;">Mức độ: {{ $securityTier }}</p>
+                <h4 style="font-size: 18px; font-weight: 800; margin-bottom: 5px;">Điểm bảo mật</h4>
+                <p style="font-size: 14px; font-weight: 700; color: {{ $tierColor }}; margin-bottom: 20px;">{{ $securityTier }}</p>
                 <div style="text-align: left; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 20px; font-size: 13px;">
-                    <p style="font-weight: 800; margin-bottom: 8px;">Lời khuyên từ chuyên gia:</p>
-                    @if($score < 100) <p style="opacity: 0.8;">• Bạn cần đạt 100 điểm để được bảo vệ tuyệt đối chống lại các cuộc tấn công tinh vi nhất.</p> @else <p style="opacity: 0.8;">• Tuyệt vời! Tài khoản của bạn đang ở trạng thái bảo mật cao nhất hệ thống.</p> @endif
+                    <p style="font-weight: 800; margin-bottom: 8px;">Kiểm tra bảo mật:</p>
+                    @foreach($details as $key => $detail)
+                        <p style="opacity: 0.8; margin-bottom: 5px;">
+                            <i class="fa-solid {{ $detail['status'] === 'pass' ? 'fa-check text-green-400' : ($detail['status'] === 'warning' ? 'fa-exclamation text-amber-400' : 'fa-xmark text-red-400') }}"></i>
+                            {{ $detail['label'] }}
+                        </p>
+                    @endforeach
                 </div>
             </div>
 
-            <div class="glass-card">
-                <h4 style="font-size: 18px; font-weight: 800; margin-bottom: 15px;">Liên kết hiện tại</h4>
+            <div class="glass-card" style="margin-top: 30px;">
+                <h4 style="font-size: 18px; font-weight: 800; margin-bottom: 15px;">Thông tin liên kết</h4>
                 <div style="display: flex; flex-direction: column; gap: 15px;">
                     <div>
-                        <p style="font-size: 11px; font-weight: 800; color: var(--text-muted);">EMAIL KHÔI PHỤC</p>
-                        <p style="font-size: 14px; font-weight: 700;">{{ $user->email }}</p>
+                        <p style="font-size: 11px; font-weight: 800; color: var(--text-muted);">EMAIL</p>
+                        <p style="font-size: 14px; font-weight: 700;">{{ auth()->user()->email }}</p>
                     </div>
                     <div>
                         <p style="font-size: 11px; font-weight: 800; color: var(--text-muted);">SỐ ĐIỆN THOẠI</p>
-                        <p style="font-size: 14px; font-weight: 700;">{{ $user->phone_number ?? 'Chưa cập nhật' }}</p>
+                        <p style="font-size: 14px; font-weight: 700;">{{ auth()->user()->phone_number ?? 'Chưa cập nhật' }}</p>
                     </div>
                 </div>
             </div>
