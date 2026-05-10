@@ -8,6 +8,7 @@
     <meta name="description" content="Hệ thống bán lẻ điện thoại, laptop, phụ kiện chính hãng, giá tốt nhất thị trường. Mua trả góp 0%, giao hàng nhanh toàn quốc.">
     <meta name="keywords" content="điện thoại, laptop, tablet, phụ kiện công nghệ, apple, samsung">
     <meta name="robots" content="index, follow">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
@@ -603,6 +604,141 @@
             transform: translateY(-3px);
             color: var(--primary-dark);
         }
+        /* ============================
+           FLOATING COMPARE BAR
+           ============================ */
+        .compare-bar {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 10000;
+            background: #fff; box-shadow: 0 -4px 24px rgba(0,0,0,.12);
+            border-top: 2px solid #0046ab;
+            animation: compareSlideUp .35s ease;
+            transition: all 0.3s ease;
+        }
+        .compare-bar.collapsed {
+            left: auto; right: 20px; bottom: 85px; width: auto;
+            border-radius: 12px; border: 2px solid #0046ab;
+            box-shadow: 0 4px 20px rgba(0,0,0,.15);
+        }
+        .compare-bar.collapsed .compare-btn-clear:not(#compareCollapseBtn) {
+            display: none;
+        }
+        @keyframes compareSlideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .compare-bar-inner {
+            max-width: 1200px; margin: 0 auto; padding: 12px 20px;
+            display: flex; align-items: center; gap: 16px;
+        }
+        .compare-slots { display: flex; gap: 12px; flex: 1; }
+        .compare-slot {
+            flex: 1; max-width: 280px; min-height: 56px;
+            border-radius: 10px; overflow: hidden;
+        }
+        .compare-slot-empty {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            height: 56px; border: 2px dashed #d1d5db; border-radius: 10px;
+            color: #9ca3af; font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: .2s;
+        }
+        .compare-slot-empty:hover { border-color: #0046ab; color: #0046ab; background: #f0f7ff; }
+        .compare-slot-empty i { font-size: 18px; }
+        .compare-slot-filled {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px; background: #f8f9fa; border-radius: 10px;
+            border: 1px solid #e5e7eb; position: relative;
+        }
+        .compare-slot-img { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
+        .compare-slot-info { flex: 1; min-width: 0; }
+        .compare-slot-name {
+            display: block; font-size: 12px; font-weight: 600; color: #333;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .compare-slot-price {
+            display: block; font-size: 12px; font-weight: 700; color: #d70018;
+        }
+        .compare-slot-remove {
+            position: absolute; top: -4px; right: -4px; width: 22px; height: 22px;
+            border-radius: 50%; border: none; background: #fee2e2; color: #d70018;
+            cursor: pointer; font-size: 10px; transition: .2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .compare-slot-remove:hover { background: #d70018; color: #fff; }
+        .compare-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+        .compare-btn-go {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 20px; background: linear-gradient(135deg, #0046ab, #003380);
+            color: #fff; border-radius: 8px; font-size: 13px; font-weight: 700;
+            cursor: pointer; transition: .2s; text-decoration: none;
+        }
+        .compare-btn-go:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,70,171,.3); }
+        .compare-count-badge {
+            background: #d70018; color: #fff; font-size: 11px; font-weight: 700;
+            padding: 1px 7px; border-radius: 10px; min-width: 20px; text-align: center;
+        }
+        .compare-btn-clear {
+            padding: 6px 16px; background: none; border: 1px solid #d1d5db;
+            border-radius: 6px; font-size: 12px; color: #888; cursor: pointer;
+            transition: .2s;
+        }
+        .compare-btn-clear:hover { border-color: #d70018; color: #d70018; }
+
+        /* Search Modal */
+        .compare-search-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 10001;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        .compare-search-content {
+            background: #fff; width: 520px; max-width: 95vw; border-radius: 14px;
+            overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+            animation: modalPop .25s ease;
+        }
+        .compare-search-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+        }
+        .compare-search-header h3 {
+            font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+        }
+        .compare-search-header button {
+            background: none; border: none; font-size: 20px; color: #888;
+            cursor: pointer; transition: .2s; padding: 4px;
+        }
+        .compare-search-header button:hover { color: #d70018; }
+        .compare-search-body { padding: 16px 20px; }
+        .compare-search-body input {
+            width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb;
+            border-radius: 10px; font-size: 14px; outline: none; transition: .2s;
+        }
+        .compare-search-body input:focus { border-color: #0046ab; }
+        .compare-search-results {
+            max-height: 300px; overflow-y: auto; margin-top: 12px;
+        }
+        .compare-search-result-item {
+            display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+            border-radius: 8px; cursor: pointer; transition: .15s;
+        }
+        .compare-search-result-item:hover { background: #f0f7ff; }
+        .compare-search-result-item img {
+            width: 44px; height: 44px; object-fit: contain; border-radius: 6px;
+            border: 1px solid #f0f0f0; padding: 2px;
+        }
+        .compare-search-result-info { flex: 1; }
+        .compare-search-result-name { font-size: 13px; font-weight: 600; color: #333; }
+        .compare-search-result-price { font-size: 12px; font-weight: 700; color: #d70018; margin-top: 2px; }
+
+        /* Global toast */
+        .compare-global-toast {
+            position: fixed; top: 80px; right: 20px; z-index: 10002;
+            padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 600;
+            display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.15);
+            transform: translateX(120%); transition: transform .4s cubic-bezier(.4,0,.2,1);
+        }
+        .compare-global-toast.show { transform: translateX(0); }
+        .compare-global-toast.success { background: #16a34a; color: #fff; }
+        .compare-global-toast.error { background: #d70018; color: #fff; }
     </style>
     @stack('styles')
 </head>
@@ -615,6 +751,9 @@
     </main>
 
     @include('partials.footer')
+
+    {{-- Floating Compare Bar --}}
+    @include('partials.compare-bar')
 
     <!-- Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
@@ -711,6 +850,9 @@
             }
         });
     </script>
+
+    <!-- Compare Feature JS -->
+    <script src="{{ asset('assets/frontend/js/compare.js') }}"></script>
 
     @stack('scripts')
 </body>

@@ -406,11 +406,11 @@
         </div>
 
         {{-- Thông số kỹ thuật --}}
-        @if($product->specifications->count())
+        @if($product->productSpecifications->count())
             <div class="pd-specs">
                 <h2><i class="fa-solid fa-microchip" style="color:#0046ab"></i> Cấu hình chi tiết</h2>
                 <table class="specs-table">
-                    @php $spec = $product->specifications->first(); @endphp
+                    @php $spec = $product->productSpecifications->first(); @endphp
                     @if($spec->cpu_chip)
                         <tr><td>Vi xử lý (CPU)</td><td>{{ $spec->cpu_chip }}</td></tr>
                     @endif
@@ -806,8 +806,6 @@
             <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #16a34a; margin-bottom: 20px;"></i>
             <h3 style="font-size: 22px; color: #333; margin-bottom: 10px;">Cảm ơn quý khách!</h3>
             <p style="font-size: 15px; color: #555; line-height: 1.5; margin-bottom: 0;">Đăng ký nhận khuyến mãi thành công. Chúng tôi sẽ gửi mã giảm giá 10% qua Email và Số điện thoại của quý khách.</p>
-        </div>
-    </div>
 @endsection
 
 @push('scripts')
