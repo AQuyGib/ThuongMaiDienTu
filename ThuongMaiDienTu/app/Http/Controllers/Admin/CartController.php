@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Product;
+
+
 
 class CartController extends Controller
 {
@@ -12,35 +15,61 @@ class CartController extends Controller
      */
     public function index()
     {
-        // Dữ liệu giỏ hàng mẫu (sau này sẽ lấy từ DB / Session)
-        $cartItems = [
-            [
-                'id'       => 1,
-                'name'     => 'Android Tivi Sony 4K 65 inch KD-65X80J',
-                'image'    => 'https://images.unsplash.com/photo-1593359677879-a4bb92f4834c?w=300',
-                'url'      => '#',
-                'price'    => 16990000,
-                'quantity' => 2,
-                'stock'    => 10,
+        $cart = session()->get('cart', []);
+
+        // Chuyển đổi dữ liệu từ session sang format view yêu cầu
+        $cartItems = collect($cart)->map(function ($item, $id) {
+            $product = Product::find($id);
+            if (!$product)
+                return null;
+            return [
+                'id' => $id,
+                'name' => $product->name,
+                'price' => (int) $product->base_price,
+                'quantity' => $item['quantity'],
+                'stock' => 10,
                 'selected' => true,
-            ],
-            [
-                'id'       => 2,
-                'name'     => 'Tủ lạnh Aqua Inverter 189 lít AQR-T219FA(PB)',
-                'image'    => 'https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?w=300',
-                'url'      => '#',
-                'price'    => 4990000,
-                'quantity' => 1,
-                'stock'    => 5,
-                'selected' => true,
-            ],
-        ];
+                'image' => $product->thumbnail,
+                'url' => route('product.detail', $id)
+            ];
+        })->filter()->values();
 
         return view('frontend.cart.shoppingcart', compact('cartItems'));
     }
 
     /**
-     * Hiển thị trang tính phí vận chuyển (trong Admin).
+     * Thêm sản phẩm vào giỏ hàng.
+     */
+    public function add(Request $request)
+    {
+        $productId = $request->input('product_id');
+        $quantity = $request->input('quantity', 1);
+        $product = Product::findOrFail($productId);
+
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$productId])) {
+            $cart[$productId]['quantity'] += $quantity;
+        } else {
+            $cart[$productId] = [
+                "name" => $product->name,
+                "quantity" => $quantity,
+                "price" => $product->base_price,
+                "image" => $product->thumbnail
+            ];
+        }
+
+        session()->put('cart', $cart);
+
+        if ($request->has('buy_now')) {
+            return redirect()->route('cart.index')->with('success', 'Đã thêm vào giỏ hàng!');
+        }
+
+        return response()->json(['status' => 'success', 'cart_count' => count($cart)]);
+    }
+
+    /**
+     * Hiển thị trang tính phí vận chuyển.
      */
     public function shipping()
     {

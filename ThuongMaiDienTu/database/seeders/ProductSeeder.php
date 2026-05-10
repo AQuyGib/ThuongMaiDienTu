@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use App\Models\Product;
 use App\Models\Category;
 
@@ -699,7 +700,9 @@ class ProductSeeder extends Seeder
         ];
 
         foreach ($products as $product) {
+            $product['slug'] = Str::slug($product['name']);
             Product::create($this->normalizeProductData($product));
+        }
         }
     }
 

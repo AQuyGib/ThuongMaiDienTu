@@ -39,6 +39,8 @@ Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.ve
 Route::post('/2fa/send',   [TwoFactorController::class, 'send'])->name('2fa.send');
 Route::post('/2fa/toggle', [TwoFactorController::class, 'toggle'])->name('2fa.toggle')->middleware('auth');
 Route::get('/security',    [TwoFactorController::class, 'securityPage'])->name('security')->middleware('auth');
+Route::delete('/security/session/{id}', [TwoFactorController::class, 'logoutSession'])->name('security.session.destroy')->middleware('auth');
+
 
 // Frontend
 Route::get('/', function () {
@@ -47,11 +49,14 @@ Route::get('/', function () {
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
 Route::get('/san-pham/{id}', [ProductController::class, 'show'])->name('product.show');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
 
 // Modules
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-Route::resource('cashbooks', CashbookController::class);
+
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/wishlist/toggle', [App\Http\Controllers\WishlistController::class, 'toggle'])->name('wishlist.toggle');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');
@@ -80,6 +85,7 @@ Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'get
 
 Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
 Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+
 Route::post('/profile/password/update', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name('profile.address.store');
 Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
