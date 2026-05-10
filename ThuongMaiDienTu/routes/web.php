@@ -42,3 +42,4 @@ Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name(
 Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
 Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
 Route::delete('/profile/wishlist/{id}', [ProfileController::class, 'removeFromWishlist'])->name('profile.wishlist.destroy');
+Route::delete('/profile/wishlist', [ProfileController::class, 'clearAllWishlist'])->name('profile.wishlist.clear');

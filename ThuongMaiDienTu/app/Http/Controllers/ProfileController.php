@@ -253,9 +253,25 @@ class ProfileController extends Controller
 
         if ($wishlistItem) {
             $wishlistItem->delete();
-            return response()->json(['success' => true]);
+            $newCount = \App\Models\WishlistRecentlyViewed::where('user_id', Auth::id())
+                ->where('type', 'Wishlist')
+                ->count();
+            return response()->json(['success' => true, 'count' => $newCount]);
         }
 
         return response()->json(['error' => 'Không tìm thấy sản phẩm'], 404);
+    }
+
+    public function clearAllWishlist()
+    {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+        }
+
+        \App\Models\WishlistRecentlyViewed::where('user_id', Auth::id())
+            ->where('type', 'Wishlist')
+            ->delete();
+
+        return response()->json(['success' => true, 'count' => 0]);
     }
 }

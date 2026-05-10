@@ -1046,9 +1046,9 @@
             <div id="wishlist-tab" class="profile-tab">
                 <div class="info-form-wrap">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
-                        <h3 style="margin: 0; border: none; padding: 0;">Sản Phẩm Yêu Thích ({{ $wishlist->count() }})</h3>
+                        <h3 id="wishlist-title" style="margin: 0; border: none; padding: 0;">Sản Phẩm Yêu Thích (<span id="wishlist-count">{{ $wishlist->count() }}</span>)</h3>
                         @if($wishlist->count() > 0)
-                            <a href="#" style="color: #0046ab; font-size: 13px; font-weight: 600;">Xóa tất cả</a>
+                            <a href="#" id="btn-clear-wishlist" onclick="event.preventDefault(); clearAllWishlist();" style="color: #0046ab; font-size: 13px; font-weight: 600;">Xóa tất cả</a>
                         @endif
                     </div>
 
@@ -1840,6 +1840,13 @@
         });
     }
 
+    function updateWishlistCount(count) {
+        const countEl = document.getElementById('wishlist-count');
+        if (countEl) countEl.textContent = count;
+        const clearBtn = document.getElementById('btn-clear-wishlist');
+        if (clearBtn) clearBtn.style.display = count > 0 ? '' : 'none';
+    }
+
     function removeFromWishlist(id) {
         showConfirm('Xóa khỏi yêu thích', 'Bạn muốn bỏ sản phẩm này khỏi danh sách yêu thích?', function() {
             fetch(`/profile/wishlist/${id}`, {
@@ -1859,7 +1866,9 @@
                         item.style.transform = 'scale(0.8)';
                         setTimeout(() => {
                             item.remove();
-                            if(document.querySelectorAll('.wishlist-item').length === 0) {
+                            const remaining = document.querySelectorAll('.wishlist-item').length;
+                            updateWishlistCount(remaining);
+                            if(remaining === 0) {
                                 window.location.reload();
                             }
                         }, 300);
@@ -1868,6 +1877,33 @@
                 } else {
                     closeConfirmModal();
                     showToast('Lỗi', 'Không thể thực hiện thao tác này.', 'error');
+                }
+            })
+            .catch(err => {
+                closeConfirmModal();
+                showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+            });
+        });
+    }
+
+    function clearAllWishlist() {
+        showConfirm('Xóa tất cả yêu thích', 'Bạn có chắc muốn xóa toàn bộ danh sách sản phẩm yêu thích?', function() {
+            fetch('{{ route("profile.wishlist.clear") }}', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    closeConfirmModal();
+                    showToast('Đã xóa tất cả', 'Danh sách yêu thích đã được làm trống.', 'success');
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    closeConfirmModal();
+                    showToast('Lỗi', 'Không thể xóa danh sách yêu thích.', 'error');
                 }
             })
             .catch(err => {
