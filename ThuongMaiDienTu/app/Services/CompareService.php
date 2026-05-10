@@ -6,40 +6,7 @@ use Illuminate\Support\Collection;
 
 class CompareService
 {
-    /**
-     * Label map cho các key thông số kỹ thuật
-     */
-    private array $labelMap = [
-        'cpu'        => 'Vi xử lý (CPU)',
-        'cpu_chip'   => 'Vi xử lý (CPU)',
-        'ram'        => 'RAM',
-        'ram_capacity' => 'RAM',
-        'rom'        => 'Bộ nhớ trong',
-        'gpu'        => 'Card đồ họa (GPU)',
-        'screen'     => 'Màn hình',
-        'screen_size' => 'Kích thước màn hình',
-        'os'         => 'Hệ điều hành',
-        'camera'     => 'Camera',
-        'battery'    => 'Pin',
-        'sim'        => 'SIM',
-        'connection' => 'Kết nối',
-        'weight'     => 'Trọng lượng',
-        'dimensions' => 'Kích thước',
-        'material'   => 'Chất liệu',
-        'water_resistance' => 'Chống nước',
-        'bluetooth'  => 'Bluetooth',
-        'wifi'       => 'Wi-Fi',
-        'nfc'        => 'NFC',
-        'charging'   => 'Sạc',
-        'refresh_rate' => 'Tần số quét',
-        'resolution' => 'Độ phân giải',
-        'storage'    => 'Lưu trữ',
-        'capacity'   => 'Dung tích',
-        'power'      => 'Công suất',
-        'energy_rating' => 'Xếp hạng năng lượng',
-        'compressor'  => 'Máy nén',
-        'inverter'    => 'Inverter',
-    ];
+    
 
     /**
      * Xây dựng dữ liệu so sánh với cờ is_different cho từng thuộc tính.
@@ -65,22 +32,12 @@ class CompareService
         }
 
         // 2. Thêm các key từ bảng product_specifications (nếu có data)
-        $dbSpecColumns = ['cpu_chip', 'ram_capacity', 'battery', 'screen_size'];
-        foreach ($products as $product) {
-            $dbSpec = $product->productSpecifications->first();
-            if ($dbSpec) {
-                foreach ($dbSpecColumns as $col) {
-                    if (!empty($dbSpec->{$col})) {
-                        $allKeys[] = $col;
-                    }
-                }
-            }
-        }
+        
 
         $allKeys = array_unique($allKeys);
 
         // 3. Sắp xếp: ưu tiên các key phổ biến trước
-        $priorityOrder = ['cpu', 'cpu_chip', 'ram', 'ram_capacity', 'rom', 'storage', 'screen', 'screen_size', 'gpu', 'camera', 'battery', 'os', 'sim', 'connection'];
+        $priorityOrder = config('specs.priority', []);
         usort($allKeys, function ($a, $b) use ($priorityOrder) {
             $posA = array_search($a, $priorityOrder);
             $posB = array_search($b, $priorityOrder);
@@ -102,13 +59,8 @@ class CompareService
                     $value = is_array($val) ? implode(', ', $val) : (string) $val;
                 }
 
-                // Fallback sang bảng product_specifications
-                if (empty($value) && in_array($key, $dbSpecColumns)) {
-                    $dbSpec = $product->productSpecifications->first();
-                    if ($dbSpec && !empty($dbSpec->{$key})) {
-                        $value = $dbSpec->{$key};
-                    }
-                }
+                // Fallback removed; rely on JSON specifications only
+                // If needed, consider extending JSON schema instead of DB fallback
 
                 $values[] = $value ?? '—';
             }
@@ -133,6 +85,11 @@ class CompareService
      */
     private function getLabel(string $key): string
     {
-        return $this->labelMap[$key] ?? ucfirst(str_replace('_', ' ', $key));
+        // Try translation from language files (resources/lang/vi/specs.php). Fallback to human readable title.
+        $translated = __("specs.$key");
+        if ($translated !== "specs.$key") {
+            return $translated;
+        }
+        return ucfirst(str_replace('_', ' ', $key));
     }
 }

@@ -608,10 +608,19 @@
            FLOATING COMPARE BAR
            ============================ */
         .compare-bar {
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 999;
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 10000;
             background: #fff; box-shadow: 0 -4px 24px rgba(0,0,0,.12);
             border-top: 2px solid #0046ab;
             animation: compareSlideUp .35s ease;
+            transition: all 0.3s ease;
+        }
+        .compare-bar.collapsed {
+            left: auto; right: 20px; bottom: 85px; width: auto;
+            border-radius: 12px; border: 2px solid #0046ab;
+            box-shadow: 0 4px 20px rgba(0,0,0,.15);
+        }
+        .compare-bar.collapsed .compare-btn-clear:not(#compareCollapseBtn) {
+            display: none;
         }
         @keyframes compareSlideUp {
             from { transform: translateY(100%); opacity: 0; }

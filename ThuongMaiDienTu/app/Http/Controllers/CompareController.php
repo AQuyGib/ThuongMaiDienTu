@@ -224,12 +224,20 @@ class CompareController extends Controller
             return;
         }
 
-        // Xóa compare cũ trong DB
+        // Lấy danh sách compare hiện tại trong DB
+        $dbList = WishlistRecentlyViewed::where('user_id', Auth::id())
+            ->where('type', 'Compare')
+            ->pluck('product_id')
+            ->toArray();
+
+        // Gộp, loại bỏ trùng lặp, giữ tối đa 3 sản phẩm mới nhất (session trước DB)
+        $mergedList = array_slice(array_unique(array_merge($sessionList, $dbList)), 0, 3);
+
+        // Xóa cũ và chèn danh sách mới
         WishlistRecentlyViewed::where('user_id', Auth::id())
             ->where('type', 'Compare')
             ->delete();
-
-        foreach ($sessionList as $productId) {
+        foreach ($mergedList as $productId) {
             WishlistRecentlyViewed::create([
                 'user_id'    => Auth::id(),
                 'product_id' => $productId,

@@ -2,14 +2,14 @@
 <div id="compareBar" class="compare-bar" style="display: none;">
     <div class="compare-bar-inner">
         {{-- 3 Slot --}}
-        <div class="compare-slots">
+        <div class="compare-slots" id="compareSlotsContainer">
             @for($i = 0; $i < 3; $i++)
                 <div class="compare-slot" id="compareSlot{{ $i }}" data-index="{{ $i }}">
                     <div class="compare-slot-empty" onclick="openCompareSearch({{ $i }})">
                         <i class="fa-solid fa-plus"></i>
                         <span>Thêm sản phẩm</span>
                     </div>
-                    <div class="compare-slot-filled" style="display: none;">
+                    <div class="compare-slot-filled" style="display: none;" data-product-id="">
                         <img class="compare-slot-img" src="" alt="">
                         <div class="compare-slot-info">
                             <span class="compare-slot-name"></span>
@@ -24,13 +24,15 @@
         </div>
 
         {{-- Hành động --}}
-        <div class="compare-actions">
+<div class="compare-actions">
             <a href="{{ route('compare.index') }}" class="compare-btn-go" id="compareGoBtn">
                 So sánh ngay
                 <span class="compare-count-badge" id="compareCountBadge">0</span>
             </a>
             <button class="compare-btn-clear" onclick="clearCompare()">Xóa tất cả</button>
+            <button type="button" class="compare-btn-clear" id="compareCollapseBtn" style="margin-left:8px;">Thu gọn</button>
         </div>
+        @vite('resources/js/compare.js')
     </div>
 </div>
 
