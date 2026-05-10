@@ -458,7 +458,7 @@
                 <h1>
                     <i class="bi bi-grid-3x3-gap-fill"></i>
                     Quản Lý Danh Mục
-                    <span class="badge-count">{{ isset($categories) ? $categories->count() : 0 }} mục mục</span>
+                    <span class="badge-count">{{ $totalCategories ?? ($categories->total() ?? $categories->count()) }} mục mục</span>
                 </h1>
                 <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addModal">
                     <i class="bi bi-plus-lg"></i> Thêm Danh Mục
