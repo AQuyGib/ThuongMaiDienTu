@@ -21,33 +21,44 @@
 .cmp-wrapper { --cols:2; }
 
 /* === STICKY PRODUCT HEADER === */
-.cmp-sticky { position:sticky; top:58px; z-index:50; background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,.08); overflow:hidden; margin-bottom:0; }
 .cmp-header { display:grid; grid-template-columns:170px repeat(var(--cols),1fr); border-bottom:1px solid #f0f0f0; }
 .cmp-header-label { padding:20px 16px; display:flex; align-items:center; font-size:13px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.5px; background:#fafbfc; border-right:1px solid #f0f0f0; }
 
-.cmp-prod-card { padding:20px; display:flex; flex-direction:column; align-items:center; gap:10px; border-right:1px solid #f0f0f0; position:relative; transition:.2s; }
+.cmp-prod-card { padding:30px 20px 20px; display:flex; flex-direction:column; align-items:center; gap:12px; border-right:1px solid #f0f0f0; position:relative; transition:.3s ease; background:#fff; }
 .cmp-prod-card:last-child { border-right:none; }
-.cmp-prod-card:hover { background:#fafbfe; }
-.cmp-remove { position:absolute; top:10px; right:10px; width:28px; height:28px; border-radius:50%; border:none; background:#fee2e2; color:#d70018; font-size:12px; cursor:pointer; transition:.2s; display:flex; align-items:center; justify-content:center; z-index:2; }
-.cmp-remove:hover { background:#d70018; color:#fff; transform:scale(1.1); }
-.cmp-prod-img { width:130px; height:130px; object-fit:contain; border-radius:10px; background:#f8f9fa; padding:8px; transition:.3s; }
-.cmp-prod-card:hover .cmp-prod-img { transform:scale(1.05); }
-.cmp-prod-name { font-size:14px; font-weight:700; color:#1a1a2e; text-align:center; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.cmp-prod-card:hover { background:#f8fbff; }
+.cmp-remove { position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%; border:none; background:#f1f5f9; color:#94a3b8; font-size:14px; cursor:pointer; transition:all .2s ease; display:flex; align-items:center; justify-content:center; z-index:2; }
+.cmp-remove:hover { background:#fee2e2; color:#d70018; transform:scale(1.1) rotate(90deg); }
+.cmp-prod-img { width:160px; height:160px; object-fit:contain; border-radius:12px; transition:transform .4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.cmp-prod-card:hover .cmp-prod-img { transform:scale(1.08) translateY(-5px); }
+.cmp-prod-name { font-size:15px; font-weight:700; color:#1e293b; text-align:center; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; transition:.2s; }
 .cmp-prod-name:hover { color:#0046ab; }
-.cmp-price-box { text-align:center; }
-.cmp-price { font-size:20px; font-weight:900; color:#d70018; }
-.cmp-old-price { font-size:12px; color:#aaa; text-decoration:line-through; margin-top:2px; }
-.cmp-discount { display:inline-block; background:#fff0f0; color:#d70018; font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px; margin-top:4px; }
-.cmp-buy-btn { display:flex; align-items:center; justify-content:center; gap:6px; width:100%; padding:10px 16px; background:linear-gradient(135deg,#d70018,#ff4444); color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; transition:.2s; }
-.cmp-buy-btn:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(215,0,24,.25); }
+.cmp-price-box { text-align:center; margin-top:auto; }
+.cmp-price { font-size:22px; font-weight:800; color:#d70018; letter-spacing:-0.5px; }
+.cmp-old-price { font-size:13px; color:#94a3b8; text-decoration:line-through; margin-top:4px; }
+.cmp-discount { display:inline-block; background:#fef2f2; color:#ef4444; font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px; margin-top:6px; border:1px solid #fecaca; }
+.cmp-buy-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:12px 16px; background:linear-gradient(to right, #0046ab, #003380); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; transition:all .3s ease; box-shadow:0 4px 12px rgba(0,70,171,.15); margin-top:8px; }
+.cmp-buy-btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,70,171,.3); background:linear-gradient(to right, #0052cc, #003d99); }
 
 /* Add slot */
-.cmp-add-slot { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:30px 16px; border-right:1px solid #f0f0f0; cursor:pointer; transition:.2s; min-height:300px; color:#b0b8c9; }
-.cmp-add-slot:hover { background:#f0f7ff; color:#0046ab; }
-.cmp-add-slot i { font-size:40px; width:70px; height:70px; border:2px dashed currentColor; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:.3s; }
-.cmp-add-slot:hover i { border-style:solid; transform:scale(1.05); }
-.cmp-add-slot span { font-size:13px; font-weight:600; }
+.cmp-add-slot { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:30px 20px; border-right:1px solid #f0f0f0; cursor:pointer; transition:all .3s ease; min-height:300px; color:#94a3b8; background:#f8fafc; }
+.cmp-add-slot:hover { background:#f0f7ff; color:#0046ab; box-shadow:inset 0 0 0 2px #bae6fd; }
+.cmp-add-slot i.cmp-add-icon { font-size:48px; width:80px; height:80px; border:2px dashed #cbd5e1; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:all .3s ease; background:#fff; color:#cbd5e1; }
+.cmp-add-slot:hover i.cmp-add-icon { border-style:solid; border-color:#0046ab; transform:scale(1.1); color:#0046ab; background:#e0f2fe; box-shadow:0 10px 20px rgba(0,70,171,.1); }
+.cmp-add-slot span { font-size:15px; font-weight:600; }
 .cmp-add-slot:last-child { border-right:none; }
+
+/* === COMPACT STICKY HEADER === */
+.cmp-sticky { position:sticky; top:58px; z-index:50; background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,.08); overflow:visible; margin-bottom:0; transition:all .3s ease; }
+.cmp-sticky.is-compact .cmp-prod-card { padding:14px 20px; min-height:60px; justify-content:center; }
+.cmp-sticky.is-compact .cmp-prod-img { display:none; }
+.cmp-sticky.is-compact .cmp-price-box { display:none; }
+.cmp-sticky.is-compact .cmp-buy-btn { display:none; }
+.cmp-sticky.is-compact .cmp-prod-name { font-size:14px; -webkit-line-clamp:1; margin-bottom:0; }
+.cmp-sticky.is-compact .cmp-remove { top:50%; right:10px; transform:translateY(-50%); width:24px; height:24px; font-size:11px; }
+.cmp-sticky.is-compact .cmp-add-slot { padding:14px; min-height:60px; flex-direction:row; gap:10px; }
+.cmp-sticky.is-compact .cmp-add-slot i.cmp-add-icon { width:32px; height:32px; font-size:16px; }
+.cmp-sticky.is-compact .cmp-header-label { padding:14px 16px; }
 
 /* Search inline */
 .cmp-inline-search { width:90%; position:relative; display:none; }
@@ -74,18 +85,18 @@
 .tgl input:checked+.tgl-slider::before { transform:translateX(22px); }
 
 /* === SPECS TABLE === */
-.cmp-table { background:#fff; border-radius:0 0 16px 16px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.06); }
-.cmp-row { display:grid; grid-template-columns:170px repeat(var(--cols),1fr); border-bottom:1px solid #f0f0f0; transition:all .3s ease; overflow:hidden; }
+.cmp-table { background:#fff; border-radius:0 0 20px 20px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.04); }
+.cmp-row { display:grid; grid-template-columns:170px repeat(var(--cols),1fr); border-bottom:1px solid #f1f5f9; transition:all .4s ease; overflow:hidden; }
 .cmp-row:last-child { border-bottom:none; }
-.cmp-row:hover { background:#fafbfe; }
-.cmp-row.diff .cmp-val { background:linear-gradient(135deg,#fffbeb,#fef3c7); }
-.cmp-row.diff .cmp-label { background:linear-gradient(135deg,#fefce8,#fef9c3); border-left:3px solid #f59e0b; }
+.cmp-row:hover { background:#f8fafc; }
+.cmp-row.diff .cmp-val { background-color:#f0f9ff; }
+.cmp-row.diff .cmp-label { background-color:#e0f2fe; border-left:4px solid #0ea5e9; color:#0369a1; }
 .cmp-row.hidden-row { max-height:0; opacity:0; border-bottom:none; padding:0; }
 
-.cmp-label { padding:13px 16px; font-size:13px; font-weight:600; color:#555; background:#fafbfc; border-right:1px solid #f0f0f0; display:flex; align-items:center; transition:.2s; }
-.cmp-val { padding:13px 16px; font-size:13px; color:#222; border-right:1px solid #f0f0f0; display:flex; align-items:center; transition:.2s; }
+.cmp-label { padding:16px 20px; font-size:14px; font-weight:600; color:#475569; background:#f8fafc; border-right:1px solid #f1f5f9; display:flex; align-items:center; transition:all .3s ease; }
+.cmp-val { padding:16px 20px; font-size:14px; color:#1e293b; border-right:1px solid #f1f5f9; display:flex; align-items:center; transition:all .3s ease; line-height:1.6; }
 .cmp-val:last-child { border-right:none; }
-.cmp-val-empty { color:#ccc; font-style:italic; }
+.cmp-val-empty { color:#94a3b8; font-style:italic; font-size:13px; }
 
 /* No data */
 .cmp-no-data { text-align:center; padding:50px 20px; color:#888; }
@@ -116,7 +127,7 @@
         </div>
     @else
         @php $cols = $products->count(); @endphp
-        <div class="cmp-wrapper" style="--cols:{{ $cols }};">
+        <div class="cmp-wrapper" style="--cols:3;">
 
             {{-- Sticky Header --}}
             <div class="cmp-sticky">
@@ -141,7 +152,7 @@
                     @endforeach
                     @for($i = $cols; $i < 3; $i++)
                         <div class="cmp-add-slot" onclick="cmpOpenSearch(this)">
-                            <i class="fa-solid fa-plus"></i>
+                            <i class="fa-solid fa-plus cmp-add-icon"></i>
                             <span>Thêm sản phẩm</span>
                             <div class="cmp-inline-search" onclick="event.stopPropagation();">
                                 <input type="text" placeholder="Nhập tên sản phẩm..." oninput="cmpSearch(this)">
@@ -167,10 +178,10 @@
                     <div class="cmp-row {{ $row['is_different'] ? 'diff' : '' }}" data-diff="{{ $row['is_different'] ? '1' : '0' }}">
                         <div class="cmp-label">{{ $row['label'] }}</div>
                         @foreach($row['values'] as $val)
-                            <div class="cmp-val {{ $val === '—' ? 'cmp-val-empty' : '' }}">{{ $val }}</div>
+                            <div class="cmp-val {{ $val === '—' ? 'cmp-val-empty' : '' }}">{{ $val === '—' ? 'Không có' : $val }}</div>
                         @endforeach
                         @for($i = count($row['values']); $i < 3; $i++)
-                            <div class="cmp-val" style="visibility:hidden">—</div>
+                            <div class="cmp-val cmp-val-empty" style="background:#f8fafc; opacity:0.6;"></div>
                         @endfor
                     </div>
                 @empty
@@ -230,5 +241,16 @@ document.addEventListener('click',e=>{if(!e.target.closest('.cmp-inline-search')
     document.querySelectorAll('.cmp-inline-search').forEach(el=>el.style.display='none');
     document.querySelectorAll('.cmp-inline-results').forEach(el=>el.classList.remove('show'));
 }});
+
+window.addEventListener('scroll', () => {
+    const sticky = document.querySelector('.cmp-sticky');
+    if (sticky) {
+        if (window.scrollY > 220) {
+            sticky.classList.add('is-compact');
+        } else {
+            sticky.classList.remove('is-compact');
+        }
+    }
+});
 </script>
 @endpush
