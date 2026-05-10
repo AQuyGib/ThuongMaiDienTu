@@ -1,43 +1,54 @@
-# AI Memory - Dự án Thương Mại Điện Tử
+# AI Memory - Dự Án Thương Mại Điện Tử
 
-## Tiết độ và Ngữ cảnh hiện tại
-Dự án được khởi tạo cấu trúc cơ sở dữ liệu dựa trên file `databasev1.sql`.
-Toàn bộ 20 bảng SQL đã được chuyển đổi sang chuẩn Migration của Laravel, bao gồm các ràng buộc khóa ngoại, timestamp và soft deletes.
+## Tiến độ và Ngữ cảnh hiện tại
+Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/CMS chuyên nghiệp.
 
-## Các file đã tạo / chỉnh sửa:
-- Đã **xóa** các file migration mặc định của Laravel (users, cache, jobs, etc.) để tránh xung đột.
-- Đã **tạo mới 20 file migration** nằm trong thư mục `database/migrations/`:
-  1. `2026_01_01_000001_create_roles_table.php`
-  2. `2026_01_01_000002_create_categories_table.php`
-  3. `2026_01_01_000003_create_suppliers_table.php`
-  4. `2026_01_01_000004_create_settings_table.php`
-  5. `2026_01_01_000005_create_coupons_flash_sales_table.php`
-  6. `2026_01_01_000006_create_users_table.php`
-  7. `2026_01_01_000007_create_products_table.php`
-  8. `2026_01_01_000008_create_purchase_orders_table.php`
-  9. `2026_01_01_000009_create_user_sessions_table.php`
-  10. `2026_01_01_000010_create_activity_logs_table.php`
-  11. `2026_01_01_000011_create_product_specifications_table.php`
-  12. `2026_01_01_000012_create_product_variants_table.php`
-  13. `2026_01_01_000013_create_wishlists_recently_viewed_table.php`
-  14. `2026_01_01_000014_create_orders_table.php`
-  15. `2026_01_01_000015_create_ai_chatbot_history_table.php`
-  16. `2026_01_01_000016_create_repair_tickets_table.php`
-  17. `2026_01_01_000017_create_inventory_items_table.php`
-  18. `2026_01_01_000018_create_order_details_table.php`
-  19. `2026_01_01_000019_create_reward_points_table.php`
-  20. `2026_01_01_000020_create_cashbooks_table.php`
+<<<<<<< HEAD
+## Các file đã tạo / chỉnh sửa & Công việc hoàn thành:
+- **Hạ tầng & Database:**
+    - Đã **xóa** các file migration mặc định của Laravel (users, cache, jobs, etc.) để tránh xung đột.
+    - Đã **tạo mới 20 file migration** nằm trong thư mục `database/migrations/` và 20 Eloquent Models hoàn chỉnh.
+    - Thiết lập cấu trúc thư mục chuẩn ERP/E-commerce (Enums, Services, Requests, Partials).
+    - Cấu hình Tailwind CSS xịn qua Vite/NPM.
+    - Thiết lập `RoleSeeder` và `UserSeeder` với dữ liệu mẫu (Admin: admin@techzone.vn / admin123).
+- **Xác thực (Authentication):**
+    - Chuyển logic Auth từ Blade sang `AuthController`.
+    - Fix lỗi mất Session (không lưu đăng nhập).
+    - Phân luồng: Đăng nhập xong về Trang chủ. Admin có link vào Dashboard trên Header.
+- **Frontend Trang chủ:**
+  - `resources/views/layouts/app.blade.php`: Giao diện Master (chứa style tổng thể và gọi include).
+  - `resources/views/partials/header.blade.php`: Tách module Header và Topbar.
+  - `resources/views/partials/footer.blade.php`: Tách module Footer.
+  - `resources/views/home.blade.php`: Trang chủ bao gồm Sidebar Menu, Banner Hero, Flash Sale, Sản phẩm nổi bật.
+  - `app/Http/Controllers/HomeController.php`: Xử lý logic route trang chủ.
+  - Sửa `routes/web.php` trỏ `/` về `HomeController@index`.
+- **Phân hệ Admin (Giai đoạn 1):**
+    - Hoàn thành **Layout Admin Premium** với Sidebar tách biệt (`admin.partials.sidebar`).
+    - Hoàn thành **CRUD Khách hàng** (Tài khoản) với giao diện hiện đại, Modal AJAX, tìm kiếm và phân trang.
+    - Tích hợp SweetAlert2 cho thông báo và xác nhận.
+    - Tạo `AutoLoginAdmin` middleware để thuận tiện dev (tự động đăng nhập Admin khi vào `/admin`).
 
-## Logic Database quan trọng
-- **Phân nhóm bảng (chuỗi tạo khóa ngoại an toàn):** Các file đã được sắp xếp tiền tố theo thứ tự an toàn (Group 1 đến Group 4) để khi chạy `php artisan migrate`, SQL engine sẽ không báo lỗi thiếu bảng tham chiếu (ví dụ: `roles` tạo xong mới tới `users`).
-- **Khóa chính**: Thay vì `$table->id()`, dự án dùng `$table->increments('pk_id')` cho khớp cấu trúc MySQL thuần `INT UNSIGNED AUTO_INCREMENT`.
-- **Kiểu dữ liệu tiền tệ**: Sử dụng `unsignedBigInteger` thay vì kiểu `int` thông thường.
+## Thông tin kỹ thuật:
+- Auth: `user_id`, `password_hash`, custom primary key.
+- Phân quyền: Admin (1), Quản lý (2), Khách hàng (3), Nhân viên (4).
 
 ## TODO (Việc cần làm tiếp theo)
 - [ ] Kết nối dự án Laravel với Database thật (sửa file `.env`).
-- [ ] Chạy lệnh `php artisan migrate` để đồng bộ Database.
-- [x] Khởi tạo các Eloquent Model tương ứng với 20 bảng cơ sở dữ liệu để thao tác logic ORM.
-- [ ] Tạo file Seeder để chèn dữ liệu mẫu (đặc biệt là bảng Roles và Categories) phục vụ kiểm duyệt.
+- [x] Chạy lệnh `php artisan migrate` để đồng bộ Database.
+- [x] Khởi tạo các Eloquent Model tương ứng với 20 bảng cơ sở dữ liệu.
+- [x] Khởi tạo cấu trúc thư mục App & Views.
+- [x] Tạo file Seeder để chèn dữ liệu mẫu (Roles & Users).
+- [x] **Nâng cấp Lọc Sản Phẩm Động (Dynamic Filtering):**
+    - Cấu trúc lại Javascript gọi API cấu hình bộ lọc theo từng danh mục.
+    - Cấu trúc Controller nhận các specs động.
+    - Chỉnh sửa Product Model Scope để sử dụng `whereJsonContains` kết hợp filter linh hoạt qua các cột chuẩn hóa.
+    - Cập nhật hiển thị "Điểm nhấn kỹ thuật" linh động trên thẻ sản phẩm.
+- [ ] Tích hợp lấy dữ liệu động từ Database hiển thị ra trang chủ thay cho giao diện demo hiện tại.
+- [ ] **Giai đoạn 2:** Triển khai CRUD Danh mục và CRUD Sản phẩm (kèm biến thể).
+- [ ] **Giai đoạn 2:** Hiển thị sản phẩm lên trang chủ khách hàng (Frontend).
+- [ ] Bắt đầu viết logic trong `CartService` và `InventoryService`.
+- [x] Triển khai CRUD Bài viết (Articles) tích hợp ecosystem, gamification & shoppable content.
 
-## Ghi chú về Models:
-Đã thiết lập đầy đủ 20 Eloquent Models tại thư mục `app/Models/` (Role, Category, Supplier, v.v.). Các Model được gán toàn bộ relation (`hasMany`, `belongsTo`), khóa chính custom (`$primaryKey`), và trạng thái timestamp theo đúng Schema.
+## Ghi chú quan trọng:
+- Đã tách Sidebar thành `resources/views/admin/partials/sidebar.blade.php` để team dễ phối hợp.
+- Sử dụng `primaryKey = 'user_id'` và `password_hash` thay cho mặc định của Laravel để khớp với yêu cầu DB.
