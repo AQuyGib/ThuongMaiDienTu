@@ -47,11 +47,14 @@ Route::get('/', function () {
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
 Route::get('/san-pham/{id}', [ProductController::class, 'show'])->name('product.show');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
 
 // Modules
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::resource('cashbooks', CashbookController::class);
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/wishlist/toggle', [App\Http\Controllers\WishlistController::class, 'toggle'])->name('wishlist.toggle');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');

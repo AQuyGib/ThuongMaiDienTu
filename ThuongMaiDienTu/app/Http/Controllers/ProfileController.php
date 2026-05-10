@@ -60,7 +60,7 @@ class ProfileController extends Controller
             }
         }
 
-        $wishlist = $user->wishlists()->where('type', 'Wishlist')->with('product')->get();
+        $wishlist = $user->wishlists()->where('type', 'wishlist')->with('product')->get();
         $loginHistories = \App\Models\LoginHistory::where('user_id', $user->user_id)
             ->orderBy('login_at', 'desc')
             ->limit(10)

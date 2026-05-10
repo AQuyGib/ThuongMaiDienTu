@@ -1055,10 +1055,22 @@
                     @if($wishlist->count() > 0)
                         <div class="wishlist-grid">
                             @foreach($wishlist as $item)
-                                @php $product = $item->product; @endphp
+                                @php 
+                                    $product = $item->product; 
+                                    $imageUrl = $product->thumbnail;
+                                    if (!$imageUrl || !Str::startsWith($imageUrl, 'http')) {
+                                        $imageUrl = asset('uploads/products/' . ($product->image ?: 'default.jpg'));
+                                    }
+                                @endphp
                                 <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
-                                    <img src="{{ $product->thumbnail ? asset('storage/' . $product->thumbnail) : 'https://via.placeholder.com/200' }}" alt="{{ $product->name }}" class="wishlist-img">
-                                    <h4>{{ $product->name }}</h4>
+                                    <a href="{{ route('product.detail', $product->product_id) }}">
+                                        <img src="{{ $imageUrl }}" alt="{{ $product->name }}" class="wishlist-img" onerror="this.src='https://loremflickr.com/400/400/technology?lock={{ $product->product_id }}'; this.onerror=null;">
+                                    </a>
+                                    <h4>
+                                        <a href="{{ route('product.detail', $product->product_id) }}" style="color: inherit; text-decoration: none;">
+                                            {{ $product->name }}
+                                        </a>
+                                    </h4>
                                     <div class="wishlist-price">
                                         {{ number_format($product->base_price, 0, ',', '.') }}đ
                                         @if($product->old_price)
@@ -1066,7 +1078,7 @@
                                         @endif
                                     </div>
                                     <div class="wishlist-actions">
-                                        <button class="btn-wishlist-cart">
+                                        <button class="btn-wishlist-cart" onclick="addToCart({{ $product->product_id }})">
                                             <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
                                         </button>
                                         <button class="btn-wishlist-remove" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
@@ -1837,6 +1849,38 @@
                 btn.style.background = 'none';
                 btn.style.color = '#0046ab';
             }, 2000);
+        });
+    }
+
+    function addToCart(productId) {
+        fetch('{{ route('cart.add') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: 1
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                showToast('Thành công', 'Đã thêm sản phẩm vào giỏ hàng!', 'success');
+                // Cập nhật số lượng giỏ hàng trên header nếu có
+                const badge = document.getElementById('headerCartBadge');
+                if(badge) {
+                    badge.innerText = data.cart_count;
+                    badge.style.display = 'block';
+                }
+            } else {
+                showToast('Lỗi', 'Không thể thêm vào giỏ hàng.', 'error');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
         });
     }
 
