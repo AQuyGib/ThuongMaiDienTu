@@ -1472,6 +1472,10 @@
     function closeConfirmModal() {
         document.getElementById('confirmModal').classList.remove('active');
         confirmCallback = null;
+        // Reset lại nút xác nhận về trạng thái ban đầu
+        const btn = document.getElementById('btnDoConfirm');
+        btn.disabled = false;
+        btn.innerHTML = 'Xác nhận xóa';
     }
 
     document.getElementById('btnDoConfirm').addEventListener('click', function() {
@@ -1858,12 +1862,10 @@
             })
             .then(res => res.json())
             .then(data => {
-                closeConfirmModal();
                 if(data.success) {
                     showToast('Đã xóa', 'Đã bỏ sản phẩm khỏi danh sách yêu thích.', 'success');
                     const item = document.getElementById(`wishlist-item-${id}`);
                     if(item) {
-                        item.style.transition = 'opacity 0.3s, transform 0.3s';
                         item.style.opacity = '0';
                         item.style.transform = 'scale(0.8)';
                         setTimeout(() => {
@@ -1871,21 +1873,13 @@
                             const remaining = document.querySelectorAll('.wishlist-item').length;
                             updateWishlistCount(remaining);
                             if(remaining === 0) {
-                                // Hiển thị empty state thay vì reload
-                                const grid = document.querySelector('.wishlist-grid');
-                                if(grid) {
-                                    grid.outerHTML = `<div class="dash-empty" style="padding: 50px 0;">
-                                        <i class="fa-regular fa-heart" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
-                                        <p>Chưa có sản phẩm nào trong danh sách yêu thích.</p>
-                                        <a href="{{ route('home') }}" class="btn-outline">Mua sắm ngay</a>
-                                    </div>`;
-                                }
-                                const clearBtn = document.getElementById('btn-clear-wishlist');
-                                if(clearBtn) clearBtn.style.display = 'none';
+                                window.location.reload();
                             }
                         }, 300);
                     }
+                    closeConfirmModal();
                 } else {
+                    closeConfirmModal();
                     showToast('Lỗi', 'Không thể thực hiện thao tác này.', 'error');
                 }
             })
