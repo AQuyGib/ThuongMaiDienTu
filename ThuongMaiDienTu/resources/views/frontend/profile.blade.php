@@ -1066,7 +1066,9 @@
                                         @endif
                                     </div>
                                     <div class="wishlist-actions">
-                                        <button class="btn-wishlist-cart">
+                                        <button class="btn-wishlist-cart"
+                                            onclick="addToCartFromWishlist(this, {{ $product->product_id }})"
+                                            data-product-id="{{ $product->product_id }}">
                                             <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
                                         </button>
                                         <button class="btn-wishlist-remove" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
@@ -1887,6 +1889,38 @@
                 closeConfirmModal();
                 showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
             });
+        });
+    }
+
+    function addToCartFromWishlist(btn, productId) {
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Đang thêm...';
+
+        fetch('{{ route("cart.add") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ product_id: productId, quantity: 1 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            if (data.success) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã thêm!';
+                showToast('Thành công', data.message, 'success');
+                setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+            } else {
+                btn.innerHTML = originalHTML;
+                showToast('Lỗi', data.message || 'Không thể thêm vào giỏ hàng.', 'error');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
         });
     }
 
