@@ -406,11 +406,11 @@
         </div>
 
         {{-- Thông số kỹ thuật --}}
-        @if($product->specifications->count())
+        @if($product->productSpecifications->count())
             <div class="pd-specs">
                 <h2><i class="fa-solid fa-microchip" style="color:#0046ab"></i> Cấu hình chi tiết</h2>
                 <table class="specs-table">
-                    @php $spec = $product->specifications->first(); @endphp
+                    @php $spec = $product->productSpecifications->first(); @endphp
                     @if($spec->cpu_chip)
                         <tr><td>Vi xử lý (CPU)</td><td>{{ $spec->cpu_chip }}</td></tr>
                     @endif
