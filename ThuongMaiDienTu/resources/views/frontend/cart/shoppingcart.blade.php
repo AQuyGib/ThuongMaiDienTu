@@ -28,8 +28,6 @@
 
 @section('content')
 
-
-
 <main class="flex-grow bg-gray-50 min-h-screen">
     <div class="max-w-6xl mx-auto px-4 pb-20 pt-8">
         <!-- Breadcrumb đơn giản -->
@@ -87,7 +85,7 @@
                     </button>
                     
                     <!-- Link tính phí vận chuyển -->
-                    <a id="shipping-link" href="{{ Route::has('shipping.calc') ? route('shipping.calc') : '#' }}" class="block w-full text-center border border-[#0047b3] text-[#0047b3] font-semibold py-2 rounded-lg hover:bg-blue-50 transition-colors">
+                    <a id="shipping-link" href="{{ Route::has('cart.shipping') ? route('cart.shipping') : (Route::has('shipping.calc') ? route('shipping.calc') : '#') }}" class="block w-full text-center border border-[#0047b3] text-[#0047b3] font-semibold py-2 rounded-lg hover:bg-blue-50 transition-colors">
                         <i class="fa-solid fa-truck-fast mr-1"></i> Kiểm tra phí giao hàng
                     </a>
 
@@ -101,8 +99,6 @@
         </div>
     </div>
 </main>
-
-
 
 <!-- Toast Thông báo -->
 <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded-xl shadow-2xl transform transition-all duration-300 translate-y-20 opacity-0 flex items-center gap-3 z-50">
@@ -124,8 +120,16 @@
             // Lấy dữ liệu từ Laravel gửi qua
             const raw = '{!! isset($cartItems) ? json_encode($cartItems) : "[]" !!}';
             window.cartData = JSON.parse(raw);
+            
+            // Fallback nếu empty (dành cho demo hoặc nếu controller chưa truyền data)
+            if (window.cartData.length === 0) {
+                 window.cartData = [
+                    { id: 1, name: 'Android Tivi Sony 4K 65 inch KD-65X75K', price: 16990000, quantity: 2, stock: 10, selected: true, image: 'https://dienmay247.com.vn/wp-content/uploads/2022/06/google-tivi-sony-4k-65-inch-kd-65x75k.jpg', url: '#' },
+                    { id: 2, name: 'Tủ lạnh Aqua Inverter 189 lít AQR-T219FA(PB)', price: 4990000, quantity: 1, stock: 5, selected: true, image: 'https://tse3.mm.bing.net/th/id/OIP.LNhrlkGhn21EpGRM9z8O9QHaE8?pid=Api&h=220&P=0', url: '#' }
+                ];
+            }
         } catch (e) {
-            console.warn("Dữ liệu mẫu cho môi trường preview.");
+            console.warn("Lỗi parse dữ liệu, sử dụng dữ liệu mặc định.");
             window.cartData = [
                 { id: 101, name: "Tủ lạnh Samsung Inverter 300L", price: 8500000, quantity: 1, stock: 5, selected: true, image: "https://placehold.co/100x100?text=Samsung", url: "#" },
                 { id: 102, name: "Máy giặt LG cửa ngang 9kg", price: 10200000, quantity: 1, stock: 3, selected: true, image: "https://placehold.co/100x100?text=LG", url: "#" }
@@ -223,6 +227,14 @@
         if (checkAll && window.cartData.length > 0) {
             checkAll.checked = window.cartData.every(i => i.selected);
         }
+        
+        // Cập nhật link tính phí vận chuyển với tổng tiền (nếu cần)
+        const shippingLink = document.getElementById('shipping-link');
+        if (shippingLink && shippingLink.href !== '#') {
+            const url = new URL(shippingLink.href, window.location.origin);
+            url.searchParams.set('total', total);
+            shippingLink.href = url.toString();
+        }
     };
 
     window.toggleAll = (isChecked) => {
@@ -244,6 +256,8 @@
                 item.quantity = newQty;
                 window.renderCart();
                 showToast("Đã cập nhật số lượng");
+            } else if (newQty > item.stock) {
+                 showToast(`Chỉ còn ${item.stock} sản phẩm trong kho!`, 'warning');
             }
         }
     };
@@ -272,9 +286,14 @@
         if (!t || !m) return;
         
         m.innerText = msg;
-        icon.innerHTML = type === "success" 
-            ? '<i class="fa-solid fa-circle-check text-xl text-green-400"></i>'
-            : '<i class="fa-solid fa-circle-info text-xl text-blue-400"></i>';
+        
+        if (type === 'warning') {
+            icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-xl text-orange-400"></i>';
+        } else {
+            icon.innerHTML = type === "success" 
+                ? '<i class="fa-solid fa-circle-check text-xl text-green-400"></i>'
+                : '<i class="fa-solid fa-circle-info text-xl text-blue-400"></i>';
+        }
 
         t.classList.remove('translate-y-20', 'opacity-0');
         t.classList.add('translate-y-0', 'opacity-100');
@@ -288,7 +307,6 @@
     window.proceedToCheckout = () => {
         const selectedIds = window.cartData.filter(i => i.selected).map(i => i.id);
         if (selectedIds.length > 0) {
-            // Chuyển hướng đến trang thanh toán thật của Laravel
             window.location.href = `{{ url('/pay') }}?items=${selectedIds.join(',')}`;
         }
     };
