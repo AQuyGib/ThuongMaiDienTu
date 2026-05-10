@@ -27,6 +27,7 @@ use App\Http\Controllers\CashbookController;
 
 // Dashboard
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/kpi', [App\Http\Controllers\Admin\KPIController::class, 'index'])->name('kpi.index');
 
 // CRUD Tài khoản (Users)
 Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
