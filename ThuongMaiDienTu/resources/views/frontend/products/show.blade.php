@@ -96,6 +96,50 @@
 .review-stars { color: #f59e0b; font-size: 12px; margin-bottom: 8px; }
 .review-content { font-size: 14px; color: #444; }
 
+/* Media Upload */
+.review-media-upload { margin: 10px 0; }
+.media-upload-label { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 2px dashed #d0d0d0; border-radius: 8px; cursor: pointer; font-size: 13px; color: #666; transition: 0.2s; background: #fafafa; }
+.media-upload-label:hover { border-color: #0046ab; color: #0046ab; background: #eef2ff; }
+.media-preview-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.media-preview-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
+.media-preview-item img, .media-preview-item video { width: 100%; height: 100%; object-fit: cover; }
+.media-preview-remove { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* Review Media Display */
+.review-media-display { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.review-media-thumb { width: 90px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; cursor: pointer; position: relative; }
+.review-media-thumb img { width: 100%; height: 100%; object-fit: cover; transition: 0.2s; }
+.review-media-thumb:hover img { opacity: 0.85; }
+.review-media-thumb .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); color: #fff; font-size: 24px; pointer-events: none; }
+
+/* Custom Confirm Modal */
+#confirmModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+#confirmModal.active { display: flex; }
+.confirm-box { background: #fff; border-radius: 16px; padding: 32px 28px 24px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: confirmPop 0.25s ease; }
+@keyframes confirmPop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.confirm-icon { font-size: 48px; color: #f59e0b; margin-bottom: 14px; }
+.confirm-title { font-size: 17px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+.confirm-desc { font-size: 14px; color: #666; margin-bottom: 24px; line-height: 1.5; }
+.confirm-actions { display: flex; gap: 12px; justify-content: center; }
+.confirm-btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; }
+.confirm-btn-cancel { background: #f1f5f9; color: #555; }
+.confirm-btn-cancel:hover { background: #e2e8f0; }
+.confirm-btn-danger { background: #d70018; color: #fff; }
+.confirm-btn-danger:hover { background: #b50014; box-shadow: 0 4px 12px rgba(215,0,24,0.3); }
+
+/* Media Lightbox */
+#mediaLightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99998; align-items: center; justify-content: center; }
+#mediaLightbox.active { display: flex; }
+#mediaLightbox img, #mediaLightbox video { max-width: 90vw; max-height: 88vh; border-radius: 8px; object-fit: contain; }
+.lightbox-close { position: absolute; top: 18px; right: 24px; color: #fff; font-size: 28px; cursor: pointer; transition: 0.2s; }
+.lightbox-close:hover { color: #f59e0b; }
+
+/* Review Replies */
+.reply-btn { background: none; border: none; color: #0046ab; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; margin-top: 10px; display: inline-flex; align-items: center; gap: 5px; }
+.reply-btn:hover { text-decoration: underline; }
+.reply-form { margin-top: 10px; display: none; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+.reply-item { margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #cbd5e1; }
+
 /* ===== RELATED ===== */
 .pd-related { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
 .pd-related h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
@@ -177,9 +221,9 @@
     })->toJson();
     
     // Load reviews
-    $reviews = App\Models\Review::where('product_id', $product->product_id)->orderBy('created_at', 'desc')->get();
-    $reviewCount = $reviews->count();
-    $avgRating = $reviewCount > 0 ? round($reviews->avg('rating'), 1) : 0;
+    $reviews = App\Models\Review::with('replies')->where('product_id', $product->product_id)->whereNull('parent_id')->orderBy('created_at', 'desc')->get();
+    $reviewCount = App\Models\Review::where('product_id', $product->product_id)->whereNull('parent_id')->count();
+    $avgRating = $reviewCount > 0 ? round(App\Models\Review::where('product_id', $product->product_id)->whereNull('parent_id')->avg('rating'), 1) : 0;
 
     $discountPercent = 0;
     if ($oldPrice > 0 && $oldPrice > $basePrice) {
@@ -427,14 +471,43 @@
                 <i class="fa-solid fa-star star-rating" data-val="5" style="color:#f59e0b"></i>
             </div>
             <textarea id="reviewText" placeholder="Nhập đánh giá của bạn về sản phẩm này..." style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; resize: none;"></textarea>
-            <button type="button" onclick="submitReview()" style="background: #0046ab; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">Gửi đánh giá</button>
+
+            @if(!auth()->check())
+            <input type="text" id="reviewAuthor" placeholder="Họ và tên của bạn *" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; outline: none;">
+            @endif
+
+            {{-- Upload ảnh/video --}}
+            <div class="review-media-upload">
+                <label class="media-upload-label" for="reviewMediaInput">
+                    <i class="fa-solid fa-photo-film"></i>
+                    Thêm ảnh / video
+                </label>
+                <input type="file" id="reviewMediaInput" multiple accept="image/*,video/*" style="display:none;" onchange="previewMediaFiles(this)">
+            </div>
+            <div class="media-preview-grid" id="mediaPreviewGrid"></div>
+
+            <button type="button" onclick="submitReview()" style="background: #0046ab; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px;">Gửi đánh giá</button>
         </div>
         
         <div class="review-list">
             @if($reviewCount > 0)
                 @foreach($reviews as $r)
-                    <div class="review-item" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">
-                        <div class="review-user" style="font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">Khách hàng <span style="background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;"><i class="fa-solid fa-check"></i> Đã mua hàng</span></div>
+                    <div class="review-item" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;" id="review-{{ $r->id }}">
+                        <div class="review-user" style="font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                            <span style="display:flex; align-items:center; gap:8px;">
+                                {{ $r->author_name ?? ($r->user ? $r->user->full_name : 'Khách hàng') }}
+                                @if($r->user && $r->user->role_id == 1)
+                                    <span style="background: #ef4444; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;">Admin</span>
+                                @elseif($r->user && $r->user->role_id == 2)
+                                    <span style="background: #3b82f6; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;">Quản lý</span>
+                                @endif
+                            </span>
+                            @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
+                            <button onclick="deleteReview({{ $r->id }})" title="Xóa đánh giá" style="background:none; border:none; cursor:pointer; color:#ccc; font-size:14px; padding:2px 6px; border-radius:4px; transition:0.2s;" onmouseover="this.style.color='#d70018'" onmouseout="this.style.color='#ccc'">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            @endif
+                        </div>
                         <div class="review-stars" style="color: #f59e0b; font-size: 12px; margin-bottom: 8px;">
                             @for($i=1; $i<=5; $i++)
                                 @if($i <= $r->rating)
@@ -443,8 +516,70 @@
                                     <i class="fa-regular fa-star"></i>
                                 @endif
                             @endfor
+                            <span style="color:#999; margin-left:8px; font-size:11px;">{{ $r->created_at->format('d/m/Y H:i') }}</span>
                         </div>
                         <div class="review-content" style="font-size: 14px; color: #444;">{{ $r->content }}</div>
+                        @if(!empty($r->media))
+                        <div class="review-media-display">
+                            @foreach($r->media as $mediaUrl)
+                                @php $isVideo = preg_match('/\.(mp4|mov|avi|mkv)$/i', $mediaUrl); @endphp
+                                @if($isVideo)
+                                    <div class="review-media-thumb" onclick="openMediaLightbox('{{ $mediaUrl }}', true)">
+                                        <video src="{{ $mediaUrl }}" style="width:100%;height:100%;object-fit:cover;"></video>
+                                        <div class="play-icon"><i class="fa-solid fa-play"></i></div>
+                                    </div>
+                                @else
+                                    <div class="review-media-thumb" onclick="openMediaLightbox('{{ $mediaUrl }}', false)">
+                                        <img src="{{ $mediaUrl }}" alt="Ảnh đánh giá" loading="lazy">
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                        @endif
+
+                        {{-- Nút trả lời --}}
+                        <button class="reply-btn" onclick="toggleReplyForm({{ $r->id }})"><i class="fa-solid fa-reply"></i> Trả lời</button>
+
+                        {{-- Form trả lời --}}
+                        <div class="reply-form" id="replyForm-{{ $r->id }}">
+                            @if(!auth()->check())
+                            <input type="text" id="replyAuthor-{{ $r->id }}" placeholder="Họ và tên của bạn *" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; outline: none; font-size: 13px;">
+                            @endif
+                            <textarea id="replyText-{{ $r->id }}" placeholder="Nhập câu trả lời..." style="width: 100%; height: 60px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; resize: none; font-size: 13px;"></textarea>
+                            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                                <button type="button" onclick="toggleReplyForm({{ $r->id }})" style="background: #e2e8f0; color: #333; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Hủy</button>
+                                <button type="button" onclick="submitReply({{ $r->id }})" style="background: #0046ab; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Gửi trả lời</button>
+                            </div>
+                        </div>
+
+                        {{-- Danh sách replies --}}
+                        <div class="replies-list" id="replies-{{ $r->id }}">
+                            @if($r->replies && $r->replies->count() > 0)
+                                @foreach($r->replies as $reply)
+                                    <div class="reply-item" id="review-{{ $reply->id }}">
+                                        <div class="review-user" style="font-weight: 600; font-size: 13px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                                            <span style="display:flex; align-items:center; gap:8px;">
+                                                <i class="fa-solid fa-turn-up fa-rotate-90" style="color:#94a3b8"></i> 
+                                                {{ $reply->author_name ?? ($reply->user ? $reply->user->full_name : 'Khách hàng') }}
+                                                @if($reply->user && $reply->user->role_id == 1)
+                                                    <span style="background: #ef4444; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;">Admin</span>
+                                                @elseif($reply->user && $reply->user->role_id == 2)
+                                                    <span style="background: #3b82f6; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;">Quản lý</span>
+                                                @endif
+                                            </span>
+                                            @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
+                                            <button onclick="deleteReview({{ $reply->id }})" title="Xóa" style="background:none; border:none; cursor:pointer; color:#ccc; font-size:13px; transition:0.2s;" onmouseover="this.style.color='#d70018'" onmouseout="this.style.color='#ccc'">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                            @endif
+                                        </div>
+                                        <div style="color:#999; font-size:11px; margin-bottom:5px; margin-left: 20px;">{{ $reply->created_at->format('d/m/Y H:i') }}</div>
+                                        <div class="review-content" style="font-size: 13px; color: #444; margin-left: 20px;">{{ $reply->content }}</div>
+                                        <button class="reply-btn" style="margin-left: 20px;" onclick="replyToUser({{ $r->id }}, '{{ addslashes($reply->author_name ?? ($reply->user ? $reply->user->full_name : 'Khách hàng')) }}')"><i class="fa-solid fa-reply"></i> Trả lời</button>
+                                    </div>
+                                @endforeach
+                            @endif
+                        </div>
                     </div>
                 @endforeach
             @else
@@ -620,6 +755,27 @@
     <i class="fa-solid fa-circle-check"></i>
     <span id="toastMsg">Thêm vào giỏ hàng thành công!</span>
 </div>
+
+<!-- Custom Confirm Modal -->
+<div id="confirmModal">
+    <div class="confirm-box">
+        <div class="confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="confirm-title" id="confirmTitle">Xác nhận xóa</div>
+        <div class="confirm-desc" id="confirmDesc">Bạn có chắc chắn muốn xóa đánh giá này không? Hành động này không thể hoàn tác.</div>
+        <div class="confirm-actions">
+            <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirmModal()">Hủy bỏ</button>
+            <button class="confirm-btn confirm-btn-danger" id="confirmOkBtn">Xóa ngay</button>
+        </div>
+    </div>
+</div>
+
+<!-- Media Lightbox -->
+<div id="mediaLightbox" onclick="closeMediaLightbox()">
+    <i class="fa-solid fa-xmark lightbox-close" onclick="closeMediaLightbox()"></i>
+    <img id="lightboxImg" src="" alt="" style="display:none;">
+    <video id="lightboxVideo" src="" controls style="display:none;"></video>
+</div>
+
 
     {{-- Đăng ký nhận khuyến mãi --}}
     <div style="background: #eef2ff; padding: 40px 0; border-top: 1px solid #ddd; margin-top: 50px;">
@@ -844,59 +1000,137 @@ document.querySelectorAll('.star-rating').forEach(star => {
     });
 });
 
+// Danh sách file đã chọn (dùng DataTransfer để quản lý)
+let selectedMediaFiles = [];
+
+function previewMediaFiles(input) {
+    const grid = document.getElementById('mediaPreviewGrid');
+    const newFiles = Array.from(input.files);
+    
+    newFiles.forEach(file => {
+        if (selectedMediaFiles.length >= 6) { showToast('Tối đa 6 file mỗi lượt đánh giá!'); return; }
+        
+        const isVideo = file.type.startsWith('video/');
+        const maxSize = isVideo ? 20 * 1024 * 1024 : 5 * 1024 * 1024; // 20MB video, 5MB image
+        if (file.size > maxSize) {
+            showToast(`File ${file.name} vượt quá dung lượng cho phép (${isVideo ? '20MB' : '5MB'})!`);
+            return;
+        }
+
+        selectedMediaFiles.push(file);
+        
+        const idx = selectedMediaFiles.length - 1;
+        const item = document.createElement('div');
+        item.className = 'media-preview-item';
+        item.id = 'preview-' + idx;
+        
+        const url = URL.createObjectURL(file);
+        
+        if (isVideo) {
+            item.innerHTML = `<video src="${url}" muted></video><button class="media-preview-remove" onclick="removePreviewItem(${idx})"><i class="fa-solid fa-xmark"></i></button>`;
+        } else {
+            item.innerHTML = `<img src="${url}" alt="preview"><button class="media-preview-remove" onclick="removePreviewItem(${idx})"><i class="fa-solid fa-xmark"></i></button>`;
+        }
+        grid.appendChild(item);
+    });
+    input.value = ''; // reset để cho phép chọn lại cùng file
+}
+
+function removePreviewItem(idx) {
+    selectedMediaFiles[idx] = null;
+    const el = document.getElementById('preview-' + idx);
+    if (el) el.remove();
+}
+
 function submitReview() {
     const textarea = document.getElementById('reviewText');
     const content = textarea.value.trim();
-    if(!content) { 
-        alert('Vui lòng nhập nội dung đánh giá!'); 
-        return; 
+    if (!content) {
+        showToast('Vui lòng nhập nội dung đánh giá!');
+        return;
     }
-    
-    // Gọi AJAX lưu vào DB
+
+    const formData = new FormData();
+    formData.append('product_id', '{{ $product->product_id }}');
+    formData.append('rating', currentRating);
+    formData.append('content', content);
+
+    const authorInput = document.getElementById('reviewAuthor');
+    let authorName = 'Bạn';
+    if (authorInput) {
+        if (!authorInput.value.trim()) {
+            showToast('Vui lòng nhập họ và tên của bạn!');
+            return;
+        }
+        formData.append('author_name', authorInput.value.trim());
+        authorName = authorInput.value.trim();
+    }
+
+    selectedMediaFiles.filter(Boolean).forEach(file => {
+        formData.append('media[]', file);
+    });
+
+    // Disable nút khi đang gửi
+    const btn = document.querySelector('.review-form button[onclick="submitReview()"]');
+    if (btn) { btn.disabled = true; btn.innerText = 'Đang gửi...'; }
+
     fetch('{{ route("reviews.store") }}', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            product_id: '{{ $product->product_id }}',
-            rating: currentRating,
-            content: content
-        })
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: formData
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
-        if(data.success) {
-            // Render sao
+        if (btn) { btn.disabled = false; btn.innerText = 'Gửi đánh giá'; }
+        if (data.success) {
             let starsHtml = '';
-            for(let i=1; i<=5; i++) {
+            for (let i = 1; i <= 5; i++) {
                 starsHtml += (i <= currentRating) ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
             }
-            
-            const reviewList = document.querySelector('.review-list');
-            if(document.getElementById('noReviewMsg')) {
-                document.getElementById('noReviewMsg').remove(); // Xóa dòng "Chưa có đánh giá nào..."
+
+            // Media HTML
+            let mediaHtml = '';
+            if (data.media && data.media.length > 0) {
+                mediaHtml = '<div class="review-media-display">';
+                data.media.forEach(url => {
+                    const isVid = /\.(mp4|mov|avi|mkv)$/i.test(url);
+                    if (isVid) {
+                        mediaHtml += `<div class="review-media-thumb" onclick="openMediaLightbox('${url}',true)"><video src="${url}" style="width:100%;height:100%;object-fit:cover;"></video><div class="play-icon"><i class="fa-solid fa-play"></i></div></div>`;
+                    } else {
+                        mediaHtml += `<div class="review-media-thumb" onclick="openMediaLightbox('${url}',false)"><img src="${url}" alt="Ảnh"></div>`;
+                    }
+                });
+                mediaHtml += '</div>';
             }
-            
-            // Thêm review mới lên đầu
+
+            const hasPurchased = {{ ($hasPurchased ?? false) ? 'true' : 'false' }};
+            const purchasedBadge = hasPurchased
+                ? '<span style="background:#16a34a;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:normal;"><i class="fa-solid fa-check"></i> Đã mua sản phẩm</span>'
+                : '';
+
+            const reviewList = document.querySelector('.review-list');
+            if (document.getElementById('noReviewMsg')) document.getElementById('noReviewMsg').remove();
+
             reviewList.innerHTML = `
-                <div class="review-item" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">
-                    <div class="review-user" style="font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">Bạn <span style="background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;"><i class="fa-solid fa-check"></i> Vừa đánh giá</span></div>
-                    <div class="review-stars" style="color: #f59e0b; font-size: 12px; margin-bottom: 8px;">${starsHtml}</div>
-                    <div class="review-content" style="font-size: 14px; color: #444;">${content}</div>
+                <div class="review-item" style="padding:15px 0;border-bottom:1px solid #f5f5f5;">
+                    <div class="review-user" style="font-weight:600;font-size:14px;margin-bottom:5px;display:flex;align-items:center;gap:8px;">${authorName} ${purchasedBadge}</div>
+                    <div class="review-stars" style="color:#f59e0b;font-size:12px;margin-bottom:8px;">${starsHtml}</div>
+                    <div class="review-content" style="font-size:14px;color:#444;">${content}</div>
+                    ${mediaHtml}
                 </div>
             ` + reviewList.innerHTML;
-            
+
             textarea.value = '';
+            selectedMediaFiles = [];
+            document.getElementById('mediaPreviewGrid').innerHTML = '';
             showToast('Đã gửi đánh giá thành công!');
         } else {
-            alert('Đã xảy ra lỗi khi lưu đánh giá.');
+            showToast('Đã xảy ra lỗi khi lưu đánh giá.');
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Đã xảy ra lỗi kết nối!');
+    .catch(() => {
+        if (btn) { btn.disabled = false; btn.innerText = 'Gửi đánh giá'; }
+        showToast('Đã xảy ra lỗi kết nối!');
     });
 }
 
@@ -904,9 +1138,160 @@ function submitReview() {
 function showToast(msg) {
     const toast = document.getElementById('toast');
     document.getElementById('toastMsg').innerText = msg;
-    
     toast.classList.add('show');
     setTimeout(() => { toast.classList.remove('show'); }, 2000);
+}
+
+// --- Custom Confirm Modal ---
+function openConfirmModal(onConfirm) {
+    document.getElementById('confirmModal').classList.add('active');
+    const okBtn = document.getElementById('confirmOkBtn');
+    okBtn.onclick = () => { closeConfirmModal(); onConfirm(); };
+}
+function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('active');
+}
+document.getElementById('confirmModal').addEventListener('click', function(e) {
+    if (e.target === this) closeConfirmModal();
+});
+
+// --- Reply Functions ---
+function toggleReplyForm(id) {
+    const form = document.getElementById('replyForm-' + id);
+    if (form) {
+        form.style.display = form.style.display === 'block' ? 'none' : 'block';
+    }
+}
+
+function replyToUser(parentId, authorName) {
+    const form = document.getElementById('replyForm-' + parentId);
+    if (form) {
+        form.style.display = 'block';
+        const textarea = document.getElementById('replyText-' + parentId);
+        if (textarea) {
+            textarea.value = `@${authorName} `;
+            textarea.focus();
+        }
+    }
+}
+
+function submitReply(parentId) {
+    const textarea = document.getElementById('replyText-' + parentId);
+    const content = textarea.value.trim();
+    if (!content) {
+        showToast('Vui lòng nhập câu trả lời!');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('product_id', '{{ $product->product_id }}');
+    formData.append('parent_id', parentId);
+    formData.append('content', content);
+
+    const authorInput = document.getElementById('replyAuthor-' + parentId);
+    let authorName = 'Bạn';
+    if (authorInput) {
+        if (!authorInput.value.trim()) {
+            showToast('Vui lòng nhập họ và tên!');
+            return;
+        }
+        formData.append('author_name', authorInput.value.trim());
+        authorName = authorInput.value.trim();
+    }
+
+    const btn = document.querySelector(`#replyForm-${parentId} button.bg-blue-600`);
+    if(btn) { btn.disabled = true; btn.innerText = 'Đang gửi...'; }
+
+    fetch('{{ route("reviews.store") }}', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(btn) { btn.disabled = false; btn.innerText = 'Gửi trả lời'; }
+        if (data.success) {
+            const repliesList = document.getElementById('replies-' + parentId);
+            const badgeHTML = @if(auth()->check() && auth()->user()->role_id == 1) '<span style="background: #ef4444; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;">Admin</span>' @elseif(auth()->check() && auth()->user()->role_id == 2) '<span style="background: #3b82f6; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;">Quản lý</span>' @else '' @endif;
+            
+            const newReply = `
+                <div class="reply-item" id="review-${data.review.id}">
+                    <div class="review-user" style="font-weight: 600; font-size: 13px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display:flex; align-items:center; gap:8px;">
+                            <i class="fa-solid fa-turn-up fa-rotate-90" style="color:#94a3b8"></i> 
+                            ${authorName} ${badgeHTML}
+                        </span>
+                        @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
+                        <button onclick="deleteReview(${data.review.id})" title="Xóa" style="background:none; border:none; cursor:pointer; color:#ccc; font-size:13px; transition:0.2s;" onmouseover="this.style.color='#d70018'" onmouseout="this.style.color='#ccc'">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                        @endif
+                    </div>
+                    <div style="color:#999; font-size:11px; margin-bottom:5px; margin-left: 20px;">Vừa xong</div>
+                    <div class="review-content" style="font-size: 13px; color: #444; margin-left: 20px;">${content}</div>
+                </div>
+            `;
+            repliesList.innerHTML += newReply;
+            textarea.value = '';
+            toggleReplyForm(parentId);
+            showToast('Đã gửi câu trả lời!');
+        } else {
+            showToast('Có lỗi xảy ra!');
+        }
+    })
+    .catch(() => {
+        if(btn) { btn.disabled = false; btn.innerText = 'Gửi trả lời'; }
+        showToast('Lỗi kết nối!');
+    });
+}
+
+// --- Media Lightbox ---
+function openMediaLightbox(url, isVideo) {
+    const lb = document.getElementById('mediaLightbox');
+    const img = document.getElementById('lightboxImg');
+    const vid = document.getElementById('lightboxVideo');
+    if (isVideo) {
+        img.style.display = 'none';
+        vid.src = url;
+        vid.style.display = 'block';
+    } else {
+        vid.style.display = 'none';
+        img.src = url;
+        img.style.display = 'block';
+    }
+    lb.classList.add('active');
+}
+function closeMediaLightbox() {
+    document.getElementById('mediaLightbox').classList.remove('active');
+    document.getElementById('lightboxVideo').pause();
+    document.getElementById('lightboxVideo').src = '';
+}
+
+function deleteReview(reviewId) {
+    openConfirmModal(() => {
+        fetch(`/reviews/${reviewId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const el = document.getElementById('review-' + reviewId);
+                if (el) {
+                    el.style.transition = 'opacity 0.3s';
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 300);
+                }
+                showToast('Đã xóa đánh giá thành công!');
+            } else {
+                showToast(data.message || 'Không thể xóa đánh giá!');
+            }
+        })
+        .catch(() => showToast('Đã xảy ra lỗi kết nối!'));
+    });
 }
 
 function buyNow() {
