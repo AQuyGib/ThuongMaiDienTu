@@ -33,95 +33,65 @@
 
         <a href="{{ route('admin.dashboard') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.dashboard') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                   {{ (request()->routeIs('admin.dashboard') || request()->routeIs('dashboard') || request()->is('admin')) ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-gauge-high w-5"></i> Dashboard
         </a>
 
         {{-- ===== NHÓM: QUẢN LÝ BÁN HÀNG ===== --}}
-        <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Quản lý Bán Hàng</div>
+        <div class="text-xs text-slate-400 font-bold mb-4 uppercase tracking-wider">Quản lý Bán Hàng</div>
 
-        <a href="#"
+        <a href="{{ route('admin.cashbooks.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.orders*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                   {{ request()->is('admin/cashbooks*') ? 'bg-indigo-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+            <i class="fa-solid fa-wallet w-5"></i> Sổ Quỹ
+        </a>
+
+        <a href="{{ route('admin.cart.index') }}"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                   {{ request()->is('admin/shoppingcart*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-clipboard-list w-5"></i> Đơn hàng
         </a>
 
-        <a href="#"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.warranties*') ? 'bg-yellow-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-            <i class="fa-solid fa-wrench w-5 text-yellow-400"></i> Y/c Bảo hành
-        </a>
-
-        <a href="#"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.returns*') ? 'bg-purple-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-            <i class="fa-solid fa-right-left w-5 text-purple-400"></i> Y/c Đổi Trả
-        </a>
-
-        {{-- ===== NHÓM: SẢN PHẨM ===== --}}
-        <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Sản phẩm</div>
+        {{-- ===== NHÓM: SẢN PHẨM & NỘI DUNG ===== --}}
+        <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Sản phẩm & Nội dung</div>
 
         <a href="{{ route('admin.products.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.products*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                   {{ request()->is('admin/products*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-box w-5"></i> Sản phẩm
         </a>
 
         <a href="{{ route('admin.categories.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.categories*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                   {{ request()->is('admin/categories*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-list w-5"></i> Danh mục
         </a>
 
-        <a href="#"
+        <a href="{{ route('admin.articles.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.brands*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-            <i class="fa-solid fa-tags w-5"></i> Thương hiệu
+                   {{ request()->is('admin/articles*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+            <i class="fa-solid fa-newspaper w-5"></i> Bài viết & CMS
         </a>
 
-        <a href="#"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.vouchers*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-            <i class="fa-solid fa-ticket w-5"></i> Mã giảm giá
-        </a>
-
-        {{-- ===== NHÓM: KHO HÀNG ===== --}}
-        <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Kho hàng</div>
+        {{-- ===== NHÓM: QUẢN LÝ KHO ===== --}}
+        <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Quản lý Kho</div>
 
         <a href="{{ route('admin.suppliers.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.suppliers*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                   {{ request()->is('admin/suppliers*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
             <i class="fa-solid fa-truck-field w-5"></i> Nhà cung cấp
         </a>
 
         <a href="{{ route('admin.purchase-orders.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.purchase-orders*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-            <i class="fa-solid fa-file-invoice-dollar w-5"></i> Phiếu nhập kho
+                   {{ request()->is('admin/purchase-orders*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+            <i class="fa-solid fa-file-invoice-dollar w-5"></i> Nhập kho
         </a>
 
         <a href="{{ route('admin.inventory.index') }}"
             class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.inventory*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-            <i class="fa-solid fa-warehouse w-5"></i> Tồn kho (IMEI)
-        </a>
-
-        {{-- ===== NHÓM: NỘI DUNG & CMS ===== --}}
-        <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Nội dung</div>
-
-        <a href="{{ route('admin.articles.index') }}"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.articles*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-            <i class="fa-solid fa-newspaper w-5 text-green-400"></i> Bài viết & CMS
-        </a>
-
-        {{-- ===== NHÓM: GIAO DIỆN ===== --}}
-        <div class="text-xs text-slate-400 font-bold mt-6 mb-4 uppercase tracking-wider">Giao diện</div>
-
-        <a href="#"
-            class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                   {{ request()->routeIs('admin.homepage*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-            <i class="fa-solid fa-palette w-5"></i> Trang chủ
+                   {{ request()->is('admin/inventory*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+            <i class="fa-solid fa-barcode w-5"></i> Kho hàng (IMEI)
         </a>
 
         {{-- ===== NHÓM: HỆ THỐNG (Chỉ Admin thấy) ===== --}}
@@ -130,20 +100,8 @@
 
             <a href="{{ route('admin.users.index') }}"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                               {{ request()->routeIs('admin.users*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                               {{ request()->is('admin/users*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
                 <i class="fa-solid fa-users w-5"></i> Tài khoản
-            </a>
-
-            <a href="#"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                               {{ request()->routeIs('admin.settings*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                <i class="fa-solid fa-gear w-5"></i> Cài đặt
-            </a>
-
-            <a href="#"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                               {{ request()->routeIs('admin.logs*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
-                <i class="fa-solid fa-clock-rotate-left w-5"></i> Nhật ký
             </a>
         @endif
     </nav>
