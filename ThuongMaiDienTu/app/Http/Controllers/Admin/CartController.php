@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 
-use App\Models\Product;
+
 
 class CartController extends Controller
 {
@@ -16,15 +16,16 @@ class CartController extends Controller
     public function index()
     {
         $cart = session()->get('cart', []);
-        
+
         // Chuyển đổi dữ liệu từ session sang format view yêu cầu
-        $cartItems = collect($cart)->map(function($item, $id) {
+        $cartItems = collect($cart)->map(function ($item, $id) {
             $product = Product::find($id);
-            if (!$product) return null;
+            if (!$product)
+                return null;
             return [
                 'id' => $id,
                 'name' => $product->name,
-                'price' => (int)$product->base_price,
+                'price' => (int) $product->base_price,
                 'quantity' => $item['quantity'],
                 'stock' => 10,
                 'selected' => true,
