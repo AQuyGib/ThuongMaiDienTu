@@ -70,4 +70,12 @@ class User extends Authenticatable {
     public function articles() {
         return $this->hasMany(Article::class, 'author_id');
     }
+
+    /**
+     * Kiểm tra người dùng có đang online không (trong vòng 5 phút qua)
+     */
+    public function isOnline()
+    {
+        return $this->sessions()->where('last_active', '>=', now()->subMinutes(5))->exists();
+    }
 }
