@@ -50,6 +50,10 @@ class SocialController extends Controller
             ]
         );
 
+        if ($user->status === 'Banned' || $user->status === 'Inactive') {
+            return redirect()->route('login')->withErrors(['login_error' => 'Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.']);
+        }
+
         Auth::login($user);
 
         return redirect()->intended('/');
