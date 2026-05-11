@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'TechZone - Hệ thống bán lẻ điện thoại di động, máy tính')
+@section('title', 'DienMayPRO - Hệ thống bán lẻ điện thoại di động, máy tính')
 
 @push('styles')
     <style>
