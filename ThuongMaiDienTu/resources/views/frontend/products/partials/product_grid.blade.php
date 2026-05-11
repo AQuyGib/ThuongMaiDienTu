@@ -1,33 +1,34 @@
+@php
+    $productCount = isset($products) ? $products->count() : 0;
+    $compareIds = session()->get('compare_ids', []);
+@endphp
+
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     @forelse($products as $product)
-        <div
-            class="product-card group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100">
-            <!-- Badges -->
-            <div class="absolute top-3 left-3 z-10 flex flex-col gap-2">
-                @if($product->discount_percent > 0)
-                    <span class="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm">
-                        -{{ $product->discount_percent }}%
-                    </span>
-                @endif
-                <span class="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-sm">
-                    Trả góp 0%
-                </span>
-            </div>
-
+        @php
+            $isOnCompare = in_array($product->product_id, $compareIds);
+            $imageUrl = $product->thumbnail;
+            if (!$imageUrl || !Str::startsWith($imageUrl, 'http')) {
+                $imageUrl = asset('uploads/products/' . ($product->image ?: 'default.jpg'));
+            }
+        @endphp
+        <div class="product-card group relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg" data-product-id="{{ $product->product_id }}">
             <!-- Image Container -->
             <div class="relative h-48 overflow-hidden bg-gray-100 p-4 flex items-center justify-center">
-                @php
-                    $imageUrl = $product->thumbnail;
-                    if (!$imageUrl || !Str::startsWith($imageUrl, 'http')) {
-                        $imageUrl = asset('uploads/products/' . ($product->image ?: 'default.jpg'));
-                    }
-                @endphp
+                <!-- Compare Badge -->
+                <div class="absolute left-3 top-3 z-10 flex items-center gap-2">
+                    <span class="compare-status-badge {{ $isOnCompare ? '' : 'hidden' }} inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-md shadow-blue-100">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Đã so sánh</span>
+                    </span>
+                </div>
+
                 <img src="{{ $imageUrl }}" alt="{{ $product->name }}"
                     class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-500"
                     onerror="this.src='https://loremflickr.com/400/400/technology?lock={{ $product->product_id }}'; this.onerror=null;">
+                
                 <!-- Quick Actions -->
-                <div
-                    class="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div class="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     @php
                         $isWishlisted = false;
                         if(auth()->check()){
@@ -43,10 +44,14 @@
                                 d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                         </svg>
                     </button>
-                    <button
-                        class="w-10 h-10 bg-white text-gray-400 rounded-full flex items-center justify-center shadow-md hover:bg-blue-500 hover:text-white transition-all duration-300"
-                        title="So sánh" onclick="event.preventDefault(); event.stopPropagation(); addToCompare({{ $product->product_id }})">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    
+                    <button type="button" 
+                        class="compare-card-btn w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md transition-all duration-300 hover:scale-110 {{ $isOnCompare ? 'bg-blue-600 text-white ring-2 ring-blue-200' : 'text-gray-400' }}" 
+                        title="{{ $isOnCompare ? 'Đã so sánh' : 'So sánh' }}" 
+                        data-product-id="{{ $product->product_id }}" 
+                        onclick="event.preventDefault(); event.stopPropagation(); addToCompare({{ $product->product_id }})">
+                        <span class="compare-card-btn-spinner hidden animate-spin"><i class="fa-solid fa-spinner"></i></span>
+                        <svg class="compare-card-btn-icon w-5 h-5 {{ $isOnCompare ? 'text-white' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
@@ -86,7 +91,7 @@
                         $highlights = [];
 
                         if (!empty($highlightConfig)) {
-                            // Render theo cấu hình của Admin (VD: ['ram' => 'RAM: ', 'cpu' => 'CPU: '])
+                            // Render theo cấu hình của Admin
                             foreach ($highlightConfig as $key => $prefix) {
                                 if (isset($specs[$key])) {
                                     $val = is_array($specs[$key]) ? implode(', ', $specs[$key]) : $specs[$key];
@@ -102,7 +107,7 @@
                         }
                     @endphp
 
-                    @foreach($highlights as $hl)
+                    @foreach(array_slice($highlights, 0, 3) as $hl)
                         <span
                             class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">{{ $hl }}</span>
                     @endforeach
@@ -118,40 +123,6 @@
                             {{ number_format($product->old_price, 0, ',', '.') }} ₫
                         </span>
                     @endif
-                </div>
-
-                <!-- Promotions -->
-                <div class="flex flex-wrap gap-1 mb-3">
-                    @if($product->discount_percent > 0)
-                        <span class="text-xs text-green-600 font-medium">
-                            Giảm {{ $product->discount_percent }}%
-                        </span>
-                    @endif
-                    <span class="text-xs text-green-600 font-medium">
-                        Sinh viên giảm thêm
-                    </span>
-                </div>
-
-                <!-- Rating -->
-                <div class="flex items-center gap-1 mb-3">
-                    <div class="flex text-yellow-400">
-                        @for($i = 1; $i <= 5; $i++)
-                            @if($i <= round($product->rating ?? 0))
-                                <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24">
-                                    <path
-                                        d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                </svg>
-                            @else
-                                <svg class="w-3 h-3 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                                </svg>
-                            @endif
-                        @endfor
-                    </div>
-                    <span class="text-xs text-gray-500">
-                        ({{ $product->review_count ?? 0 }})
-                    </span>
                 </div>
 
                 <!-- Action Buttons -->

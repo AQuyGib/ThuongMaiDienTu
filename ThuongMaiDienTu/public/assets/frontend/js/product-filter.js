@@ -454,6 +454,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(html => {
                 if (productListContainer) productListContainer.innerHTML = html;
                 updateProductCount(html);
+                window.dispatchEvent(new CustomEvent('product-grid:updated'));
             })
             .catch(error => {
                 console.error('Lỗi khi lọc:', error);
