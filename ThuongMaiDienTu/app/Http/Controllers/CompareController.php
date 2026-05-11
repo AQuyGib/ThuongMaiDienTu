@@ -12,7 +12,7 @@ class CompareController extends Controller
 {
     private const STORAGE_KEY = 'compare_products';
     private const TYPE = 'Compare';
-    private const MAX_ITEMS = 4;
+    private const MAX_ITEMS = 3;
 
     public function index()
     {
