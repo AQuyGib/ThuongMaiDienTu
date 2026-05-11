@@ -121,9 +121,9 @@
                         </div>
                         <h1 class="text-lg font-bold text-gray-800">
                             @if($currentCategory)
-                                {{ $currentCategory->name }} — <span id="product-count" class="text-red-600">...</span> sản phẩm
+                                {{ $currentCategory->name }} — Hiển thị <span id="product-count" class="text-red-600">{{ $products->total() }}</span> sản phẩm
                             @else
-                                Tìm thấy <span id="product-count" class="text-red-600">...</span> sản phẩm
+                                Hiển thị <span id="product-count" class="text-red-600">{{ $products->total() }}</span> sản phẩm
                             @endif
                         </h1>
                     </div>
