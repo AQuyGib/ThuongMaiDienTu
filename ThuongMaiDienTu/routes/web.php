@@ -83,6 +83,11 @@ Route::get('/products/{categorySlug}', [App\Http\Controllers\Frontend\ProductCon
 Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.detail');
 Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'getCategoryFilters'])->name('api.categories.filters');
 
+// Admin Customer Management
+Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class])->group(function () {
+    Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class, ['as' => 'admin']);
+});
+
 Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
 Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
 
