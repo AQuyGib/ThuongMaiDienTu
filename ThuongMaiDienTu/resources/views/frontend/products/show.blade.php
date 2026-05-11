@@ -467,11 +467,11 @@
         <div class="review-form" style="margin-bottom: 25px; background: #f9f9f9; padding: 20px; border-radius: 10px;">
             <h4 style="margin-bottom: 15px; font-size: 15px;">Viết đánh giá của bạn</h4>
             <div style="margin-bottom: 10px; display: flex; gap: 10px; color: #ccc; font-size: 20px; cursor: pointer;">
-                <i class="fa-solid fa-star star-rating" data-val="1" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="2" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="3" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="4" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="5" style="color:#f59e0b"></i>
+                <i class="fa-solid fa-star star-rating" data-val="1"></i>
+                <i class="fa-solid fa-star star-rating" data-val="2"></i>
+                <i class="fa-solid fa-star star-rating" data-val="3"></i>
+                <i class="fa-solid fa-star star-rating" data-val="4"></i>
+                <i class="fa-solid fa-star star-rating" data-val="5"></i>
             </div>
             <textarea id="reviewText" placeholder="Nhập đánh giá của bạn về sản phẩm này..." style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; resize: none;"></textarea>
 
@@ -779,7 +779,6 @@
     <video id="lightboxVideo" src="" controls style="display:none;"></video>
 </div>
 
-
     {{-- Đăng ký nhận khuyến mãi --}}
     <div style="background: #eef2ff; padding: 40px 0; border-top: 1px solid #ddd; margin-top: 50px;">
         <div class="container" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:30px;">
@@ -809,6 +808,9 @@
             <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #16a34a; margin-bottom: 20px;"></i>
             <h3 style="font-size: 22px; color: #333; margin-bottom: 10px;">Cảm ơn quý khách!</h3>
             <p style="font-size: 15px; color: #555; line-height: 1.5; margin-bottom: 0;">Đăng ký nhận khuyến mãi thành công. Chúng tôi sẽ gửi mã giảm giá 10% qua Email và Số điện thoại của quý khách.</p>
+        </div>
+    </div>
+
 @endsection
 
 @push('scripts')
@@ -1324,10 +1326,6 @@ function toggleWishlist() {
         return;
     }
 
-    const btn = document.getElementById('btnWishlist');
-    const icon = document.getElementById('wishlistIcon');
-    const text = document.getElementById('wishlistText');
-    
     fetch('{{ route("wishlist.toggle") }}', {
         method: 'POST',
         headers: {
@@ -1336,58 +1334,47 @@ function toggleWishlist() {
         },
         body: JSON.stringify({ product_id: '{{ $product->product_id }}' })
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
-        if(data.status === 'added') {
+        const icon = document.getElementById('wishlistIcon');
+        const text = document.getElementById('wishlistText');
+        const btn = document.getElementById('btnWishlist');
+
+        if (data.status === 'added') {
             isWishlist = true;
-            btn.classList.add('active');
-            icon.classList.remove('fa-regular');
-            icon.classList.add('fa-solid');
+            icon.classList.replace('fa-regular', 'fa-solid');
             icon.style.color = '#d70018';
             text.innerText = 'Đã thêm yêu thích';
-            showToast('Đã thêm vào danh sách yêu thích!');
-        } else if(data.status === 'removed') {
+            btn.classList.add('active');
+            showToast('Đã thêm vào yêu thích!');
+        } else {
             isWishlist = false;
-            btn.classList.remove('active');
-            icon.classList.remove('fa-solid');
-            icon.classList.add('fa-regular');
+            icon.classList.replace('fa-solid', 'fa-regular');
             icon.style.color = '';
-            text.innerText = 'Thêm vào yêu thích';
-            showToast('Đã xóa khỏi danh sách yêu thích.');
+            text.innerText = 'Thêm yêu thích';
+            btn.classList.remove('active');
+            showToast('Đã xóa khỏi yêu thích.');
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Đã xảy ra lỗi!');
     });
 }
 
-// --- Installment Modal ---
+// --- Trả góp logic ---
 let instCurrentBasePrice = basePrice;
 let instSelectedCompany = 'Shinhan Finance';
 let instSelectedMonth = 6;
 
 function checkAuthAndOpenInstallment() {
-    @auth
-        openInstallmentModal();
-    @else
-        showToast('Vui lòng đăng nhập để đăng ký trả góp!');
-        setTimeout(() => {
-            window.location.href = "{{ route('login_register') }}";
-        }, 1500);
-    @endauth
+    if (!{{ auth()->check() ? 'true' : 'false' }}) {
+        window.location.href = "{{ route('login_register') }}";
+        return;
+    }
+    openInstallmentModal();
 }
 
 function openInstallmentModal() {
     document.getElementById('installmentModal').classList.add('active');
-    
-    // Reset lại giao diện
-    document.getElementById('instSuccessMsg').style.display = 'none';
-    switchInstTab(0);
-    
     updateInstallmentTable();
 }
-
 function closeInstallmentModal() {
     document.getElementById('installmentModal').classList.remove('active');
 }

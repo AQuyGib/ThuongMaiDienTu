@@ -1,9 +1,9 @@
 @php
-    $productCount = isset($products) ? $products->count() : 0;
+    $productCount = isset($products) ? $products->total() : 0;
     $compareIds = session()->get('compare_ids', []);
 @endphp
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" data-total-products="{{ $productCount }}">
     @forelse($products as $product)
         @php
             $isOnCompare = in_array($product->product_id, $compareIds);
@@ -157,8 +157,8 @@
     @endforelse
 </div>
 
-<div class="mt-8">
-    {{ $products->links() }}
+<div class="mt-8 pagination-container">
+    {{ $products->links('vendor.pagination.custom') }}
 </div>
 
 <script>
