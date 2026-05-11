@@ -755,6 +755,14 @@
     {{-- Floating Compare Bar --}}
     @include('partials.compare-bar')
 
+    <div id="compareFloatingBadge" class="fixed bottom-5 right-5 z-[10001] hidden">
+        <a href="{{ route('compare.index') }}" class="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-3 text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
+            <i class="fa-solid fa-scale-balanced"></i>
+            <span class="font-semibold">So sánh</span>
+            <span id="compareFloatingBadgeCount" class="min-w-6 rounded-full bg-white/20 px-2 py-0.5 text-center text-sm font-bold">0</span>
+        </a>
+    </div>
+
     <!-- Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 

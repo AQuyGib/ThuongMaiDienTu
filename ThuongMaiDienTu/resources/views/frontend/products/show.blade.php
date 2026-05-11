@@ -302,11 +302,14 @@
                         <i class="fa-solid fa-credit-card"></i> TRẢ GÓP 0%
                     </button>
                 </div>
-                <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
-                    <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700;">
+                <div style="display:flex; gap:10px; width:100%; margin-top:10px; flex-wrap:wrap;">
+                    <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700; min-width:180px;">
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
-                    <button class="btn-wishlist" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
+                    <button type="button" class="btn-buy" id="btnCompareDetail" onclick="addToCompare('{{ $product->product_id }}')" style="flex:1; background:#eff6ff; color:#2563eb; border:2px solid #bfdbfe; min-width:180px;">
+                        <i class="fa-solid fa-scale-balanced"></i> <span id="compareDetailLabel">So sánh</span>
+                    </button>
+                    <button class="btn-wishlist" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center; min-width:180px;">
                         <i class="fa-regular fa-heart" id="wishlistIcon"></i> <span id="wishlistText">Thêm yêu thích</span>
                     </button>
                 </div>

@@ -86,9 +86,7 @@ Route::delete('/profile/wishlist/{id}', [ProfileController::class, 'removeFromWi
 
 // Product Compare (So sánh sản phẩm)
 use App\Http\Controllers\CompareController;
-Route::post('/compare/add', [CompareController::class, 'add'])->name('compare.add');
-Route::delete('/compare/remove/{id}', [CompareController::class, 'remove'])->name('compare.remove');
-Route::post('/compare/clear', [CompareController::class, 'clear'])->name('compare.clear');
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
 Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');
+Route::post('/compare/sync', [CompareController::class, 'sync'])->name('compare.sync');
 Route::get('/api/products/search-compare', [CompareController::class, 'searchCompare'])->name('api.products.search-compare');
