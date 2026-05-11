@@ -80,7 +80,8 @@ function renderSearchResults(results) {
                 id: product.product_id,
                 name: product.name,
                 image: product.thumbnail,
-                price: new Intl.NumberFormat('vi-VN').format(product.base_price) + 'đ'
+                price: new Intl.NumberFormat('vi-VN').format(product.base_price) + 'đ',
+                categoryId: product.category_id
             };
             addToCompare(productData);
         };
@@ -121,13 +122,14 @@ window.addToCompare = async function(productOrId) {
 
         // Tìm slot trống đầu tiên nếu không có slot cụ thể
         if (currentSlotIndex === null) {
-            const emptySlot = Array.from(document.querySelectorAll('.compare-slot-filled'))
-                .findIndex(el => el.style.display === 'none');
-            if (emptySlot === -1) {
+            const filledSlots = Array.from(document.querySelectorAll('.compare-slot-filled'));
+            const emptySlotIndex = filledSlots.findIndex(el => !el.dataset.productId || el.dataset.productId === "");
+            
+            if (emptySlotIndex === -1) {
                 showToast('Danh sách so sánh đã đầy (tối đa 3 sản phẩm)', 'error');
                 return;
             }
-            currentSlotIndex = emptySlot;
+            currentSlotIndex = emptySlotIndex;
         }
 
         // Fetch thông tin sản phẩm từ server nếu chỉ có ID
@@ -140,7 +142,8 @@ window.addToCompare = async function(productOrId) {
                     id: p.product_id,
                     name: p.name,
                     image: p.thumbnail,
-                    price: new Intl.NumberFormat('vi-VN').format(p.base_price) + 'đ'
+                    price: new Intl.NumberFormat('vi-VN').format(p.base_price) + 'đ',
+                    categoryId: p.category_id
                 };
             } else {
                 showToast('Không tìm thấy thông tin sản phẩm', 'error');
@@ -153,6 +156,13 @@ window.addToCompare = async function(productOrId) {
         }
     } else {
         productData = productOrId;
+    }
+
+    // Kiểm tra cùng loại sản phẩm
+    const existingSlot = document.querySelector('.compare-slot-filled[data-category-id]:not([data-category-id=""])');
+    if (existingSlot && existingSlot.dataset.categoryId != productData.categoryId) {
+        showToast('Chỉ có thể so sánh các sản phẩm cùng loại', 'error');
+        return;
     }
 
     // Điền dữ liệu vào slot
@@ -169,12 +179,19 @@ window.addToCompare = async function(productOrId) {
     filledDiv.querySelector('.compare-slot-name').textContent = productData.name;
     filledDiv.querySelector('.compare-slot-price').textContent = productData.price;
     filledDiv.dataset.productId = productData.id;
+    filledDiv.dataset.categoryId = productData.categoryId;
 
     currentSlotIndex = null; // Reset slot index
     updateCount();
     closeCompareSearch();
     syncWithServer();
     updateProductCardButtons();
+    
+    // Nếu đang ở trang so sánh, cần reload dữ liệu bảng
+    if (window.__COMPARE_PAGE__) {
+        loadComparePage();
+    }
+    
     showToast('Đã thêm sản phẩm vào so sánh');
 };
 
@@ -194,9 +211,12 @@ window.removeFromCompare = function(btn) {
 window.clearCompare = function() {
     document.querySelectorAll('.compare-slot-filled').forEach(el => {
         el.style.display = 'none';
-        el.dataset.productId = '';
+        el.dataset.productId = "";
+        el.dataset.categoryId = "";
     });
-    document.querySelectorAll('.compare-slot-empty').forEach(el => el.style.display = 'flex');
+    const emptyDivs = document.querySelectorAll('.compare-slot-empty');
+    emptyDivs.forEach(el => el.style.display = 'flex');
+    
     updateCount();
     syncWithServer();
     updateProductCardButtons();
@@ -311,7 +331,11 @@ function formatSpecValue(value) {
 }
 
 async function loadComparePage() {
-    if (!window.__COMPARE_PAGE__) return;
+    console.log('Loading compare page...');
+    if (!window.__COMPARE_PAGE__) {
+        console.log('Not on compare page, skipping table render.');
+        return;
+    }
 
     const emptyState = document.getElementById('compareEmptyState');
     const tableWrap = document.getElementById('compareTableWrap');
@@ -372,12 +396,15 @@ async function loadComparePage() {
 
         // Render Body
         if (bodyEl) {
-            const generalRows = [
-                { label: 'Giá hiện tại', getter: (p) => new Intl.NumberFormat('vi-VN').format(p.base_price) + 'đ' },
-                { label: 'Giá cũ', getter: (p) => p.old_price ? new Intl.NumberFormat('vi-VN').format(p.old_price) + 'đ' : '—' },
-                { label: 'Đánh giá', getter: (p) => p.rating ? `${p.rating}/5` : 'Chưa có' },
-                { label: 'Danh mục', getter: (p) => p.category_name || '—' },
-            ];
+            const processedGeneralRows = [
+                { label: 'Giá hiện tại', values: products.map(p => new Intl.NumberFormat('vi-VN').format(p.base_price) + 'đ') },
+                { label: 'Giá cũ', values: products.map(p => p.old_price ? new Intl.NumberFormat('vi-VN').format(p.old_price) + 'đ' : '—') },
+                { label: 'Đánh giá', values: products.map(p => p.rating ? `${p.rating}/5` : 'Chưa có') },
+                { label: 'Danh mục', values: products.map(p => p.category_name || '—') },
+            ].map(row => ({
+                ...row,
+                is_different: new Set(row.values).size > 1
+            }));
 
             const specRows = rows.map(row => ({
                 label: row.label,
@@ -385,14 +412,22 @@ async function loadComparePage() {
                 values: row.values
             }));
 
-            let html = generalRows.map(row => `
-                <tr>
-                    <th class="sticky left-0 bg-white p-4 text-left font-medium text-gray-700 border-r border-gray-100">${row.label}</th>
-                    ${products.map(p => `<td class="p-4 text-gray-700">${row.getter(p)}</td>`).join('')}
+            const diffOnly = document.getElementById('diffOnlyCheckbox')?.checked || false;
+
+            const filteredGeneralRows = diffOnly ? processedGeneralRows.filter(r => r.is_different) : processedGeneralRows;
+
+            let html = filteredGeneralRows.map(row => `
+                <tr class="${row.is_different ? 'bg-blue-50/50' : ''}">
+                    <th class="sticky left-0 ${row.is_different ? 'bg-blue-50' : 'bg-white'} p-4 text-left font-medium text-gray-700 border-r border-gray-100">
+                        ${row.label} ${row.is_different ? '<span class="ml-2 text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">Khác biệt</span>' : ''}
+                    </th>
+                    ${row.values.map(v => `<td class="p-4 text-gray-700">${v}</td>`).join('')}
                 </tr>
             `).join('');
 
-            html += specRows.map(row => `
+            const filteredSpecRows = diffOnly ? specRows.filter(r => r.is_different) : specRows;
+
+            html += filteredSpecRows.map(row => `
                 <tr class="${row.is_different ? 'bg-blue-50/50' : ''}">
                     <th class="sticky left-0 ${row.is_different ? 'bg-blue-50' : 'bg-white'} p-4 text-left font-medium text-gray-700 border-r border-gray-100">
                         ${row.label} ${row.is_different ? '<span class="ml-2 text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">Khác biệt</span>' : ''}
@@ -400,6 +435,10 @@ async function loadComparePage() {
                     ${row.values.map(v => `<td class="p-4 text-gray-700">${formatSpecValue(v)}</td>`).join('')}
                 </tr>
             `).join('');
+
+            if (diffOnly && filteredSpecRows.length === 0) {
+                html += `<tr><td colspan="${products.length + 1}" class="p-10 text-center text-gray-400 italic">Không có khác biệt về thông số kỹ thuật</td></tr>`;
+            }
 
             bodyEl.innerHTML = html;
         }
@@ -419,12 +458,13 @@ async function loadComparePage() {
                         </div>
                     </div>
                     <div class="space-y-2 pt-2 border-t border-gray-50">
-                        ${rows.map(row => `
+                        ${(diffOnly ? rows.filter(r => r.is_different) : rows).map(row => `
                             <div class="flex justify-between text-xs">
                                 <span class="text-gray-500">${row.label}</span>
                                 <span class="font-medium text-gray-900 text-right">${formatSpecValue(row.values[idx])}</span>
                             </div>
                         `).join('')}
+                        ${diffOnly && rows.filter(r => r.is_different).length === 0 ? '<div class="text-center text-[10px] text-gray-400 italic pt-2">Không có khác biệt</div>' : ''}
                     </div>
                 </div>
             `).join('');
@@ -452,39 +492,62 @@ if (clearAllBtn) {
     });
 }
 
+const diffOnlyCheckbox = document.getElementById('diffOnlyCheckbox');
+if (diffOnlyCheckbox) {
+    diffOnlyCheckbox.addEventListener('change', () => {
+        loadComparePage();
+    });
+}
+
 // Khởi tạo ban đầu
 document.addEventListener('DOMContentLoaded', function() {
+    // Luôn load page nếu đang ở trang so sánh để hiện trạng thái trống nếu cần
+    if (window.__COMPARE_PAGE__) {
+        loadComparePage();
+    }
+
     // Load dữ liệu từ server nếu có (qua endpoint data)
     fetch('/compare/data')
         .then(res => res.json())
         .then(data => {
             if (data.products && data.products.length > 0) {
-                data.products.forEach((p, index) => {
-                    if (index < MAX_SLOTS) {
-                        const productData = {
-                            id: p.product_id,
-                            name: p.name,
-                            image: p.thumbnail,
-                            price: new Intl.NumberFormat('vi-VN').format(p.base_price) + 'đ'
-                        };
-                        // Điền trực tiếp để tránh toast lặp lại
+                data.products.forEach((productData, index) => {
+                    if (index < 3) {
                         const slot = document.getElementById(`compareSlot${index}`);
                         if (slot) {
-                            slot.querySelector('.compare-slot-empty').style.display = 'none';
+                            const empty = slot.querySelector('.compare-slot-empty');
                             const filled = slot.querySelector('.compare-slot-filled');
-                            filled.style.display = 'flex';
-                            filled.querySelector('.compare-slot-img').src = productData.image;
-                            filled.querySelector('.compare-slot-name').textContent = productData.name;
-                            filled.querySelector('.compare-slot-price').textContent = productData.price;
-                            filled.dataset.productId = productData.id;
+                            
+                            if (empty && filled) {
+                                empty.style.display = 'none';
+                                filled.style.display = 'flex';
+                                
+                                const img = filled.querySelector('.compare-slot-img');
+                                const name = filled.querySelector('.compare-slot-name');
+                                const price = filled.querySelector('.compare-slot-price');
+                                
+                                if (img) img.src = productData.thumbnail;
+                                if (name) name.textContent = productData.name;
+                                if (price) price.textContent = new Intl.NumberFormat('vi-VN').format(productData.base_price) + 'đ';
+                                
+                                filled.dataset.productId = productData.product_id;
+                                filled.dataset.categoryId = productData.category_id;
+                            }
                         }
                     }
                 });
                 updateCount();
                 updateProductCardButtons();
-                // Sau khi điền vào bar, nếu đang ở trang compare thì render bảng
+                // Sau khi điền vào bar, render bảng
+                loadComparePage();
+            } else if (window.__COMPARE_PAGE__) {
+                // Nếu rỗng nhưng đang ở trang so sánh, đảm bảo gọi loadComparePage để hiện empty state
                 loadComparePage();
             }
+        })
+        .catch(err => {
+            console.error('Error syncing compare data:', err);
+            if (window.__COMPARE_PAGE__) loadComparePage();
         });
 });
 

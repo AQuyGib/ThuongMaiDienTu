@@ -42,7 +42,10 @@ class CompareController extends Controller
 
         return response()->json([
             'products' => $products->map(function ($product) {
-                $specs = is_string($product->specifications) ? json_decode($product->specifications, true) : ($product->specifications ?? []);
+                $specs = $product->specifications;
+                if (is_string($specs)) {
+                    $specs = json_decode($specs, true) ?? [];
+                }
                 if (!is_array($specs)) {
                     $specs = [];
                 }
@@ -57,6 +60,7 @@ class CompareController extends Controller
                     'rating' => $product->rating,
                     'review_count' => $product->review_count,
                     'category_name' => $product->category->name ?? null,
+                    'category_id' => $product->category_id,
                     'specifications' => $specs,
                 ];
             })->values(),
@@ -151,6 +155,10 @@ class CompareController extends Controller
 
     private function normalizeIds(mixed $ids): array
     {
+        if (is_numeric($ids)) {
+            return [(int) $ids];
+        }
+
         if (is_string($ids)) {
             $ids = array_filter(array_map('intval', explode(',', $ids)));
         } elseif (is_array($ids)) {

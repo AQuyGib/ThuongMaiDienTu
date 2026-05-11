@@ -1,6 +1,9 @@
 @php
     $productCount = isset($products) ? $products->total() : 0;
-    $compareIds = session()->get('compare_ids', []);
+    $compareIds = session()->get('compare_list', []);
+    if (!is_array($compareIds)) {
+        $compareIds = [];
+    }
 @endphp
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" data-total-products="{{ $productCount }}">

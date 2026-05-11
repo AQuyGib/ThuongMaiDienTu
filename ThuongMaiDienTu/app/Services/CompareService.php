@@ -16,17 +16,20 @@ class CompareService
      */
     public function buildComparisonData(Collection $products): array
     {
-        if ($products->count() < 2) {
-            return [];
-        }
-
         // 1. Thu thập tất cả spec keys từ cột JSON `specifications` trên bảng products
         $allKeys = [];
         $productSpecs = [];
 
         foreach ($products as $product) {
-            $rawSpecs = $product->getRawOriginal('specifications') ?? '{}';
-            $specs = is_string($rawSpecs) ? (json_decode($rawSpecs, true) ?? []) : [];
+            $rawSpecs = $product->getRawOriginal('specifications');
+            if (is_string($rawSpecs)) {
+                $specs = json_decode($rawSpecs, true) ?? [];
+            } elseif (is_array($rawSpecs)) {
+                $specs = $rawSpecs;
+            } else {
+                $specs = [];
+            }
+            
             $productSpecs[$product->product_id] = $specs;
             $allKeys = array_merge($allKeys, array_keys($specs));
         }
