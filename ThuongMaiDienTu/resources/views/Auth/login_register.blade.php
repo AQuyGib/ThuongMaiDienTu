@@ -301,6 +301,42 @@
         /* Canvas particle layer */
         #particle-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
 
+        /* Nút quay lại trang chủ */
+        .back-to-home {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 10px 18px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .back-to-home svg {
+            transition: transform 0.3s ease;
+        }
+        .back-to-home:hover {
+            color: var(--tech-blue);
+            background: #ffffff;
+            border-color: var(--tech-blue);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+        .back-to-home:hover svg {
+            transform: translateX(-4px);
+        }
+
     </style>
 </head>
 <body>
@@ -354,8 +390,17 @@
         </div>
 
         <!-- FORM PANEL (Phải) -->
-        <div class="form-panel">
+        <div class="form-panel" style="position: relative;">
             
+            <!-- Nút Quay lại Trang chủ -->
+            <a href="{{ route('home') }}" class="back-to-home">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Trang chủ</span>
+            </a>
+
             <!-- Đưa tên thương hiệu lên trên -->
             <div class="form-header">
                 <h2 class="brand-title">DienMay<span class="highlight">Pro</span></h2>
