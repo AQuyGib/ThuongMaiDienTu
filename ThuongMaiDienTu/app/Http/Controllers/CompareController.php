@@ -14,8 +14,15 @@ class CompareController extends Controller
     private const TYPE = 'Compare';
     private const MAX_ITEMS = 3;
 
-    public function index()
+    public function index(Request $request)
     {
+        if ($request->has('ids')) {
+            $ids = $this->normalizeIds($request->query('ids'));
+            if (!empty($ids)) {
+                $this->saveCompareIds($ids);
+            }
+        }
+
         return view('frontend.compare.index', [
             'serverCompareIds' => $this->getServerCompareIds(),
         ]);

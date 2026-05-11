@@ -8,7 +8,13 @@
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div class="space-y-1">
                 <p class="text-sm font-medium text-blue-600">So sánh sản phẩm</p>
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Đối chiếu nhanh các sản phẩm đã lưu</h1>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Đối chiếu nhanh các sản phẩm đã lưu</h1>
+                    <button type="button" onclick="copyCompareLink()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100 transition-colors">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        Chia sẻ
+                    </button>
+                </div>
                 <p id="compareMeta" class="text-sm text-gray-500">0 sản phẩm</p>
             </div>
             <div class="flex flex-col sm:flex-row gap-3 items-center">

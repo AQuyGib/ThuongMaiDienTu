@@ -161,8 +161,11 @@ window.addToCompare = async function(productOrId) {
     // Kiểm tra cùng loại sản phẩm
     const existingSlot = document.querySelector('.compare-slot-filled[data-category-id]:not([data-category-id=""])');
     if (existingSlot && existingSlot.dataset.categoryId != productData.categoryId) {
-        showToast('Chỉ có thể so sánh các sản phẩm cùng loại', 'error');
-        return;
+        if (confirm('Sản phẩm này khác loại với danh sách hiện tại. Bạn có muốn xóa danh sách cũ để bắt đầu so sánh loại mới này không?')) {
+            clearCompare();
+        } else {
+            return;
+        }
     }
 
     // Điền dữ liệu vào slot
@@ -330,6 +333,12 @@ function formatSpecValue(value) {
     return escapeHtml(value);
 }
 
+function extractNumber(str) {
+    if (typeof str !== 'string') return null;
+    const match = str.match(/[\d\.]+/);
+    return match ? parseFloat(match[0].replace(/\./g, '')) : null;
+}
+
 async function loadComparePage() {
     console.log('Loading compare page...');
     if (!window.__COMPARE_PAGE__) {
@@ -374,18 +383,18 @@ async function loadComparePage() {
         // Render Head
         if (headEl) {
             headEl.innerHTML = `
-                <tr>
-                    <th class="sticky left-0 bg-gray-50 p-4 text-left font-semibold text-gray-700 w-56">Thuộc tính</th>
+                <tr class="sticky top-0 z-20 shadow-sm">
+                    <th class="bg-gray-50 p-4 text-left font-semibold text-gray-700 w-56 border-b border-gray-200">Thuộc tính</th>
                     ${products.map(p => `
-                        <th class="p-4 text-left min-w-72 align-top bg-white">
+                        <th class="p-4 text-left min-w-72 align-top bg-white border-b border-gray-200">
                             <div class="space-y-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                                 <div class="flex items-start justify-between gap-3">
-                                    <div class="font-semibold text-gray-900 leading-6">${escapeHtml(p.name)}</div>
+                                    <div class="font-semibold text-gray-900 leading-6 truncate">${escapeHtml(p.name)}</div>
                                     <button type="button" class="text-red-500 hover:text-red-700" onclick="window.removeAndRefresh('${p.product_id}')">
                                         <i class="fa-solid fa-xmark"></i>
                                     </button>
                                 </div>
-                                <img src="${p.thumbnail}" alt="${escapeHtml(p.name)}" class="h-32 w-full object-contain rounded-xl bg-gray-50 p-3">
+                                <img src="${p.thumbnail}" alt="${escapeHtml(p.name)}" class="h-24 w-full object-contain rounded-xl bg-gray-50 p-2">
                                 <div class="text-red-600 font-bold">${new Intl.NumberFormat('vi-VN').format(p.base_price)}đ</div>
                             </div>
                         </th>
@@ -427,14 +436,26 @@ async function loadComparePage() {
 
             const filteredSpecRows = diffOnly ? specRows.filter(r => r.is_different) : specRows;
 
-            html += filteredSpecRows.map(row => `
-                <tr class="${row.is_different ? 'bg-blue-50/50' : ''}">
-                    <th class="sticky left-0 ${row.is_different ? 'bg-blue-50' : 'bg-white'} p-4 text-left font-medium text-gray-700 border-r border-gray-100">
-                        ${row.label} ${row.is_different ? '<span class="ml-2 text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">Khác biệt</span>' : ''}
-                    </th>
-                    ${row.values.map(v => `<td class="p-4 text-gray-700">${formatSpecValue(v)}</td>`).join('')}
-                </tr>
-            `).join('');
+            html += filteredSpecRows.map(row => {
+                const rowValues = row.values.map(v => formatSpecValue(v));
+                const numbers = rowValues.map(v => extractNumber(v)).filter(n => n !== null);
+                const maxVal = (numbers.length > 1) ? Math.max(...numbers) : null;
+
+                return `
+                    <tr class="${row.is_different ? 'bg-blue-50/50' : ''}">
+                        <th class="sticky left-0 ${row.is_different ? 'bg-blue-50' : 'bg-white'} p-4 text-left font-medium text-gray-700 border-r border-gray-100">
+                            ${row.label} ${row.is_different ? '<span class="ml-2 text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">Khác biệt</span>' : ''}
+                        </th>
+                        ${rowValues.map(v => {
+                            const num = extractNumber(v);
+                            const isBest = maxVal !== null && num === maxVal;
+                            return `<td class="p-4 text-gray-700 ${isBest ? 'text-blue-600 font-bold bg-blue-50/30' : ''}">
+                                ${isBest ? '<i class="fa-solid fa-award mr-1 text-blue-500"></i>' : ''}${v}
+                            </td>`;
+                        }).join('')}
+                    </tr>
+                `;
+            }).join('');
 
             if (diffOnly && filteredSpecRows.length === 0) {
                 html += `<tr><td colspan="${products.length + 1}" class="p-10 text-center text-gray-400 italic">Không có khác biệt về thông số kỹ thuật</td></tr>`;
@@ -482,6 +503,27 @@ window.removeAndRefresh = function(id) {
         removeFromCompare(btn);
         loadComparePage();
     }
+};
+
+window.copyCompareLink = function() {
+    const ids = Array.from(document.querySelectorAll('.compare-slot-filled[data-product-id]'))
+        .map(el => el.dataset.productId)
+        .filter(id => id && id !== "");
+    
+    if (ids.length === 0) {
+        showToast('Hãy thêm sản phẩm để chia sẻ', 'error');
+        return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('ids', ids.join(','));
+    
+    navigator.clipboard.writeText(url.toString()).then(() => {
+        showToast('Đã sao chép liên kết so sánh');
+    }).catch(err => {
+        console.error('Copy failed:', err);
+        showToast('Không thể sao chép liên kết', 'error');
+    });
 };
 
 const clearAllBtn = document.getElementById('compareClearAllBtn');
