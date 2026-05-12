@@ -25,7 +25,8 @@ class SocialController extends Controller
         try {
             $socialUser = Socialite::driver($provider)->user();
         } catch (\Exception $e) {
-            return redirect()->route('login_register')->with('error', 'Đăng nhập thất bại.');
+            \Illuminate\Support\Facades\Log::error('Social Login Error: ' . $e->getMessage());
+            return redirect()->route('login_register')->with('error', 'Đăng nhập thất bại: ' . $e->getMessage());
         }
 
         $existingUser = User::where('email', $socialUser->getEmail())->first();
@@ -48,6 +49,10 @@ class SocialController extends Controller
                 'member_tier' => $existingUser ? $existingUser->member_tier : 'Dong',
             ]
         );
+
+        if ($user->status === 'Banned' || $user->status === 'Inactive') {
+            return redirect()->route('login')->withErrors(['login_error' => 'Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.']);
+        }
 
         Auth::login($user);
 
