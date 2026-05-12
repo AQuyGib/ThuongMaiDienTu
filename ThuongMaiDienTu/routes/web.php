@@ -84,12 +84,7 @@ Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::cl
 Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'getCategoryFilters'])->name('api.categories.filters');
 
 Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
-Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
 
-Route::post('/profile/password/update', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
-Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name('profile.address.store');
-Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
-Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
 Route::delete('/profile/wishlist/{id}', [ProfileController::class, 'removeFromWishlist'])->name('profile.wishlist.destroy');
 
 // Product Compare (So sánh sản phẩm)
