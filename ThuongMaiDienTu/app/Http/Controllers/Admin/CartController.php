@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 class CartController extends Controller
 {
     /**
-     * Hiển thị giỏ hàng.
+     * Hiển thị giỏ hàng (trong Admin).
      */
     public function index()
     {
@@ -40,16 +40,11 @@ class CartController extends Controller
     }
 
     /**
-     * Hiển thị trang tính phí vận chuyển.
+     * Hiển thị trang tính phí vận chuyển (trong Admin).
      */
     public function shipping()
     {
         return view('frontend.cart.ShippingCosts');
-    }
-
-    public function checkout()
-    {
-        return view('frontend.cart.pay');
     }
 
     public function pay()
@@ -62,3 +57,4 @@ class CartController extends Controller
         return view('frontend.cart.maQR');
     }
 }
+

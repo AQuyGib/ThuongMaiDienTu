@@ -79,10 +79,24 @@
                 <i class="fa-solid fa-truck-fast"></i>
                 <span>Tra cứu đơn</span>
             </a>
-            <a href="{{ route('cart.index') }}" class="action-item">
+            <a href="{{ route('cart.index') }}" class="action-item" style="position: relative;">
                 <i class="fa-solid fa-cart-shopping"></i>
+                <span id="headerCartBadge" style="position: absolute; top: 0px; right: 8px; background: #d70018; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 10px; display: none;">0</span>
                 <span>Giỏ hàng</span>
             </a>
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    let userId = '{{ Auth::id() ?? "guest" }}';
+                    let savedCount = localStorage.getItem('cartCount_' + userId);
+                    if(savedCount && parseInt(savedCount) > 0) {
+                        let badge = document.getElementById('headerCartBadge');
+                        if(badge) {
+                            badge.innerText = savedCount;
+                            badge.style.display = 'block';
+                        }
+                    }
+                });
+            </script>
             @auth
                 <div class="action-item relative group" style="position: relative;">
                     <a href="/profile" style="display:flex; flex-direction:column; align-items:center;">
@@ -123,7 +137,7 @@
         <!-- CỘT TRÁI: Danh mục + icon -->
         <div class="mega-col-left">
             @foreach($headerCategories as $cat)
-                <a href="#" class="mega-cat-item {{ $loop->first ? 'active' : '' }}"
+                <a href="{{ route('products.category', $cat->slug) }}" class="mega-cat-item {{ $loop->first ? 'active' : '' }}"
                    data-cat="{{ $cat->category_id }}">
                     <i class="fa-solid {{ $categoryIcons[$cat->name] ?? 'fa-tag' }}"></i>
                     <span>{{ $cat->name }}</span>
@@ -136,7 +150,7 @@
             <a href="#" class="mega-cat-item"><i class="fa-solid fa-gamepad"></i><span>Thu cũ đổi mới</span></a>
             <a href="#" class="mega-cat-item"><i class="fa-solid fa-tags"></i><span>Hàng cũ</span></a>
             <a href="#" class="mega-cat-item"><i class="fa-solid fa-percent"></i><span>Khuyến mãi</span></a>
-            <a href="#" class="mega-cat-item"><i class="fa-solid fa-newspaper"></i><span>Tin công nghệ</span></a>
+            <a href="{{ route('articles.index') }}" class="mega-cat-item"><i class="fa-solid fa-newspaper"></i><span>Tin công nghệ</span></a>
         </div>
 
         <!-- CỘT PHẢI: Nội dung chi tiết theo danh mục -->
@@ -149,9 +163,9 @@
                             <h4 class="mega-section-title">{{ $cat->name }}</h4>
                             <div class="mega-tags">
                                 @foreach($cat->children as $child)
-                                    <a href="#" class="mega-tag">{{ $child->name }}</a>
+                                    <a href="{{ route('products.category', $child->slug) }}" class="mega-tag">{{ $child->name }}</a>
                                 @endforeach
-                                <a href="#" class="mega-tag see-all">Xem tất cả {{ $cat->name }}</a>
+                                <a href="{{ route('products.category', $cat->slug) }}" class="mega-tag see-all">Xem tất cả {{ $cat->name }}</a>
                             </div>
                         </div>
                     @else
