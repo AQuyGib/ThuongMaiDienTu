@@ -82,19 +82,7 @@
 .specs-table td:first-child { width:40%; font-weight:600; color:#555; }
 .specs-table td:last-child { color:#222; }
 
-/* Reviews */
-.pd-reviews { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
-.pd-reviews h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
-.review-stats { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-.review-average { text-align: center; }
-.review-average h3 { font-size: 32px; color: #d70018; margin-bottom: 5px; }
-.review-average .stars { color: #f59e0b; font-size: 14px; }
-.review-item { padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
-.review-item:last-child { border-bottom: none; }
-.review-user { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
-.review-user span { background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;}
-.review-stars { color: #f59e0b; font-size: 12px; margin-bottom: 8px; }
-.review-content { font-size: 14px; color: #444; }
+
 
 /* ===== RELATED ===== */
 .pd-related { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
@@ -176,10 +164,9 @@
         ];
     })->toJson();
     
-    // Load reviews
-    $reviews = App\Models\Review::where('product_id', $product->product_id)->orderBy('created_at', 'desc')->get();
-    $reviewCount = $reviews->count();
-    $avgRating = $reviewCount > 0 ? round($reviews->avg('rating'), 1) : 0;
+    // Reviews are disabled in this branch
+    $reviewCount = 0;
+    $avgRating = 0;
 
     $discountPercent = 0;
     if ($oldPrice > 0 && $oldPrice > $basePrice) {
@@ -389,69 +376,7 @@
         @endif
     </div>
 
-    {{-- Đánh giá sản phẩm --}}
-    <div class="pd-reviews">
-        <h2><i class="fa-solid fa-comments" style="color:#0046ab"></i> Đánh giá & Nhận xét</h2>
-        <div class="review-stats">
-            <div class="review-average">
-                <h3 id="avgReviewScore">{{ $avgRating }}/5</h3>
-                <div class="stars" id="avgReviewStars">
-                    @for($i=1; $i<=5; $i++)
-                        @if($i <= round($avgRating))
-                            <i class="fa-solid fa-star" style="color:#f59e0b"></i>
-                        @else
-                            <i class="fa-regular fa-star" style="color:#ccc"></i>
-                        @endif
-                    @endfor
-                </div>
-                <p style="font-size:12px; color:#666; margin-top:5px;" id="totalReviewCount">{{ $reviewCount }} đánh giá</p>
-            </div>
-            <div style="flex:1;">
-                <p style="font-size:14px; color:#555;" id="reviewStatusText">
-                    @if($reviewCount > 0)
-                        Đã có {{ $reviewCount }} đánh giá cho sản phẩm này.
-                    @else
-                        Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!
-                    @endif
-                </p>
-            </div>
-        </div>
-        
-        <div class="review-form" style="margin-bottom: 25px; background: #f9f9f9; padding: 20px; border-radius: 10px;">
-            <h4 style="margin-bottom: 15px; font-size: 15px;">Viết đánh giá của bạn</h4>
-            <div style="margin-bottom: 10px; display: flex; gap: 10px; color: #ccc; font-size: 20px; cursor: pointer;">
-                <i class="fa-solid fa-star star-rating" data-val="1" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="2" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="3" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="4" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="5" style="color:#f59e0b"></i>
-            </div>
-            <textarea id="reviewText" placeholder="Nhập đánh giá của bạn về sản phẩm này..." style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; resize: none;"></textarea>
-            <button type="button" onclick="submitReview()" style="background: #0046ab; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">Gửi đánh giá</button>
-        </div>
-        
-        <div class="review-list">
-            @if($reviewCount > 0)
-                @foreach($reviews as $r)
-                    <div class="review-item" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">
-                        <div class="review-user" style="font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">Khách hàng <span style="background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;"><i class="fa-solid fa-check"></i> Đã mua hàng</span></div>
-                        <div class="review-stars" style="color: #f59e0b; font-size: 12px; margin-bottom: 8px;">
-                            @for($i=1; $i<=5; $i++)
-                                @if($i <= $r->rating)
-                                    <i class="fa-solid fa-star"></i>
-                                @else
-                                    <i class="fa-regular fa-star"></i>
-                                @endif
-                            @endfor
-                        </div>
-                        <div class="review-content" style="font-size: 14px; color: #444;">{{ $r->content }}</div>
-                    </div>
-                @endforeach
-            @else
-                <p id="noReviewMsg" style="text-align: center; color: #888; font-style: italic; padding: 20px 0;">Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đánh giá!</p>
-            @endif
-        </div>
-    </div>
+
 
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())
@@ -844,61 +769,7 @@ document.querySelectorAll('.star-rating').forEach(star => {
     });
 });
 
-function submitReview() {
-    const textarea = document.getElementById('reviewText');
-    const content = textarea.value.trim();
-    if(!content) { 
-        alert('Vui lòng nhập nội dung đánh giá!'); 
-        return; 
-    }
-    
-    // Gọi AJAX lưu vào DB
-    fetch('{{ route("reviews.store") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            product_id: '{{ $product->product_id }}',
-            rating: currentRating,
-            content: content
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.success) {
-            // Render sao
-            let starsHtml = '';
-            for(let i=1; i<=5; i++) {
-                starsHtml += (i <= currentRating) ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
-            }
-            
-            const reviewList = document.querySelector('.review-list');
-            if(document.getElementById('noReviewMsg')) {
-                document.getElementById('noReviewMsg').remove(); // Xóa dòng "Chưa có đánh giá nào..."
-            }
-            
-            // Thêm review mới lên đầu
-            reviewList.innerHTML = `
-                <div class="review-item" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">
-                    <div class="review-user" style="font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">Bạn <span style="background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;"><i class="fa-solid fa-check"></i> Vừa đánh giá</span></div>
-                    <div class="review-stars" style="color: #f59e0b; font-size: 12px; margin-bottom: 8px;">${starsHtml}</div>
-                    <div class="review-content" style="font-size: 14px; color: #444;">${content}</div>
-                </div>
-            ` + reviewList.innerHTML;
-            
-            textarea.value = '';
-            showToast('Đã gửi đánh giá thành công!');
-        } else {
-            alert('Đã xảy ra lỗi khi lưu đánh giá.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Đã xảy ra lỗi kết nối!');
-    });
-}
+
 
 // --- Toast & Actions ---
 function showToast(msg) {
