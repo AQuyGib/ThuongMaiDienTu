@@ -58,8 +58,11 @@ class ProfileController extends Controller
                 $tierProgress = ($totalSpent / $targetAmount) * 100;
             }
         }
+        
+        $loginHistories = $user->loginHistories()->orderBy('login_at', 'desc')->take(10)->get();
+        $wishlist = $user->wishlists()->where('type', 'wishlist')->with('product')->get();
 
-        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'loginHistories'));
+        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'loginHistories', 'wishlist'));
     }
 
     /**
@@ -235,4 +238,44 @@ class ProfileController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function removeFromWishlist($id)
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $user = Auth::user();
+            // Sử dụng relationship để đảm bảo tính nhất quán và bảo mật (chỉ xóa của mình)
+            $wishlistItem = $user->wishlists()->where('id', $id)->first();
+
+            if ($wishlistItem) {
+                $wishlistItem->delete();
+                return response()->json(['success' => true]);
+            }
+
+            return response()->json(['success' => false, 'error' => 'Không tìm thấy sản phẩm trong danh sách yêu thích.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi xóa sản phẩm yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function clearWishlist()
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $user = Auth::user();
+            // Xóa tất cả các mục thuộc loại Wishlist của user
+            $user->wishlists()->whereIn('type', ['Wishlist', 'wishlist'])->delete();
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi xóa toàn bộ danh sách yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
 }

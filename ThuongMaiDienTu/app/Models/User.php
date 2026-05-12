@@ -75,6 +75,10 @@ class User extends Authenticatable {
         return $this->hasMany(Order::class, 'staff_id', 'user_id');
     }
 
+    public function loginHistories() {
+        return $this->hasMany(LoginHistory::class, 'user_id');
+    }
+
     public function repairTickets() {
         return $this->hasMany(RepairTicket::class, 'technician_id', 'user_id');
     }
