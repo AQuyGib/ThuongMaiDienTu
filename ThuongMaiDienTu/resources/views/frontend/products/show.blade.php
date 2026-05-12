@@ -378,6 +378,8 @@
 
 
 
+    @include('frontend.products.partials.reviews')
+
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())
         <div class="pd-related">
