@@ -430,7 +430,12 @@
 
                     <div class="form-group">
                         <label for="password">Mật khẩu</label>
-                        <input type="password" id="password" name="password" class="form-control" required minlength="8" placeholder="••••••••">
+                        <div class="input-wrapper">
+                            <input type="password" id="password" name="password" class="form-control" required minlength="8" placeholder="••••••••">
+                            <button type="button" class="eye-toggle" onclick="togglePassword('password', this)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </button>
+                        </div>
                         <div style="text-align: right; margin-top: 8px;">
                             <a href="{{ route('password.request') }}" class="forgot-link">Quên mật khẩu?</a>
                         </div>
