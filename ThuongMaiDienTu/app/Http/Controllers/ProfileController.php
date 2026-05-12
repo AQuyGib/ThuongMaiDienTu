@@ -58,6 +58,8 @@ class ProfileController extends Controller
                 $tierProgress = ($totalSpent / $targetAmount) * 100;
             }
         }
+        
+        $loginHistories = $user->loginHistories()->orderBy('login_at', 'desc')->take(10)->get();
 
         return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'loginHistories'));
     }
