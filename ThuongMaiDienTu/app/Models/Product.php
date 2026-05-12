@@ -10,14 +10,13 @@ class Product extends Model
     public $timestamps = false;
     protected $guarded = [];
     protected $casts = [
-        'specifications' => 'array',
     ];
 
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
-    public function productSpecifications()
+    public function specifications()
     {
         return $this->hasMany(ProductSpecification::class, 'product_id');
     }
