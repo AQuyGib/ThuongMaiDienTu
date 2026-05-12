@@ -72,9 +72,7 @@ Route::middleware('auth')->group(function() {
 });
 Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController::class, 'show'])->name('articles.show');
 
-Route::match(['get', 'post'], '/admin/permissions', function () {
-    return view('admin.permissions.index');
-})->name('admin.permissions.index')->middleware([\App\Http\Middleware\IsAdmin::class]);
+
 
 // Product Filtering
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');

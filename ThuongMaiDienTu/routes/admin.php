@@ -41,7 +41,8 @@ Route::resource('orders', OrderController::class);
 Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 
 // CRUD Tài khoản (Users)
-Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
+// Hệ thống quản lý tài khoản chính thức
+Route::match(['get', 'post'], 'users', [App\Http\Controllers\Admin\PermissionsController::class, 'index'])->name('users.index');
 Route::get('users/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
 Route::delete('users/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
 Route::post('users/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');

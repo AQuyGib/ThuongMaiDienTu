@@ -1,128 +1,4 @@
 <?php
-use App\Models\User;
-
-$search = request('search');
-$filter_role = request('role_id');
-$filter_status = request('status');
-$filter_tier = request('tier');
-$sort = request('sort', 'newest');
-
-$query = User::with('role');
-
-if ($search) {
-    $query->where(function($q) use ($search) {
-        $q->where('full_name', 'like', "%$search%")
-          ->orWhere('email', 'like', "%$search%");
-        
-        // Nếu là số, ưu tiên tìm chính xác ID
-        if (is_numeric($search)) {
-            $q->orWhere('user_id', $search);
-        } else {
-            $q->orWhere('user_id', 'like', "%$search%");
-        }
-    });
-}
-
-if ($filter_role) $query->where('role_id', $filter_role);
-if ($filter_status) $query->where('status', $filter_status);
-if ($filter_tier) $query->where('member_tier', $filter_tier);
-
-// Xử lý Sắp xếp
-switch ($sort) {
-    case 'oldest':  $query->orderBy('user_id', 'ASC'); break;
-    case 'name_az': $query->orderBy('full_name', 'ASC'); break;
-    case 'name_za': $query->orderBy('full_name', 'DESC'); break;
-    case 'id_asc':  $query->orderBy('user_id', 'ASC'); break;
-    case 'id_desc': $query->orderBy('user_id', 'DESC'); break;
-    default:        $query->orderBy('user_id', 'DESC'); break;
-}
-
-$users = $query->paginate(15)->withQueryString();
-$total_users = User::count();
-
-if (request('export') == 'csv') {
-    $all = $query->get();
-    $filename = "users_export_" . date('Ymd_His') . ".csv";
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename=' . $filename);
-    $output = fopen('php://output', 'w');
-    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
-    fputcsv($output, ['ID','Họ tên','Email','SĐT','Vai trò','Hạng','Trạng thái','Ngày tạo']);
-    foreach ($all as $u) {
-        fputcsv($output, [$u->user_id, $u->full_name, $u->email, $u->phone_number, $u->role->name ?? '', $u->member_tier, $u->status, $u->created_at]);
-    }
-    fclose($output); exit();
-}
-
-if (request()->isMethod('post') && request('action') == 'bulk_delete') {
-    $ids = array_filter(explode(',', request('ids')), fn($id) => $id != 1);
-    if (!empty($ids)) { User::whereIn('user_id', $ids)->delete(); }
-    return redirect('/admin/permissions?message=bulk_deleted');
-}
-
-if (request()->isMethod('post') && request('action') == 'delete') {
-    $del_id = request('user_id');
-    if ($del_id != 1) User::destroy($del_id);
-    return redirect('/admin/permissions?message=deleted');
-}
-
-if (request()->isMethod('post') && in_array(request('action'), ['add','edit'])) {
-    $data = [
-        'full_name'    => request('full_name'),
-        'email'        => request('email'),
-        'phone_number' => request('phone_number'),
-        'role_id'      => request('role_id'),
-        'status'       => request('status'),
-        'member_tier'  => request('member_tier'),
-    ];
-    if (request('password')) $data['password_hash'] = Hash::make(request('password'));
-    if (request('action') == 'add') {
-        User::create($data);
-        return redirect('/admin/permissions?message=added');
-    } else {
-        User::where('user_id', request('user_id'))->update($data);
-        return redirect('/admin/permissions?message=updated');
-    }
-}
-
-if (request()->isMethod('post')) {
-    if (request('action') == 'add_role') {
-        \App\Models\Role::create(['name' => request('name'), 'description' => request('description'), 'color' => request('color','indigo')]);
-        return redirect('/admin/permissions?tab=roles&message=role_added');
-    }
-    if (request('action') == 'edit_role') {
-        \App\Models\Role::where('role_id', request('role_id'))->update(['name' => request('name'), 'description' => request('description'), 'color' => request('color','indigo')]);
-        return redirect('/admin/permissions?tab=roles&message=role_updated');
-    }
-    if (request('action') == 'delete_role' && !in_array(request('role_id'), [1,2,3])) {
-        \App\Models\Role::destroy(request('role_id'));
-        return redirect('/admin/permissions?tab=roles&message=role_deleted');
-    }
-}
-
-$roles      = \App\Models\Role::all();
-$active_tab = request('tab', 'users');
-$msg_map    = [
-    'deleted'      => ['Đã xóa tài khoản thành công!', 'success'],
-    'bulk_deleted' => ['Đã xóa hàng loạt thành công!', 'success'],
-    'added'        => ['Đã thêm tài khoản mới!', 'success'],
-    'updated'      => ['Cập nhật tài khoản thành công!', 'success'],
-    'role_added'   => ['Đã thêm vai trò mới!', 'success'],
-    'role_updated' => ['Cập nhật vai trò thành công!', 'success'],
-    'role_deleted' => ['Đã xóa vai trò!', 'danger'],
-];
-[$message, $msg_type] = $msg_map[request('message')] ?? ['', 'success'];
-
-$role_stats  = [];
-$status_stats = ['Active' => 0, 'Banned' => 0, 'Inactive' => 0];
-foreach ($roles as $r) {
-    $role_stats[$r->role_id] = ['name' => $r->name, 'count' => User::where('role_id', $r->role_id)->count()];
-}
-foreach (['Active','Banned','Inactive'] as $s) {
-    $status_stats[$s] = User::where('status', $s)->count();
-}
-$tier_stats = ['Vang' => User::where('member_tier','Vang')->count(), 'Bac' => User::where('member_tier','Bac')->count(), 'Dong' => User::where('member_tier','Dong')->count()];
-
 function userInitials($name) {
     $parts = explode(' ', trim($name));
     if (count($parts) >= 2) return strtoupper(mb_substr($parts[0],0,1).mb_substr(end($parts),0,1));
@@ -169,7 +45,7 @@ function avatarColor($name) {
     --radius-lg: 16px;
     --radius-xl: 22px;
 
-    --sidebar-w: 260px;
+    --sidebar-w: 300px;
 }
 
 body.light-mode {
@@ -194,7 +70,7 @@ body {
     display: flex;
     height: 100vh;
     overflow: hidden;
-    font-size: 16px;
+    font-size: 20px;
     transition: background 0.3s, color 0.3s;
 }
 
@@ -232,18 +108,18 @@ body {
     box-shadow: 0 4px 12px var(--indigo-glow);
     flex-shrink: 0;
 }
-.logo-text { font-size: 13px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-1); }
-.logo-badge { font-size: 9px; font-weight: 700; letter-spacing: 1px; color: var(--text-2); text-transform: uppercase; }
+.logo-text { font-size: 18px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-1); }
+.logo-badge { font-size: 13px; font-weight: 700; letter-spacing: 1px; color: var(--text-2); text-transform: uppercase; }
 
 .sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 12px; }
 .nav-section-label {
-    font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    font-size: 14px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
     color: var(--text-3); padding: 16px 8px 8px; display: block;
 }
 .nav-item {
     display: flex; align-items: center; gap: 10px;
     padding: 12px 14px; border-radius: var(--radius);
-    color: var(--text-2); font-size: 15px; font-weight: 500;
+    color: var(--text-2); font-size: 18px; font-weight: 500;
     text-decoration: none; cursor: pointer;
     transition: all 0.15s ease;
     margin-bottom: 4px;
@@ -267,7 +143,7 @@ body {
     margin-left: auto;
     background: var(--indigo);
     color: #fff;
-    font-size: 10px; font-weight: 700;
+    font-size: 14px; font-weight: 700;
     padding: 2px 7px; border-radius: 20px;
 }
 
@@ -289,8 +165,8 @@ body {
     font-size: 13px; font-weight: 700; color: #fff;
     flex-shrink: 0;
 }
-.admin-name { font-size: 13px; font-weight: 600; color: var(--text-1); }
-.admin-role { font-size: 10px; font-weight: 600; color: var(--emerald); text-transform: uppercase; letter-spacing: 0.5px; }
+.admin-name { font-size: 17px; font-weight: 600; color: var(--text-1); }
+.admin-role { font-size: 14px; font-weight: 600; color: var(--emerald); text-transform: uppercase; letter-spacing: 0.5px; }
 .btn-back-site {
     width: 100%; padding: 9px; border-radius: var(--radius);
     background: var(--surface-3); border: 1px solid var(--border);
@@ -312,10 +188,10 @@ body {
 }
 .topbar-breadcrumb {
     display: flex; align-items: center; gap: 8px;
-    font-size: 13px; color: var(--text-2);
+    font-size: 17px; color: var(--text-2);
 }
 .topbar-breadcrumb .current { color: var(--text-1); font-weight: 600; }
-.topbar-breadcrumb i { font-size: 10px; }
+.topbar-breadcrumb i { font-size: 14px; }
 
 .topbar-search {
     flex: 1; max-width: 420px; margin-left: auto;
@@ -396,9 +272,9 @@ body {
 .stat-icon.rose  { background: rgba(244,63,94,0.15); color: var(--rose); }
 .stat-icon.amber { background: rgba(245,158,11,0.15); color: var(--amber); }
 
-.stat-label { font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-.stat-value { font-size: 36px; font-weight: 800; color: var(--text-1); line-height: 1; font-variant-numeric: tabular-nums; }
-.stat-sub { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+.stat-label { font-size: 17px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.stat-value { font-size: 44px; font-weight: 800; color: var(--text-1); line-height: 1; font-variant-numeric: tabular-nums; }
+.stat-sub { font-size: 16px; color: var(--text-3); margin-top: 6px; }
 
 /* ── TABS ── */
 .tab-bar {
@@ -408,14 +284,14 @@ body {
 }
 .tab-btn {
     display: flex; align-items: center; gap: 7px;
-    padding: 12px 20px; font-size: 15px; font-weight: 600;
+    padding: 12px 20px; font-size: 19px; font-weight: 600;
     color: var(--text-2); text-decoration: none; border-bottom: 2px solid transparent;
     margin-bottom: -1px; transition: all 0.15s; border-radius: var(--radius) var(--radius) 0 0;
 }
 .tab-btn:hover { color: var(--text-1); background: var(--surface-2); }
 .tab-btn.active { color: var(--violet); border-bottom-color: var(--indigo); }
 .tab-count {
-    font-size: 10px; font-weight: 700;
+    font-size: 14px; font-weight: 700;
     background: var(--surface-3); color: var(--text-2);
     padding: 2px 7px; border-radius: 20px;
 }
@@ -501,7 +377,7 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 tbody tr:last-child { border-bottom: none; }
 
 td {
-    padding: 16px; font-size: 15px; color: var(--text-1);
+    padding: 16px; font-size: 19px; color: var(--text-1);
     vertical-align: middle;
 }
 td:first-child { padding-left: 8px; }
@@ -514,18 +390,18 @@ td input[type=checkbox] { accent-color: var(--indigo); width: 14px; height: 14px
     font-size: 12px; font-weight: 700; color: #fff;
     flex-shrink: 0; letter-spacing: 0.5px;
 }
-.user-name { font-size: 15px; font-weight: 600; color: var(--text-1); margin-bottom: 1px; }
-.user-email { font-size: 13px; color: var(--text-2); }
+.user-name { font-size: 19px; font-weight: 600; color: var(--text-1); margin-bottom: 1px; }
+.user-email { font-size: 17px; color: var(--text-2); }
 .user-id {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px; color: var(--text-3);
+    font-size: 16px; color: var(--text-3);
 }
 
 /* Status badges */
 .badge {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 4px 12px; border-radius: 20px;
-    font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
+    font-size: 16px; font-weight: 600; letter-spacing: 0.3px;
     white-space: nowrap;
 }
 .badge-dot { width: 5px; height: 5px; border-radius: 50%; }
@@ -539,7 +415,7 @@ td input[type=checkbox] { accent-color: var(--indigo); width: 14px; height: 14px
 .role-badge {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 10px; border-radius: 6px;
-    font-size: 11px; font-weight: 600;
+    font-size: 15px; font-weight: 600;
 }
 .r-admin    { background: rgba(244,63,94,0.12);  color: #FB7185; }
 .r-manager  { background: rgba(14,165,233,0.12); color: #38BDF8; }
@@ -549,7 +425,7 @@ td input[type=checkbox] { accent-color: var(--indigo); width: 14px; height: 14px
 .tier-badge {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 10px; border-radius: 6px;
-    font-size: 11px; font-weight: 600;
+    font-size: 15px; font-weight: 600;
 }
 .t-vang { background: rgba(245,158,11,0.12); color: #FCD34D; }
 .t-bac  { background: rgba(148,163,184,0.12); color: #CBD5E1; }
@@ -561,7 +437,7 @@ td input[type=checkbox] { accent-color: var(--indigo); width: 14px; height: 14px
     width: 30px; height: 30px; border-radius: 8px;
     background: var(--surface-2); border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
-    color: var(--text-2); font-size: 12px; cursor: pointer;
+    color: var(--text-2); font-size: 16px; cursor: pointer;
     transition: all 0.15s;
 }
 .act-btn:hover { background: var(--surface-3); border-color: var(--border-2); color: var(--text-1); }
@@ -725,9 +601,9 @@ td input[type=checkbox] { accent-color: var(--indigo); width: 14px; height: 14px
 <!-- ══ SIDEBAR ══ -->
 <aside class="sidebar">
     <div class="sidebar-logo">
-        <div class="logo-icon"><i class="fa-solid fa-bolt"></i></div>
+        <div class="logo-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
         <div>
-            <div class="logo-text">DienMayPro</div>
+            <div class="logo-text">DIENMAYPRO</div>
             <div class="logo-badge">Admin Panel</div>
         </div>
     </div>
@@ -735,42 +611,66 @@ td input[type=checkbox] { accent-color: var(--indigo); width: 14px; height: 14px
     <nav class="sidebar-nav">
         <span class="nav-section-label">Tổng quan</span>
         <a href="/admin" class="nav-item">
-            <i class="fa-solid fa-chart-pie"></i> Dashboard
+            <i class="fa-solid fa-gauge-high"></i> Dashboard
+        </a>
+        <a href="/admin/kpi" class="nav-item">
+            <i class="fa-solid fa-chart-pie"></i> Thống kê KPI
         </a>
 
-        <span class="nav-section-label">Quản lý</span>
+        <span class="nav-section-label">Quản lý Bán Hàng</span>
         <a href="/admin/orders" class="nav-item">
             <i class="fa-solid fa-cart-shopping"></i> Đơn hàng
-            <span class="nav-badge">12</span>
         </a>
+        <a href="/admin/cashbooks" class="nav-item">
+            <i class="fa-solid fa-wallet"></i> Sổ Quỹ
+        </a>
+
+        <span class="nav-section-label">Sản phẩm & Nội dung</span>
         <a href="/admin/products" class="nav-item">
-            <i class="fa-solid fa-boxes-stacked"></i> Sản phẩm
+            <i class="fa-solid fa-box"></i> Sản phẩm
         </a>
-        <a href="/admin/permissions" class="nav-item active">
-            <i class="fa-solid fa-users"></i> Tài khoản
+        <a href="/admin/categories" class="nav-item">
+            <i class="fa-solid fa-list"></i> Danh mục
         </a>
-        <a href="/admin/reviews" class="nav-item">
-            <i class="fa-solid fa-star-half-stroke"></i> Đánh giá
+        <a href="/admin/articles" class="nav-item">
+            <i class="fa-solid fa-newspaper"></i> Bài viết & CMS
+        </a>
+
+        <span class="nav-section-label">Quản lý Kho</span>
+        <a href="/admin/suppliers" class="nav-item">
+            <i class="fa-solid fa-truck-field"></i> Nhà cung cấp
+        </a>
+        <a href="/admin/purchase-orders" class="nav-item">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Nhập kho
+        </a>
+        <a href="/admin/inventory" class="nav-item">
+            <i class="fa-solid fa-warehouse"></i> Tồn kho (IMEI)
         </a>
 
         <span class="nav-section-label">Hệ thống</span>
-        <a href="/admin/vouchers" class="nav-item">
-            <i class="fa-solid fa-ticket"></i> Voucher
+        <a href="/admin/users" class="nav-item active">
+            <i class="fa-solid fa-users"></i> Tài khoản
         </a>
-        <a href="/admin/reports" class="nav-item">
-            <i class="fa-solid fa-chart-line"></i> Báo cáo
+        <a href="/admin/settings/theme" class="nav-item">
+            <i class="fa-solid fa-palette"></i> Giao diện
         </a>
         <a href="/admin/settings" class="nav-item">
             <i class="fa-solid fa-gear"></i> Cài đặt
         </a>
+        <a href="/admin/logs" class="nav-item">
+            <i class="fa-solid fa-clock-rotate-left"></i> Nhật ký
+        </a>
     </nav>
 
     <div class="sidebar-footer">
+        <?php $u = Illuminate\Support\Facades\Auth::user(); ?>
         <div class="admin-card">
-            <div class="admin-avatar">AD</div>
+            <div class="admin-avatar" style="background: <?php echo avatarColor($u->full_name ?? 'AD'); ?>">
+                <?php echo userInitials($u->full_name ?? 'AD'); ?>
+            </div>
             <div>
-                <div class="admin-name">Administrator</div>
-                <div class="admin-role">Super Admin</div>
+                <div class="admin-name"><?php echo htmlspecialchars($u->full_name ?? 'Administrator'); ?></div>
+                <div class="admin-role"><?php echo $u->role->name ?? 'Admin'; ?></div>
             </div>
             <div style="margin-left:auto; color:var(--text-3); font-size:12px; cursor:pointer;">
                 <i class="fa-solid fa-ellipsis-vertical"></i>
