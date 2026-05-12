@@ -63,6 +63,23 @@
         .extra-price{color:var(--warning);font-weight:600}
         .total-price{color:var(--success);font-weight:700}
         .img-preview{max-width:100%;max-height:120px;border-radius:8px;margin-top:8px;display:none;border:1px solid var(--border)}
+        .upload-tabs{display:flex;gap:0;margin-bottom:14px;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+        .upload-tab{flex:1;padding:9px 14px;text-align:center;font-size:.82rem;font-weight:600;cursor:pointer;background:var(--bg-primary);color:var(--text-secondary);transition:all .2s;border:none;outline:none}
+        .upload-tab.active{background:var(--accent);color:#fff}
+        .upload-tab:first-child{border-right:1px solid var(--border)}
+        .upload-pane{display:none}
+        .upload-pane.active{display:block}
+        .drop-zone{border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .25s;background:var(--bg-primary);position:relative}
+        .drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(108,92,231,.06)}
+        .drop-zone input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+        .drop-zone .drop-icon{font-size:2rem;color:var(--accent);margin-bottom:6px}
+        .drop-zone .drop-text{font-size:.85rem;color:var(--text-secondary)}
+        .drop-zone .drop-text strong{color:var(--accent)}
+        .file-info{display:flex;align-items:center;gap:10px;background:var(--bg-primary);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-top:10px}
+        .file-info .file-name{font-size:.85rem;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .file-info .file-size{font-size:.78rem;color:var(--text-secondary)}
+        .file-info .file-remove{width:28px;height:28px;border-radius:6px;border:none;background:var(--danger);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.8rem;transition:background .2s}
+        .file-info .file-remove:hover{background:var(--danger-hover)}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         .animate-in{animation:fadeInUp .4s ease forwards}
     </style>
@@ -130,6 +147,26 @@
             </div>
             @endif
         </div>
+        @php
+            $catName = $product->category->name ?? '';
+            $variantMode = match (true) {
+                str_contains($catName, 'Laptop') || str_contains($catName, 'MacBook') => 'laptop',
+                str_contains($catName, 'Điện thoại') || in_array($catName, ['iPhone', 'Samsung', 'Xiaomi', 'OPPO'], true) => 'phone',
+                str_contains($catName, 'Tablet') || in_array($catName, ['iPad', 'Samsung Galaxy Tab'], true) => 'tablet',
+                str_contains($catName, 'Tai nghe') || str_contains($catName, 'Loa') => 'audio',
+                str_contains($catName, 'Đồng hồ') => 'watch',
+                str_contains($catName, 'Tivi') || str_contains($catName, 'Màn hình') => 'tv',
+                default => 'default',
+            };
+            $hasRamRom = in_array($variantMode, ['laptop', 'phone', 'tablet'], true);
+            $hasCpuGpu = $variantMode === 'laptop' || $variantMode === 'tablet' || $variantMode === 'phone';
+            $colorLabel = match ($variantMode) {
+                'watch' => 'Kích Thước',
+                'tv' => 'Kích Thước',
+                'audio' => 'Phiên Bản / Màu',
+                default => 'Màu Sắc',
+            };
+        @endphp
 
         {{-- Bảng biến thể --}}
         <div class="table-card animate-in">
@@ -145,9 +182,15 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Màu Sắc</th>
-                            <th>RAM</th>
-                            <th>ROM</th>
+                            <th>{{ $colorLabel }}</th>
+                            @if($hasRamRom)
+                                <th>RAM</th>
+                                <th>ROM / Bộ nhớ</th>
+                            @endif
+                            @if($hasCpuGpu)
+                                <th>CPU</th>
+                                <th>GPU</th>
+                            @endif
                             <th>Giá +</th>
                             <th>Tổng Giá</th>
                             <th>Ảnh</th>
@@ -161,14 +204,22 @@
                                 <td>
                                     @if($variant->color)
                                         <span class="d-flex align-items-center gap-2">
-                                            <span class="color-dot" style="background:{{ $variant->color }}" title="{{ $variant->color }}"></span>
+                                            @if(!str_contains($colorLabel, 'Kích Thước'))
+                                                <span class="color-dot" style="background:{{ $variant->color }}" title="{{ $variant->color }}"></span>
+                                            @endif
                                             {{ $variant->color }}
                                         </span>
                                     @else <span style="color:var(--text-secondary)">—</span>
                                     @endif
                                 </td>
-                                <td>{{ $variant->ram ?? '—' }}</td>
-                                <td>{{ $variant->rom_capacity ?? '—' }}</td>
+                                    @if($hasRamRom)
+                                    <td>{{ $variant->ram ?? '—' }}</td>
+                                    <td>{{ $variant->rom_capacity ?? '—' }}</td>
+                                @endif
+                                @if($hasCpuGpu)
+                                    <td>{{ $variant->cpu_chip ?? '—' }}</td>
+                                    <td>{{ $variant->gpu_chip ?? '—' }}</td>
+                                @endif
                                 <td><span class="extra-price">+{{ number_format($variant->extra_price, 0, ',', '.') }}₫</span></td>
                                 <td><span class="total-price">{{ number_format($product->base_price + $variant->extra_price, 0, ',', '.') }}₫</span></td>
                                 <td>
@@ -180,7 +231,7 @@
                                 <td class="text-center">
                                     <div class="d-flex gap-1 justify-content-center">
                                         <button class="btn-action edit" title="Sửa"
-                                            onclick="openEditVariant({{ $variant->variant_id }}, '{{ addslashes($variant->color ?? '') }}', '{{ addslashes($variant->ram ?? '') }}', '{{ addslashes($variant->rom_capacity ?? '') }}', {{ $variant->extra_price }}, '{{ addslashes($variant->image_url ?? '') }}')">
+                                            onclick="openEditVariant({{ $variant->variant_id }}, '{{ addslashes($variant->color ?? '') }}', '{{ addslashes($variant->ram ?? '') }}', '{{ addslashes($variant->rom_capacity ?? '') }}', '{{ addslashes($variant->cpu_chip ?? '') }}', '{{ addslashes($variant->gpu_chip ?? '') }}', {{ $variant->extra_price }}, '{{ addslashes($variant->image_url ?? '') }}')">
                                             <i class="bi bi-pencil-fill"></i>
                                         </button>
                                         <button class="btn-action delete" title="Xóa"
@@ -210,7 +261,7 @@
     <div class="modal fade" id="addVariantModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <form action="{{ route('admin.products.variants.store', $product->product_id) }}" method="POST">
+                <form action="{{ route('admin.products.variants.store', $product->product_id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="modal-header">
                         <h5 class="modal-title"><i class="bi bi-plus-circle-fill me-2" style="color:var(--accent);"></i>Thêm Biến Thể</h5>
@@ -218,10 +269,11 @@
                     </div>
                     <div class="modal-body">
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Màu Sắc</label>
-                                <input type="text" name="color" class="form-control" placeholder="VD: Đen, Trắng, Xanh..." maxlength="30">
+                            <div class="{{ $hasRamRom ? 'col-md-6' : 'col-md-12' }}">
+                                <label class="form-label">{{ $colorLabel }}</label>
+                                <input type="text" name="color" class="form-control" placeholder="VD: Đen, 45mm, Tiêu chuẩn..." maxlength="30" required>
                             </div>
+                            @if($hasRamRom)
                             <div class="col-md-6">
                                 <label class="form-label">RAM</label>
                                 <input type="text" name="ram" class="form-control" placeholder="VD: 8GB, 12GB..." maxlength="20">
@@ -230,14 +282,46 @@
                                 <label class="form-label">ROM / Bộ nhớ</label>
                                 <input type="text" name="rom_capacity" class="form-control" placeholder="VD: 128GB, 256GB..." maxlength="20">
                             </div>
+                            @endif
+                            @if($hasCpuGpu)
                             <div class="col-md-6">
+                                <label class="form-label">CPU</label>
+                                <input type="text" name="cpu_chip" class="form-control" placeholder="VD: Intel Core i7, Apple M3..." maxlength="100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">GPU</label>
+                                <input type="text" name="gpu_chip" class="form-control" placeholder="VD: RTX 4060, Apple GPU 10-core..." maxlength="100">
+                            </div>
+                            @endif
+                            <div class="{{ $hasRamRom || $hasCpuGpu ? 'col-md-6' : 'col-md-12' }}">
                                 <label class="form-label">Giá Cộng Thêm (₫) <span style="color:var(--danger);">*</span></label>
                                 <input type="number" name="extra_price" class="form-control" placeholder="0" required min="0" value="0">
                             </div>
                             <div class="col-12">
-                                <label class="form-label">URL Ảnh biến thể</label>
-                                <input type="text" name="image_url" class="form-control" placeholder="https://..." maxlength="500" oninput="previewUrl(this,'addVarPreview')">
-                                <img id="addVarPreview" class="img-preview" alt="Preview">
+                                <label class="form-label">Ảnh Biến Thể</label>
+                                <div class="upload-tabs">
+                                    <button type="button" class="upload-tab active" onclick="switchTab(this, 'add-upload-pane')"><i class="bi bi-cloud-arrow-up me-1"></i>Tải ảnh lên</button>
+                                    <button type="button" class="upload-tab" onclick="switchTab(this, 'add-url-pane')"><i class="bi bi-link-45deg me-1"></i>Nhập URL</button>
+                                </div>
+                                <div id="add-upload-pane" class="upload-pane active">
+                                    <div class="drop-zone" id="addDropZone">
+                                        <input type="file" name="image_file" id="addFileInput" accept="image/jpeg,image/png,image/webp,image/gif" onchange="handleFileSelect(this, 'addFileInfo', 'addFilePreview')">
+                                        <div class="drop-icon"><i class="bi bi-image"></i></div>
+                                        <div class="drop-text">Kéo thả ảnh vào đây hoặc <strong>chọn file</strong></div>
+                                        <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">JPG, PNG, WEBP, GIF • Tối đa 2MB</div>
+                                    </div>
+                                    <div id="addFileInfo" class="file-info" style="display:none;">
+                                        <i class="bi bi-file-earmark-image" style="font-size:1.2rem;color:var(--accent);"></i>
+                                        <span class="file-name"></span>
+                                        <span class="file-size"></span>
+                                        <button type="button" class="file-remove" onclick="clearFileInput('addFileInput', 'addFileInfo', 'addFilePreview')"><i class="bi bi-x"></i></button>
+                                    </div>
+                                    <img id="addFilePreview" class="img-preview" alt="Preview">
+                                </div>
+                                <div id="add-url-pane" class="upload-pane">
+                                    <input type="text" name="image_url" class="form-control" placeholder="https://..." maxlength="500" oninput="previewUrl(this,'addVarPreview')">
+                                    <img id="addVarPreview" class="img-preview" alt="Preview">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -254,7 +338,7 @@
     <div class="modal fade" id="editVariantModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <form id="editVariantForm" method="POST">
+                <form id="editVariantForm" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     <div class="modal-header">
@@ -263,10 +347,11 @@
                     </div>
                     <div class="modal-body">
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Màu Sắc</label>
-                                <input type="text" name="color" id="evColor" class="form-control" maxlength="30">
+                            <div class="{{ $hasRamRom ? 'col-md-6' : 'col-md-12' }}">
+                                <label class="form-label">{{ $colorLabel }}</label>
+                                <input type="text" name="color" id="evColor" class="form-control" maxlength="30" required>
                             </div>
+                            @if($hasRamRom)
                             <div class="col-md-6">
                                 <label class="form-label">RAM</label>
                                 <input type="text" name="ram" id="evRam" class="form-control" maxlength="20">
@@ -275,14 +360,51 @@
                                 <label class="form-label">ROM / Bộ nhớ</label>
                                 <input type="text" name="rom_capacity" id="evRom" class="form-control" maxlength="20">
                             </div>
+                            @endif
+                            @if($hasCpuGpu)
                             <div class="col-md-6">
+                                <label class="form-label">CPU</label>
+                                <input type="text" name="cpu_chip" id="evCpu" class="form-control" maxlength="100">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">GPU</label>
+                                <input type="text" name="gpu_chip" id="evGpu" class="form-control" maxlength="100">
+                            </div>
+                            @endif
+                            <div class="{{ $hasRamRom || $hasCpuGpu ? 'col-md-6' : 'col-md-12' }}">
                                 <label class="form-label">Giá Cộng Thêm (₫) <span style="color:var(--danger);">*</span></label>
                                 <input type="number" name="extra_price" id="evPrice" class="form-control" required min="0">
                             </div>
                             <div class="col-12">
-                                <label class="form-label">URL Ảnh biến thể</label>
-                                <input type="text" name="image_url" id="evImage" class="form-control" maxlength="500" oninput="previewUrl(this,'editVarPreview')">
-                                <img id="editVarPreview" class="img-preview" alt="Preview">
+                                <label class="form-label">Ảnh Biến Thể</label>
+                                {{-- Ảnh hiện tại --}}
+                                <div id="editCurrentImage" style="margin-bottom:10px;display:none;">
+                                    <div style="font-size:.78rem;color:var(--text-secondary);margin-bottom:4px;">Ảnh hiện tại:</div>
+                                    <img id="editCurrentPreview" style="max-height:80px;border-radius:8px;border:1px solid var(--border);" alt="">
+                                </div>
+                                <div class="upload-tabs">
+                                    <button type="button" class="upload-tab active" onclick="switchTab(this, 'edit-upload-pane')"><i class="bi bi-cloud-arrow-up me-1"></i>Tải ảnh mới</button>
+                                    <button type="button" class="upload-tab" onclick="switchTab(this, 'edit-url-pane')"><i class="bi bi-link-45deg me-1"></i>Nhập URL</button>
+                                </div>
+                                <div id="edit-upload-pane" class="upload-pane active">
+                                    <div class="drop-zone" id="editDropZone">
+                                        <input type="file" name="image_file" id="editFileInput" accept="image/jpeg,image/png,image/webp,image/gif" onchange="handleFileSelect(this, 'editFileInfo', 'editFilePreview')">
+                                        <div class="drop-icon"><i class="bi bi-image"></i></div>
+                                        <div class="drop-text">Kéo thả ảnh vào đây hoặc <strong>chọn file</strong></div>
+                                        <div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px;">JPG, PNG, WEBP, GIF • Tối đa 2MB</div>
+                                    </div>
+                                    <div id="editFileInfo" class="file-info" style="display:none;">
+                                        <i class="bi bi-file-earmark-image" style="font-size:1.2rem;color:var(--accent);"></i>
+                                        <span class="file-name"></span>
+                                        <span class="file-size"></span>
+                                        <button type="button" class="file-remove" onclick="clearFileInput('editFileInput', 'editFileInfo', 'editFilePreview')"><i class="bi bi-x"></i></button>
+                                    </div>
+                                    <img id="editFilePreview" class="img-preview" alt="Preview">
+                                </div>
+                                <div id="edit-url-pane" class="upload-pane">
+                                    <input type="text" name="image_url" id="evImage" class="form-control" maxlength="500" oninput="previewUrl(this,'editVarPreview')">
+                                    <img id="editVarPreview" class="img-preview" alt="Preview">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -307,19 +429,102 @@
         const productId = {{ $product->product_id }};
         const baseUrl = "{{ url('admin/products') }}";
 
-        function openEditVariant(id, color, ram, rom, price, imageUrl) {
+        // ===== Tab Switching =====
+        function switchTab(btn, paneId) {
+            const tabs = btn.closest('.upload-tabs');
+            const container = btn.closest('.col-12');
+            tabs.querySelectorAll('.upload-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            container.querySelectorAll('.upload-pane').forEach(p => p.classList.remove('active'));
+            document.getElementById(paneId).classList.add('active');
+        }
+
+        // ===== File Upload Handling =====
+        function handleFileSelect(input, infoId, previewId) {
+            const file = input.files[0];
+            const info = document.getElementById(infoId);
+            const preview = document.getElementById(previewId);
+            if (file) {
+                info.style.display = 'flex';
+                info.querySelector('.file-name').textContent = file.name;
+                info.querySelector('.file-size').textContent = formatFileSize(file.size);
+                // Preview
+                const reader = new FileReader();
+                reader.onload = (e) => { preview.src = e.target.result; preview.style.display = 'block'; };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearFileInput(inputId, infoId, previewId) {
+            document.getElementById(inputId).value = '';
+            document.getElementById(infoId).style.display = 'none';
+            const p = document.getElementById(previewId);
+            p.src = ''; p.style.display = 'none';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // ===== Drag & Drop =====
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+            zone.addEventListener('dragleave', () => { zone.classList.remove('drag-over'); });
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                const input = zone.querySelector('input[type=file]');
+                if (e.dataTransfer.files.length) {
+                    input.files = e.dataTransfer.files;
+                    input.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+
+        // ===== Edit Variant Modal =====
+        function openEditVariant(id, color, ram, rom, cpu, gpu, price, imageUrl) {
             document.getElementById('evColor').value = color;
-            document.getElementById('evRam').value = ram;
-            document.getElementById('evRom').value = rom;
+            const evRam = document.getElementById('evRam');
+            const evRom = document.getElementById('evRom');
+            const evCpu = document.getElementById('evCpu');
+            const evGpu = document.getElementById('evGpu');
+            if (evRam) evRam.value = ram;
+            if (evRom) evRom.value = rom;
+            if (evCpu) evCpu.value = cpu;
+            if (evGpu) evGpu.value = gpu;
             document.getElementById('evPrice').value = price;
-            document.getElementById('evImage').value = imageUrl;
-            const preview = document.getElementById('editVarPreview');
-            if (imageUrl) { preview.src = imageUrl; preview.style.display = 'block'; }
-            else { preview.style.display = 'none'; }
+            document.getElementById('evImage').value = '';
+
+            // Show current image
+            const currentImg = document.getElementById('editCurrentImage');
+            const currentPreview = document.getElementById('editCurrentPreview');
+            if (imageUrl) {
+                currentPreview.src = imageUrl;
+                currentImg.style.display = 'block';
+            } else {
+                currentImg.style.display = 'none';
+            }
+
+            // Reset file input & previews
+            clearFileInput('editFileInput', 'editFileInfo', 'editFilePreview');
+            const urlPreview = document.getElementById('editVarPreview');
+            urlPreview.src = ''; urlPreview.style.display = 'none';
+
+            // Reset tabs to upload
+            const editTabs = document.querySelector('#editVariantModal .upload-tabs');
+            if (editTabs) {
+                editTabs.querySelectorAll('.upload-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+            }
+            document.getElementById('edit-upload-pane').classList.add('active');
+            document.getElementById('edit-url-pane').classList.remove('active');
+
             document.getElementById('editVariantForm').action = baseUrl + '/' + productId + '/variants/' + id;
             new bootstrap.Modal(document.getElementById('editVariantModal')).show();
         }
 
+        // ===== Delete Variant =====
         function confirmDeleteVariant(id) {
             Swal.fire({
                 title: 'Xác nhận xóa?',
@@ -337,12 +542,14 @@
             });
         }
 
+        // ===== URL Preview =====
         function previewUrl(input, previewId) {
             const p = document.getElementById(previewId);
             if (input.value.trim()) { p.src = input.value.trim(); p.style.display = 'block'; p.onerror = () => p.style.display = 'none'; }
             else { p.style.display = 'none'; }
         }
 
+        // ===== Flash Alert Auto-dismiss =====
         const fa = document.getElementById('flash-alert');
         if (fa) { setTimeout(() => { fa.style.transition='opacity .5s'; fa.style.opacity='0'; setTimeout(() => fa.remove(), 500); }, 4000); }
     </script>

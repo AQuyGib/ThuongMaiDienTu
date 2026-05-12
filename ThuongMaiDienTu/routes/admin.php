@@ -8,6 +8,11 @@ use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\CashbookController;
+use App\Http\Controllers\Admin\ThemeSettingController;
+use App\Http\Controllers\Admin\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,9 +29,22 @@ use App\Http\Controllers\Admin\InventoryController;
 
 // Dashboard
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/kpi', [App\Http\Controllers\Admin\KPIController::class, 'index'])->name('kpi.index');
+
+// Cấu hình giao diện
+Route::get('/settings/theme', [ThemeSettingController::class, 'index'])->name('settings.theme');
+Route::post('/settings/theme', [ThemeSettingController::class, 'update'])->name('settings.theme.update');
+Route::post('/settings/theme/reset', [ThemeSettingController::class, 'reset'])->name('settings.theme.reset');
+
+// ===== Quản lý Đơn hàng =====
+Route::resource('orders', OrderController::class);
+Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 
 // CRUD Tài khoản (Users)
 Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
+Route::get('users/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
+Route::delete('users/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
+Route::post('users/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
 
 // ===== Quản lý Danh Mục =====
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -71,6 +89,10 @@ Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->n
 // ===== Quản lý IMEI =====
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 Route::put('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.updateStatus');
+
+// ===== Quản lý Sổ Quỹ (Cashbook) =====
+Route::post('cashbooks/bulk-destroy', [CashbookController::class, 'bulkDestroy'])->name('cashbooks.bulkDestroy');
+Route::resource('cashbooks', CashbookController::class);
 
 // API lấy variants theo product (cho form tạo phiếu nhập)
 Route::get('/api/products/{id}/variants', [PurchaseOrderController::class, 'getVariants'])->name('api.product.variants');

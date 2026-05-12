@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -148,4 +149,67 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')
             ->with('success', 'Đã xóa tài khoản "' . $name . '".');
     }
+    /**
+     * Đăng xuất tất cả các thiết bị của một người dùng (Dùng cho Admin).
+     */
+    public function revokeSessions($id)
+    {
+        DB::table('sessions')->where('user_id', $id)->delete();
+        
+        return redirect()->back()
+            ->with('success', 'Đã đăng xuất tất cả các phiên làm việc thành công.');
+    }
+
+    /**
+     * Xem danh sách chi tiết các thiết bị đang đăng nhập của một user.
+     */
+    public function showSessions($id)
+    {
+        $user = User::findOrFail($id);
+        $sessions = DB::table('sessions')
+            ->where('user_id', $id)
+            ->orderBy('last_activity', 'desc')
+            ->get();
+
+        foreach ($sessions as $session) {
+            $agent = $this->parseUserAgent($session->user_agent);
+            $session->browser = $agent['browser'];
+            $session->os = $agent['os'];
+            $session->device = $agent['device'];
+            $session->last_active = \Carbon\Carbon::createFromTimestamp($session->last_activity)->diffForHumans();
+        }
+
+        return view('admin.users.sessions', compact('user', 'sessions'));
+    }
+
+    /**
+     * Xóa một phiên đăng nhập cụ thể.
+     */
+    public function deleteSession($sessionId)
+    {
+        DB::table('sessions')->where('id', $sessionId)->delete();
+        return redirect()->back()->with('success', 'Đã xóa phiên đăng nhập thành công.');
+    }
+
+    private function parseUserAgent($userAgent)
+    {
+        $os = "Unknown OS";
+        $browser = "Unknown Browser";
+        $device = "Máy tính";
+
+        if (preg_match('/windows|win32/i', $userAgent)) $os = 'Windows';
+        elseif (preg_match('/macintosh|mac os x/i', $userAgent)) $os = 'Mac OS';
+        elseif (preg_match('/linux/i', $userAgent)) $os = 'Linux';
+        elseif (preg_match('/iphone/i', $userAgent)) { $os = 'iOS'; $device = 'iPhone'; }
+        elseif (preg_match('/android/i', $userAgent)) { $os = 'Android'; $device = 'Điện thoại Android'; }
+
+        if (preg_match('/firefox/i', $userAgent)) $browser = 'Firefox';
+        elseif (preg_match('/chrome/i', $userAgent)) $browser = 'Chrome';
+        elseif (preg_match('/safari/i', $userAgent)) $browser = 'Safari';
+        elseif (preg_match('/msie/i', $userAgent)) $browser = 'Internet Explorer';
+        elseif (preg_match('/edge/i', $userAgent)) $browser = 'Edge';
+
+        return ['os' => $os, 'browser' => $browser, 'device' => $device];
+    }
 }
+
