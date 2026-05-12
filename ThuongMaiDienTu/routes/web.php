@@ -56,7 +56,6 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::post('/wishlist/toggle', [App\Http\Controllers\WishlistController::class, 'toggle'])->name('wishlist.toggle');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');
@@ -90,7 +89,7 @@ Route::post('/profile/password/update', [ProfileController::class, 'updatePasswo
 Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name('profile.address.store');
 Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
 Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
-Route::delete('/profile/wishlist/{id}', [ProfileController::class, 'removeFromWishlist'])->name('profile.wishlist.destroy');
+
 
 // Product Compare (So sánh sản phẩm)
 use App\Http\Controllers\CompareController;
