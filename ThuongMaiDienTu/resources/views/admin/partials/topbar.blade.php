@@ -1,13 +1,29 @@
-{{-- TOPBAR ADMIN --}}
-<header class="h-16 bg-white shadow-sm flex items-center justify-between px-4 sm:px-8 z-10 shrink-0">
-    <div class="flex items-center gap-3">
-        {{-- Nút Hamburger (hiện trên mọi màn hình) --}}
-        <button onclick="toggleSidebar()" class="text-gray-600 hover:text-blue-600 text-xl p-1" title="Menu">
-            <i class="fa-solid fa-bars"></i>
+{{-- TOPBAR ADMIN - Joly UI Premium --}}
+<header class="h-24 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-10 z-30 shrink-0 sticky top-0">
+    <div class="flex items-center gap-8">
+        {{-- Menu Toggle --}}
+        <button onclick="window.dispatchEvent(new CustomEvent('admin-sidebar-toggle'))" class="w-12 h-12 bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 rounded-2xl flex items-center justify-center transition-all shadow-sm border border-slate-100 group" title="Thu gọn/Mở rộng Menu">
+            <i class="fa-solid fa-bars-staggered transition-transform group-hover:rotate-12"></i>
         </button>
-        <h2 class="text-base sm:text-xl font-bold text-gray-800 truncate">
-            @yield('page-title', 'Dashboard')
-        </h2>
+
+        <div class="flex flex-col">
+            <h2 class="text-xl font-black text-slate-800 tracking-tighter uppercase leading-none mb-1">
+                @yield('page-title', 'Dashboard')
+            </h2>
+            <div class="flex items-center gap-2">
+                <div class="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Hệ thống đang hoạt động ổn định</p>
+            </div>
+        </div>
     </div>
-    {{-- Đã xóa ô Tìm kiếm chung --}}
+
+    <div class="flex items-center gap-4">
+        <div class="hidden md:flex flex-col items-end mr-2">
+            <span class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Hôm nay</span>
+            <span class="text-sm font-bold text-slate-700 leading-none">{{ now()->format('d/m/Y') }}</span>
+        </div>
+        <div class="w-12 h-12 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 hover:bg-white hover:text-indigo-600 transition-all cursor-pointer shadow-sm">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+    </div>
 </header>
