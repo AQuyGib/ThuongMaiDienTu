@@ -10,7 +10,6 @@ class Product extends Model
     public $timestamps = false;
     protected $guarded = [];
     protected $casts = [
-        'specifications' => 'array',
     ];
 
     public function category()

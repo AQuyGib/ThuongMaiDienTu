@@ -11,10 +11,18 @@
 .review-average .stars { color: #f59e0b; font-size: 14px; }
 .review-item { padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
 .review-item:last-child { border-bottom: none; }
-.review-user { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
-.review-user span { background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;}
-.review-stars { color: #f59e0b; font-size: 12px; margin-bottom: 8px; }
-.review-content { font-size: 14px; color: #444; }
+.review-user { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 12px; }
+.user-info { display: flex; flex-direction: column; }
+.user-name { font-size: 16px; font-weight: 700; color: #333; display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.user-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; font-size: 18px; text-transform: uppercase; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.avatar-admin { background: linear-gradient(135deg, #0046ab, #003380); }
+.avatar-manager { background: linear-gradient(135deg, #16a34a, #15803d); }
+.avatar-default { background: #94a3b8; }
+.user-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase; }
+.badge-admin { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.badge-manager { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.review-stars { color: #f59e0b; font-size: 12px; margin-bottom: 8px; margin-left: 54px; }
+.review-content { font-size: 15px; color: #444; line-height: 1.6; margin-left: 54px; }
 
 /* Media Upload */
 .review-media-upload { margin: 10px 0; }
@@ -35,8 +43,67 @@
 /* Review Replies */
 .reply-btn { background: none; border: none; color: #0046ab; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; margin-top: 10px; display: inline-flex; align-items: center; gap: 5px; }
 .reply-btn:hover { text-decoration: underline; }
-.reply-form { margin-top: 10px; display: none; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
+.reply-form { margin-top: 10px; display: none; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+.reply-textarea { width: 100%; height: 100px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; resize: vertical; font-size: 14px; outline: none; transition: 0.2s; display: block; }
+.reply-textarea:focus { border-color: #0046ab; box-shadow: 0 0 0 3px rgba(0,70,171,0.1); }
+.reply-author-input { width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px; font-size: 14px; outline: none; }
+.reply-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.btn-submit-reply { background: #0046ab; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; }
+.btn-submit-reply:hover { background: #003380; transform: translateY(-1px); }
 .reply-item { margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #cbd5e1; }
+.reply-hidden { display: none; }
+.btn-show-more-replies { background: none; border: none; color: #666; font-size: 13px; font-weight: 600; cursor: pointer; padding: 10px 0; display: inline-flex; align-items: center; gap: 5px; transition: 0.2s; margin-left: 30px; }
+.btn-show-more-replies:hover { color: #0046ab; }
+.btn-show-more-replies i { transition: transform 0.3s; }
+.btn-show-more-replies:hover i { transform: translateY(2px); }
+
+/* Custom Confirm Modal */
+.confirm-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+.confirm-modal-overlay.active { display: flex; }
+.confirm-modal { background: #fff; width: 90%; max-width: 400px; border-radius: 20px; padding: 25px; text-align: center; animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+@keyframes modalScale { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.confirm-icon { width: 60px; height: 60px; background: #fee2e2; color: #e21033; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 24px; }
+.confirm-modal h4 { margin: 0 0 10px; font-size: 18px; color: #333; }
+.confirm-modal p { color: #666; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
+.confirm-actions { display: flex; gap: 12px; }
+.confirm-actions button { flex: 1; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: 0.2s; border: none; }
+.btn-cancel { background: #f1f5f9; color: #475569; }
+.btn-cancel:hover { background: #e2e8f0; }
+.btn-confirm-delete { background: #e21033; color: #fff; }
+.btn-confirm-delete:hover { background: #b50d29; }
+
+/* Toast Notification */
+#toast-container { position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
+.toast { min-width: 280px; background: #fff; padding: 15px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); border-left: 5px solid #0046ab; }
+.toast.active { transform: translateX(0); }
+.toast.success { border-left-color: #166534; }
+.toast.error { border-left-color: #e21033; }
+.toast.warning { border-left-color: #f59e0b; }
+.toast-icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.toast.success .toast-icon { background: #dcfce7; color: #166534; }
+.toast.error .toast-icon { background: #fee2e2; color: #e21033; }
+.toast.warning .toast-icon { background: #fef3c7; color: #f59e0b; }
+.toast-content { flex: 1; }
+.toast-title { font-weight: 700; font-size: 14px; margin-bottom: 2px; display: block; }
+.toast-msg { font-size: 13px; color: #666; }
+
+/* Centered Toast */
+#toast-center-container { position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; pointer-events: none; }
+.toast-center { background: rgba(0, 70, 171, 0.95); color: #fff; padding: 15px 35px; border-radius: 50px; font-weight: 600; font-size: 15px; box-shadow: 0 10px 30px rgba(0,70,171,0.3); opacity: 0; transform: translateY(20px); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; gap: 12px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.2); }
+.toast-center.active { opacity: 1; transform: translateY(0); }
+.toast-center i { color: #fff; font-size: 20px; }
+
+/* Media Lightbox */
+#mediaLightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 99999; align-items: center; justify-content: center; cursor: pointer; }
+#mediaLightbox.active { display: flex; }
+#mediaLightbox img, #mediaLightbox video { max-width: 90%; max-height: 90%; border-radius: 12px; object-fit: contain; cursor: default; }
+.lightbox-close { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 28px; cursor: pointer; z-index: 100000; background: rgba(0,0,0,0.5); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+.lightbox-close:hover { background: rgba(255,255,255,0.2); }
+.review-media-display { margin-left: 54px; }
+
+/* Spinner */
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 @endpush
 
@@ -100,25 +167,43 @@
             @foreach($reviews as $r)
                 <div class="review-item" id="review-{{ $r->id }}">
                     <div class="review-user">
-                        <span>
-                            {{ $r->author_name ?? ($r->user ? $r->user->full_name : 'Khách hàng') }}
-                            @if($r->user && $r->user->role_id == 1)
-                                <span class="badge-admin">Admin</span>
-                            @elseif($r->user && $r->user->role_id == 2)
-                                <span class="badge-manager">Quản lý</span>
+                        @php
+                            $isReviewAdmin = $r->user && $r->user->role_id == 1;
+                            $isReviewManager = $r->user && $r->user->role_id == 2;
+                            $displayName = $r->author_name ?? ($r->user ? $r->user->full_name : 'Khách hàng');
+                            $firstLetter = mb_substr($displayName, 0, 1, 'UTF-8');
+                        @endphp
+                        
+                        <div class="user-avatar {{ $isReviewAdmin ? 'avatar-admin' : ($isReviewManager ? 'avatar-manager' : 'avatar-default') }}">
+                            @if($isReviewAdmin || $isReviewManager)
+                                <i class="fa-solid fa-bolt-lightning"></i>
+                            @else
+                                {{ $firstLetter }}
                             @endif
-                        </span>
-                        @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
-                        <button onclick="deleteReview({{ $r->id }})" title="Xóa đánh giá" class="btn-delete-review">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                        @endif
+                        </div>
+
+                        <div class="user-info">
+                            <div class="user-name">
+                                {{ $displayName }}
+                                @if($isReviewAdmin)
+                                    <span class="user-badge badge-admin">Admin</span>
+                                @elseif($isReviewManager)
+                                    <span class="user-badge badge-manager">Quản lý</span>
+                                @endif
+                                <span style="color:#94a3b8; font-size:12px; font-weight:400; margin-left:8px;">{{ $r->created_at->format('d/m/Y H:i') }}</span>
+                                
+                                @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
+                                <button onclick="deleteReview({{ $r->id }})" title="Xóa đánh giá" class="btn-delete-review" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px; margin-left:10px;">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                     <div class="review-stars">
                         @for($i=1; $i<=5; $i++)
                             <i class="{{ $i <= $r->rating ? 'fa-solid' : 'fa-regular' }} fa-star"></i>
                         @endfor
-                        <span class="review-date">{{ $r->created_at->format('d/m/Y H:i') }}</span>
                     </div>
                     <div class="review-content">{{ $r->content }}</div>
                     
@@ -152,30 +237,52 @@
                     </div>
 
                     <div class="replies-list" id="replies-{{ $r->id }}">
-                        @foreach($r->replies as $reply)
-                            <div class="reply-item" id="review-{{ $reply->id }}">
+                        @foreach($r->replies as $index => $reply)
+                            <div class="reply-item {{ $index >= 1 ? 'reply-hidden' : '' }}" id="review-{{ $reply->id }}">
                                 <div class="review-user">
-                                    <span>
-                                        <i class="fa-solid fa-turn-up fa-rotate-90"></i> 
-                                        {{ $reply->author_name ?? ($reply->user ? $reply->user->full_name : 'Khách hàng') }}
-                                        @if($reply->user && $reply->user->role_id == 1)
-                                            <span class="badge-admin">Admin</span>
-                                        @elseif($reply->user && $reply->user->role_id == 2)
-                                            <span class="badge-manager">Quản lý</span>
+                                    @php
+                                        $isReplyAdmin = $reply->user && $reply->user->role_id == 1;
+                                        $isReplyManager = $reply->user && $reply->user->role_id == 2;
+                                        $replyName = $reply->author_name ?? ($reply->user ? $reply->user->full_name : 'Khách hàng');
+                                        $replyLetter = mb_substr($replyName, 0, 1, 'UTF-8');
+                                    @endphp
+
+                                    <div class="user-avatar {{ $isReplyAdmin ? 'avatar-admin' : ($isReplyManager ? 'avatar-manager' : 'avatar-default') }}" style="width:32px; height:32px; font-size:14px;">
+                                        @if($isReplyAdmin || $isReplyManager)
+                                            <i class="fa-solid fa-bolt-lightning" style="font-size:16px;"></i>
+                                        @else
+                                            {{ $replyLetter }}
                                         @endif
-                                    </span>
-                                    @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
-                                    <button onclick="deleteReview({{ $reply->id }})" class="btn-delete-reply">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                    @endif
+                                    </div>
+
+                                    <div class="user-info">
+                                        <div class="user-name" style="font-size:14px;">
+                                            {{ $replyName }}
+                                            @if($isReplyAdmin)
+                                                <span class="user-badge badge-admin">Admin</span>
+                                            @elseif($isReplyManager)
+                                                <span class="user-badge badge-manager">Quản lý</span>
+                                            @endif
+                                            <span style="color:#94a3b8; font-size:11px; font-weight:400; margin-left:8px;">{{ $reply->created_at->format('d/m/Y H:i') }}</span>
+                                            
+                                            @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
+                                            <button onclick="deleteReview({{ $reply->id }})" class="btn-delete-reply" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:12px; margin-left:8px;">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="review-date-replied">{{ $reply->created_at->format('d/m/Y H:i') }}</div>
-                                <div class="review-content-replied">{{ $reply->content }}</div>
-                                <button class="reply-btn-nested" onclick="replyToUser({{ $r->id }}, '{{ addslashes($reply->author_name ?? ($reply->user ? $reply->user->full_name : 'Khách hàng')) }}')"><i class="fa-solid fa-reply"></i> Trả lời</button>
+                                <div class="review-content-replied" style="margin-left:44px; font-size:14px;">{{ $reply->content }}</div>
+                                <button class="reply-btn-nested" style="margin-left:44px;" onclick="replyToUser({{ $r->id }}, '{{ addslashes($replyName) }}', {{ $reply->id }})"><i class="fa-solid fa-reply"></i> Trả lời</button>
                             </div>
                         @endforeach
                     </div>
+                    @if($r->replies->count() > 1)
+                        <button class="btn-show-more-replies" onclick="showAllReplies({{ $r->id }}, this)">
+                            <i class="fa-solid fa-chevron-down"></i> Xem thêm {{ $r->replies->count() - 1 }} phản hồi
+                        </button>
+                    @endif
                 </div>
             @endforeach
         @else
@@ -184,12 +291,66 @@
     </div>
 </div>
 
+{{-- Modal cảnh báo/thông báo --}}
+<div class="confirm-modal-overlay" id="alertModal">
+    <div class="confirm-modal">
+        <div class="confirm-icon" id="alertIcon" style="background: #fef3c7; color: #f59e0b;">
+            <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <h4 id="alertTitle">Thông báo</h4>
+        <p id="alertMessage">Vui lòng nhập nội dung!</p>
+        <div class="confirm-actions">
+            <button type="button" class="btn-confirm-delete" id="alertBtn" style="background: #0046ab;" onclick="closeAlertModal()">Đồng ý</button>
+        </div>
+    </div>
+</div>
+
+{{-- Modal xác nhận xóa --}}
+<div class="confirm-modal-overlay" id="confirmModal">
+    <div class="confirm-modal">
+        <div class="confirm-icon">
+            <i class="fa-solid fa-trash-can"></i>
+        </div>
+        <h4 id="confirmTitle">Xác nhận xóa</h4>
+        <p id="confirmMessage">Bạn có chắc chắn muốn xóa đánh giá này không? Thao tác này không thể hoàn tác.</p>
+        <div class="confirm-actions">
+            <button type="button" class="btn-cancel" onclick="closeConfirmModal()">Hủy bỏ</button>
+            <button type="button" id="btnDoConfirm" class="btn-confirm-delete">Xác nhận xóa</button>
+        </div>
+    </div>
+</div>
+
+{{-- Toast container --}}
+<div id="toast-container"></div>
+<div id="toast-center-container"></div>
+
+{{-- Media Lightbox --}}
+<div id="mediaLightbox" onclick="closeMediaLightbox()">
+    <i class="fa-solid fa-xmark lightbox-close" onclick="closeMediaLightbox()"></i>
+    <img id="lightboxImg" src="" alt="" style="display:none;" onclick="event.stopPropagation()">
+    <video id="lightboxVideo" src="" controls style="display:none;" onclick="event.stopPropagation()"></video>
+</div>
+
 @push('scripts')
 <script>
 let currentRating = 5;
 let selectedMediaFiles = [];
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Kiểm tra thông báo từ sessionStorage sau khi reload trang
+    const reviewToast = sessionStorage.getItem('review_toast');
+    if (reviewToast) {
+        const data = JSON.parse(reviewToast);
+        if (data.isCenter) {
+            showCenterToast(data.msg);
+        } else if (data.isModal) {
+            showAlert(data.title, data.msg, 'success');
+        } else {
+            showToast(data.title, data.msg, data.type);
+        }
+        sessionStorage.removeItem('review_toast');
+    }
+
     const stars = document.querySelectorAll('.star-rating');
     stars.forEach(star => {
         star.addEventListener('click', function() {
@@ -209,18 +370,50 @@ function previewMediaFiles(input) {
     const files = Array.from(input.files);
     
     files.forEach(file => {
-        if (selectedMediaFiles.length >= 5) return;
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+        
+        if (!isImage && !isVideo) {
+            showAlert('Định dạng không hợp lệ', `Tệp "${file.name}" không phải ảnh hoặc video.`);
+            return;
+        }
+
+        // Kiểm tra dung lượng (tối đa 2MB do giới hạn máy chủ hiện tại)
+        if (file.size > 2 * 1024 * 1024) {
+            showAlert('Tệp quá lớn', `Tệp "${file.name}" vượt quá giới hạn 2MB. Vui lòng chọn tệp nhỏ hơn.`);
+            return;
+        }
+
+        // Giới hạn video: chỉ 1 video
+        if (isVideo) {
+            const hasVideo = selectedMediaFiles.some(f => f && f.type.startsWith('video/'));
+            if (hasVideo) {
+                showAlert('Giới hạn video', 'Bạn chỉ có thể tải lên tối đa 1 video.');
+                return;
+            }
+        }
+
+        // Giới hạn ảnh: tối đa 5 ảnh
+        if (isImage) {
+            const imageCount = selectedMediaFiles.filter(f => f && f.type.startsWith('image/')).length;
+            if (imageCount >= 5) {
+                showAlert('Giới hạn ảnh', 'Bạn chỉ có thể tải lên tối đa 5 ảnh.');
+                return;
+            }
+        }
+
+        const fileIndex = selectedMediaFiles.length;
         selectedMediaFiles.push(file);
         
         const reader = new FileReader();
         reader.onload = function(e) {
             const div = document.createElement('div');
             div.className = 'media-preview-item';
-            const isVideo = file.type.startsWith('video/');
+            div.id = 'preview-item-' + fileIndex;
             
             div.innerHTML = `
                 ${isVideo ? `<video src="${e.target.result}"></video>` : `<img src="${e.target.result}">`}
-                <button type="button" class="media-preview-remove" onclick="removeMediaFile(this, ${selectedMediaFiles.length - 1})"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" class="media-preview-remove" onclick="removeMediaFile(${fileIndex})"><i class="fa-solid fa-xmark"></i></button>
             `;
             grid.appendChild(div);
         }
@@ -229,9 +422,10 @@ function previewMediaFiles(input) {
     input.value = ''; 
 }
 
-function removeMediaFile(btn, index) {
-    btn.parentElement.remove();
-    selectedMediaFiles.splice(index, 1);
+function removeMediaFile(index) {
+    const item = document.getElementById('preview-item-' + index);
+    if (item) item.remove();
+    selectedMediaFiles[index] = null;
 }
 
 function submitReview() {
@@ -240,8 +434,8 @@ function submitReview() {
     const authorInput = document.getElementById('reviewAuthor');
     const authorName = authorInput ? authorInput.value.trim() : null;
 
-    if(!content) { alert('Vui lòng nhập nội dung đánh giá!'); return; }
-    if(authorInput && !authorName) { alert('Vui lòng nhập tên của bạn!'); return; }
+    if(!content) { showAlert('Thiếu nội dung', 'Vui lòng nhập nội dung đánh giá của bạn!'); return; }
+    if(authorInput && !authorName) { showAlert('Thiếu thông tin', 'Vui lòng nhập tên của bạn để gửi đánh giá!'); return; }
 
     const formData = new FormData();
     formData.append('product_id', '{{ $product->product_id }}');
@@ -249,35 +443,85 @@ function submitReview() {
     formData.append('content', content);
     if(authorName) formData.append('author_name', authorName);
     
-    selectedMediaFiles.forEach(file => {
+    selectedMediaFiles.filter(Boolean).forEach(file => {
         formData.append('media[]', file);
     });
 
     fetch('{{ route("reviews.store") }}', {
         method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        headers: { 
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
         body: formData
     })
-    .then(response => response.json())
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || `Lỗi hệ thống (${response.status})`);
+        }
+        return data;
+    })
     .then(data => {
         if(data.success) {
+            sessionStorage.setItem('review_toast', JSON.stringify({
+                msg: 'DienMayPro cảm ơn quý khách đã gửi bình luận!',
+                isCenter: true
+            }));
             location.reload(); 
         } else {
-            alert(data.message || 'Lỗi khi gửi đánh giá.');
+            showAlert('Lỗi', data.message || 'Lỗi khi gửi đánh giá.');
         }
+    })
+    .catch(error => {
+        console.error('Submit review error:', error);
+        showAlert('Không thể gửi', 'Đã có lỗi xảy ra: ' + error.message);
     });
 }
 
 function toggleReplyForm(id) {
     const form = document.getElementById('replyForm-' + id);
-    form.style.display = (form.style.display === 'block') ? 'none' : 'block';
+    const repliesList = document.getElementById('replies-' + id);
+    const isHidden = form.style.display === 'none' || form.style.display === '';
+
+    if (isHidden) {
+        // Trả về vị trí mặc định (trước danh sách câu trả lời)
+        repliesList.parentNode.insertBefore(form, repliesList);
+        form.style.display = 'block';
+        const textarea = document.getElementById('replyText-' + id);
+        textarea.value = '';
+        textarea.focus();
+    } else {
+        form.style.display = 'none';
+    }
 }
 
-function replyToUser(parentReviewId, userName) {
-    toggleReplyForm(parentReviewId);
+function replyToUser(parentReviewId, userName, specificReplyId) {
+    const form = document.getElementById('replyForm-' + parentReviewId);
+    const specificReply = document.getElementById('review-' + specificReplyId);
+    
+    // Di chuyển khung reply xuống dưới comment cụ thể
+    specificReply.parentNode.insertBefore(form, specificReply.nextSibling);
+    
+    form.style.display = 'block';
     const textarea = document.getElementById('replyText-' + parentReviewId);
     textarea.value = '@' + userName + ': ';
     textarea.focus();
+}
+
+function showAllReplies(reviewId, btn) {
+    const list = document.getElementById('replies-' + reviewId);
+    const hiddenItems = list.querySelectorAll('.reply-hidden');
+    hiddenItems.forEach(item => {
+        item.classList.remove('reply-hidden');
+        item.style.opacity = '0';
+        item.style.display = 'block';
+        setTimeout(() => {
+            item.style.transition = '0.3s';
+            item.style.opacity = '1';
+        }, 10);
+    });
+    btn.remove();
 }
 
 function submitReply(parentId) {
@@ -285,42 +529,165 @@ function submitReply(parentId) {
     const authorInput = document.getElementById('replyAuthor-' + parentId);
     const authorName = authorInput ? authorInput.value.trim() : null;
 
-    if(!text) { alert('Vui lòng nhập câu trả lời!'); return; }
+    if(!text) { showAlert('Thiếu nội dung', 'Vui lòng nhập câu trả lời của bạn!'); return; }
     
+    const formData = new FormData();
+    formData.append('product_id', '{{ $product->product_id }}');
+    formData.append('parent_id', parentId);
+    formData.append('content', text);
+    formData.append('rating', 5);
+    if(authorName) formData.append('author_name', authorName);
+
     fetch('{{ route("reviews.store") }}', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
         },
-        body: JSON.stringify({
-            product_id: '{{ $product->product_id }}',
-            parent_id: parentId,
-            content: text,
-            author_name: authorName,
-            rating: 5
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.success) location.reload();
-    });
-}
-
-function deleteReview(id) {
-    if(!confirm('Bạn có chắc chắn muốn xóa?')) return;
-    
-    fetch(`/reviews/${id}`, {
-        method: 'DELETE',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
         if(data.success) {
-            document.getElementById('review-' + id).remove();
-            showToast('Đã xóa thành công');
+            sessionStorage.setItem('review_toast', JSON.stringify({
+                msg: 'DienMayPro cảm ơn quý khách đã gửi bình luận!',
+                isCenter: true
+            }));
+            location.reload();
         }
     });
+}
+
+function deleteReview(id) {
+    showConfirm('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa đánh giá này không?', function() {
+        const btn = document.getElementById('btnDoConfirm');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Đang xóa...';
+
+        fetch(`/reviews/${id}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                const element = document.getElementById('review-' + id);
+                if(element) {
+                    element.style.opacity = '0';
+                    element.style.transform = 'translateX(-20px)';
+                    element.style.transition = '0.3s';
+                    setTimeout(() => element.remove(), 300);
+                }
+                showToast('Thành công', 'Đã xóa đánh giá thành công!', 'success');
+                closeConfirmModal();
+            } else {
+                showToast('Lỗi', data.message || 'Không thể xóa đánh giá.', 'error');
+                closeConfirmModal();
+            }
+        })
+        .catch(err => {
+            showToast('Lỗi', 'Đã xảy ra lỗi kết nối!', 'error');
+            closeConfirmModal();
+        });
+    });
+}
+
+/* ===== Toast Notification System ===== */
+function showToast(title, message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icons = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-xmark',
+        warning: 'fa-triangle-exclamation'
+    };
+
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="fa-solid ${icons[type]}"></i>
+        </div>
+        <div class="toast-content">
+            <span class="toast-title">${title}</span>
+            <span class="toast-msg">${message}</span>
+        </div>
+    `;
+    
+    container.appendChild(toast);
+    setTimeout(() => toast.classList.add('active'), 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('active');
+        setTimeout(() => toast.remove(), 400);
+    }, 4000);
+}
+
+/* ===== Custom Confirmation System ===== */
+let confirmCallback = null;
+function showConfirm(title, message, callback) {
+    document.getElementById('confirmTitle').innerText = title;
+    document.getElementById('confirmMessage').innerText = message;
+    document.getElementById('confirmModal').classList.add('active');
+    confirmCallback = callback;
+    
+    // Reset button state
+    const btn = document.getElementById('btnDoConfirm');
+    btn.disabled = false;
+    btn.innerHTML = 'Xác nhận xóa';
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirmModal').classList.remove('active');
+    confirmCallback = null;
+}
+
+document.getElementById('btnDoConfirm').addEventListener('click', function() {
+    if (confirmCallback) confirmCallback();
+});
+
+/* ===== Alert System ===== */
+function showAlert(title, message, type = 'warning') {
+    const icon = document.getElementById('alertIcon');
+    const btn = document.getElementById('alertBtn');
+    
+    if (type === 'success') {
+        icon.style.background = '#dcfce7';
+        icon.style.color = '#166534';
+        icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+        btn.style.background = '#16a34a';
+        btn.innerText = 'Tuyệt vời';
+    } else {
+        icon.style.background = '#fef3c7';
+        icon.style.color = '#f59e0b';
+        icon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+        btn.style.background = '#0046ab';
+        btn.innerText = 'Đồng ý';
+    }
+
+    document.getElementById('alertTitle').innerText = title;
+    document.getElementById('alertMessage').innerText = message;
+    document.getElementById('alertModal').classList.add('active');
+}
+
+/* ===== Center Toast ===== */
+function showCenterToast(message) {
+    const container = document.getElementById('toast-center-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast-center';
+    toast.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${message}`;
+    
+    container.appendChild(toast);
+    setTimeout(() => toast.classList.add('active'), 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('active');
+        setTimeout(() => toast.remove(), 400);
+    }, 3500);
+}
+
+function closeAlertModal() {
+    document.getElementById('alertModal').classList.remove('active');
 }
 
 function openMediaLightbox(url, isVideo) {

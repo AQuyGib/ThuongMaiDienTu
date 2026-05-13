@@ -344,11 +344,11 @@
         </div>
 
         {{-- Thông số kỹ thuật --}}
-        @if($product->specifications->count())
+        @if($product->productSpecifications->count())
             <div class="pd-specs">
                 <h2><i class="fa-solid fa-microchip" style="color:#0046ab"></i> Cấu hình chi tiết</h2>
                 <table class="specs-table">
-                    @php $spec = $product->specifications->first(); @endphp
+                    @php $spec = $product->productSpecifications->first(); @endphp
                     @if($spec->cpu_chip)
                         <tr><td>Vi xử lý (CPU)</td><td>{{ $spec->cpu_chip }}</td></tr>
                     @endif
@@ -535,31 +535,8 @@
     <i class="fa-solid fa-chevron-right zoom-nav next" onclick="nextZoomImage()"></i>
 </div>
 
-<!-- Toast -->
-<div class="toast-notification" id="toast">
-    <i class="fa-solid fa-circle-check"></i>
-    <span id="toastMsg">Thêm vào giỏ hàng thành công!</span>
-</div>
+<!-- End Product Display Sections -->
 
-<!-- Custom Confirm Modal -->
-<div id="confirmModal">
-    <div class="confirm-box">
-        <div class="confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="confirm-title" id="confirmTitle">Xác nhận xóa</div>
-        <div class="confirm-desc" id="confirmDesc">Bạn có chắc chắn muốn xóa đánh giá này không? Hành động này không thể hoàn tác.</div>
-        <div class="confirm-actions">
-            <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirmModal()">Hủy bỏ</button>
-            <button class="confirm-btn confirm-btn-danger" id="confirmOkBtn">Xóa ngay</button>
-        </div>
-    </div>
-</div>
-
-<!-- Media Lightbox -->
-<div id="mediaLightbox" onclick="closeMediaLightbox()">
-    <i class="fa-solid fa-xmark lightbox-close" onclick="closeMediaLightbox()"></i>
-    <img id="lightboxImg" src="" alt="" style="display:none;">
-    <video id="lightboxVideo" src="" controls style="display:none;"></video>
-</div>
 
 
     {{-- Đăng ký nhận khuyến mãi --}}
