@@ -286,10 +286,13 @@
     }
 
     window.proceedToCheckout = () => {
-        const selectedIds = window.cartData.filter(i => i.selected).map(i => i.id);
-        if (selectedIds.length > 0) {
-            // Chuyển hướng đến trang thanh toán thật của Laravel
-            window.location.href = `{{ url('/pay') }}?items=${selectedIds.join(',')}`;
+        const selectedItems = window.cartData.filter(i => i.selected);
+        if (selectedItems.length > 0) {
+            // Lưu dữ liệu vào sessionStorage để trang pay đọc
+            try {
+                sessionStorage.setItem('checkoutItems', JSON.stringify(selectedItems));
+            } catch(e) {}
+            window.location.href = `{{ url('/pay') }}`;
         }
     };
 

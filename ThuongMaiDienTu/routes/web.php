@@ -54,7 +54,7 @@ Route::resource('cashbooks', CashbookController::class);
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
-Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');
+Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
 
 // Articles & Lifestyle
 Route::get('/lifestyle', [\App\Http\Controllers\ArticleFrontendController::class, 'index'])->name('articles.index');
