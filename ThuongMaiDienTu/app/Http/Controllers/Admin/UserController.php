@@ -19,28 +19,101 @@ class UserController extends Controller
     {
         $query = User::with('role');
 
-        // Tìm kiếm theo tên hoặc email
-        if ($search = $request->input('q')) {
+        // Tìm kiếm nâng cao (Tên, Email, ID, SĐT)
+        if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('full_name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%");
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhere('user_id', 'LIKE', "%{$search}%")
+                  ->orWhere('phone_number', 'LIKE', "%{$search}%");
             });
         }
 
-        // Lọc theo vai trò (nếu có)
-        if ($roleFilter = $request->input('role')) {
+        // Lọc theo vai trò
+        if ($roleFilter = $request->input('role_id')) {
             $query->where('role_id', $roleFilter);
         }
 
-        // Lọc theo trạng thái (nếu có)
+        // Lọc theo trạng thái
         if ($statusFilter = $request->input('status')) {
             $query->where('status', $statusFilter);
         }
 
-        $users = $query->orderByDesc('created_at')->paginate(15);
+        // Lọc theo hạng thành viên
+        if ($tierFilter = $request->input('tier')) {
+            $query->where('member_tier', $tierFilter);
+        }
+
+        // Sắp xếp nâng cao
+        $sort = $request->input('sort', 'newest');
+        switch ($sort) {
+            case 'oldest':  $query->orderBy('user_id', 'ASC'); break;
+            case 'name_az': $query->orderBy('full_name', 'ASC'); break;
+            case 'name_za': $query->orderBy('full_name', 'DESC'); break;
+            case 'id_asc':  $query->orderBy('user_id', 'ASC'); break;
+            case 'id_desc': $query->orderBy('user_id', 'DESC'); break;
+            default:        $query->orderBy('user_id', 'DESC'); break;
+        }
+
+        // Xử lý Xuất CSV (Giữ lại tính năng từ file cũ)
+        if ($request->input('export') === 'csv') {
+            return $this->exportCsv($query);
+        }
+
+        $users = $query->paginate(15)->withQueryString();
         $roles = Role::all();
 
-        return view('admin.users.index', compact('users', 'roles'));
+        // Thống kê (Dùng cho giao diện mới)
+        $stats = [
+            'total' => User::count(),
+            'active' => User::where('status', 'Active')->count(),
+            'banned' => User::where('status', 'Banned')->count(),
+            'tiers' => [
+                'Vang' => User::where('member_tier', 'Vang')->count(),
+                'Bac' => User::where('member_tier', 'Bac')->count(),
+                'Dong' => User::where('member_tier', 'Dong')->count(),
+            ]
+        ];
+
+        // Nếu là yêu cầu AJAX/JSON từ React, trả về dữ liệu thuần
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'users' => $users,
+                'stats' => $stats
+            ]);
+        }
+
+        return view('admin.permissions.index', compact('users', 'roles', 'stats'));
+    }
+
+    /**
+     * Logic xuất CSV từ file cũ chuyển sang
+     */
+    private function exportCsv($query)
+    {
+        $all = $query->get();
+        $filename = "users_export_" . date('Ymd_His') . ".csv";
+        
+        $headers = [
+            'Content-Type' => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename=' . $filename,
+        ];
+
+        $callback = function() use ($all) {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM
+            fputcsv($file, ['ID', 'Họ tên', 'Email', 'SĐT', 'Vai trò', 'Hạng', 'Trạng thái', 'Ngày tạo']);
+            
+            foreach ($all as $u) {
+                fputcsv($file, [
+                    $u->user_id, $u->full_name, $u->email, $u->phone_number, 
+                    $u->role->name ?? '', $u->member_tier, $u->status, $u->created_at
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     /**
@@ -71,6 +144,10 @@ class UserController extends Controller
             'member_tier' => $validated['member_tier'],
             'status' => $validated['status'],
         ]);
+
+        if ($request->ajax()) {
+            return response()->json(['message' => 'Đã tạo tài khoản thành công!']);
+        }
 
         return redirect()->route('admin.users.index')
             ->with('success', 'Đã tạo tài khoản "' . $validated['full_name'] . '" thành công!');
@@ -126,6 +203,10 @@ class UserController extends Controller
                 ->with('error', '⚠️ Xung đột dữ liệu! Tài khoản "' . $user->full_name . '" đã bị chỉnh sửa bởi một quản trị viên khác. Vui lòng mở lại và thử lần nữa.');
         }
 
+        if ($request->ajax()) {
+            return response()->json(['message' => 'Đã cập nhật tài khoản thành công!']);
+        }
+
         return redirect()->route('admin.users.index')
             ->with('success', 'Đã cập nhật tài khoản "' . $validated['full_name'] . '" thành công!');
     }
@@ -146,6 +227,10 @@ class UserController extends Controller
         $name = $user->full_name;
         $user->delete();
 
+        if (request()->ajax()) {
+            return response()->json(['message' => 'Đã xóa tài khoản thành công!']);
+        }
+
         return redirect()->route('admin.users.index')
             ->with('success', 'Đã xóa tài khoản "' . $name . '".');
     }
@@ -156,6 +241,10 @@ class UserController extends Controller
     {
         DB::table('sessions')->where('user_id', $id)->delete();
         
+        if (request()->ajax()) {
+            return response()->json(['message' => 'Đã đăng xuất tất cả các phiên làm việc thành công.']);
+        }
+
         return redirect()->back()
             ->with('success', 'Đã đăng xuất tất cả các phiên làm việc thành công.');
     }
@@ -179,7 +268,7 @@ class UserController extends Controller
             $session->last_active = \Carbon\Carbon::createFromTimestamp($session->last_activity)->diffForHumans();
         }
 
-        return view('admin.users.sessions', compact('user', 'sessions'));
+        return view('admin.permissions.sessions', compact('user', 'sessions'));
     }
 
     /**
@@ -188,6 +277,9 @@ class UserController extends Controller
     public function deleteSession($sessionId)
     {
         DB::table('sessions')->where('id', $sessionId)->delete();
+        if (request()->ajax()) {
+            return response()->json(['message' => 'Đã xóa phiên đăng nhập thành công.']);
+        }
         return redirect()->back()->with('success', 'Đã xóa phiên đăng nhập thành công.');
     }
 

@@ -25,32 +25,31 @@ class ProfileController extends Controller
         $totalOrders = $orders->count();
         $totalSpent = $orders->where('status', 'Delivered')->sum('final_amount');
         
-        // Logic tính hạng thành viên thực tế
-        $currentTier = 'Đồng';
+        // Logic tính hạng thành viên thực tế dựa vào dữ liệu trong admin
+        $tierMapping = [
+            'Dong' => 'Đồng',
+            'Bac' => 'Bạc',
+            'Vang' => 'Vàng',
+        ];
+        
+        $currentTier = $tierMapping[$user->member_tier] ?? 'Đồng';
         $nextTier = 'Bạc';
         $spendNeeded = 0;
 
-        if ($totalSpent < 5000000) {
-            $currentTier = 'Đồng';
+        if ($currentTier == 'Đồng') {
             $nextTier = 'Bạc';
-            $spendNeeded = 5000000 - $totalSpent;
-        } elseif ($totalSpent < 20000000) {
-            $currentTier = 'Bạc';
+            $spendNeeded = max(0, 5000000 - $totalSpent);
+        } elseif ($currentTier == 'Bạc') {
             $nextTier = 'Vàng';
-            $spendNeeded = 20000000 - $totalSpent;
-        } elseif ($totalSpent < 50000000) {
-            $currentTier = 'Vàng';
-            $nextTier = 'Kim Cương';
-            $spendNeeded = 50000000 - $totalSpent;
+            $spendNeeded = max(0, 20000000 - $totalSpent);
         } else {
-            $currentTier = 'Kim Cương';
             $nextTier = 'Đã đạt cấp tối đa';
             $spendNeeded = 0;
         }
 
         // Tính % tiến trình cho thanh bar
         $tierProgress = 0;
-        if ($currentTier == 'Kim Cương') {
+        if ($currentTier == 'Vàng') {
             $tierProgress = 100;
         } else {
             // Mục tiêu là số tiền cần đạt để lên hạng tiếp theo
@@ -60,7 +59,7 @@ class ProfileController extends Controller
             }
         }
 
-        $wishlist = $user->wishlists()->where('type', 'Wishlist')->with('product')->get();
+        $wishlist = $user->wishlists()->where('type', 'wishlist')->with('product')->get();
         $loginHistories = \App\Models\LoginHistory::where('user_id', $user->user_id)
             ->orderBy('login_at', 'desc')
             ->limit(10)

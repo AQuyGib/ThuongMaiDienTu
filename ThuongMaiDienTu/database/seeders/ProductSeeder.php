@@ -12,12 +12,7 @@ class ProductSeeder extends Seeder
     public function run(): void
     {
         // Lấy danh mục đã seed từ CategorySeeder
-        $catDienThoai = Category::where('name', 'Điện thoại')->first();
-        $catLaptop    = Category::where('name', 'Laptop')->first();
-        $catTablet    = Category::where('name', 'Tablet')->first();
-        $catAmThanh   = Category::where('name', 'Âm thanh')->first();
         $catDongHo    = Category::where('name', 'Đồng hồ thông minh')->first();
-        $catPhuKien   = Category::where('name', 'Phụ kiện')->first();
         $catTivi      = Category::where('name', 'Tivi, Màn hình')->first();
         $catGiaDung   = Category::where('name', 'Gia dụng, Smarthome')->first();
 
@@ -27,7 +22,39 @@ class ProductSeeder extends Seeder
         $catXiaomi    = Category::where('name', 'Xiaomi')->first();
         $catMacBook   = Category::where('name', 'MacBook')->first();
         $catGaming    = Category::where('name', 'Laptop Gaming')->first();
+        $catVanPhong  = Category::where('name', 'Laptop Văn phòng')->first();
         $catiPad      = Category::where('name', 'iPad')->first();
+        $catGalaxyTab = Category::where('name', 'Samsung Galaxy Tab')->first();
+        $catOppo      = Category::where('name', 'OPPO')->first();
+        $catTaiNghe   = Category::where('name', 'Tai nghe')->first();
+        $catLoa       = Category::where('name', 'Loa Bluetooth')->first();
+        $catSacDuPhong = Category::where('name', 'Sạc dự phòng')->first();
+        $catOpLung    = Category::where('name', 'Ốp lưng, bao da')->first();
+        $catCapSac    = Category::where('name', 'Cáp sạc')->first();
+
+        foreach ([
+            'Đồng hồ thông minh' => $catDongHo,
+            'Tivi, Màn hình' => $catTivi,
+            'Gia dụng, Smarthome' => $catGiaDung,
+            'iPhone' => $catIPhone,
+            'Samsung' => $catSamsung,
+            'Xiaomi' => $catXiaomi,
+            'MacBook' => $catMacBook,
+            'Laptop Gaming' => $catGaming,
+            'Laptop Văn phòng' => $catVanPhong,
+            'iPad' => $catiPad,
+            'Samsung Galaxy Tab' => $catGalaxyTab,
+            'OPPO' => $catOppo,
+            'Tai nghe' => $catTaiNghe,
+            'Loa Bluetooth' => $catLoa,
+            'Sạc dự phòng' => $catSacDuPhong,
+            'Ốp lưng, bao da' => $catOpLung,
+            'Cáp sạc' => $catCapSac,
+        ] as $categoryName => $category) {
+            if (! $category) {
+                throw new \RuntimeException("Thiếu danh mục seed: {$categoryName}");
+            }
+        }
 
         $products = [
             // ===== ĐIỆN THOẠI - iPhone (4 sản phẩm) =====
@@ -35,54 +62,34 @@ class ProductSeeder extends Seeder
                 'category_id' => $catIPhone->category_id,
                 'name' => 'iPhone 15 Pro Max 256GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&q=80',
-                'image' => 'iphone-15-pro-max-256gb.jpg',
+
                 'base_price' => 34990000,
                 'old_price' => 35990000,
-                'ram' => '8GB',
-                'rom' => '256GB',
-                'cpu' => 'Apple A17 Pro',
-                'gpu' => '6-core GPU',
-                'screen' => '6.7 inch Super Retina XDR OLED',
-                'os' => 'iOS 17',
-                'camera' => '48MP Main + 12MP Ultra Wide + 12MP Telephoto',
-                'battery' => '4422 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6E, Bluetooth 5.3',
-                'description' => 'iPhone 15 Pro Max với chip A17 Pro mạnh mẽ, màn hình ProMotion 120Hz và thiết kế titan siêu nhẹ. Camera 48MP cho chất lượng hình ảnh tuyệt vời.',
+
                 'specifications' => json_encode([
-                    'Màn hình' => 'Super Retina XDR OLED, 6.7 inch, 2796x1290',
-                    'Camera sau' => '48MP (f/1.8) + 12MP Ultra Wide (f/2.2) + 12MP Telephoto (f/2.8)',
-                    'Camera trước' => '12MP (f/1.9)',
-                    'Pin' => '4422 mAh, sạc nhanh USB-C',
+                    'Màn hình' => 'Super Retina XDR OLED, 6.7 inch, 2796x1290, 120Hz',
+                    'Chip' => 'Apple A17 Pro 6 nhân',
+                    'RAM' => '8GB',
+                    'Bộ nhớ trong' => '256GB',
+                    'Camera sau' => '48MP + 12MP Ultra Wide + 12MP Telephoto 5x',
+                    'Camera trước' => '12MP TrueDepth',
+                    'Pin' => '4422 mAh, sạc nhanh USB-C, MagSafe 15W',
+                    'Hệ điều hành' => 'iOS 17',
+                    'Kết nối' => '5G, Wi-Fi 6E, Bluetooth 5.3, NFC',
+                    'Chống nước' => 'IP68',
+                    'Chất liệu' => 'Khung Titanium, mặt kính Ceramic Shield',
                     'Trọng lượng' => '221g',
-                    'Chất liệu' => 'Titanium frame, glass front/back',
                 ]),
-                'discount_percent' => 3,
-                'rating' => 4.8,
-                'review_count' => 1250,
-                'view_count' => 5430,
-                'sold_count' => 890,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
                 'category_id' => $catIPhone->category_id,
                 'name' => 'iPhone 15 128GB Chính hãng VN/A',
                 'thumbnail' => 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400&q=80',
-                'image' => 'iphone-15-128gb.jpg',
+
                 'base_price' => 22990000,
                 'old_price' => 24990000,
-                'ram' => '6GB',
-                'rom' => '128GB',
-                'cpu' => 'Apple A16 Bionic',
-                'gpu' => '5-core GPU',
-                'screen' => '6.1 inch Super Retina XDR OLED',
-                'os' => 'iOS 17',
-                'camera' => '48MP Main + 12MP Ultra Wide',
-                'battery' => '3349 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6, Bluetooth 5.3',
-                'description' => 'iPhone 15 với chip A16 Bionic mạnh mẽ, camera 48MP và thiết kế màu sắc trẻ trung. Màn hình Super Retina XDR sống động.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'Super Retina XDR OLED, 6.1 inch, 2556x1179',
                     'Camera sau' => '48MP (f/1.8) + 12MP Ultra Wide (f/2.2)',
@@ -91,32 +98,16 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '171g',
                     'Chất liệu' => 'Aluminum frame, glass front/back',
                 ]),
-                'discount_percent' => 5,
-                'rating' => 4.7,
-                'review_count' => 890,
-                'view_count' => 4200,
-                'sold_count' => 650,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
                 'category_id' => $catIPhone->category_id,
                 'name' => 'iPhone 14 128GB Chính hãng',
                 'thumbnail' => 'https://images.unsplash.com/photo-1591337676887-a217a6c7e2e4?w=400&q=80',
-                'image' => 'iphone-14-128gb.jpg',
+
                 'base_price' => 17990000,
                 'old_price' => 19990000,
-                'ram' => '6GB',
-                'rom' => '128GB',
-                'cpu' => 'Apple A15 Bionic',
-                'gpu' => '5-core GPU',
-                'screen' => '6.1 inch Super Retina XDR OLED',
-                'os' => 'iOS 17',
-                'camera' => '12MP Main + 12MP Ultra Wide',
-                'battery' => '3279 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6, Bluetooth 5.0',
-                'description' => 'iPhone 14 với chip A15 Bionic mạnh mẽ, camera Dual 12MP và tính năng Emergency SOS qua vệ tinh. Màn hình Super Retina XDR sống động.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'Super Retina XDR OLED, 6.1 inch, 2532x1170',
                     'Camera sau' => '12MP (f/1.8) + 12MP Ultra Wide (f/2.2)',
@@ -125,32 +116,16 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '172g',
                     'Chất liệu' => 'Aluminum frame, glass front/back',
                 ]),
-                'discount_percent' => 8,
-                'rating' => 4.6,
-                'review_count' => 1560,
-                'view_count' => 3800,
-                'sold_count' => 1200,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
             [
                 'category_id' => $catIPhone->category_id,
                 'name' => 'iPhone 13 128GB Chính hãng',
                 'thumbnail' => 'https://images.unsplash.com/photo-1624353365286-3f280127ca1d?w=400&q=80',
-                'image' => 'iphone-13-128gb.jpg',
+
                 'base_price' => 15990000,
                 'old_price' => 17990000,
-                'ram' => '4GB',
-                'rom' => '128GB',
-                'cpu' => 'Apple A15 Bionic',
-                'gpu' => '5-core GPU',
-                'screen' => '6.1 inch Super Retina XDR OLED',
-                'os' => 'iOS 17',
-                'camera' => '12MP Main + 12MP Ultra Wide',
-                'battery' => '3227 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6, Bluetooth 5.0',
-                'description' => 'iPhone 13 với chip A15 Bionic, camera Dual 12MP và thời lượng pin vượt trội. Màn hình Super Retina XDR sống động.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'Super Retina XDR OLED, 6.1 inch, 2532x1170',
                     'Camera sau' => '12MP (f/1.8) + 12MP Ultra Wide (f/2.2)',
@@ -159,13 +134,7 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '173g',
                     'Chất liệu' => 'Aluminum frame, glass front/back',
                 ]),
-                'discount_percent' => 10,
-                'rating' => 4.5,
-                'review_count' => 2100,
-                'view_count' => 5600,
-                'sold_count' => 1800,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
 
             // ===== ĐIỆN THOẠI - Samsung (4 sản phẩm) =====
@@ -173,20 +142,10 @@ class ProductSeeder extends Seeder
                 'category_id' => $catSamsung->category_id,
                 'name' => 'Samsung Galaxy S24 Ultra 5G 256GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80',
-                'image' => 'samsung-s24-ultra-256gb.jpg',
+
                 'base_price' => 33990000,
                 'old_price' => 36990000,
-                'ram' => '12GB',
-                'rom' => '256GB',
-                'cpu' => 'Snapdragon 8 Gen 3',
-                'gpu' => 'Adreno 750',
-                'screen' => '6.8 inch QHD+ Dynamic AMOLED 2X',
-                'os' => 'Android 14 (One UI 6)',
-                'camera' => '200MP Main + 12MP Ultra Wide + 10MP Telephoto + 10MP Telephoto',
-                'battery' => '5000 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6E, Bluetooth 5.3',
-                'description' => 'Samsung Galaxy S24 Ultra với camera 200MP mạnh mẽ nhất, bút S Pen tích hợp và thiết kế cao cấp. Màn hình Dynamic AMOLED 2X 120Hz sống động.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'Dynamic AMOLED 2X, 6.8 inch, 3120x1440, 120Hz',
                     'Camera sau' => '200MP (f/1.7) + 12MP Ultra Wide + 10MP Telephoto + 10MP Telephoto',
@@ -195,32 +154,16 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '232g',
                     'Chất liệu' => 'Titanium frame, Gorilla Glass Victus 2',
                 ]),
-                'discount_percent' => 5,
-                'rating' => 4.9,
-                'review_count' => 1890,
-                'view_count' => 6200,
-                'sold_count' => 1450,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
                 'category_id' => $catSamsung->category_id,
                 'name' => 'Samsung Galaxy Z Fold5 256GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&q=80',
-                'image' => 'samsung-z-fold5-256gb.jpg',
+
                 'base_price' => 40990000,
                 'old_price' => 41990000,
-                'ram' => '12GB',
-                'rom' => '256GB',
-                'cpu' => 'Snapdragon 8 Gen 2',
-                'gpu' => 'Adreno 740',
-                'screen' => '7.6 inch Main Display, 6.2 inch Cover Display',
-                'os' => 'Android 13 (One UI 5)',
-                'camera' => '50MP Main + 12MP Ultra Wide + 10MP Telephoto',
-                'battery' => '4400 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6E, Bluetooth 5.3',
-                'description' => 'Samsung Galaxy Z Fold5 với màn hình gập lớn 7.6 inch, bút S Pen và đa nhiệm mạnh mẽ. Thiết kế bền bỉ với铰链 (hinge) mới.',
+
                 'specifications' => json_encode([
                     'Màn hình chính' => 'Folded Dynamic AMOLED 2X, 7.6 inch, 2176x1512',
                     'Màn hình phụ' => 'Dynamic AMOLED 2X, 6.2 inch, 904x2316',
@@ -230,32 +173,16 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '253g',
                     'Chất liệu' => 'Titanium frame, Gorilla Glass Victus 2',
                 ]),
-                'discount_percent' => 2,
-                'rating' => 4.7,
-                'review_count' => 780,
-                'view_count' => 3100,
-                'sold_count' => 420,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
                 'category_id' => $catSamsung->category_id,
                 'name' => 'Samsung Galaxy A55 5G 128GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=400&q=80',
-                'image' => 'samsung-a55-5g-128gb.jpg',
+
                 'base_price' => 9990000,
                 'old_price' => 10990000,
-                'ram' => '8GB',
-                'rom' => '128GB',
-                'cpu' => 'Exynos 1480',
-                'gpu' => 'Immortalix T760',
-                'screen' => '6.6 inch FHD+ AMOLED',
-                'os' => 'Android 14 (One UI 6)',
-                'camera' => '50MP Main + 12MP Ultra Wide + 10MP Telephoto',
-                'battery' => '5000 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6, Bluetooth 5.3',
-                'description' => 'Samsung Galaxy A55 5G với camera 50MP, màn hình AMOLED 120Hz và thời lượng pin 5000mAh. Thiết kế bền bỉ với chống nước IP67.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'AMOLED, 6.6 inch, 1080x2340, 120Hz',
                     'Camera sau' => '50MP (f/1.8) + 12MP Ultra Wide + 10MP Telephoto',
@@ -265,32 +192,16 @@ class ProductSeeder extends Seeder
                     'Chất liệu' => 'Plastic frame, Gorilla Glass 5',
                     'Chống nước' => 'IP67',
                 ]),
-                'discount_percent' => 8,
-                'rating' => 4.5,
-                'review_count' => 1200,
-                'view_count' => 4500,
-                'sold_count' => 980,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
             [
                 'category_id' => $catSamsung->category_id,
                 'name' => 'Samsung Galaxy S23 FE 128GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80',
-                'image' => 'samsung-s23-fe-128gb.jpg',
+
                 'base_price' => 13990000,
                 'old_price' => 15990000,
-                'ram' => '8GB',
-                'rom' => '128GB',
-                'cpu' => 'Snapdragon 7 Gen 1',
-                'gpu' => 'Adreno 710',
-                'screen' => '6.4 inch FHD+ Dynamic AMOLED 2X',
-                'os' => 'Android 13 (One UI 5)',
-                'camera' => '50MP Main + 12MP Ultra Wide + 8MP Telephoto',
-                'battery' => '4500 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6, Bluetooth 5.2',
-                'description' => 'Samsung Galaxy S23 FE với camera 50MP, màn hình AMOLED 120Hz và thiết kế bền bỉ. Phiên bản Fan Edition với giá tốt.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'Dynamic AMOLED 2X, 6.4 inch, 1080x2340, 120Hz',
                     'Camera sau' => '50MP (f/1.8) + 12MP Ultra Wide + 8MP Telephoto',
@@ -299,13 +210,7 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '180g',
                     'Chất liệu' => 'Aluminum frame, Gorilla Glass 5',
                 ]),
-                'discount_percent' => 12,
-                'rating' => 4.6,
-                'review_count' => 1650,
-                'view_count' => 5200,
-                'sold_count' => 1350,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
 
             // ===== ĐIỆN THOẠI - Xiaomi (4 sản phẩm) =====
@@ -313,20 +218,10 @@ class ProductSeeder extends Seeder
                 'category_id' => $catXiaomi->category_id,
                 'name' => 'Xiaomi 14 Ultra 5G 512GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80',
-                'image' => 'xiaomi-14-ultra-512gb.jpg',
+
                 'base_price' => 23990000,
                 'old_price' => 25990000,
-                'ram' => '16GB',
-                'rom' => '512GB',
-                'cpu' => 'Snapdragon 8 Gen 3',
-                'gpu' => 'Adreno 750',
-                'screen' => '6.73 inch QHD+ AMOLED',
-                'os' => 'Android 14 (HyperOS)',
-                'camera' => '50MP Main + 50MP Ultra Wide + 50MP Telephoto + 50MP Telephoto',
-                'battery' => '5300 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 7, Bluetooth 7.0',
-                'description' => 'Xiaomi 14 Ultra với camera Leica 50MP quad, màn hình AMOLED 2K và thời lượng pin 5300mAh. Thiết kế cao cấp với khung titan.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'AMOLED, 6.73 inch, 2K (2960x1440), 120Hz',
                     'Camera sau' => '50MP Leica (f/1.63) + 50MP Ultra Wide + 50MP Telephoto + 50MP Telephoto',
@@ -335,32 +230,16 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '220g',
                     'Chất liệu' => 'Titanium frame, Gorilla Glass Victus 2',
                 ]),
-                'discount_percent' => 5,
-                'rating' => 4.8,
-                'review_count' => 950,
-                'view_count' => 3800,
-                'sold_count' => 680,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
                 'category_id' => $catXiaomi->category_id,
                 'name' => 'Xiaomi Redmi Note 13 Pro 5G',
                 'thumbnail' => 'https://images.unsplash.com/photo-1556656793-08538906a9f8?w=400&q=80',
-                'image' => 'redmi-note-13-pro-5g.jpg',
+
                 'base_price' => 7990000,
                 'old_price' => 8990000,
-                'ram' => '8GB',
-                'rom' => '256GB',
-                'cpu' => 'Snapdragon 7s Gen 3',
-                'gpu' => 'Adreno 710',
-                'screen' => '6.67 inch FHD+ AMOLED',
-                'os' => 'Android 14 (HyperOS)',
-                'camera' => '200MP Main + 8MP Ultra Wide + 2MP Macro',
-                'battery' => '5100 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6, Bluetooth 5.4',
-                'description' => 'Xiaomi Redmi Note 13 Pro 5G với camera 200MP, màn hình AMOLED 120Hz và thời lượng pin 5100mAh. Thiết kế sang trọng với khung kim loại.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'AMOLED, 6.67 inch, 1080x2400, 120Hz',
                     'Camera sau' => '200MP (f/1.7) + 8MP Ultra Wide + 2MP Macro',
@@ -369,32 +248,15 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '178g',
                     'Chất liệu' => 'Aluminum frame, Gorilla Glass 5',
                 ]),
-                'discount_percent' => 10,
-                'rating' => 4.4,
-                'review_count' => 2800,
-                'view_count' => 8500,
-                'sold_count' => 3200,
-                'status' => 1,
-                'hot_flag' => 1,
             ],
             [
                 'category_id' => $catXiaomi->category_id,
                 'name' => 'Xiaomi 13T Pro 5G 256GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&q=80',
-                'image' => 'xiaomi-13t-pro-256gb.jpg',
+
                 'base_price' => 14990000,
                 'old_price' => 16990000,
-                'ram' => '12GB',
-                'rom' => '256GB',
-                'cpu' => 'Snapdragon 8 Gen 2',
-                'gpu' => 'Adreno 740',
-                'screen' => '6.67 inch QHD+ AMOLED',
-                'os' => 'Android 13 (HyperOS)',
-                'camera' => '50MP Main + 8MP Ultra Wide + 5MP Telephoto',
-                'battery' => '5000 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6, Bluetooth 5.3',
-                'description' => 'Xiaomi 13T Pro với chip Snapdragon 8 Gen 2, camera 50MP và màn hình AMOLED 144Hz. Thiết kế cao cấp với khung kim loại.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'AMOLED, 6.67 inch, 2K (2400x1080), 144Hz',
                     'Camera sau' => '50MP (f/1.9) + 8MP Ultra Wide + 5MP Telephoto',
@@ -403,34 +265,17 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '203g',
                     'Chất liệu' => 'Aluminum frame, Gorilla Glass 5',
                 ]),
-                'discount_percent' => 8,
-                'rating' => 4.5,
-                'review_count' => 1450,
-                'view_count' => 4200,
-                'sold_count' => 1100,
-                'status' => 1,
-                'hot_flag' => 0,
             ],
 
             // ===== ĐIỆN THOẠI - OPPO (2 sản phẩm) =====
             [
-                'category_id' => $catXiaomi->category_id,
+                'category_id' => $catOppo->category_id,
                 'name' => 'OPPO Find X6 Pro 256GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=400&q=80',
-                'image' => 'oppo-find-x6-pro-256gb.jpg',
+
                 'base_price' => 19990000,
                 'old_price' => 21990000,
-                'ram' => '12GB',
-                'rom' => '256GB',
-                'cpu' => 'Snapdragon 8 Gen 2',
-                'gpu' => 'Adreno 740',
-                'screen' => '6.82 inch QHD+ AMOLED',
-                'os' => 'Android 13 (ColorOS 13)',
-                'camera' => '50MP Main + 50MP Ultra Wide + 50MP Telephoto',
-                'battery' => '5000 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6, Bluetooth 5.3',
-                'description' => 'OPPO Find X6 Pro với camera Hasselblad 50MP triple, màn hình AMOLED 120Hz và thiết kế cao cấp. Tính năng video cinematic độc đáo.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'AMOLED, 6.82 inch, 2K (3168x1440), 120Hz',
                     'Camera sau' => '50MP Hasselblad (f/1.7) + 50MP Ultra Wide + 50MP Telephoto',
@@ -439,32 +284,16 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '219g',
                     'Chất liệu' => 'Aluminum frame, Gorilla Glass 5',
                 ]),
-                'discount_percent' => 7,
-                'rating' => 4.6,
-                'review_count' => 890,
-                'view_count' => 2900,
-                'sold_count' => 520,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
             [
-                'category_id' => $catXiaomi->category_id,
+                'category_id' => $catOppo->category_id,
                 'name' => 'OPPO Reno11 F 5G 256GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=400&q=80',
-                'image' => 'oppo-reno11-f-5g-256gb.jpg',
+
                 'base_price' => 8490000,
                 'old_price' => 8990000,
-                'ram' => '8GB',
-                'rom' => '256GB',
-                'cpu' => 'Snapdragon 782G',
-                'gpu' => 'Adreno 642L',
-                'screen' => '6.7 inch FHD+ AMOLED',
-                'os' => 'Android 13 (ColorOS 13)',
-                'camera' => '64MP Main + 8MP Ultra Wide + 2MP Macro',
-                'battery' => '4700 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => '5G, WiFi 6, Bluetooth 5.2',
-                'description' => 'OPPO Reno11 F với camera 64MP, thiết kế mỏng nhẹ và màn hình AMOLED sống động. Dòng Reno nổi bật với thiết kế thời trang.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'AMOLED, 6.7 inch, 1080x2412, 120Hz',
                     'Camera sau' => '64MP (f/1.7) + 8MP Ultra Wide + 2MP Macro',
@@ -473,13 +302,7 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '172g',
                     'Chất liệu' => 'Aluminum frame, Gorilla Glass 5',
                 ]),
-                'discount_percent' => 10,
-                'rating' => 4.3,
-                'review_count' => 1100,
-                'view_count' => 3500,
-                'sold_count' => 850,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
 
             // ===== LAPTOP - MacBook (2 sản phẩm) =====
@@ -487,20 +310,10 @@ class ProductSeeder extends Seeder
                 'category_id' => $catMacBook->category_id,
                 'name' => 'MacBook Air 15 inch M3 2024 8GB/256GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&q=80',
-                'image' => 'macbook-air-15-m3-2024.jpg',
+
                 'base_price' => 32990000,
                 'old_price' => 35990000,
-                'ram' => '8GB',
-                'rom' => '256GB',
-                'cpu' => 'Apple M3',
-                'gpu' => '8-core GPU',
-                'screen' => '15.3 inch Liquid Retina IPS',
-                'os' => 'macOS Sonoma',
-                'camera' => '1080p FaceTime HD',
-                'battery' => '78.6 Wh',
-                'sim' => 'Không',
-                'connection' => 'WiFi 6E, Bluetooth 5.3',
-                'description' => 'MacBook Air 15 inch M3 với thiết kế mỏng nhẹ, màn hình Liquid Retina 120Hz và thời lượng pin vượt trội. Lý tưởng cho công việc và giải trí.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'Liquid Retina IPS, 15.3 inch, 2880x1864, 120Hz',
                     'Camera' => '1080p FaceTime HD',
@@ -509,32 +322,16 @@ class ProductSeeder extends Seeder
                     'Chất liệu' => 'Aluminum unibody',
                     'Cổng kết nối' => '2x Thunderbolt 4, 3.5mm headphone',
                 ]),
-                'discount_percent' => 5,
-                'rating' => 4.8,
-                'review_count' => 1200,
-                'view_count' => 4800,
-                'sold_count' => 950,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
                 'category_id' => $catMacBook->category_id,
                 'name' => 'MacBook Pro 14 inch M3 Pro 2024 18GB/512GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400&q=80',
-                'image' => 'macbook-pro-14-m3-pro.jpg',
+
                 'base_price' => 49990000,
                 'old_price' => 52990000,
-                'ram' => '18GB',
-                'rom' => '512GB',
-                'cpu' => 'Apple M3 Pro',
-                'gpu' => '18-core GPU',
-                'screen' => '14.2 inch Liquid Retina XDR',
-                'os' => 'macOS Sonoma',
-                'camera' => '1080p FaceTime HD',
-                'battery' => '70 Wh',
-                'sim' => 'Không',
-                'connection' => 'WiFi 6E, Bluetooth 5.3',
-                'description' => 'MacBook Pro 14 inch M3 Pro với hiệu năng mạnh mẽ, màn hình XDR sống động và cổng kết nối đầy đủ. Dành cho nhà sáng tạo và developer.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'Liquid Retina XDR, 14.2 inch, 3024x1964, 120Hz',
                     'Camera' => '1080p FaceTime HD',
@@ -543,13 +340,7 @@ class ProductSeeder extends Seeder
                     'Chất liệu' => 'Aluminum unibody',
                     'Cổng kết nối' => '3x Thunderbolt 4, HDMI, SDXC, 3.5mm headphone, MagSafe 3',
                 ]),
-                'discount_percent' => 3,
-                'rating' => 4.9,
-                'review_count' => 850,
-                'view_count' => 3200,
-                'sold_count' => 620,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
 
             // ===== LAPTOP - Gaming (2 sản phẩm) =====
@@ -557,20 +348,10 @@ class ProductSeeder extends Seeder
                 'category_id' => $catGaming->category_id,
                 'name' => 'ASUS ROG Strix G16 2024 i7-14700HX RTX4060',
                 'thumbnail' => 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=400&q=80',
-                'image' => 'asus-rog-strix-g16-rtx4060.jpg',
+
                 'base_price' => 32990000,
                 'old_price' => 36990000,
-                'ram' => '16GB',
-                'rom' => '512GB',
-                'cpu' => 'Intel Core i7-14700HX',
-                'gpu' => 'NVIDIA RTX 4060 8GB',
-                'screen' => '16 inch QHD+ IPS 165Hz',
-                'os' => 'Windows 11',
-                'camera' => '720p HD',
-                'battery' => '90 Wh',
-                'sim' => 'Không',
-                'connection' => 'WiFi 6, Bluetooth 5.3',
-                'description' => 'ASUS ROG Strix G16 với CPU Intel Core i7-14700HX, GPU RTX 4060 và màn hình 165Hz. Thiết kế gaming với RGB keyboard.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'IPS, 16 inch, 2560x1600, 165Hz',
                     'Camera' => '720p HD',
@@ -579,32 +360,16 @@ class ProductSeeder extends Seeder
                     'Chất liệu' => 'Plastic/Metal hybrid',
                     'Cổng kết nối' => 'USB-C, USB-A, HDMI 2.1, Ethernet, 3.5mm',
                 ]),
-                'discount_percent' => 8,
-                'rating' => 4.5,
-                'review_count' => 1500,
-                'view_count' => 5600,
-                'sold_count' => 1200,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
                 'category_id' => $catGaming->category_id,
                 'name' => 'MSI Katana 15 B13VFK i7-13650HX RTX4060',
                 'thumbnail' => 'https://images.unsplash.com/photo-1588776814555-5f437317611f?w=400&q=80',
-                'image' => 'msi-katana-15-rtx4060.jpg',
+
                 'base_price' => 31990000,
                 'old_price' => 35990000,
-                'ram' => '16GB',
-                'rom' => '1TB',
-                'cpu' => 'Intel Core i7-13650HX',
-                'gpu' => 'NVIDIA RTX 4060 8GB',
-                'screen' => '15.6 inch FHD IPS 144Hz',
-                'os' => 'Windows 11',
-                'camera' => '720p HD',
-                'battery' => '90 Wh',
-                'sim' => 'Không',
-                'connection' => 'WiFi 6, Bluetooth 5.2',
-                'description' => 'MSI Katana 15 với CPU Intel Core i7-13650HX, GPU RTX 4060 và màn hình 144Hz. Thiết kế gaming với RGB keyboard và giá đỡ laptop.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'IPS, 15.6 inch, 1920x1080, 144Hz',
                     'Camera' => '720p HD',
@@ -613,34 +378,18 @@ class ProductSeeder extends Seeder
                     'Chất liệu' => 'Plastic/Metal hybrid',
                     'Cổng kết nối' => 'USB-C, USB-A, HDMI 2.1, Ethernet, 3.5mm',
                 ]),
-                'discount_percent' => 10,
-                'rating' => 4.4,
-                'review_count' => 1200,
-                'view_count' => 4500,
-                'sold_count' => 980,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
 
             // ===== LAPTOP - Văn phòng (1 sản phẩm) =====
             [
-                'category_id' => $catLaptop->category_id,
+                'category_id' => $catVanPhong->category_id,
                 'name' => 'Dell XPS 15 2024 Core i7/16GB/512GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1531297572550-8cc3df7a0f69?w=400&q=80',
-                'image' => 'dell-xps-15-2024.jpg',
+
                 'base_price' => 38490000,
                 'old_price' => 41990000,
-                'ram' => '16GB',
-                'rom' => '512GB',
-                'cpu' => 'Intel Core i7-13620H',
-                'gpu' => 'Intel Iris Xe',
-                'screen' => '15.6 inch 4K+ OLED',
-                'os' => 'Windows 11',
-                'camera' => '1080p HD',
-                'battery' => '86 Wh',
-                'sim' => 'Không',
-                'connection' => 'WiFi 6E, Bluetooth 5.3',
-                'description' => 'Dell XPS 15 với màn hình 4K+ OLED sống động, hiệu năng mạnh mẽ và thiết kế cao cấp. Lý tưởng cho designer và developer.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'OLED, 15.6 inch, 3840x2400, 60Hz',
                     'Camera' => '1080p HD',
@@ -649,13 +398,7 @@ class ProductSeeder extends Seeder
                     'Chất liệu' => 'Aluminum/Carbon fiber',
                     'Cổng kết nối' => '2x Thunderbolt 4, 2x USB-C, 3.5mm',
                 ]),
-                'discount_percent' => 5,
-                'rating' => 4.7,
-                'review_count' => 680,
-                'view_count' => 2400,
-                'sold_count' => 450,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
 
             // ===== TABLET - iPad (2 sản phẩm) =====
@@ -663,20 +406,10 @@ class ProductSeeder extends Seeder
                 'category_id' => $catiPad->category_id,
                 'name' => 'iPad Pro M4 11 inch 2024 WiFi 256GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400&q=80',
-                'image' => 'ipad-pro-m4-11-inch.jpg',
+
                 'base_price' => 28990000,
                 'old_price' => 30990000,
-                'ram' => '8GB',
-                'rom' => '256GB',
-                'cpu' => 'Apple M4',
-                'gpu' => '10-core GPU',
-                'screen' => '11 inch Liquid Retina XDR Mini-LED',
-                'os' => 'iPadOS 17',
-                'camera' => '12MP Wide + 10MP Ultra Wide',
-                'battery' => '7513 mAh',
-                'sim' => 'Nano SIM + eSIM (cellular)',
-                'connection' => 'WiFi 6, Bluetooth 5.3',
-                'description' => 'iPad Pro M4 với hiệu năng vượt trội, màn hình XDR sống động và hỗ trợ Apple Pencil 2. Lý tưởng cho sáng tạo và làm việc.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'Liquid Retina XDR Mini-LED, 11 inch, 2388x1668, 120Hz',
                     'Camera sau' => '12MP Wide (f/1.8) + 10MP Ultra Wide (f/2.2)',
@@ -686,32 +419,16 @@ class ProductSeeder extends Seeder
                     'Chất liệu' => 'Aluminum unibody',
                     'Hỗ trợ Apple Pencil' => 'Gen 2, magnetic charging',
                 ]),
-                'discount_percent' => 3,
-                'rating' => 4.9,
-                'review_count' => 750,
-                'view_count' => 2800,
-                'sold_count' => 520,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
                 'category_id' => $catiPad->category_id,
                 'name' => 'iPad Air M2 13 inch 2024 WiFi 128GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1585790050230-5dd28404ccb9?w=400&q=80',
-                'image' => 'ipad-air-m2-13-inch.jpg',
+
                 'base_price' => 18990000,
                 'old_price' => 19990000,
-                'ram' => '8GB',
-                'rom' => '128GB',
-                'cpu' => 'Apple M2',
-                'gpu' => '8-core GPU',
-                'screen' => '13 inch Liquid Retina IPS',
-                'os' => 'iPadOS 17',
-                'camera' => '12MP Wide + 12MP Ultra Wide',
-                'battery' => '7089 mAh',
-                'sim' => 'Nano SIM + eSIM (cellular)',
-                'connection' => 'WiFi 6, Bluetooth 5.3',
-                'description' => 'iPad Air M2 13 inch với màn hình lớn, hiệu năng mạnh mẽ và hỗ trợ Apple Pencil 2. Thiết kế mỏng nhẹ với 4 màu sắc.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'Liquid Retina IPS, 13 inch, 2768x2048, 120Hz',
                     'Camera sau' => '12MP Wide (f/1.8) + 12MP Ultra Wide (f/2.2)',
@@ -721,32 +438,16 @@ class ProductSeeder extends Seeder
                     'Chất liệu' => 'Aluminum unibody',
                     'Hỗ trợ Apple Pencil' => 'Gen 2, magnetic charging',
                 ]),
-                'discount_percent' => 8,
-                'rating' => 4.7,
-                'review_count' => 1100,
-                'view_count' => 4200,
-                'sold_count' => 850,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
             [
-                'category_id' => $catTablet->category_id,
+                'category_id' => $catGalaxyTab->category_id,
                 'name' => 'Samsung Galaxy Tab S9 FE 128GB',
                 'thumbnail' => 'https://images.unsplash.com/photo-1561154464-82e9aab32f4d?w=400&q=80',
-                'image' => 'samsung-tab-s9-fe.jpg',
+
                 'base_price' => 9990000,
                 'old_price' => 11990000,
-                'ram' => '6GB',
-                'rom' => '128GB',
-                'cpu' => 'Snapdragon 7 Gen 1',
-                'gpu' => 'Adreno 710',
-                'screen' => '10.9 inch FHD+ LCD',
-                'os' => 'Android 13 (One UI 5)',
-                'camera' => '13MP Main + 5MP Ultra Wide',
-                'battery' => '7040 mAh',
-                'sim' => 'Nano SIM + eSIM',
-                'connection' => 'WiFi 6, Bluetooth 5.2',
-                'description' => 'Samsung Galaxy Tab S9 FE với màn hình lớn, thời lượng pin lâu và bút S Pen tích hợp. Dành cho học tập và làm việc.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'LCD, 10.9 inch, 2560x1600, 120Hz',
                     'Camera sau' => '13MP (f/1.9) + 5MP Ultra Wide (f/2.2)',
@@ -756,34 +457,18 @@ class ProductSeeder extends Seeder
                     'Chất liệu' => 'Plastic frame, Gorilla Glass 5',
                     'Hỗ trợ S Pen' => 'Có, lưu trong máy',
                 ]),
-                'discount_percent' => 12,
-                'rating' => 4.4,
-                'review_count' => 1350,
-                'view_count' => 5100,
-                'sold_count' => 1100,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
 
             // ===== ÂM THANH (3 sản phẩm) =====
             [
-                'category_id' => $catAmThanh->category_id,
+                'category_id' => $catTaiNghe->category_id,
                 'name' => 'Apple AirPods Pro 2 USB-C 2024',
                 'thumbnail' => 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
-                'image' => 'airpods-pro-2-usb-c.jpg',
+
                 'base_price' => 5590000,
                 'old_price' => 6990000,
-                'ram' => 'Không',
-                'rom' => 'Không',
-                'cpu' => 'H2 chip',
-                'gpu' => 'Không',
-                'screen' => 'Không',
-                'os' => 'iOS/macOS watchOS',
-                'camera' => 'Không',
-                'battery' => '24 giờ (với hộp sạc)',
-                'sim' => 'Không',
-                'connection' => 'Bluetooth 5.3',
-                'description' => 'AirPods Pro 2 với H2 chip, khử ồn chủ động và thời lượng pin 24 giờ. Chất âm tuyệt vời và fit vừa tai.',
+
                 'specifications' => json_encode([
                     'Loa' => 'Driver lực từ lớn',
                     'Micro' => '3 micro',
@@ -792,32 +477,16 @@ class ProductSeeder extends Seeder
                     'Sạc' => 'USB-C, Qi wireless',
                     'Chống nước' => 'IPX4',
                 ]),
-                'discount_percent' => 10,
-                'rating' => 4.8,
-                'review_count' => 2500,
-                'view_count' => 8900,
-                'sold_count' => 3200,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
-                'category_id' => $catAmThanh->category_id,
+                'category_id' => $catTaiNghe->category_id,
                 'name' => 'Sony WH-1000XM5 Chống ồn',
                 'thumbnail' => 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400&q=80',
-                'image' => 'sony-wh-100xm5.jpg',
+
                 'base_price' => 7490000,
                 'old_price' => 8490000,
-                'ram' => 'Không',
-                'rom' => 'Không',
-                'cpu' => 'Không',
-                'gpu' => 'Không',
-                'screen' => 'Không',
-                'os' => 'Không',
-                'camera' => 'Không',
-                'battery' => '30 giờ',
-                'sim' => 'Không',
-                'connection' => 'Bluetooth 5.2',
-                'description' => 'Sony WH-1000XM5 với khử ồn vượt trội, chất âm Hi-Res và thời lượng pin 30 giờ. Thiết kế êm ái và gập gọn.',
+
                 'specifications' => json_encode([
                     'Loa' => '30mm driver',
                     'Micro' => '4 micro',
@@ -826,32 +495,16 @@ class ProductSeeder extends Seeder
                     'Sạc' => 'USB-C, Quick charging 3 giờ/10 phút',
                     'Chống nước' => 'Không',
                 ]),
-                'discount_percent' => 8,
-                'rating' => 4.9,
-                'review_count' => 1800,
-                'view_count' => 6500,
-                'sold_count' => 2100,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
-                'category_id' => $catAmThanh->category_id,
+                'category_id' => $catLoa->category_id,
                 'name' => 'JBL Charge 5 Loa Bluetooth chống nước',
                 'thumbnail' => 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&q=80',
-                'image' => 'jbl-charge-5.jpg',
+
                 'base_price' => 3190000,
                 'old_price' => 3990000,
-                'ram' => 'Không',
-                'rom' => 'Không',
-                'cpu' => 'Không',
-                'gpu' => 'Không',
-                'screen' => 'Không',
-                'os' => 'Không',
-                'camera' => 'Không',
-                'battery' => '20 giờ',
-                'sim' => 'Không',
-                'connection' => 'Bluetooth 5.1',
-                'description' => 'JBL Charge 5 với âm thanh JBL Signature, chống nước IP67 và sạc dự phòng USB-C. Thiết kế nhỏ gọn cho mọi chuyến đi.',
+
                 'specifications' => json_encode([
                     'Loa' => '2x 20W',
                     'Micro' => 'Không',
@@ -860,13 +513,7 @@ class ProductSeeder extends Seeder
                     'Chống nước' => 'IP67',
                     'Kết nối' => 'JBL PartyBoost, Bluetooth 5.1',
                 ]),
-                'discount_percent' => 15,
-                'rating' => 4.6,
-                'review_count' => 3200,
-                'view_count' => 12000,
-                'sold_count' => 5500,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
 
             // ===== ĐỒNG HỒ THÔNG MINH (3 sản phẩm) =====
@@ -874,20 +521,10 @@ class ProductSeeder extends Seeder
                 'category_id' => $catDongHo->category_id,
                 'name' => 'Apple Watch Series 9 GPS 45mm',
                 'thumbnail' => 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=400&q=80',
-                'image' => 'apple-watch-series-9.jpg',
+
                 'base_price' => 10990000,
                 'old_price' => 12490000,
-                'ram' => 'Không',
-                'rom' => '32GB',
-                'cpu' => 'S9 SiP',
-                'gpu' => 'Không',
-                'screen' => '1.78 inch LTPO OLED',
-                'os' => 'watchOS 10',
-                'camera' => 'Không',
-                'battery' => '18 giờ',
-                'sim' => 'Không',
-                'connection' => 'Bluetooth 5.3, WiFi 6',
-                'description' => 'Apple Watch Series 9 với chip S9, màn hình luôn bật và tính năng Double Tap. Đa chức năng cho sức khỏe và kết nối.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'LTPO OLED, 1.78 inch, 450x352',
                     'Camera' => 'Không',
@@ -895,32 +532,16 @@ class ProductSeeder extends Seeder
                     'Chống nước' => '50m (WR50)',
                     'Cảm biến' => 'Heart rate, ECG, SpO2, Temperature',
                 ]),
-                'discount_percent' => 8,
-                'rating' => 4.7,
-                'review_count' => 1650,
-                'view_count' => 5800,
-                'sold_count' => 2400,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
                 'category_id' => $catDongHo->category_id,
                 'name' => 'Samsung Galaxy Watch 6 Classic 47mm',
                 'thumbnail' => 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
-                'image' => 'samsung-galaxy-watch-6.jpg',
+
                 'base_price' => 8990000,
                 'old_price' => 9990000,
-                'ram' => 'Không',
-                'rom' => '16GB',
-                'cpu' => 'Exynos W930',
-                'gpu' => 'Mali-G68 MC2',
-                'screen' => '1.4 inch AMOLED',
-                'os' => 'Wear OS 4',
-                'camera' => 'Không',
-                'battery' => '40 giờ',
-                'sim' => 'Không',
-                'connection' => 'Bluetooth 5.3, WiFi 6',
-                'description' => 'Samsung Galaxy Watch 6 Classic với thiết kế xoay truyền thống, cảm biến sinh học tiên tiến và thời lượng pin 40 giờ.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'AMOLED, 1.4 inch, 480x480',
                     'Camera' => 'Không',
@@ -928,32 +549,16 @@ class ProductSeeder extends Seeder
                     'Chống nước' => '5ATM + IP68',
                     'Cảm biến' => 'Heart rate, ECG, SpO2, Body Composition',
                 ]),
-                'discount_percent' => 10,
-                'rating' => 4.5,
-                'review_count' => 1200,
-                'view_count' => 4500,
-                'sold_count' => 1800,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
             [
                 'category_id' => $catDongHo->category_id,
                 'name' => 'Apple Watch Ultra 2 GPS + Cellular 49mm',
                 'thumbnail' => 'https://images.unsplash.com/photo-1434493789847-2f02dc6ca35d?w=400&q=80',
-                'image' => 'apple-watch-ultra-2.jpg',
+
                 'base_price' => 21990000,
                 'old_price' => 23990000,
-                'ram' => 'Không',
-                'rom' => '32GB',
-                'cpu' => 'S9 SiP',
-                'gpu' => 'Không',
-                'screen' => '1.92 inch LTPO OLED',
-                'os' => 'watchOS 10',
-                'camera' => 'Không',
-                'battery' => '36 giờ',
-                'sim' => 'Không',
-                'connection' => 'Bluetooth 5.3, WiFi 6',
-                'description' => 'Apple Watch Ultra 2 với màn hình lớn 49mm, độ sáng 2000 nits và tính năng lặn. Thiết kế titan bền bỉ cho vận động viên.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'LTPO OLED, 1.92 inch, 512x394',
                     'Camera' => 'Không',
@@ -961,34 +566,18 @@ class ProductSeeder extends Seeder
                     'Chống nước' => '100m (WR100)',
                     'Cảm biến' => 'Heart rate, ECG, SpO2, Temperature, Barometer',
                 ]),
-                'discount_percent' => 5,
-                'rating' => 4.9,
-                'review_count' => 450,
-                'view_count' => 2100,
-                'sold_count' => 380,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
 
             // ===== PHỤ KIỆN (3 sản phẩm) =====
             [
-                'category_id' => $catPhuKien->category_id,
+                'category_id' => $catSacDuPhong->category_id,
                 'name' => 'Sạc dự phòng Anker 20000mAh 65W',
                 'thumbnail' => 'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=400&q=80',
-                'image' => 'anker-powerbank-20000mah.jpg',
+
                 'base_price' => 1290000,
                 'old_price' => 1590000,
-                'ram' => 'Không',
-                'rom' => 'Không',
-                'cpu' => 'Không',
-                'gpu' => 'Không',
-                'screen' => 'Không',
-                'os' => 'Không',
-                'camera' => 'Không',
-                'battery' => '20000 mAh',
-                'sim' => 'Không',
-                'connection' => 'USB-C, USB-A',
-                'description' => 'Sạc dự phòng Anker 20000mAh với công suất 65W, sạc nhanh cho laptop và điện thoại. Thiết kế nhỏ gọn với LED indicator.',
+
                 'specifications' => json_encode([
                     'Dung lượng' => '20000 mAh',
                     'Công suất' => '65W (USB-C), 18W (USB-A)',
@@ -997,32 +586,16 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '420g',
                     'Bảo hành' => '18 tháng',
                 ]),
-                'discount_percent' => 12,
-                'rating' => 4.6,
-                'review_count' => 2800,
-                'view_count' => 9500,
-                'sold_count' => 4200,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
             [
-                'category_id' => $catPhuKien->category_id,
+                'category_id' => $catCapSac->category_id,
                 'name' => 'Cáp sạc nhanh USB-C to Lightning 2m',
                 'thumbnail' => 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=400&q=80',
-                'image' => 'usb-c-lightning-cable.jpg',
+
                 'base_price' => 390000,
                 'old_price' => 490000,
-                'ram' => 'Không',
-                'rom' => 'Không',
-                'cpu' => 'Không',
-                'gpu' => 'Không',
-                'screen' => 'Không',
-                'os' => 'Không',
-                'camera' => 'Không',
-                'battery' => 'Không',
-                'sim' => 'Không',
-                'connection' => 'USB-C, Lightning',
-                'description' => 'Cáp sạc nhanh USB-C to Lightning 2m hỗ trợ sạc nhanh 3A. Chứng nhận MFi và vỏ bọc nylon bền bỉ.',
+
                 'specifications' => json_encode([
                     'Loại cổng A' => 'USB-C',
                     'Loại cổng B' => 'Lightning',
@@ -1031,32 +604,16 @@ class ProductSeeder extends Seeder
                     'Chứng nhận' => 'MFi certified',
                     'Độ dài' => '2 mét',
                 ]),
-                'discount_percent' => 15,
-                'rating' => 4.5,
-                'review_count' => 4500,
-                'view_count' => 15000,
-                'sold_count' => 8500,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
             [
-                'category_id' => $catPhuKien->category_id,
+                'category_id' => $catOpLung->category_id,
                 'name' => 'Ốp lưng MagSafe iPhone 15 Pro Max',
                 'thumbnail' => 'https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=400&q=80',
-                'image' => 'magsafe-iphone-15-pro-max.jpg',
+
                 'base_price' => 890000,
                 'old_price' => 1190000,
-                'ram' => 'Không',
-                'rom' => 'Không',
-                'cpu' => 'Không',
-                'gpu' => 'Không',
-                'screen' => 'Không',
-                'os' => 'Không',
-                'camera' => 'Không',
-                'battery' => 'Không',
-                'sim' => 'Không',
-                'connection' => 'Không',
-                'description' => 'Ốp lưng MagSafe iPhone 15 Pro Max với nam châm mạnh, hỗ trợ sạc không dây và thiết kế mỏng nhẹ. Chống sốc và trầy xước.',
+
                 'specifications' => json_encode([
                     'Chất liệu' => 'Silicone/Polycarbonate',
                     'Tính năng' => 'MagSafe, sạc không dây',
@@ -1064,13 +621,7 @@ class ProductSeeder extends Seeder
                     'Trọng lượng' => '22g',
                     'Màu sắc' => 'Đen, Trắng, Xanh, Đỏ',
                 ]),
-                'discount_percent' => 10,
-                'rating' => 4.4,
-                'review_count' => 1800,
-                'view_count' => 6200,
-                'sold_count' => 2800,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
 
             // ===== TIVI, MÀN HÌNH (2 sản phẩm) =====
@@ -1078,20 +629,10 @@ class ProductSeeder extends Seeder
                 'category_id' => $catTivi->category_id,
                 'name' => 'Samsung Smart TV 4K 55 inch QA55Q80C',
                 'thumbnail' => 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&q=80',
-                'image' => 'samsung-tv-55-q80c.jpg',
+
                 'base_price' => 19990000,
                 'old_price' => 24990000,
-                'ram' => 'Không',
-                'rom' => 'Không',
-                'cpu' => 'Không',
-                'gpu' => 'Không',
-                'screen' => '55 inch 4K UHD',
-                'os' => 'Tizen OS',
-                'camera' => 'Không',
-                'battery' => 'Không',
-                'sim' => 'Không',
-                'connection' => 'WiFi 6, Bluetooth 5.0',
-                'description' => 'Samsung Smart TV 55 inch Q80C với công nghệ Quantum Dot, độ sáng 1000 nits và game mode. Âm thanh Q-Symphony.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'QLED, 55 inch, 4K UHD (3840x2160)',
                     'Độ sáng' => '1000 nits',
@@ -1100,32 +641,16 @@ class ProductSeeder extends Seeder
                     'Cổng kết nối' => 'HDMI 2.1 (2x), USB 3.0, Optical, Ethernet',
                     'Âm thanh' => '20W, Q-Symphony',
                 ]),
-                'discount_percent' => 15,
-                'rating' => 4.5,
-                'review_count' => 950,
-                'view_count' => 3800,
-                'sold_count' => 720,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
             [
                 'category_id' => $catTivi->category_id,
                 'name' => 'LG OLED 65 inch C3 4K Smart TV',
                 'thumbnail' => 'https://images.unsplash.com/photo-1567690187548-f07b1d7bf5a9?w=400&q=80',
-                'image' => 'lg-oled-65-c3.jpg',
+
                 'base_price' => 35990000,
                 'old_price' => 42990000,
-                'ram' => 'Không',
-                'rom' => 'Không',
-                'cpu' => 'Không',
-                'gpu' => 'Không',
-                'screen' => '65 inch 4K UHD',
-                'os' => 'webOS 24',
-                'camera' => 'Không',
-                'battery' => 'Không',
-                'sim' => 'Không',
-                'connection' => 'WiFi 6E, Bluetooth 5.3',
-                'description' => 'LG OLED 65 inch C3 với panel OLED tự phát sáng, màu sắc hoàn hảo và thời gian phản hồi 0.1ms. Game Mode Pro.',
+
                 'specifications' => json_encode([
                     'Màn hình' => 'OLED, 65 inch, 4K UHD (3840x2160)',
                     'Tần số quét' => '120Hz',
@@ -1134,13 +659,7 @@ class ProductSeeder extends Seeder
                     'Âm thanh' => '40W, AI Sound Pro',
                     'Tính năng' => 'AI Picture, Game Mode Pro',
                 ]),
-                'discount_percent' => 8,
-                'rating' => 4.9,
-                'review_count' => 680,
-                'view_count' => 2500,
-                'sold_count' => 420,
-                'status' => 1,
-                'hot_flag' => 1,
+
             ],
 
             // ===== GIA DỤNG, SMARTHOME (2 sản phẩm) =====
@@ -1148,20 +667,10 @@ class ProductSeeder extends Seeder
                 'category_id' => $catGiaDung->category_id,
                 'name' => 'Robot hút bụi Xiaomi Vacuum X20 Pro',
                 'thumbnail' => 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=80',
-                'image' => 'xiaomi-vacuum-x20-pro.jpg',
+
                 'base_price' => 8990000,
                 'old_price' => 11990000,
-                'ram' => 'Không',
-                'rom' => 'Không',
-                'cpu' => 'Không',
-                'gpu' => 'Không',
-                'screen' => 'Không',
-                'os' => 'Không',
-                'camera' => 'Không',
-                'battery' => '5200 mAh',
-                'sim' => 'Không',
-                'connection' => 'WiFi 4, Bluetooth 5.0',
-                'description' => 'Robot hút bụi Xiaomi X20 Pro với công suất hút 7000Pa, quét laser 360 độ và tự động hút nước. Trí tuệ nhân tạo AI.',
+
                 'specifications' => json_encode([
                     'Công suất hút' => '7000Pa',
                     'Pin' => '5200 mAh, sử dụng 180 phút',
@@ -1169,32 +678,16 @@ class ProductSeeder extends Seeder
                     'Tính năng' => 'Hút + lau, tự động hút nước, AI obstacle avoidance',
                     'Điều khiển' => 'App Xiaomi Home',
                 ]),
-                'discount_percent' => 15,
-                'rating' => 4.6,
-                'review_count' => 1500,
-                'view_count' => 5600,
-                'sold_count' => 1200,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
             [
                 'category_id' => $catGiaDung->category_id,
                 'name' => 'Máy lọc không khí Samsung AX60R5080WD',
                 'thumbnail' => 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80',
-                'image' => 'samsung-air-purifier.jpg',
+
                 'base_price' => 6490000,
                 'old_price' => 7990000,
-                'ram' => 'Không',
-                'rom' => 'Không',
-                'cpu' => 'Không',
-                'gpu' => 'Không',
-                'screen' => 'Không',
-                'os' => 'Không',
-                'camera' => 'Không',
-                'battery' => 'Không',
-                'sim' => 'Không',
-                'connection' => 'WiFi, Bluetooth',
-                'description' => 'Máy lọc không khí Samsung AX60 với bộ lọc True HEPA, diệt khuẩn H13 và lọc bụi mịn PM0.3. Diện tích phòng 65m².',
+
                 'specifications' => json_encode([
                     'Công suất lọc' => '65m²',
                     'Bộ lọc' => 'True HEPA H13, Activated Carbon',
@@ -1202,19 +695,128 @@ class ProductSeeder extends Seeder
                     'Điều khiển' => 'App SmartThings, remote',
                     'Độ ồn' => '24-52 dB',
                 ]),
-                'discount_percent' => 12,
-                'rating' => 4.5,
-                'review_count' => 890,
-                'view_count' => 3200,
-                'sold_count' => 650,
-                'status' => 1,
-                'hot_flag' => 0,
+
             ],
         ];
 
         foreach ($products as $product) {
             $product['slug'] = Str::slug($product['name']);
-            Product::create($product);
+            Product::create($this->normalizeProductData($product));
         }
+        }
+    }
+
+    private function normalizeProductData(array $product): array
+    {
+        $specifications = json_decode($product['specifications'], true) ?: [];
+        $productName = $product['name'];
+
+        $common = [
+            'Thương hiệu' => $this->detectBrand($productName),
+            'Tình trạng' => 'Hàng mới 100%, nguyên seal',
+            'Bảo hành' => $this->detectWarranty($productName),
+            'Phù hợp' => $this->detectUseCase($productName),
+            'Điểm nổi bật' => $this->detectHighlight($productName, $specifications),
+        ];
+
+        $product['specifications'] = json_encode($common + $specifications, JSON_UNESCAPED_UNICODE);
+
+        return $product;
+    }
+
+    private function detectBrand(string $productName): string
+    {
+        $brands = ['iPhone' => 'Apple', 'iPad' => 'Apple', 'MacBook' => 'Apple', 'Apple Watch' => 'Apple', 'AirPods' => 'Apple', 'Samsung' => 'Samsung', 'Xiaomi' => 'Xiaomi', 'OPPO' => 'OPPO', 'ASUS' => 'ASUS', 'MSI' => 'MSI', 'Dell' => 'Dell', 'Sony' => 'Sony', 'JBL' => 'JBL', 'Anker' => 'Anker', 'LG' => 'LG'];
+
+        foreach ($brands as $keyword => $brand) {
+            if (str_contains($productName, $keyword)) {
+                return $brand;
+            }
+        }
+
+        return 'TechZone';
+    }
+
+    private function detectWarranty(string $productName): string
+    {
+        if (str_contains($productName, 'MacBook') || str_contains($productName, 'Laptop') || str_contains($productName, 'Dell') || str_contains($productName, 'ASUS') || str_contains($productName, 'MSI')) {
+            return '24 tháng chính hãng';
+        }
+
+        if (str_contains($productName, 'Cáp') || str_contains($productName, 'Ốp lưng')) {
+            return '12 tháng';
+        }
+
+        return '12 tháng chính hãng';
+    }
+
+    private function detectUseCase(string $productName): string
+    {
+        if (str_contains($productName, 'iPhone') || str_contains($productName, 'Galaxy') || str_contains($productName, 'Xiaomi') || str_contains($productName, 'OPPO')) {
+            return 'Chụp ảnh, quay video, giải trí, làm việc di động';
+        }
+
+        if (str_contains($productName, 'MacBook') || str_contains($productName, 'Dell')) {
+            return 'Học tập, văn phòng, thiết kế, lập trình';
+        }
+
+        if (str_contains($productName, 'ROG') || str_contains($productName, 'MSI')) {
+            return 'Gaming, đồ họa, dựng video, tác vụ hiệu năng cao';
+        }
+
+        if (str_contains($productName, 'iPad') || str_contains($productName, 'Tab')) {
+            return 'Ghi chú, học online, vẽ sáng tạo, xem phim';
+        }
+
+        if (str_contains($productName, 'AirPods') || str_contains($productName, 'Sony')) {
+            return 'Nghe nhạc, họp online, chống ồn khi di chuyển';
+        }
+
+        if (str_contains($productName, 'JBL')) {
+            return 'Nghe nhạc ngoài trời, du lịch, tiệc nhóm';
+        }
+
+        if (str_contains($productName, 'Watch')) {
+            return 'Theo dõi sức khỏe, luyện tập, nhận thông báo';
+        }
+
+        if (str_contains($productName, 'TV')) {
+            return 'Giải trí gia đình, xem phim 4K, chơi game console';
+        }
+
+        if (str_contains($productName, 'Robot') || str_contains($productName, 'lọc không khí')) {
+            return 'Tự động hóa nhà thông minh, chăm sóc không gian sống';
+        }
+
+        return 'Sử dụng hằng ngày, nâng cấp trải nghiệm công nghệ';
+    }
+
+    private function detectHighlight(string $productName, array $specifications): string
+    {
+        if (isset($specifications['Camera sau'])) {
+            return 'Camera chất lượng cao, hiệu năng ổn định, pin dùng cả ngày';
+        }
+
+        if (isset($specifications['Cổng kết nối']) && (str_contains($productName, 'MacBook') || str_contains($productName, 'Dell') || str_contains($productName, 'ASUS') || str_contains($productName, 'MSI'))) {
+            return 'Màn hình sắc nét, hiệu năng mạnh, nhiều cổng kết nối cho công việc';
+        }
+
+        if (isset($specifications['Khử ồn'])) {
+            return 'Âm thanh rõ, kết nối nhanh, tối ưu trải nghiệm nghe gọi';
+        }
+
+        if (isset($specifications['Cảm biến'])) {
+            return 'Theo dõi sức khỏe toàn diện, thiết kế bền bỉ, nhiều chế độ luyện tập';
+        }
+
+        if (isset($specifications['Công suất hút']) || isset($specifications['Công suất lọc'])) {
+            return 'Tự động hóa tiện lợi, điều khiển qua app, phù hợp nhà thông minh';
+        }
+
+        if (isset($specifications['Dung lượng']) || isset($specifications['Dòng sạc'])) {
+            return 'Sạc nhanh, nhỏ gọn, tương thích nhiều thiết bị';
+        }
+
+        return 'Thiết kế hiện đại, dễ sử dụng, phù hợp nhu cầu phổ thông';
     }
 }
