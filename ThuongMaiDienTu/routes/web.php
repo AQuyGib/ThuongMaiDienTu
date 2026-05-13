@@ -60,6 +60,7 @@ Route::post('/wishlist/toggle', [App\Http\Controllers\WishlistController::class,
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
+Route::get('/orders', [CartController::class, 'tracking'])->name('cart.tracking');
 
 // Articles & Lifestyle
 Route::get('/lifestyle', [\App\Http\Controllers\ArticleFrontendController::class, 'index'])->name('articles.index');

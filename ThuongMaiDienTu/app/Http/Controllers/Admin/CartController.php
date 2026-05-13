@@ -91,4 +91,9 @@ class CartController extends Controller
     {
         return view('frontend.cart.maQR');
     }
+
+    public function tracking()
+    {
+        return view('frontend.cart.ordertracking');
+    }
 }
