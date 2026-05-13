@@ -12,6 +12,11 @@ class SocialController extends Controller
 {
     public function redirectToProvider($provider)
     {
+        if ($provider === 'google') {
+            return Socialite::driver($provider)
+                ->with(['prompt' => 'select_account'])
+                ->redirect();
+        }
         return Socialite::driver($provider)->redirect();
     }
 
@@ -20,20 +25,33 @@ class SocialController extends Controller
         try {
             $socialUser = Socialite::driver($provider)->user();
         } catch (\Exception $e) {
-            return redirect()->route('login_register')->with('error', 'Đăng nhập thất bại.');
+            \Illuminate\Support\Facades\Log::error('Social Login Error: ' . $e->getMessage());
+            return redirect()->route('login_register')->with('error', 'Đăng nhập thất bại: ' . $e->getMessage());
         }
 
-        $user = User::where('email', $socialUser->getEmail())->first();
+        $existingUser = User::where('email', $socialUser->getEmail())->first();
 
-        if (!$user) {
-            $user = User::create([
+        $roleId = 3; // Mặc định là Khách hàng (theo RoleSeeder)
+        if ($socialUser->getEmail() === 'prodienmay@gmail.com') {
+            $roleId = 1; // Admin cho tài khoản chính
+        }
+
+        $user = User::updateOrCreate(
+            ['email' => $socialUser->getEmail()],
+            [
                 'full_name' => $socialUser->getName(),
-                'email' => $socialUser->getEmail(),
-                'password_hash' => bcrypt(Str::random(16)),
-                'role_id' => 2, // 2 là Khách hàng
-                'status' => 'Active',
-                'member_tier' => 'Dong',
-            ]);
+                'google_id' => $socialUser->getId(),
+                'provider' => $provider,
+                'avatar' => $socialUser->getAvatar(),
+                'password_hash' => $existingUser ? $existingUser->password_hash : bcrypt(Str::random(16)),
+                'role_id' => $existingUser ? $existingUser->role_id : $roleId,
+                'status' => $existingUser ? $existingUser->status : 'Active',
+                'member_tier' => $existingUser ? $existingUser->member_tier : 'Dong',
+            ]
+        );
+
+        if ($user->status === 'Banned' || $user->status === 'Inactive') {
+            return redirect()->route('login')->withErrors(['login_error' => 'Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.']);
         }
 
         Auth::login($user);

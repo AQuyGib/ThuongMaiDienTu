@@ -1,13 +1,13 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tính phí vận chuyển - DIENMAYPRO</title>
+@extends('layouts.app')
+
+@section('title', 'Tính phí vận chuyển - DIENMAYPRO')
+
+@push('styles')
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="bg-gray-50 text-gray-800 font-sans p-6">
+@endpush
+
+@section('content')
+<div class="bg-gray-50 text-gray-800 font-sans p-6 min-h-screen pt-12">
     <div class="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
         <!-- Header -->
         <div class="bg-blue-600 p-4 text-white">
@@ -73,7 +73,9 @@
             </a>
         </div>
     </div>
+</div>
 
+@push('scripts')
     <script>
         const formatMoney = (amount) => {
             return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
@@ -121,7 +123,9 @@
             }
         });
     </script>
+@endpush
 
+@push('styles')
     <style>
         @keyframes pulse {
             0% { background-color: rgb(239 246 255); }
@@ -132,5 +136,5 @@
             animation: pulse 0.5s ease-in-out;
         }
     </style>
-</body>
-</html>
+@endpush
+@endsection

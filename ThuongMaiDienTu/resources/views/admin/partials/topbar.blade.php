@@ -9,11 +9,5 @@
             @yield('page-title', 'Dashboard')
         </h2>
     </div>
-    <form method="GET" action="" class="flex bg-gray-100 rounded-lg border border-gray-200 overflow-hidden shrink-0">
-        <input type="text" name="q" value="{{ request('q') }}" placeholder="Tìm kiếm..."
-            class="px-3 sm:px-4 py-2 bg-transparent focus:outline-none text-sm w-32 sm:w-48 md:w-64">
-        <button type="submit" class="px-3 sm:px-4 text-gray-500 hover:text-blue-600">
-            <i class="fa-solid fa-magnifying-glass"></i>
-        </button>
-    </form>
+    {{-- Đã xóa ô Tìm kiếm chung --}}
 </header>
