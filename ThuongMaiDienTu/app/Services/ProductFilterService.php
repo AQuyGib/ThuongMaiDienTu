@@ -21,6 +21,11 @@ class ProductFilterService
             ->searchKeyword($params['q'] ?? null)
             ->sortBy($params['sort'] ?? 'newest');
 
+        if (!empty($params['brand'])) {
+            $brands = is_array($params['brand']) ? $params['brand'] : explode(',', $params['brand']);
+            $query->whereIn('brand', array_filter($brands));
+        }
+
         $category = $this->resolveCategory($params['category_id'] ?? null, $params['category_slug'] ?? null);
         $specs = $this->extractSpecsParams($params);
         $specs = $this->normalizeSpecsForCategory($specs, $category?->filter_config ?? []);
@@ -60,7 +65,7 @@ class ProductFilterService
     {
         $nonSpecKeys = [
             'category_id', 'category_slug', 'min_price', 'max_price', 'q', 'sort',
-            'needs', 'eco_friendly', 'high_repairability', 'page'
+            'needs', 'eco_friendly', 'high_repairability', 'page', 'brand'
         ];
 
         $specs = array_diff_key($params, array_flip($nonSpecKeys));

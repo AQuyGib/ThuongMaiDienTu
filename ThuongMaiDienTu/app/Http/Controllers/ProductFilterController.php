@@ -35,47 +35,52 @@ class ProductFilterController extends Controller
      */
     public function getCategoryFilters($id)
     {
-        $category = Category::find($id);
-        if (!$category) {
-            return response()->json([]);
-        }
+        $cacheKey = "category_filters_{$id}";
 
-        $config = $category->filter_config ?? [];
-        if (is_string($config)) {
-            $config = json_decode($config, true) ?: [];
-        }
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($id) {
+            $category = Category::find($id);
+            if (!$category) {
+                return [];
+            }
 
-        if (!isset($config['price'])) {
-            $config['price'] = [
-                'label' => 'Khoảng giá',
-                'type' => 'range',
-                'fields' => [
-                    ['label' => 'Từ', 'name' => 'min_price', 'placeholder' => '0'],
-                    ['label' => 'Đến', 'name' => 'max_price', 'placeholder' => '∞']
-                ]
-            ];
-        }
+            $config = $category->filter_config ?? [];
+            if (is_string($config)) {
+                $config = json_decode($config, true) ?: [];
+            }
 
-        if (!isset($config['brand'])) {
-            $brands = Product::where('category_id', $id)
-                ->pluck('name')
-                ->map(function ($name) {
-                    return explode(' ', $name)[0];
-                })
-                ->unique()
-                ->values()
-                ->toArray();
-
-            if (!empty($brands)) {
-                $config['brand'] = [
-                    'label' => 'Hãng sản xuất',
-                    'type' => 'checkbox',
-                    'inputName' => 'brand[]',
-                    'options' => $brands
+            // Mặc định luôn có lọc giá
+            if (!isset($config['price'])) {
+                $config['price'] = [
+                    'label' => 'Khoảng giá',
+                    'type' => 'range',
+                    'fields' => [
+                        ['label' => 'Từ', 'name' => 'min_price', 'placeholder' => '0'],
+                        ['label' => 'Đến', 'name' => 'max_price', 'placeholder' => '∞']
+                    ]
                 ];
             }
-        }
 
-        return response()->json($config);
+            // Lấy danh sách thương hiệu từ cột brand (đã được tối ưu)
+            if (!isset($config['brand'])) {
+                $brands = Product::where('category_id', $id)
+                    ->whereNotNull('brand')
+                    ->distinct()
+                    ->pluck('brand')
+                    ->sort()
+                    ->values()
+                    ->toArray();
+
+                if (!empty($brands)) {
+                    $config['brand'] = [
+                        'label' => 'Hãng sản xuất',
+                        'type' => 'checkbox',
+                        'inputName' => 'brand[]',
+                        'options' => $brands
+                    ];
+                }
+            }
+
+            return $config;
+        });
     }
 }

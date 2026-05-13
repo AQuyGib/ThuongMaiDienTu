@@ -176,4 +176,47 @@ class CompareController extends Controller
 
         return array_values(array_unique($ids));
     }
+
+    /**
+     * Chuyển danh sách so sánh từ Session vào Database sau khi đăng nhập.
+     */
+    public static function migrateSessionToDb()
+    {
+        if (!Auth::check()) {
+            return;
+        }
+
+        $sessionIds = session('compare_list', []);
+        if (empty($sessionIds)) {
+            return;
+        }
+
+        $userId = Auth::id();
+
+        // Lấy danh sách hiện tại trong DB
+        $dbIds = WishlistRecentlyViewed::where('user_id', $userId)
+            ->where('type', self::TYPE)
+            ->pluck('product_id')
+            ->toArray();
+
+        // Gộp và giới hạn số lượng
+        $allIds = array_unique(array_merge($dbIds, $sessionIds));
+        $finalIds = array_slice($allIds, 0, self::MAX_ITEMS);
+
+        // Lưu vào DB
+        WishlistRecentlyViewed::where('user_id', $userId)
+            ->where('type', self::TYPE)
+            ->delete();
+
+        foreach ($finalIds as $productId) {
+            WishlistRecentlyViewed::create([
+                'user_id' => $userId,
+                'product_id' => $productId,
+                'type' => self::TYPE,
+            ]);
+        }
+
+        // Xóa session
+        session()->forget('compare_list');
+    }
 }
