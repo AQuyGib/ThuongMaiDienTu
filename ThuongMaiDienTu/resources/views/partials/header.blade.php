@@ -38,7 +38,7 @@
         </div>
         <div class="top-bar-right">
             <span><i class="fa-solid fa-store"></i> Cửa hàng gần bạn</span>
-            <span><i class="fa-solid fa-truck"></i> Tra cứu đơn hàng</span>
+            <a href="/orders" class="hover:text-white transition"><span><i class="fa-solid fa-truck"></i> Tra cứu đơn hàng</span></a>
             <span><i class="fa-solid fa-phone"></i> <strong>1800 2097</strong></span>
         </div>
     </div>
