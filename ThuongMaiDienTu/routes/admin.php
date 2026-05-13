@@ -37,14 +37,20 @@ Route::post('/settings/theme', [ThemeSettingController::class, 'update'])->name(
 Route::post('/settings/theme/reset', [ThemeSettingController::class, 'reset'])->name('settings.theme.reset');
 
 // ===== Quản lý Đơn hàng =====
-Route::resource('orders', OrderController::class);
-Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+// Route::resource('orders', OrderController::class);
+// Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 
-// CRUD Tài khoản (Users)
-Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
-Route::get('users/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
-Route::delete('users/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
-Route::post('users/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
+// CRUD Quyền hạn & Tài khoản (Permissions)
+Route::resource('permissions', UserController::class)->names([
+    'index' => 'users.index',
+    'store' => 'users.store',
+    'update' => 'users.update',
+    'destroy' => 'users.destroy',
+])->except(['create', 'show', 'edit']);
+
+Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
+Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
+Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
 
 // ===== Quản lý Danh Mục =====
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
