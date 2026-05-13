@@ -134,7 +134,11 @@ interface UserManagementProps {
   stats: Stats;
 }
 
-export default function UserManagement({ users: initialUsers, roles, stats: initialStats }: UserManagementProps) {
+export default function UserManagement({ 
+  users: initialUsers = { data: [], total: 0, current_page: 1, last_page: 1, links: [] }, 
+  roles = [], 
+  stats: initialStats = { total: 0, active: 0, banned: 0, tiers: { Vang: 0, Bac: 0, Dong: 0 } } 
+}: UserManagementProps) {
   const [activeTab, setActiveTab] = useState('users');
   const [users, setUsers] = useState(initialUsers);
   const [stats, setStats] = useState(initialStats);

@@ -53,7 +53,7 @@ Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'delet
 Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
 
 // Quản lý Giỏ hàng & Phí vận chuyển
-Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.shoppingcart');
+Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.ShippingCosts');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');
@@ -67,6 +67,10 @@ Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.
 Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
 Route::put('/suppliers/{id}', [SupplierController::class, 'update'])->name('suppliers.update');
 Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
+
+// ===== Quản lý Sản Phẩm & Danh Mục =====
+Route::resource('products', ProductController::class);
+Route::resource('categories', CategoryController::class);
 
 // ===== Quản lý Biến Thể Sản Phẩm =====
 Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'])->name('products.variants.store');
