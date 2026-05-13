@@ -342,7 +342,7 @@
             const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
             if (selectedMethod === 'vnpay' || selectedMethod === 'momo') {
                 e.preventDefault();
-                window.location.href = "{{ route('cart.ai') }}";
+                window.location.href = "{{ route('cart.qr') }}";
             }
         });
 

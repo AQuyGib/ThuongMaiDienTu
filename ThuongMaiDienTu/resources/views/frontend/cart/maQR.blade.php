@@ -98,6 +98,9 @@
                     <p class="text-[10px] text-slate-500 uppercase font-bold">Nhân viên trực</p>
                     <p class="text-sm font-semibold text-slate-200">Quản Trị Viên</p>
                 </div>
+                <a href="{{ route('cart.print') }}" target="_blank" class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-blue-500/20 hover:border-blue-500/50 transition-all group">
+                    <i class="fa-solid fa-print text-slate-400 group-hover:text-blue-500"></i>
+                </a>
                 <button class="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-red-500/20 hover:border-red-500/50 transition-all group">
                     <i class="fa-solid fa-power-off text-slate-400 group-hover:text-red-500"></i>
                 </button>
@@ -370,10 +373,14 @@
             document.getElementById('last-tx').innerText = `${txId} • ${formatMoney(total)}`;
             
             setTimeout(() => {
+                // Lưu vào session để trang print-bill lấy ra
+                sessionStorage.setItem('checkoutItems', JSON.stringify(cart));
+                sessionStorage.setItem('paymentTotal', total);
+                
                 cart = [];
                 renderCart();
                 setPaymentMethod('cash');
-                window.print();
+                window.open('{{ route('cart.print') }}', '_blank');
             }, 1000);
         }
 

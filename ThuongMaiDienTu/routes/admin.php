@@ -50,7 +50,7 @@ Route::post('users/{id}/revoke-sessions', [UserController::class, 'revokeSession
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.shoppingcart');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.ShippingCosts');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
-Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');
+Route::get('/ai', [CartController::class, 'ai'])->name('cart.qr');
 
 // ===== Quản lý Bài viết (Articles / Ecosystem) =====
 Route::resource('articles', ArticleController::class);

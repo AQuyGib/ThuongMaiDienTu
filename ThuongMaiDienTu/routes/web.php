@@ -61,6 +61,7 @@ Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.sh
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
 Route::get('/orders', [CartController::class, 'tracking'])->name('cart.tracking');
+Route::get('/print-bill', [CartController::class, 'print'])->name('cart.print');
 
 // Articles & Lifestyle
 Route::get('/lifestyle', [\App\Http\Controllers\ArticleFrontendController::class, 'index'])->name('articles.index');
