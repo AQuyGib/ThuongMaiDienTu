@@ -16,6 +16,12 @@ return new class extends Migration
             $table->json('filter_config')->nullable()->after('slug');
         });
 
+        if (!Schema::hasColumn('products', 'specifications')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->json('specifications')->nullable()->after('old_price');
+            });
+        }
+
         // 2. Chuyển dữ liệu từ các cột rời rạc sang cột specifications (JSON)
         $products = \Illuminate\Support\Facades\DB::table('products')->get();
         $colsToMove = ['ram', 'rom', 'cpu', 'gpu', 'screen', 'os', 'camera', 'battery', 'sim', 'connection'];
@@ -37,11 +43,14 @@ return new class extends Migration
                 ]);
         }
 
-        // 3. Xóa các cột rời rạc đi (Tạm thời comment để Seeder chạy được)
-        // Schema::table('products', function (Blueprint $table) use ($colsToMove) {
-        //     $table->dropColumn($colsToMove);
-        // });
-
+        // 3. Xóa các cột rời rạc đi
+        Schema::table('products', function (Blueprint $table) use ($colsToMove) {
+            foreach ($colsToMove as $col) {
+                if (Schema::hasColumn('products', $col)) {
+                    $table->dropColumn($col);
+                }
+            }
+        });
     }
 
     /**

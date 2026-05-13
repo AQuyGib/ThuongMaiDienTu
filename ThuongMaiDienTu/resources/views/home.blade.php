@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'TechZone - Hệ thống bán lẻ điện thoại di động, máy tính')
+@section('title', 'DienMayPRO - Hệ thống bán lẻ điện thoại di động, máy tính')
 
 @push('styles')
     <style>
@@ -396,7 +396,7 @@
                 <ul>
                     @foreach($categories as $cat)
                         <li>
-                            <a href="#">
+                            <a href="{{ route('products.category', $cat->slug) }}">
                                 <div class="menu-icon">
                                     <i class="fa-solid {{ $sidebarIcons[$cat->name] ?? 'fa-tag' }} main-icon"></i>
                                     {{ $cat->name }}
@@ -448,7 +448,7 @@
         <!-- Quick Links - DỮ LIỆU ĐỘNG TỪ DB -->
         <div class="quick-links">
             @foreach($categories as $cat)
-                <a href="#" class="quick-link-item">
+                <a href="{{ route('products.category', $cat->slug) }}" class="quick-link-item">
                     <img src="{{ $quickLinkIcons[$cat->name] ?? 'https://cdn-icons-png.flaticon.com/512/1261/1261163.png' }}" alt="{{ $cat->name }}">
                     <span>{{ $cat->name }}</span>
                 </a>
@@ -514,7 +514,7 @@
         @if($phoneProducts->count())
             <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
                 <h2 class="section-title"><i class="fa-solid fa-mobile-screen-button"></i> ĐIỆN THOẠI NỔI BẬT NHẤT</h2>
-                <a href="#" style="color:var(--primary-color); font-size:14px; font-weight:600;">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
+                <a href="{{ route('products.category', 'dien-thoai') }}" style="color:var(--primary-color); font-size:14px; font-weight:600;">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
             </div>
             <div class="product-grid-white">
                 @foreach($phoneProducts as $product)
@@ -555,7 +555,7 @@
         @if($laptopProducts->count())
             <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
                 <h2 class="section-title"><i class="fa-solid fa-laptop"></i> LAPTOP GIÁ SỐC</h2>
-                <a href="#" style="color:var(--primary-color); font-size:14px; font-weight:600;">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
+                <a href="{{ route('products.category', 'laptop') }}" style="color:var(--primary-color); font-size:14px; font-weight:600;">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
             </div>
             <div class="product-grid-white">
                 @foreach($laptopProducts as $product)

@@ -22,6 +22,8 @@ class ProductVariant extends Model {
             $this->color,
             $this->ram,
             $this->rom_capacity,
+            $this->cpu_chip,
+            $this->gpu_chip,
         ]);
         return implode(' / ', $parts) ?: '—';
     }

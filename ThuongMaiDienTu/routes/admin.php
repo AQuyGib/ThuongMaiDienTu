@@ -10,6 +10,9 @@ use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\CashbookController;
+use App\Http\Controllers\Admin\ThemeSettingController;
+use App\Http\Controllers\Admin\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,28 +31,30 @@ use App\Http\Controllers\Admin\ProductController;
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/kpi', [App\Http\Controllers\Admin\KPIController::class, 'index'])->name('kpi.index');
 
-// CRUD Tài khoản (Users)
-Route::resource('users', UserController::class)->except(['create', 'show', 'edit']);
-Route::get('users/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
-Route::delete('users/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
-Route::post('users/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
+// Cấu hình giao diện
+Route::get('/settings/theme', [ThemeSettingController::class, 'index'])->name('settings.theme');
+Route::post('/settings/theme', [ThemeSettingController::class, 'update'])->name('settings.theme.update');
+Route::post('/settings/theme/reset', [ThemeSettingController::class, 'reset'])->name('settings.theme.reset');
 
-// ===== Quản lý Danh Mục =====
-Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
-Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
-Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
-Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+// ===== Quản lý Đơn hàng =====
+// Route::resource('orders', OrderController::class);
+// Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 
-// ===== Quản lý Sản Phẩm =====
-Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
-Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
-Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
+// CRUD Quyền hạn & Tài khoản (Permissions)
+Route::resource('permissions', UserController::class)->names([
+    'index' => 'users.index',
+    'store' => 'users.store',
+    'update' => 'users.update',
+    'destroy' => 'users.destroy',
+])->except(['create', 'show', 'edit']);
+
+Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
+Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
+Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
 
 // Quản lý Giỏ hàng & Phí vận chuyển
-Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
-Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
+Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.shoppingcart');
+Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.ShippingCosts');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');
 
@@ -77,6 +82,10 @@ Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->n
 // ===== Quản lý IMEI =====
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 Route::put('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.updateStatus');
+
+// ===== Quản lý Sổ Quỹ (Cashbook) =====
+Route::post('cashbooks/bulk-destroy', [CashbookController::class, 'bulkDestroy'])->name('cashbooks.bulkDestroy');
+Route::resource('cashbooks', CashbookController::class);
 
 // API lấy variants theo product (cho form tạo phiếu nhập)
 Route::get('/api/products/{id}/variants', [PurchaseOrderController::class, 'getVariants'])->name('api.product.variants');
