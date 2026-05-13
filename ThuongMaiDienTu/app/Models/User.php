@@ -70,4 +70,20 @@ class User extends Authenticatable {
     public function articles() {
         return $this->hasMany(Article::class, 'author_id');
     }
+
+    public function salesOrders() {
+        return $this->hasMany(Order::class, 'staff_id', 'user_id');
+    }
+
+    public function repairTickets() {
+        return $this->hasMany(RepairTicket::class, 'technician_id', 'user_id');
+    }
+
+    /**
+     * Kiểm tra người dùng có đang online không (trong vòng 5 phút qua)
+     */
+    public function isOnline()
+    {
+        return $this->sessions()->where('last_active', '>=', now()->subMinutes(5))->exists();
+    }
 }

@@ -49,12 +49,17 @@ Route::get('/', function () {
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
 Route::get('/san-pham/{id}', [ProductController::class, 'show'])->name('product.show');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
 
 // Modules
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-Route::resource('cashbooks', CashbookController::class);
+
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/wishlist/toggle', [App\Http\Controllers\WishlistController::class, 'toggle'])->name('wishlist.toggle');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
+Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
+Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');
 
 // Articles & Lifestyle
 Route::get('/lifestyle', [\App\Http\Controllers\ArticleFrontendController::class, 'index'])->name('articles.index');
@@ -67,9 +72,9 @@ Route::middleware('auth')->group(function() {
 });
 Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController::class, 'show'])->name('articles.show');
 
-Route::get('/users', function () {
-    return view('PhanQuyen.user');
-})->name('users.index');
+Route::match(['get', 'post'], '/admin/permissions', function () {
+    return view('admin.permissions.index');
+})->name('admin.permissions.index')->middleware([\App\Http\Middleware\IsAdmin::class]);
 
 // Product Filtering
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
@@ -86,3 +91,10 @@ Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name(
 Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
 Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
 Route::delete('/profile/wishlist/{id}', [ProfileController::class, 'removeFromWishlist'])->name('profile.wishlist.destroy');
+
+// Product Compare (So sánh sản phẩm)
+use App\Http\Controllers\CompareController;
+Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
+Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');
+Route::post('/compare/sync', [CompareController::class, 'sync'])->name('compare.sync');
+Route::get('/api/products/search-compare', [CompareController::class, 'searchCompare'])->name('api.products.search-compare');

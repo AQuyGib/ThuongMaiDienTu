@@ -139,6 +139,8 @@ class ProductController extends Controller
             'color' => 'nullable|string|max:30',
             'ram' => 'nullable|string|max:20',
             'rom_capacity' => 'nullable|string|max:20',
+            'cpu_chip' => 'nullable|string|max:100',
+            'gpu_chip' => 'nullable|string|max:100',
             'extra_price' => 'required|numeric|min:0',
             'image_url' => 'nullable|string|max:500',
         ], [
@@ -151,6 +153,8 @@ class ProductController extends Controller
             'color' => $request->color ?: null,
             'ram' => $request->ram ?: null,
             'rom_capacity' => $request->rom_capacity ?: null,
+            'cpu_chip' => $request->cpu_chip ?: null,
+            'gpu_chip' => $request->gpu_chip ?: null,
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
         ]);
@@ -170,6 +174,8 @@ class ProductController extends Controller
             'color' => 'nullable|string|max:30',
             'ram' => 'nullable|string|max:20',
             'rom_capacity' => 'nullable|string|max:20',
+            'cpu_chip' => 'nullable|string|max:100',
+            'gpu_chip' => 'nullable|string|max:100',
             'extra_price' => 'required|numeric|min:0',
             'image_url' => 'nullable|string|max:500',
         ], [
@@ -185,6 +191,8 @@ class ProductController extends Controller
             'color' => $request->color ?: null,
             'ram' => $request->ram ?: null,
             'rom_capacity' => $request->rom_capacity ?: null,
+            'cpu_chip' => $request->cpu_chip ?: null,
+            'gpu_chip' => $request->gpu_chip ?: null,
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
         ]);
