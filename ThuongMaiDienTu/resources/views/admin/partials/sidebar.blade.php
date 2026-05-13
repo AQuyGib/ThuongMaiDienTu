@@ -115,7 +115,7 @@
 
             <a href="{{ route('admin.users.index') }}"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                               {{ request()->is('admin/users*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
+                               {{ request()->is('admin/permissions*') ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800' }}">
                 <i class="fa-solid fa-users w-5"></i> Tài khoản
             </a>
 
