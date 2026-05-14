@@ -1,5 +1,8 @@
 <?php
 namespace App\Models;
+
+use App\Enums\OrderStatus;
+use App\Services\PointsService;
 use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model {
@@ -17,25 +20,42 @@ class Order extends Model {
     protected static function booted()
     {
         static::saved(function ($order) {
-            if ($order->user_id) {
-                $user = $order->user;
-                if ($user) {
-                    $totalSpent = $user->orders()->where('status', 'Delivered')->sum('final_amount');
-                    
-                    $newTier = 'Dong';
-                    if ($totalSpent >= 20000000) {
-                        $newTier = 'Vang';
-                    } elseif ($totalSpent >= 5000000) {
-                        $newTier = 'Bac';
-                    }
-                    
-                    // Chỉ cập nhật nếu hạng thay đổi
-                    if ($user->member_tier !== $newTier) {
-                        $user->member_tier = $newTier;
-                        $user->save();
-                    }
-                }
+            if ($order->wasChanged('status') && self::isCompletedStatus($order->status)) {
+                app(PointsService::class)->applyOrderCompletedPoints($order);
+                self::syncMemberTierByPoints($order);
             }
         });
+    }
+
+    protected static function syncMemberTierByPoints(self $order): void
+    {
+        if (! $order->user_id) {
+            return;
+        }
+
+        $pointsService = app(PointsService::class);
+        $balance = $pointsService->getBalance($order->user);
+        $rankPoints = (int) ($balance['rank_points'] ?? 0);
+        $newTier = $pointsService->resolveRankLevel($rankPoints);
+
+        $user = $order->user;
+        if ($user && $user->member_tier !== $newTier) {
+            $user->member_tier = match ($newTier) {
+                'Diamond' => 'Vang',
+                'Gold' => 'Bac',
+                'Silver' => 'Dong',
+                default => 'Dong',
+            };
+            $user->save();
+        }
+    }
+
+    protected static function isCompletedStatus(?string $status): bool
+    {
+        return in_array(strtolower((string) $status), [
+            OrderStatus::DELIVERED->value,
+            'delivered',
+            'completed',
+        ], true);
     }
 }

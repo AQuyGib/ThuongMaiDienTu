@@ -153,6 +153,18 @@
         text-align: center;
         font-size: 16px;
     }
+    .profile-rewards-link {
+        display: block;
+        margin: 0 20px 12px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        box-shadow: 0 12px 30px rgba(79,70,229,.18);
+    }
+    .profile-rewards-link small { display:block; opacity:.85; font-weight:500; }
     .nav-divider {
         height: 1px;
         background: #eee;
@@ -709,11 +721,20 @@
                 </div>
 
                 <div class="nav-divider"></div>
+                <a href="{{ route('rewards.index') }}" class="profile-rewards-link">
+                    Trang đổi thưởng
+                    <small>Mở catalog voucher, quà tặng và vòng quay may mắn</small>
+                </a>
                 <div class="profile-nav-item" onclick="switchTab('promo-tab', this)">
                     <i class="fa-solid fa-ticket"></i> Hạng thành viên & Ưu đãi
                 </div>
                 <div class="profile-nav-item" onclick="switchTab('login-history-tab', this)">
                     <i class="fa-solid fa-shield-halved"></i> Lịch sử đăng nhập
+                </div>
+                <div class="profile-nav-item">
+                    <a href="{{ route('rewards.history') }}" class="w-full flex items-center gap-4 text-inherit">
+                        <i class="fa-solid fa-gift"></i> Lịch sử đổi thưởng
+                    </a>
                 </div>
                 <div class="nav-divider"></div>
                 <form action="{{ route('logout') ?? '/logout' }}" method="POST">

@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ProductSeeder::class,
             ProductDetailSeeder::class,
+            RewardSeeder::class,
+            RewardRuleSeeder::class,
+            RewardHistorySeeder::class,
         ]);
     }
 }

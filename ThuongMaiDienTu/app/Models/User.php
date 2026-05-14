@@ -21,6 +21,20 @@ class User extends Authenticatable {
         return $this->hasMany(UserAddress::class, 'user_id', 'user_id');
     }
 
+    public function rewardRedemptions()
+    {
+        return $this->hasMany(RewardRedemption::class, 'user_id', 'user_id');
+    }
+
+    public function luckyWheelSpins()
+    {
+        return $this->hasMany(LuckyWheelSpin::class, 'user_id', 'user_id');
+    }
+
+    public function rewardPoints() {
+        return $this->hasMany(RewardPoint::class, 'user_id');
+    }
+
     /**
      * Optimistic Locking: Cập nhật user chỉ khi version khớp.
      * Nếu version đã thay đổi (bởi admin khác), trả về false.
@@ -61,7 +75,7 @@ class User extends Authenticatable {
     public function orders() {
         return $this->hasMany(Order::class, 'user_id');
     }
-    public function rewardPoints() {
+    public function rewardPointsLegacy() {
         return $this->hasMany(RewardPoint::class, 'user_id');
     }
     public function wishlists() {
@@ -83,9 +97,6 @@ class User extends Authenticatable {
         return $this->hasMany(RepairTicket::class, 'technician_id', 'user_id');
     }
 
-    /**
-     * Kiểm tra người dùng có đang online không (trong vòng 5 phút qua)
-     */
     public function isOnline()
     {
         return $this->sessions()->where('last_active', '>=', now()->subMinutes(5))->exists();

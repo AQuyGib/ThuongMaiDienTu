@@ -11,6 +11,10 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RewardsController;
+use App\Http\Controllers\RewardsHistoryController;
+use App\Http\Controllers\Admin\RewardsController as AdminRewardsController;
+use App\Http\Controllers\Admin\RewardsController as AdminRewardsController;
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
@@ -58,9 +62,18 @@ Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index'
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
+Route::post('/pay/wallet-points', [CartController::class, 'applyWalletPoints'])->name('cart.pay.wallet-points');
+Route::post('/pay/place-order', [CartController::class, 'placeOrder'])->name('cart.place-order');
+Route::get('/order-confirmation/{orderId}', [CartController::class, 'confirmation'])->name('cart.confirmation');
 Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
 Route::get('/orders', [CartController::class, 'tracking'])->name('cart.tracking');
 Route::get('/print-bill', [CartController::class, 'print'])->name('cart.print');
+
+Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');
+Route::get('/rewards/{reward}', [RewardsController::class, 'show'])->name('rewards.show');
+Route::get('/rewards/history', [RewardsHistoryController::class, 'index'])->name('rewards.history');
+Route::post('/rewards/redeem', [RewardsController::class, 'redeem'])->name('rewards.redeem');
+Route::post('/rewards/spin', [RewardsController::class, 'spin'])->name('rewards.spin');
 
 // Articles & Lifestyle
 Route::get('/lifestyle', [\App\Http\Controllers\ArticleFrontendController::class, 'index'])->name('articles.index');
@@ -87,6 +100,10 @@ Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'get
 // Admin Customer Management
 Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class])->group(function () {
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class, ['as' => 'admin']);
+    Route::get('rewards', [AdminRewardsController::class, 'index'])->name('admin.rewards.index');
+    Route::post('rewards', [AdminRewardsController::class, 'store'])->name('admin.rewards.store');
+    Route::put('rewards/{reward}', [AdminRewardsController::class, 'update'])->name('admin.rewards.update');
+    Route::delete('rewards/{reward}', [AdminRewardsController::class, 'destroy'])->name('admin.rewards.destroy');
 });
 
 Route::middleware('auth')->group(function () {
