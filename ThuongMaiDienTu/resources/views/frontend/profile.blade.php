@@ -1066,8 +1066,8 @@
             <div id="wishlist-tab" class="profile-tab">
                 <div class="info-form-wrap">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                        <h3 style="margin: 0;">Danh sách yêu thích ({{ count($wishlistItems) }})</h3>
-                        @if(count($wishlistItems) > 0)
+                        <h3 style="margin: 0;">Danh sách yêu thích ({{ count($wishlist) }})</h3>
+                        @if(count($wishlist) > 0)
                             <form action="{{ route('wishlist.clear') }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?')">
                                 @csrf
                                 @method('DELETE')
@@ -1078,9 +1078,9 @@
                         @endif
                     </div>
 
-                    @if(count($wishlistItems) > 0)
+                    @if(count($wishlist) > 0)
                         <div class="wishlist-grid">
-                            @foreach($wishlistItems as $item)
+                            @foreach($wishlist as $item)
                                 @if($item->product)
                                     <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
                                         <div class="wishlist-item-img">
