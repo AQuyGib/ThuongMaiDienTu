@@ -20,9 +20,9 @@ class IsAdmin
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để truy cập trang này.');
         }
 
-        // 2. Kiểm tra vai trò (role_id 1: Admin, role_id 2: Quản lý)
+        // 2. Kiểm tra vai trò (1: Admin, 2: Quản lý, 4: Nhân viên)
         $user = Auth::user();
-        if ($user->role_id == 1 || $user->role_id == 2) {
+        if (in_array($user->role_id, [1, 2, 4])) {
             return $next($request);
         }
 
