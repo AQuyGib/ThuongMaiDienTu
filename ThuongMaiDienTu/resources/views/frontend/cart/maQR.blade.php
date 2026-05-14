@@ -23,6 +23,9 @@
                     <i class="fa-solid fa-house"></i>
                 </div>
             </a>
+            <a href="{{ route('cart.print') }}" target="_blank" class="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 hover:bg-blue-600 hover:text-white transition ml-2" title="In đơn hàng">
+                <i class="fa-solid fa-print"></i>
+            </a>
         </div>
 
         <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">

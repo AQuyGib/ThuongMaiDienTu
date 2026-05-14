@@ -94,4 +94,9 @@ class CartController extends Controller
     {
         return view('frontend.cart.ordertracking');
     }
+
+    public function print()
+    {
+        return view('frontend.cart.print');
+    }
 }
