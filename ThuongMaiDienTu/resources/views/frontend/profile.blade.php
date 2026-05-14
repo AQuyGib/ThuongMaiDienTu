@@ -1077,6 +1077,13 @@
                                             <button class="btn-add-cart-wishlist" onclick="addToCart('{{ $item->product->product_id }}')">
                                                 <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
                                             </button>
+                                            <div style="margin-top: 10px; text-align: center;">
+                                                <a href="javascript:void(0)" onclick="addToCompare('{{ $item->product->product_id }}')" 
+                                                   style="font-size: 11px; color: #666; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 500;"
+                                                   onmouseover="this.style.color='#0046ab'" onmouseout="this.style.color='#666'">
+                                                    <i class="fa-solid fa-scale-balanced"></i> So sánh
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
                                 @endif
