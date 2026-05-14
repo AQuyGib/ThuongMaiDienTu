@@ -57,7 +57,6 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::post('/wishlist/toggle', [App\Http\Controllers\WishlistController::class, 'toggle'])->name('wishlist.toggle');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');
@@ -94,8 +93,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
     Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
     
-    Route::delete('/profile/wishlist/clear', [ProfileController::class, 'clearWishlist'])->name('profile.wishlist.clear');
-    Route::delete('/profile/wishlist/{id}', [ProfileController::class, 'removeFromWishlist'])->name('profile.wishlist.destroy');
+    // Wishlist management
+    Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::delete('/wishlist/clear', [WishlistController::class, 'clearWishlist'])->name('wishlist.clear');
+    Route::delete('/wishlist/{id}', [WishlistController::class, 'removeFromWishlist'])->name('wishlist.destroy');
 });
 
 // Product Compare (So sánh sản phẩm)
