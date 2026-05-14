@@ -13,7 +13,7 @@
         <div class="footer-col">
             <h4>Về công ty</h4>
             <ul>
-                <li><a href="#">Giới thiệu công ty TechZone</a></li>
+                <li><a href="#">Giới thiệu công ty DIENMAYPRO</a></li>
                 <li><a href="#">Tuyển dụng</a></li>
                 <li><a href="#">Gửi góp ý, khiếu nại</a></li>
                 <li><a href="#">Tìm siêu thị (150+ shop)</a></li>

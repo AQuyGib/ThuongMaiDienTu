@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { VercelTabs } from './ui/vercel-tabs';
-import { 
-  Users, ShieldCheck, ShieldAlert, Trophy, 
-  Search, Filter, Download, Plus, 
+import {
+  Users, ShieldCheck, ShieldAlert, Trophy,
+  Search, Filter, Download, Plus,
   Edit, Trash2, Shield,
   Clock, CheckCircle2, XCircle, X, Loader2,
   ChevronDown, Mail, Phone, Calendar, Check
@@ -17,10 +17,10 @@ interface SelectOption {
   icon?: React.ReactNode;
 }
 
-function CustomSelect({ options, value, onChange, placeholder, icon: LeftIcon }: { 
-  options: SelectOption[], 
-  value: string, 
-  onChange: (val: string) => void, 
+function CustomSelect({ options, value, onChange, placeholder, icon: LeftIcon }: {
+  options: SelectOption[],
+  value: string,
+  onChange: (val: string) => void,
   placeholder: string,
   icon?: React.ReactNode
 }) {
@@ -67,11 +67,10 @@ function CustomSelect({ options, value, onChange, placeholder, icon: LeftIcon }:
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-left transition-all group/opt ${
-                  value === option.value 
-                    ? 'bg-blue-600 text-white' 
+                className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-left transition-all group/opt ${value === option.value
+                    ? 'bg-blue-600 text-white'
                     : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   {option.icon && <div className={`${value === option.value ? 'text-white' : 'text-slate-400 group-hover/opt:text-blue-500'} transition-colors`}>{option.icon}</div>}
@@ -134,11 +133,7 @@ interface UserManagementProps {
   stats: Stats;
 }
 
-export default function UserManagement({ 
-  users: initialUsers = { data: [], total: 0, current_page: 1, last_page: 1, links: [] }, 
-  roles = [], 
-  stats: initialStats = { total: 0, active: 0, banned: 0, tiers: { Vang: 0, Bac: 0, Dong: 0 } } 
-}: UserManagementProps) {
+export default function UserManagement({ users: initialUsers, roles, stats: initialStats }: UserManagementProps) {
   const [activeTab, setActiveTab] = useState('users');
   const [users, setUsers] = useState(initialUsers);
   const [stats, setStats] = useState(initialStats);
@@ -163,7 +158,7 @@ export default function UserManagement({
       });
       setUsers(response.data.users);
       setStats(response.data.stats);
-      
+
       const url = new URL(window.location.href);
       Object.entries(newFilters).forEach(([key, value]) => {
         if (value) url.searchParams.set(key, value as string);
@@ -197,10 +192,10 @@ export default function UserManagement({
       label: 'Danh sách Người dùng',
       value: 'users',
       content: (
-        <UserDashboard 
-          users={users} 
-          stats={stats} 
-          roles={roles} 
+        <UserDashboard
+          users={users}
+          stats={stats}
+          roles={roles}
           loading={loading}
           filters={filters}
           onFilterChange={handleFilterChange}
@@ -209,7 +204,7 @@ export default function UserManagement({
             setFilters(newFilters);
             fetchData(newFilters);
           }}
-          onEdit={(user: User) => { setSelectedUser(user); setIsModalOpen(true); }} 
+          onEdit={(user: User) => { setSelectedUser(user); setIsModalOpen(true); }}
           onRefresh={fetchData}
         />
       )
@@ -231,9 +226,9 @@ export default function UserManagement({
             <p className="text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-widest">Hệ thống quản trị thời gian thực</p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
-          <Button variant="outline" className="h-12 px-6 gap-2 font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-2xl" onClick={() => window.location.href='?export=csv'}>
+          <Button variant="outline" className="h-12 px-6 gap-2 font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-2xl" onClick={() => window.location.href = '?export=csv'}>
             <Download size={18} /> Xuất dữ liệu
           </Button>
           <Button onClick={() => { setSelectedUser(null); setIsModalOpen(true); }} className="h-12 px-6 gap-2 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/20">
@@ -245,10 +240,10 @@ export default function UserManagement({
       <VercelTabs tabs={tabs} value={activeTab} onChange={setActiveTab} />
 
       {isModalOpen && (
-        <UserModal 
-          user={selectedUser} 
-          roles={roles} 
-          onClose={() => setIsModalOpen(false)} 
+        <UserModal
+          user={selectedUser}
+          roles={roles}
+          onClose={() => setIsModalOpen(false)}
           onSuccess={() => {
             setIsModalOpen(false);
             fetchData();
@@ -303,37 +298,37 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
       <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none flex flex-wrap items-center gap-4">
         <div className="relative flex-1 min-w-[280px]">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={filters.search}
             onChange={(e) => onFilterChange('search', e.target.value)}
-            placeholder="Tìm kiếm người dùng..." 
+            placeholder="Tìm kiếm người dùng..."
             className="w-full pl-12 pr-4 h-12 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl text-sm font-bold transition-all text-slate-900 dark:text-white outline-none"
           />
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3">
-          <CustomSelect 
-            options={roleOptions} 
-            value={filters.role_id} 
-            onChange={(val) => onFilterChange('role_id', val)} 
-            placeholder="Vai trò" 
+          <CustomSelect
+            options={roleOptions}
+            value={filters.role_id}
+            onChange={(val) => onFilterChange('role_id', val)}
+            placeholder="Vai trò"
             icon={<Shield size={16} />}
           />
 
-          <CustomSelect 
-            options={statusOptions} 
-            value={filters.status} 
-            onChange={(val) => onFilterChange('status', val)} 
-            placeholder="Trạng thái" 
+          <CustomSelect
+            options={statusOptions}
+            value={filters.status}
+            onChange={(val) => onFilterChange('status', val)}
+            placeholder="Trạng thái"
             icon={<CheckCircle2 size={16} />}
           />
 
-          <CustomSelect 
-            options={sortOptions} 
-            value={filters.sort} 
-            onChange={(val) => onFilterChange('sort', val)} 
-            placeholder="Sắp xếp" 
+          <CustomSelect
+            options={sortOptions}
+            value={filters.sort}
+            onChange={(val) => onFilterChange('sort', val)}
+            placeholder="Sắp xếp"
             icon={<Filter size={16} />}
           />
 
@@ -350,7 +345,7 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
             <Loader2 className="animate-spin text-blue-600" size={48} />
           </div>
         )}
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -394,7 +389,7 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
                   <td className="px-8 py-6 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-blue-600 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-600 hover:text-white transition-all shadow-sm" onClick={() => onEdit(user)}><Edit size={16} /></Button>
-                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-amber-600 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-600 hover:text-white transition-all shadow-sm" onClick={() => window.location.href=`/admin/permissions/${user.user_id}/sessions`}><Clock size={16} /></Button>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-amber-600 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-600 hover:text-white transition-all shadow-sm" onClick={() => window.location.href = `/admin/permissions/${user.user_id}/sessions`}><Clock size={16} /></Button>
                       <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-rose-600 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-600 hover:text-white transition-all shadow-sm" onClick={() => handleDelete(user)}><Trash2 size={16} /></Button>
                     </div>
                   </td>
@@ -452,7 +447,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
         <form onSubmit={handleSubmit} className="p-10 space-y-6">
           <input type="hidden" name="_token" value={csrfToken} />
           {isEdit && <input type="hidden" name="_method" value="PUT" />}
-          
+
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Họ và tên</label>
             <input name="full_name" defaultValue={user?.full_name} required className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" />

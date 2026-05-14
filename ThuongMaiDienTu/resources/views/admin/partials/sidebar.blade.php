@@ -3,7 +3,7 @@
         [
             'label' => 'Bảng điều khiển',
             'route' => route('admin.dashboard'),
-            'icon' => 'fa-solid fa-grid-2',
+            'icon' => 'fa-solid fa-house',
             'active' => request()->routeIs('admin.dashboard') || request()->is('admin'),
             'section' => 'Tổng quan'
         ],
@@ -60,7 +60,7 @@
 
     if(Auth::check() && Auth::user()->role_id == 1) {
         $menu[] = [
-            'label' => 'Người dùng & Quyền',
+            'label' => 'Tài khoản',
             'route' => route('admin.users.index'),
             'icon' => 'fa-solid fa-user-gear',
             'active' => request()->is('admin/users*') || request()->is('admin/permissions*'),

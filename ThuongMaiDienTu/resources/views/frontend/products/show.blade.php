@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $product->name . ' - TechZone')
+@section('title', $product->name . ' - DIENMAYPRO')
 
 @push('styles')
 <style>
