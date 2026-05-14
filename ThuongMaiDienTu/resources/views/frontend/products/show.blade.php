@@ -165,14 +165,18 @@
         ];
     })->toJson();
     
-    // Load reviews
-    $reviews = App\Models\Review::with('replies')->where('product_id', $product->product_id)->whereNull('parent_id')->orderBy('created_at', 'desc')->get();
-    $reviewCount = App\Models\Review::where('product_id', $product->product_id)->whereNull('parent_id')->count();
-    $avgRating = $reviewCount > 0 ? round(App\Models\Review::where('product_id', $product->product_id)->whereNull('parent_id')->avg('rating'), 1) : 0;
+    // Reviews are disabled in this branch
+    $reviewCount = 0;
+    $avgRating = 0;
 
     $discountPercent = 0;
     if ($oldPrice > 0 && $oldPrice > $basePrice) {
         $discountPercent = round((($oldPrice - $basePrice) / $oldPrice) * 100);
+    }
+
+    $isWishlisted = false;
+    if(auth()->check()){
+        $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'Wishlist')->exists();
     }
 @endphp
 
@@ -291,12 +295,12 @@
                         <i class="fa-solid fa-credit-card"></i> TRẢ GÓP 0%
                     </button>
                 </div>
-                <div style="display:flex; gap:10px; width:100%; margin-top:10px; flex-wrap:wrap;">
-                    <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700; min-width:180px;">
+                <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
+                    <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700;">
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
-                    <button type="button" class="btn-buy" id="btnCompareDetail" onclick="addToCompare('{{ $product->product_id }}')" style="flex:1; background:#eff6ff; color:#2563eb; border:2px solid #bfdbfe; min-width:180px;">
-                        <i class="fa-solid fa-scale-balanced"></i> <span id="compareDetailLabel">So sánh</span>
+                    <button class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
+                        <i class="{{ $isWishlisted ? 'fa-solid' : 'fa-regular' }} fa-heart" id="wishlistIcon" style="{{ $isWishlisted ? 'color: #d70018;' : '' }}"></i> <span id="wishlistText">{{ $isWishlisted ? 'Đã thêm yêu thích' : 'Thêm yêu thích' }}</span>
                     </button>
 
                 </div>
@@ -372,6 +376,8 @@
             </div>
         @endif
     </div>
+
+
 
     @include('frontend.products.partials.reviews')
 
@@ -537,28 +543,10 @@
     <i class="fa-solid fa-chevron-right zoom-nav next" onclick="nextZoomImage()"></i>
 </div>
 
-<!-- End Product Display Sections -->
-
-
-
-<!-- Custom Confirm Modal -->
-<div id="confirmModal">
-    <div class="confirm-box">
-        <div class="confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="confirm-title" id="confirmTitle">Xác nhận xóa</div>
-        <div class="confirm-desc" id="confirmDesc">Bạn có chắc chắn muốn xóa đánh giá này không? Hành động này không thể hoàn tác.</div>
-        <div class="confirm-actions">
-            <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirmModal()">Hủy bỏ</button>
-            <button class="confirm-btn confirm-btn-danger" id="confirmOkBtn">Xóa ngay</button>
-        </div>
-    </div>
-</div>
-
-<!-- Media Lightbox -->
-<div id="mediaLightbox" onclick="closeMediaLightbox()">
-    <i class="fa-solid fa-xmark lightbox-close" onclick="closeMediaLightbox()"></i>
-    <img id="lightboxImg" src="" alt="" style="display:none;">
-    <video id="lightboxVideo" src="" controls style="display:none;"></video>
+<!-- Toast -->
+<div class="toast-notification" id="toast">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastMsg">Thêm vào giỏ hàng thành công!</span>
 </div>
 
     {{-- Đăng ký nhận khuyến mãi --}}
@@ -592,7 +580,6 @@
             <p style="font-size: 15px; color: #555; line-height: 1.5; margin-bottom: 0;">Đăng ký nhận khuyến mãi thành công. Chúng tôi sẽ gửi mã giảm giá 10% qua Email và Số điện thoại của quý khách.</p>
         </div>
     </div>
-
 @endsection
 
 @push('scripts')
@@ -791,22 +778,31 @@ document.querySelectorAll('.star-rating').forEach(star => {
 function showToast(msg) {
     const toast = document.getElementById('toast');
     document.getElementById('toastMsg').innerText = msg;
+    
     toast.classList.add('show');
     setTimeout(() => { toast.classList.remove('show'); }, 2000);
 }
 
 // --- Custom Confirm Modal ---
 function openConfirmModal(onConfirm) {
-    document.getElementById('confirmModal').classList.add('active');
+    const modal = document.getElementById('confirmModal');
+    if (!modal) return;
+    modal.classList.add('active');
     const okBtn = document.getElementById('confirmOkBtn');
-    okBtn.onclick = () => { closeConfirmModal(); onConfirm(); };
+    if (okBtn) {
+        okBtn.onclick = () => { closeConfirmModal(); onConfirm(); };
+    }
 }
 function closeConfirmModal() {
-    document.getElementById('confirmModal').classList.remove('active');
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.classList.remove('active');
 }
-document.getElementById('confirmModal').addEventListener('click', function(e) {
-    if (e.target === this) closeConfirmModal();
-});
+const confModal = document.getElementById('confirmModal');
+if (confModal) {
+    confModal.addEventListener('click', function(e) {
+        if (e.target === this) closeConfirmModal();
+    });
+}
 
 // --- Reply Functions ---
 function toggleReplyForm(id) {
@@ -898,8 +894,6 @@ function submitReply(parentId) {
     });
 }
 
-
-
 function buyNow() {
     window.location.href = "{{ route('cart.index') }}";
 }
@@ -932,6 +926,7 @@ function toggleWishlist() {
     const btn = document.getElementById('btnWishlist');
     const icon = document.getElementById('wishlistIcon');
     const text = document.getElementById('wishlistText');
+    
     fetch('{{ route("wishlist.toggle") }}', {
         method: 'POST',
         headers: {
@@ -940,26 +935,24 @@ function toggleWishlist() {
         },
         body: JSON.stringify({ product_id: '{{ $product->product_id }}' })
     })
-    .then(r => r.json())
+    .then(response => response.json())
     .then(data => {
-        const icon = document.getElementById('wishlistIcon');
-        const text = document.getElementById('wishlistText');
-        const btn = document.getElementById('btnWishlist');
-
-        if (data.status === 'added') {
+        if(data.status === 'added') {
             isWishlist = true;
-            icon.classList.replace('fa-regular', 'fa-solid');
+            btn.classList.add('active');
+            icon.classList.remove('fa-regular');
+            icon.classList.add('fa-solid');
             icon.style.color = '#d70018';
             text.innerText = 'Đã thêm yêu thích';
-            btn.classList.add('active');
-            showToast('Đã thêm vào yêu thích!');
-        } else {
+            showToast('Đã thêm vào danh sách yêu thích!');
+        } else if(data.status === 'removed') {
             isWishlist = false;
-            icon.classList.replace('fa-solid', 'fa-regular');
-            icon.style.color = '';
-            text.innerText = 'Thêm yêu thích';
             btn.classList.remove('active');
-            showToast('Đã xóa khỏi yêu thích.');
+            icon.classList.remove('fa-solid');
+            icon.classList.add('fa-regular');
+            icon.style.color = '';
+            text.innerText = 'Thêm vào yêu thích';
+            showToast('Đã xóa khỏi danh sách yêu thích.');
         }
     })
     .catch(error => {
@@ -968,23 +961,32 @@ function toggleWishlist() {
     });
 }
 
-// --- Trả góp logic ---
+// --- Installment Modal ---
 let instCurrentBasePrice = basePrice;
 let instSelectedCompany = 'Shinhan Finance';
 let instSelectedMonth = 6;
 
 function checkAuthAndOpenInstallment() {
-    if (!{{ auth()->check() ? 'true' : 'false' }}) {
-        window.location.href = "{{ route('login_register') }}";
-        return;
-    }
-    openInstallmentModal();
+    @auth
+        openInstallmentModal();
+    @else
+        showToast('Vui lòng đăng nhập để đăng ký trả góp!');
+        setTimeout(() => {
+            window.location.href = "{{ route('login_register') }}";
+        }, 1500);
+    @endauth
 }
 
 function openInstallmentModal() {
     document.getElementById('installmentModal').classList.add('active');
+    
+    // Reset lại giao diện
+    document.getElementById('instSuccessMsg').style.display = 'none';
+    switchInstTab(0);
+    
     updateInstallmentTable();
 }
+
 function closeInstallmentModal() {
     document.getElementById('installmentModal').classList.remove('active');
 }
@@ -1009,9 +1011,12 @@ function confirmInstallment() {
 }
 
 // Close when clicking outside
-document.getElementById('installmentModal').addEventListener('click', function(e) {
-    if(e.target === this) closeInstallmentModal();
-});
+const instModal = document.getElementById('installmentModal');
+if (instModal) {
+    instModal.addEventListener('click', function(e) {
+        if(e.target === this) closeInstallmentModal();
+    });
+}
 
 function selectCompany(el, company) {
     document.querySelectorAll('.inst-company').forEach(c => c.classList.remove('active'));
