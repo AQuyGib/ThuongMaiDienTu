@@ -106,7 +106,8 @@
     $props = [
         'user' => [
             'full_name' => Auth::user()->full_name ?? 'Admin',
-            'role_name' => optional(Auth::user()->role)->name ?? 'Administrator'
+            'role_name' => optional(Auth::user()->role)->name ?? 'Administrator',
+            'email' => Auth::user()->email ?? ''
         ],
         'menu' => $menu,
         'homeRoute' => route('admin.dashboard'),
