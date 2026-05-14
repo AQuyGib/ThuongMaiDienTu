@@ -43,10 +43,13 @@ class FlashSaleProductController extends Controller
             })->exists();
 
         if ($overlapping) {
+            if ($request->ajax()) {
+                return response()->json(['message' => 'Sản phẩm này đã nằm trong một chương trình Flash Sale khác có thời gian trùng lặp.'], 422);
+            }
             return back()->with('error', 'Sản phẩm này đã nằm trong một chương trình Flash Sale khác có thời gian trùng lặp.');
         }
 
-        FlashSaleProduct::updateOrCreate(
+        $flashSaleProduct = FlashSaleProduct::updateOrCreate(
             [
                 'flash_sale_id' => $flash_sale->flash_sale_id,
                 'product_id' => $product->product_id,
@@ -59,7 +62,23 @@ class FlashSaleProductController extends Controller
             ]
         );
 
-        return redirect()->route('admin.flash-sales.index')->with('success', 'Đã gán sản phẩm vào Flash Sale.');
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã gán sản phẩm vào Flash Sale.',
+                'product' => [
+                    'id' => $product->product_id,
+                    'name' => $product->name,
+                    'thumbnail' => $product->thumbnail,
+                    'sale_price' => number_format($flashSaleProduct->sale_price, 0, ',', '.') . 'đ',
+                    'stock_limit' => $flashSaleProduct->stock_limit,
+                    'sold_quantity' => $flashSaleProduct->sold_quantity,
+                    'delete_url' => route('admin.flash-sales.products.destroy', [$flash_sale->flash_sale_id, $flashSaleProduct->id])
+                ]
+            ]);
+        }
+
+        return redirect()->route('admin.flash-sales.index', ['edit' => $flash_sale->flash_sale_id])->with('success', 'Đã gán sản phẩm vào Flash Sale.');
     }
 
     public function destroy(FlashSale $flash_sale, FlashSaleProduct $flash_sale_product)
