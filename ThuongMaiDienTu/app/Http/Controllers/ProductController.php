@@ -11,7 +11,7 @@ class ProductController extends Controller
 {
     /**
      * Trang chi tiết sản phẩm.
-     * Route: /san-pham/{id}
+     * Route: /product/{id}
      */
     public function show(int $id)
     {

@@ -1050,6 +1050,51 @@
                         @endif
                     </div>
 
+                    @if($wishlist->count() > 0)
+                        <div class="wishlist-grid">
+                            @foreach($wishlist as $item)
+                                @php 
+                                    $product = $item->product; 
+                                    $imageUrl = $product->thumbnail;
+                                    if (!$imageUrl || !Str::startsWith($imageUrl, 'http')) {
+                                        $imageUrl = asset('uploads/products/' . ($product->image ?: 'default.jpg'));
+                                    }
+                                @endphp
+                                <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
+                                    <a href="{{ route('product.show', $product->product_id) }}">
+                                        <img src="{{ $imageUrl }}" alt="{{ $product->name }}" class="wishlist-img" onerror="this.src='https://loremflickr.com/400/400/technology?lock={{ $product->product_id }}'; this.onerror=null;">
+                                    </a>
+                                    <h4>
+                                        <a href="{{ route('product.show', $product->product_id) }}" style="color: inherit; text-decoration: none;">
+                                            {{ $product->name }}
+                                        </a>
+                                    </h4>
+                                    <div class="wishlist-price">
+                                        {{ number_format($product->base_price, 0, ',', '.') }}đ
+                                        @if($product->old_price)
+                                            <span style="font-size: 12px; color: #999; text-decoration: line-through; font-weight: 400; margin-left: 5px;">{{ number_format($product->old_price, 0, ',', '.') }}đ</span>
+                                        @endif
+                                    </div>
+                                    <div class="wishlist-actions">
+                                        <button class="btn-wishlist-cart" onclick="addToCart({{ $product->product_id }})">
+                                            <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
+                                        </button>
+                                        <button class="btn-wishlist-remove" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="dash-empty" style="padding: 50px 0;">
+                            <i class="fa-regular fa-heart" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
+                            <p>Chưa có sản phẩm nào trong danh sách yêu thích.</p>
+                            <a href="{{ route('home') }}" class="btn-outline">Mua sắm ngay</a>
+                        </div>
+                    @endif
+                </div>
+            </div>
 
             <div id="promo-tab" class="profile-tab">
                 <div class="info-form-wrap">

@@ -82,7 +82,7 @@ Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
 Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
 Route::get('/products/{categorySlug}', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.category');
-Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.detail');
+Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
 Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'getCategoryFilters'])->name('api.categories.filters');
 
 // Admin Customer Management

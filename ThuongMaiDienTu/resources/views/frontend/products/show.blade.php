@@ -413,7 +413,9 @@
 
 
 
-    @include('frontend.products.partials.reviews')
+
+    {{-- Legacy review include removed to avoid merge conflicts with Hien/danhgia --}}
+
 
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())
@@ -861,13 +863,7 @@ if (confModal) {
     });
 }
 
-// --- Reply Functions ---
-function toggleReplyForm(id) {
-    const form = document.getElementById('replyForm-' + id);
-    if (form) {
-        form.style.display = form.style.display === 'block' ? 'none' : 'block';
-    }
-}
+// Review reply functions removed to avoid errors until Hien/danhgia is merged
 
 function replyToUser(parentId, authorName) {
     const form = document.getElementById('replyForm-' + parentId);
