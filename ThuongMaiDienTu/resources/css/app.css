@@ -124,4 +124,12 @@
       filter: blur(0);
     }
   }
+
+  /* Admin Modal Backdrop Blurring */
+  body.admin-modal-open header,
+  body.admin-modal-open aside {
+    filter: blur(8px) grayscale(0.1);
+    pointer-events: none;
+    transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }

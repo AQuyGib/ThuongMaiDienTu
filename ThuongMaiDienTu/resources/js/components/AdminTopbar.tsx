@@ -37,9 +37,9 @@ const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate }) => {
     };
 
     return (
-        <header className="h-24 bg-white/90 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-10 z-30 shrink-0 sticky top-0 shadow-sm">
+        <header className="h-28 bg-white/90 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-12 z-10 shrink-0 sticky top-0 shadow-sm transition-all duration-300">
             {/* Left: Branding & Navigation */}
-            <div className="flex items-center gap-6 w-1/4">
+            <div className="flex items-center gap-8 w-1/4">
                 <button 
                     onClick={() => window.dispatchEvent(new CustomEvent('admin-sidebar-toggle'))} 
                     className="w-12 h-12 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-2xl flex items-center justify-center transition-all duration-300 shadow-sm border border-indigo-100 group shrink-0" 
