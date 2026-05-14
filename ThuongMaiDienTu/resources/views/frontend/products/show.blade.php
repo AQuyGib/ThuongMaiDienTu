@@ -173,6 +173,11 @@
     if ($oldPrice > 0 && $oldPrice > $basePrice) {
         $discountPercent = round((($oldPrice - $basePrice) / $oldPrice) * 100);
     }
+
+    $isWishlisted = false;
+    if(auth()->check()){
+        $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'wishlist')->exists();
+    }
 @endphp
 
 <div class="container">
@@ -294,8 +299,8 @@
                     <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700;">
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
-                    <button class="btn-wishlist" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
-                        <i class="fa-regular fa-heart" id="wishlistIcon"></i> <span id="wishlistText">Thêm yêu thích</span>
+                    <button class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
+                        <i class="{{ $isWishlisted ? 'fa-solid' : 'fa-regular' }} fa-heart" id="wishlistIcon" style="{{ $isWishlisted ? 'color: #d70018;' : '' }}"></i> <span id="wishlistText">{{ $isWishlisted ? 'Đã thêm yêu thích' : 'Thêm yêu thích' }}</span>
                     </button>
                 </div>
             </div>
@@ -792,24 +797,49 @@ function addToCart() {
 }
 
 // Wishlist Toggle
-let isWishlist = false;
+let isWishlist = {{ $isWishlisted ? 'true' : 'false' }};
 function toggleWishlist() {
+    if (!{{ auth()->check() ? 'true' : 'false' }}) {
+        window.location.href = "{{ route('login_register') }}";
+        return;
+    }
+
     const btn = document.getElementById('btnWishlist');
     const icon = document.getElementById('wishlistIcon');
     const text = document.getElementById('wishlistText');
     
-    isWishlist = !isWishlist;
-    if(isWishlist) {
-        btn.classList.add('active');
-        icon.classList.remove('fa-regular');
-        icon.classList.add('fa-solid');
-        text.innerText = 'Đã thêm yêu thích';
-    } else {
-        btn.classList.remove('active');
-        icon.classList.remove('fa-solid');
-        icon.classList.add('fa-regular');
-        text.innerText = 'Thêm vào yêu thích';
-    }
+    fetch('{{ route("wishlist.toggle") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ product_id: '{{ $product->product_id }}' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.status === 'added') {
+            isWishlist = true;
+            btn.classList.add('active');
+            icon.classList.remove('fa-regular');
+            icon.classList.add('fa-solid');
+            icon.style.color = '#d70018';
+            text.innerText = 'Đã thêm yêu thích';
+            showToast('Thành công', 'Đã thêm vào danh sách yêu thích!');
+        } else if(data.status === 'removed') {
+            isWishlist = false;
+            btn.classList.remove('active');
+            icon.classList.remove('fa-solid');
+            icon.classList.add('fa-regular');
+            icon.style.color = '';
+            text.innerText = 'Thêm yêu thích';
+            showToast('Thông báo', 'Đã xóa khỏi danh sách yêu thích.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Lỗi', 'Đã xảy ra lỗi!', 'error');
+    });
 }
 
 // --- Installment Modal ---
