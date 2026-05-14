@@ -1,6 +1,7 @@
 @php
+    $rawTitle = $__env->getSections()['page-title'] ?? ($__env->getSections()['title'] ?? 'Dashboard');
     $props = [
-        'pageTitle' => $__env->getSections()['page-title'] ?? ($__env->getSections()['title'] ?? 'Dashboard'),
+        'pageTitle' => html_entity_decode($rawTitle, ENT_QUOTES, 'UTF-8'),
         'todayDate' => now()->format('d/m/Y')
     ];
 @endphp

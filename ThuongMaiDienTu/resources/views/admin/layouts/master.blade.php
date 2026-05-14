@@ -32,7 +32,7 @@
         @include('admin.partials.topbar')
 
         {{-- NỘI DUNG CHÍNH --}}
-        <div class="flex-1 p-6 sm:p-10 overflow-y-auto custom-scrollbar bg-slate-50/50">
+        <div id="joly-main-container" class="flex-1 p-6 sm:p-10 overflow-y-auto custom-scrollbar bg-slate-50/50">
             {{-- Thông báo Flash Message --}}
             @if(session('success'))
                 <div class="mb-8 p-6 bg-white border-l-4 border-emerald-500 shadow-xl shadow-emerald-500/5 rounded-2xl flex items-center gap-4 animate-in slide-in-from-top duration-500">
