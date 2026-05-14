@@ -1065,7 +1065,6 @@
             <!-- TAB DANH SÁCH YÊU THÍCH -->
             <div id="wishlist-tab" class="profile-tab">
                 <div class="info-form-wrap">
-<<<<<<< HEAD
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                         <h3 style="margin: 0;">Danh sách yêu thích ({{ count($wishlistItems) }})</h3>
                         @if(count($wishlistItems) > 0)
@@ -1076,12 +1075,6 @@
                                     <i class="fa-solid fa-trash-can"></i> Xóa tất cả
                                 </button>
                             </form>
-=======
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
-                        <h3 id="wishlist-title" style="margin: 0; border: none; padding: 0;">Sản Phẩm Yêu Thích (<span id="wishlist-count">{{ $wishlist->count() }}</span>)</h3>
-                        @if($wishlist->count() > 0)
-                            <a href="#" id="btn-clear-wishlist" onclick="event.preventDefault(); clearAllWishlist();" style="color: #0046ab; font-size: 13px; font-weight: 600;">Xóa tất cả</a>
->>>>>>> origin/Hien/Profile+danhsachyeuthich
                         @endif
                     </div>
 
@@ -1113,9 +1106,7 @@
                                             </div>
                                         </div>
                                     </div>
-<<<<<<< HEAD
                                 @endif
-=======
                                     <div class="wishlist-actions">
                                         <button class="btn-wishlist-cart"
                                             onclick="addToCartFromWishlist(this, {{ $product->product_id }})"
@@ -1127,7 +1118,6 @@
                                         </button>
                                     </div>
                                 </div>
->>>>>>> origin/Hien/Profile+danhsachyeuthich
                             @endforeach
                         </div>
                     @else
@@ -1901,7 +1891,6 @@
         });
     }
 
-<<<<<<< HEAD
     function addToCart(productId) {
         fetch('{{ route('cart.add') }}', {
             method: 'POST',
@@ -1916,29 +1905,26 @@
         })
         .then(res => res.json())
         .then(data => {
-            if(data.status === 'success') {
-                showToast('Thành công', 'Đã thêm sản phẩm vào giỏ hàng!', 'success');
-                // Cập nhật số lượng giỏ hàng trên header nếu có
+            if(data.status === 'success' || data.success) {
+                showToast('Thành công', data.message || 'Đã thêm sản phẩm vào giỏ hàng!', 'success');
                 const badge = document.getElementById('headerCartBadge');
                 if(badge) {
                     badge.innerText = data.cart_count;
                     badge.style.display = 'block';
                 }
             } else {
-                showToast('Lỗi', 'Không thể thêm vào giỏ hàng.', 'error');
+                showToast('Lỗi', data.message || 'Không thể thêm vào giỏ hàng.', 'error');
             }
         })
         .catch(err => {
             console.error(err);
             showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
         });
-=======
+    }
+
     function updateWishlistCount(count) {
         const countEl = document.getElementById('wishlist-count');
         if (countEl) countEl.textContent = count;
-        const clearBtn = document.getElementById('btn-clear-wishlist');
-        if (clearBtn) clearBtn.style.display = count > 0 ? '' : 'none';
->>>>>>> origin/Hien/Profile+danhsachyeuthich
     }
 
     function removeFromWishlist(id) {
@@ -1952,6 +1938,7 @@
             })
             .then(res => res.json())
             .then(data => {
+                closeConfirmModal();
                 if(data.success) {
                     showToast('Đã xóa', 'Đã bỏ sản phẩm khỏi danh sách yêu thích.', 'success');
                     const item = document.getElementById(`wishlist-item-${id}`);
@@ -1960,22 +1947,14 @@
                         item.style.transform = 'scale(0.8)';
                         setTimeout(() => {
                             item.remove();
-<<<<<<< HEAD
-                            // Reload if empty
-                            const grid = document.querySelector('.wishlist-grid');
-                            if(grid && grid.querySelectorAll('.wishlist-item').length === 0) {
-=======
                             const remaining = document.querySelectorAll('.wishlist-item').length;
                             updateWishlistCount(remaining);
                             if(remaining === 0) {
->>>>>>> origin/Hien/Profile+danhsachyeuthich
                                 window.location.reload();
                             }
                         }, 300);
                     }
-                    closeConfirmModal();
                 } else {
-                    closeConfirmModal();
                     showToast('Lỗi', data.error || 'Không thể thực hiện thao tác này.', 'error');
                 }
             })
@@ -1986,11 +1965,32 @@
         });
     }
 
-<<<<<<< HEAD
     function clearWishlist() {
         showConfirm('Xóa tất cả', 'Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?', function() {
             fetch('{{ route('wishlist.clear') }}', {
-=======
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                closeConfirmModal();
+                if(data.success) {
+                    showToast('Thành công', 'Đã xóa toàn bộ danh sách yêu thích.', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showToast('Lỗi', data.error || 'Không thể xóa danh sách lúc này.', 'error');
+                }
+            })
+            .catch(err => {
+                closeConfirmModal();
+                showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+            });
+        });
+    }
+
     function addToCartFromWishlist(btn, productId) {
         const originalHTML = btn.innerHTML;
         btn.disabled = true;
@@ -2007,9 +2007,9 @@
         .then(res => res.json())
         .then(data => {
             btn.disabled = false;
-            if (data.success) {
+            if (data.status === 'success' || data.success) {
                 btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã thêm!';
-                showToast('Thành công', data.message, 'success');
+                showToast('Thành công', data.message || 'Đã thêm vào giỏ hàng!', 'success');
                 setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
             } else {
                 btn.innerHTML = originalHTML;
@@ -2023,48 +2023,6 @@
         });
     }
 
-    function clearAllWishlist() {
-        showConfirm('Xóa tất cả yêu thích', 'Bạn có chắc muốn xóa toàn bộ danh sách sản phẩm yêu thích?', function() {
-            fetch('{{ route("profile.wishlist.clear") }}', {
->>>>>>> origin/Hien/Profile+danhsachyeuthich
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.success) {
-<<<<<<< HEAD
-                    showToast('Thành công', 'Đã xóa toàn bộ danh sách yêu thích.', 'success');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    closeConfirmModal();
-                    showToast('Lỗi', data.error || 'Không thể xóa danh sách lúc này.', 'error');
-=======
-                    closeConfirmModal();
-                    showToast('Đã xóa tất cả', 'Danh sách yêu thích đã được làm trống.', 'success');
-                    setTimeout(() => window.location.reload(), 1200);
-                } else {
-                    closeConfirmModal();
-                    showToast('Lỗi', 'Không thể xóa danh sách yêu thích.', 'error');
->>>>>>> origin/Hien/Profile+danhsachyeuthich
-                }
-            })
-            .catch(err => {
-                closeConfirmModal();
-                showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
-            });
-        });
-    }
-
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/Hien/Profile+danhsachyeuthich
     function deleteAddress(id) {
         showConfirm('Xóa địa chỉ', 'Bạn có chắc chắn muốn xóa địa chỉ này? Thao tác này không thể hoàn tác.', function() {
             fetch(`/profile/address/${id}`, {
@@ -2076,6 +2034,7 @@
             })
             .then(res => res.json())
             .then(data => {
+                closeConfirmModal();
                 if(data.success) {
                     sessionStorage.setItem('profile_toast', JSON.stringify({
                         title: 'Đã xóa',
@@ -2084,7 +2043,6 @@
                     }));
                     window.location.href = '?tab=info-tab';
                 } else {
-                    closeConfirmModal();
                     showToast('Lỗi', 'Không thể xóa địa chỉ này.', 'error');
                 }
             })
@@ -2097,7 +2055,6 @@
 
     // Initialize Active Tab & Notifications
     document.addEventListener('DOMContentLoaded', function() {
-        // Kiểm tra toast từ sessionStorage (được set trước khi reload trang)
         const toastData = sessionStorage.getItem('profile_toast');
         if (toastData) {
             const data = JSON.parse(toastData);
@@ -2117,7 +2074,10 @@
                 case 'promo-tab': index = 4; break;
                 case 'login-history-tab': index = 5; break;
             }
-            switchTab(tab, document.querySelectorAll('.profile-nav-item')[index]);
+            const navItems = document.querySelectorAll('.profile-nav-item');
+            if (navItems[index]) {
+                switchTab(tab, navItems[index]);
+            }
         }
     });
 </script>
