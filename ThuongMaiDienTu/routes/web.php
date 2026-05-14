@@ -88,14 +88,19 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class, ['as' => 'admin']);
 });
 
-Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
-Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
-
-Route::post('/profile/password/update', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
-Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name('profile.address.store');
-Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
-Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
-
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
+    Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    
+    // Address management
+    Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name('profile.address.store');
+    Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
+    Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
+    
+    Route::delete('/profile/wishlist/clear', [ProfileController::class, 'clearWishlist'])->name('profile.wishlist.clear');
+    Route::delete('/profile/wishlist/{id}', [ProfileController::class, 'removeFromWishlist'])->name('profile.wishlist.destroy');
+});
 
 // Product Compare (So sánh sản phẩm)
 use App\Http\Controllers\CompareController;

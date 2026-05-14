@@ -1041,6 +1041,14 @@
             </div>
 
             <!-- CÁC TAB KHÁC -->
+            <div id="wishlist-tab" class="profile-tab">
+                <div class="info-form-wrap">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+                        <h3 style="margin: 0; border: none; padding: 0;">Sản Phẩm Yêu Thích ({{ $wishlist->count() }})</h3>
+                        @if($wishlist->count() > 0)
+                            <a href="javascript:void(0)" onclick="clearWishlist()" style="color: #0046ab; font-size: 13px; font-weight: 600;">Xóa tất cả</a>
+                        @endif
+                    </div>
 
 
             <div id="promo-tab" class="profile-tab">
@@ -1856,7 +1864,35 @@
                     closeConfirmModal();
                 } else {
                     closeConfirmModal();
-                    showToast('Lỗi', 'Không thể thực hiện thao tác này.', 'error');
+                    showToast('Lỗi', data.error || 'Không thể thực hiện thao tác này.', 'error');
+                }
+            })
+            .catch(err => {
+                closeConfirmModal();
+                showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+            });
+        });
+    }
+
+    function clearWishlist() {
+        showConfirm('Xóa tất cả', 'Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?', function() {
+            fetch('{{ route('profile.wishlist.clear') }}', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    showToast('Thành công', 'Đã xóa toàn bộ danh sách yêu thích.', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    closeConfirmModal();
+                    showToast('Lỗi', data.error || 'Không thể xóa danh sách lúc này.', 'error');
                 }
             })
             .catch(err => {
