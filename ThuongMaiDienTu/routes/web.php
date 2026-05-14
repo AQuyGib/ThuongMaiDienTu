@@ -47,7 +47,7 @@ Route::get('/', function () {
     return redirect()->route('home');
 });
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
-Route::get('/san-pham/{id}', [ProductController::class, 'show'])->name('product.show');
+Route::get('/san-pham/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
 
@@ -58,6 +58,9 @@ Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index'
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
+Route::post('/cart/confirm', [CartController::class, 'confirmOrder'])->name('cart.confirm');
+Route::post('/cart/cancel', [CartController::class, 'cancelOrder'])->name('cart.cancel');
+Route::post('/cart/timeout', [CartController::class, 'timeoutOrder'])->name('cart.timeout');
 Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
 Route::get('/orders', [CartController::class, 'tracking'])->name('cart.tracking');
 Route::get('/print-bill', [CartController::class, 'print'])->name('cart.print');
@@ -84,6 +87,11 @@ Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'get
 
 // Admin Customer Management
 Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class])->group(function () {
+    Route::get('customers/trash', [\App\Http\Controllers\Admin\CustomerController::class, 'trash'])->name('admin.customers.trash');
+    Route::post('customers/{id}/restore', [\App\Http\Controllers\Admin\CustomerController::class, 'restore'])->name('admin.customers.restore');
+    Route::delete('customers/{id}/force-delete', [\App\Http\Controllers\Admin\CustomerController::class, 'forceDelete'])->name('admin.customers.force-delete');
+    Route::get('customers/export', [\App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('admin.customers.export');
+    Route::post('customers/bulk-action', [\App\Http\Controllers\Admin\CustomerController::class, 'bulkAction'])->name('admin.customers.bulk-action');
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class, ['as' => 'admin']);
 });
 

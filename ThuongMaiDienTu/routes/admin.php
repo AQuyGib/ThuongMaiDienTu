@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\FlashSaleController;
+use App\Http\Controllers\Admin\FlashSaleProductController;
 use App\Http\Controllers\CashbookController;
 use App\Http\Controllers\Admin\ThemeSettingController;
 use App\Http\Controllers\Admin\OrderController;
@@ -79,6 +81,11 @@ Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('
 // ===== Quản lý Sản Phẩm & Danh Mục =====
 Route::resource('products', ProductController::class);
 Route::resource('categories', CategoryController::class);
+
+// ===== Flash Sale =====
+Route::resource('flash-sales', FlashSaleController::class)->except(['create', 'edit', 'show']);
+Route::post('flash-sales/{flash_sale}/products', [FlashSaleProductController::class, 'store'])->name('flash-sales.products.store');
+Route::delete('flash-sales/{flash_sale}/products/{flash_sale_product}', [FlashSaleProductController::class, 'destroy'])->name('flash-sales.products.destroy');
 
 // ===== Quản lý Biến Thể Sản Phẩm =====
 Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'])->name('products.variants.store');
