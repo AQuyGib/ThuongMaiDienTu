@@ -24,14 +24,14 @@
 .pd-thumb img { max-width:100%; max-height:100%; object-fit:contain; }
 
 /* Modal Zoom Image */
-#imageZoomModal { display: none; position: fixed; z-index: 9999; inset: 0; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
+#imageZoomModal { display: none; position: fixed; z-index: 10005; inset: 0; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
 #imageZoomModal.active { display: flex; }
-#zoomedImg { width: 70vw; height: 70vh; object-fit: contain; }
-.close-zoom { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 30px; cursor: pointer; transition: 0.2s; }
+#zoomedImg { width: 90vw; height: 90vh; object-fit: contain; }
+.close-zoom { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; transition: 0.2s; z-index: 10010; }
 .close-zoom:hover { color: #d70018; }
 
 /* Info */
-.pd-info { display:flex; flex-direction:column; gap:14px; }
+.pd-info { display:flex; flex-direction:column; gap:14px; position: relative; z-index: 500; }
 .pd-category { font-size:12px; font-weight:600; color:#0046ab; background:#eef2ff; padding:3px 10px; border-radius:20px; display:inline-block; width:fit-content; }
 .pd-name { font-size:22px; font-weight:800; color:#1a1a2e; line-height:1.3; }
 .pd-rating { display:flex; align-items:center; gap:8px; font-size:13px; }
@@ -49,7 +49,8 @@
 .variant-btn.selected { border-color:#0046ab; background:#0046ab; color:#fff; }
 
 /* Buttons */
-.pd-actions { display:flex; flex-direction:column; gap:10px; margin-top: 5px; }
+.pd-actions { display:flex; flex-direction:column; gap:10px; margin-top: 5px; position: relative; z-index: 600; }
+.pd-actions button { pointer-events: auto !important; }
 .btn-buy { padding:14px; font-size:16px; font-weight:700; border-radius:10px; border:none; cursor:pointer; transition:.2s; text-align:center; }
 .btn-buy-now { background:linear-gradient(135deg,#d70018,#ff4444); color:#fff; }
 .btn-buy-now:hover { background:linear-gradient(135deg,#b50014,#e03333); transform:translateY(-1px); box-shadow:0 6px 16px rgba(215,0,24,.3); }
@@ -109,12 +110,13 @@
 .bottom-action-bar {
     position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; box-shadow: 0 -4px 15px rgba(0,0,0,0.08); padding: 12px 0; z-index: 9999;
     transform: translateY(100%); transition: transform 0.3s ease;
+    visibility: hidden; pointer-events: none;
 }
-.bottom-action-bar.show { transform: translateY(0); }
+.bottom-action-bar.show { transform: translateY(0); visibility: visible; pointer-events: auto; }
 
 /* Installment Modal */
-#installmentModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10002; align-items: center; justify-content: center; }
-#installmentModal.active { display: flex; }
+#installmentModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10002; align-items: center; justify-content: center; pointer-events: none; }
+#installmentModal.active { display: flex; pointer-events: auto; }
 .installment-content { background: #fff; width: 90%; max-width: 800px; max-height: 90vh; border-radius: 12px; overflow-y: auto; position: relative; }
 .installment-header { position: sticky; top: 0; background: #fff; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10; border-radius: 12px 12px 0 0; }
 .installment-body { padding: 20px; }
@@ -456,7 +458,7 @@
 </div>
 
 <!-- Modal Trả góp -->
-<div id="installmentModal">
+<div id="installmentModal" style="display: none;">
     <div class="installment-content">
         <div class="installment-header">
             <h3 style="margin:0; font-size:18px;">Thông tin các gói trả góp</h3>
@@ -568,7 +570,7 @@
 </div>
 
 <!-- Modal Zoom Ảnh -->
-<div id="imageZoomModal">
+<div id="imageZoomModal" style="display: none;">
     <i class="fa-solid fa-xmark close-zoom" onclick="closeZoom()"></i>
     <i class="fa-solid fa-chevron-left zoom-nav prev" onclick="prevZoomImage()"></i>
     <img id="zoomedImg" src="" alt="Zoom">
@@ -726,7 +728,7 @@ function updatePriceDisplay() {
         variantStr = ' - ' + [romVal, colorVal].filter(Boolean).join(' ');
     }
     
-    const baseName = `{{ $product->name }}`;
+    const baseName = "{{ $product->name }}";
     const fullName = baseName + variantStr;
     
     const stickyProductName = document.getElementById('stickyProductName');
@@ -808,7 +810,10 @@ function selectColor(el) {
 }
 
 // Khởi tạo trạng thái ban đầu cho chức năng đánh giá sao
-let currentRating = 5;
+// Sử dụng biến currentRating đã được khai báo hoặc khởi tạo nếu chưa có
+if (typeof currentRating === 'undefined') {
+    window.currentRating = 5;
+}
 document.querySelectorAll('.star-rating').forEach(star => {
     star.addEventListener('click', function() {
         const val = this.getAttribute('data-val');
@@ -826,10 +831,11 @@ document.querySelectorAll('.star-rating').forEach(star => {
 
 
 // --- Toast & Actions ---
-function showToast(msg) {
+function showProductToast(msg) {
+    console.log('Toast:', msg);
     const toast = document.getElementById('toast');
+    if(!toast) return;
     document.getElementById('toastMsg').innerText = msg;
-    
     toast.classList.add('show');
     setTimeout(() => { toast.classList.remove('show'); }, 2000);
 }
@@ -879,7 +885,7 @@ function submitReply(parentId) {
     const textarea = document.getElementById('replyText-' + parentId);
     const content = textarea.value.trim();
     if (!content) {
-        showToast('Vui lòng nhập câu trả lời!');
+        showProductToast('Vui lòng nhập câu trả lời!');
         return;
     }
 
@@ -892,7 +898,7 @@ function submitReply(parentId) {
     let authorName = 'Bạn';
     if (authorInput) {
         if (!authorInput.value.trim()) {
-            showToast('Vui lòng nhập họ và tên!');
+            showProductToast('Vui lòng nhập họ và tên!');
             return;
         }
         formData.append('author_name', authorInput.value.trim());
@@ -934,18 +940,19 @@ function submitReply(parentId) {
             repliesList.innerHTML += newReply;
             textarea.value = '';
             toggleReplyForm(parentId);
-            showToast('Đã gửi câu trả lời!');
+            showProductToast('Đã gửi câu trả lời!');
         } else {
-            showToast('Có lỗi xảy ra!');
+            showProductToast('Có lỗi xảy ra!');
         }
     })
     .catch(() => {
         if(btn) { btn.disabled = false; btn.innerText = 'Gửi trả lời'; }
-        showToast('Lỗi kết nối!');
+        showProductToast('Lỗi kết nối!');
     });
 }
 
 function buyNow() {
+    console.log('Buy Now clicked');
     window.location.href = "{{ route('cart.index') }}";
 }
 
@@ -953,7 +960,7 @@ let userId = '{{ Auth::id() ?? "guest" }}';
 let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || document.getElementById('headerCartBadge')?.innerText || 0);
 
 function addToCart() {
-    showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
+    showProductToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
     
     // Cập nhật số lượng trên header và lưu vào localStorage theo user
     cartCount++;
@@ -995,7 +1002,7 @@ function toggleWishlist() {
             icon.classList.add('fa-solid');
             icon.style.color = '#d70018';
             text.innerText = 'Đã thêm yêu thích';
-            showToast('Đã thêm vào danh sách yêu thích!');
+            showProductToast('Đã thêm vào danh sách yêu thích!');
         } else if(data.status === 'removed') {
             isWishlist = false;
             btn.classList.remove('active');
@@ -1003,12 +1010,12 @@ function toggleWishlist() {
             icon.classList.add('fa-regular');
             icon.style.color = '';
             text.innerText = 'Thêm vào yêu thích';
-            showToast('Đã xóa khỏi danh sách yêu thích.');
+            showProductToast('Đã xóa khỏi danh sách yêu thích.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Đã xảy ra lỗi!');
+        showProductToast('Đã xảy ra lỗi!');
     });
 }
 
@@ -1021,7 +1028,7 @@ function checkAuthAndOpenInstallment() {
     @auth
         openInstallmentModal();
     @else
-        showToast('Vui lòng đăng nhập để đăng ký trả góp!');
+        showProductToast('Vui lòng đăng nhập để đăng ký trả góp!');
         setTimeout(() => {
             window.location.href = "{{ route('login_register') }}";
         }, 1500);

@@ -47,7 +47,7 @@ Route::get('/', function () {
     return redirect()->route('home');
 });
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
-Route::get('/san-pham/{id}', [ProductController::class, 'show'])->name('product.show');
+Route::get('/san-pham/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
 
