@@ -11,12 +11,11 @@ use App\Models\Product;
 class CartController extends Controller
 {
     /**
-     * Hiển thị giỏ hàng (trong Admin).
+     * Hiển thị giỏ hàng.
      */
     public function index()
     {
         $cart = session()->get('cart', []);
-
         // Chuyển đổi dữ liệu từ session sang format view yêu cầu
         $cartItems = collect($cart)->map(function ($item, $id) {
             $product = Product::find($id);
@@ -76,6 +75,11 @@ class CartController extends Controller
         return view('frontend.cart.ShippingCosts');
     }
 
+    public function checkout()
+    {
+        return view('frontend.cart.pay');
+    }
+
     public function pay()
     {
         return view('frontend.cart.pay');
@@ -85,5 +89,14 @@ class CartController extends Controller
     public function ai()
     {
         return view('frontend.cart.maQR');
+    }
+    public function tracking()
+    {
+        return view('frontend.cart.ordertracking');
+    }
+
+    public function print()
+    {
+        return view('frontend.cart.print');
     }
 }

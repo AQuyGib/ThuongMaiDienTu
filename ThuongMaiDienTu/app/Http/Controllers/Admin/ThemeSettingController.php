@@ -15,7 +15,16 @@ class ThemeSettingController extends Controller
     public function index()
     {
         $settings = Setting::pluck('setting_value', 'setting_key')->toArray();
-        return view('admin.settings.theme', compact('settings'));
+        $props = [
+            'settings' => $settings,
+            'asset_url' => asset('')
+        ];
+
+        if (request()->wantsJson()) {
+            return response()->json($props);
+        }
+
+        return view('admin.settings.theme', compact('props'));
     }
 
     /**
@@ -61,6 +70,14 @@ class ThemeSettingController extends Controller
 
         // Xóa cache để dữ liệu mới có hiệu lực ngay
         \Illuminate\Support\Facades\Cache::forget('settings');
+
+        if (request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã cập nhật cấu hình giao diện thành công!',
+                'settings' => Setting::pluck('setting_value', 'setting_key')->toArray()
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Đã cập nhật cấu hình giao diện thành công!');
     }

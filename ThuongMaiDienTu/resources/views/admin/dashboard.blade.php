@@ -1,6 +1,7 @@
 @extends('admin.layouts.master')
 
 @section('title', 'Bảng điều khiển')
+@section('page-title', 'Bảng điều khiển')
 
 @section('content')
 <div class="space-y-8 animate-in fade-in duration-500">

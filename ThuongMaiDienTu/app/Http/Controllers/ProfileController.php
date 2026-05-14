@@ -58,14 +58,11 @@ class ProfileController extends Controller
                 $tierProgress = ($totalSpent / $targetAmount) * 100;
             }
         }
-
+        
+        $loginHistories = $user->loginHistories()->orderBy('login_at', 'desc')->take(10)->get();
         $wishlist = $user->wishlists()->where('type', 'wishlist')->with('product')->get();
-        $loginHistories = \App\Models\LoginHistory::where('user_id', $user->user_id)
-            ->orderBy('login_at', 'desc')
-            ->limit(10)
-            ->get();
 
-        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'wishlist', 'loginHistories'));
+        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'loginHistories', 'wishlist'));
     }
 
     /**
@@ -243,19 +240,77 @@ class ProfileController extends Controller
 
     public function removeFromWishlist($id)
     {
-        if (!Auth::check()) {
-            return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $user = Auth::user();
+            // Sử dụng relationship để đảm bảo tính nhất quán và bảo mật (chỉ xóa của mình)
+            $wishlistItem = $user->wishlists()->where('id', $id)->first();
+
+            if ($wishlistItem) {
+                $wishlistItem->delete();
+                return response()->json(['success' => true]);
+            }
+
+            return response()->json(['success' => false, 'error' => 'Không tìm thấy sản phẩm trong danh sách yêu thích.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi xóa sản phẩm yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
         }
+    }
 
-        $wishlistItem = \App\Models\WishlistRecentlyViewed::where('user_id', Auth::id())
-            ->where('id', $id)
-            ->first();
+    public function clearWishlist()
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
 
-        if ($wishlistItem) {
-            $wishlistItem->delete();
+            $user = Auth::user();
+            // Xóa tất cả các mục thuộc loại Wishlist của user
+            $user->wishlists()->whereIn('type', ['Wishlist', 'wishlist'])->delete();
+
             return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi xóa toàn bộ danh sách yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
         }
+    }
 
-        return response()->json(['error' => 'Không tìm thấy sản phẩm'], 404);
+    public function toggleWishlist(Request $request)
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $request->validate([
+                'product_id' => 'required'
+            ]);
+
+            $user = Auth::user();
+            $productId = $request->product_id;
+
+            $wishlist = $user->wishlists()
+                ->where('product_id', $productId)
+                ->where('type', 'wishlist')
+                ->first();
+
+            if ($wishlist) {
+                $wishlist->delete();
+                return response()->json(['status' => 'removed']);
+            } else {
+                $user->wishlists()->create([
+                    'product_id' => $productId,
+                    'type' => 'wishlist'
+                ]);
+                return response()->json(['status' => 'added']);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi toggle yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
     }
 }
