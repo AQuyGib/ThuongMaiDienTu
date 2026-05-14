@@ -122,7 +122,7 @@
 <script>
     function removeFromWishlist(id) {
         showConfirm('Xóa khỏi yêu thích', 'Bạn muốn bỏ sản phẩm này khỏi danh sách yêu thích?', function() {
-            fetch(`/profile/wishlist/${id}`, {
+            fetch(`/wishlist/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -159,7 +159,7 @@
 
     function clearWishlist() {
         showConfirm('Xóa tất cả', 'Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?', function() {
-            fetch('{{ route('profile.wishlist.clear') }}', {
+            fetch('{{ route('wishlist.clear') }}', {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
