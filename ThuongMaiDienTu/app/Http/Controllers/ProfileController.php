@@ -61,7 +61,14 @@ class ProfileController extends Controller
         
         $loginHistories = $user->loginHistories()->orderBy('login_at', 'desc')->take(10)->get();
 
-        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'loginHistories'));
+        // Lấy danh sách yêu thích
+        $wishlistItems = \App\Models\WishlistRecentlyViewed::with('product')
+            ->where('user_id', $user->user_id)
+            ->where('type', 'wishlist')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'loginHistories', 'wishlistItems'));
     }
 
     /**

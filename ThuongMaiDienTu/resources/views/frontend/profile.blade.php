@@ -707,6 +707,9 @@
                 <div class="profile-nav-item" onclick="switchTab('info-tab', this)">
                     <i class="fa-solid fa-user-pen"></i> Thông tin tài khoản
                 </div>
+                <div class="profile-nav-item" onclick="switchTab('wishlist-tab', this)">
+                    <i class="fa-solid fa-heart"></i> Danh sách yêu thích
+                </div>
 
                 <div class="nav-divider"></div>
                 <div class="profile-nav-item" onclick="switchTab('promo-tab', this)">
@@ -1037,6 +1040,55 @@
                             </div>
                         </form>
                     </div>
+                </div>
+            </div>
+
+            <!-- TAB DANH SÁCH YÊU THÍCH -->
+            <div id="wishlist-tab" class="profile-tab">
+                <div class="info-form-wrap">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h3 style="margin: 0;">Danh sách yêu thích ({{ count($wishlistItems) }})</h3>
+                        @if(count($wishlistItems) > 0)
+                            <form action="{{ route('profile.wishlist.clear') }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?')">
+                                @csrf
+                                <button type="submit" class="btn-outline" style="color: #d70018; border-color: #d70018;">
+                                    <i class="fa-solid fa-trash-can"></i> Xóa tất cả
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+
+                    @if(count($wishlistItems) > 0)
+                        <div class="wishlist-grid">
+                            @foreach($wishlistItems as $item)
+                                @if($item->product)
+                                    <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
+                                        <div class="wishlist-item-img">
+                                            <a href="{{ route('product.show', $item->product->product_id) }}">
+                                                <img src="{{ $item->product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}" alt="{{ $item->product->name }}">
+                                            </a>
+                                            <button class="remove-btn" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                        <div class="wishlist-item-info">
+                                            <a href="{{ route('product.show', $item->product->product_id) }}" class="wishlist-item-name">{{ $item->product->name }}</a>
+                                            <div class="wishlist-item-price">{{ number_format($item->product->base_price, 0, ',', '.') }}đ</div>
+                                            <button class="btn-add-cart-wishlist" onclick="addToCart('{{ $item->product->product_id }}')">
+                                                <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="dash-empty" style="padding: 50px 0;">
+                            <i class="fa-solid fa-heart-crack" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
+                            <p>Danh sách yêu thích của bạn đang trống.</p>
+                            <a href="{{ route('home') }}" class="btn-outline">Khám phá sản phẩm</a>
+                        </div>
+                    @endif
                 </div>
             </div>
 

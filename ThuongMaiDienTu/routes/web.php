@@ -11,6 +11,8 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WishlistController;
+
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
@@ -91,7 +93,16 @@ Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress']
 Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
 
 
+
+// Wishlist
+Route::middleware('auth')->group(function () {
+    Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::post('/profile/wishlist/clear', [WishlistController::class, 'clear'])->name('profile.wishlist.clear');
+    Route::delete('/profile/wishlist/{id}', [WishlistController::class, 'remove'])->name('profile.wishlist.remove');
+});
+
 // Product Compare (So sánh sản phẩm)
+
 use App\Http\Controllers\CompareController;
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
 Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');
