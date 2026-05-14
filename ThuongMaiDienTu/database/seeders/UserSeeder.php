@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     {
         // Admin mặc định
         User::updateOrCreate(
-            ['email' => 'admin@techzone.vn'],
+            ['email' => 'admin@dienmaypro.com.vn'],
             [
                 'role_id'       => 1,
                 'full_name'     => 'Quản Trị Viên',
@@ -27,7 +27,7 @@ class UserSeeder extends Seeder
 
         // Quản lý mẫu
         User::updateOrCreate(
-            ['email' => 'manager@techzone.vn'],
+            ['email' => 'manager@dienmaypro.com.vn'],
             [
                 'role_id'       => 2,
                 'full_name'     => 'Nguyễn Quản Lý',
