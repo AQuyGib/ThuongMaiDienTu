@@ -155,6 +155,11 @@ if not exist .env (
     php artisan key:generate
 )
 
+echo    [ STEP 1.5 ] LAM SACH CACHE...
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+
 echo    [ STEP 2 ] KHOI TAO SERVERS...
 start "Laravel Server" cmd /c "php artisan serve"
 if "%MODE%"=="DEV" (

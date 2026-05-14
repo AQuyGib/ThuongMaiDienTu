@@ -404,9 +404,32 @@
             <!-- Đưa tên thương hiệu lên trên -->
             <div class="form-header">
                 <h2 class="brand-title">DienMay<span class="highlight">Pro</span></h2>
-                <p class="brand-slogan">Chào mừng đến với cửa hàng điện máy thông minh</p>
+                <p class="brand-slogan">Chào mừng bạn quay trở lại</p>
             </div>
 
+            <!-- HIỂN THỊ LỖI HỆ THỐNG -->
+            @if(session('error'))
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #b91c1c; display: flex; align-items: center; gap: 10px; animation: shake 0.5s ease;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #b91c1c; animation: shake 0.5s ease;">
+                    @foreach ($errors->all() as $error)
+                        <p>• {{ $error }}</p>
+                    @endforeach
+                </div>
+            @endif
+
+            <style>
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+            </style>
             <div class="tabs">
                 <div class="tab" id="tabLogin">Đăng nhập</div>
                 <div class="tab" id="tabRegister">Đăng ký</div>
