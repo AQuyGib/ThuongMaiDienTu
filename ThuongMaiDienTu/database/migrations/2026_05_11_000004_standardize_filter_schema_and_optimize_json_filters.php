@@ -45,7 +45,12 @@ return new class extends Migration
 
         Schema::table('products', function (Blueprint $table) {
             $table->unsignedInteger('base_price_generated')->nullable()->storedAs('`base_price`')->comment('Generated price mirror for hot filtering');
-            $table->unsignedInteger('ram_gb_generated')->nullable()->storedAs("CAST(JSON_UNQUOTE(JSON_EXTRACT(`specifications`, '$.ram_gb')) AS UNSIGNED)");
+            
+            $ramGbExpression = DB::getDriverName() === 'sqlite' 
+                ? "json_extract(specifications, '$.ram_gb')" 
+                : "CAST(JSON_UNQUOTE(JSON_EXTRACT(`specifications`, '$.ram_gb')) AS UNSIGNED)";
+                
+            $table->unsignedInteger('ram_gb_generated')->nullable()->storedAs($ramGbExpression);
             $table->index('base_price_generated', 'products_base_price_generated_idx');
             $table->index('ram_gb_generated', 'products_ram_gb_generated_idx');
         });

@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\CashbookController;
 use App\Http\Controllers\Admin\ThemeSettingController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\RoleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +52,13 @@ Route::resource('permissions', UserController::class)->names([
 Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
 Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
 Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
+
+// Quản lý Vai trò (Roles)
+Route::resource('roles', RoleController::class)->names([
+    'store' => 'roles.store',
+    'update' => 'roles.update',
+    'destroy' => 'roles.destroy',
+])->only(['store', 'update', 'destroy']);
 
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
