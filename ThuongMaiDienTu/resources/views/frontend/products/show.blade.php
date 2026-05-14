@@ -83,12 +83,6 @@
 .specs-table td:first-child { width:40%; font-weight:600; color:#555; }
 .specs-table td:last-child { color:#222; }
 
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> origin/Hien/danhsachyeuthich
 /* ===== RELATED ===== */
 .pd-related { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
 .pd-related h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
@@ -325,32 +319,10 @@
                     <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700;">
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
-<<<<<<< HEAD
-<<<<<<< HEAD
-                    <button class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
-=======
-                    @php
-                        $isWishlisted = false;
-                        if(auth()->check()){
-                            $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'wishlist')->exists();
-                        }
-                    @endphp
-                    <button class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center; min-width:180px;">
->>>>>>> origin/Hien/danhsachyeuthich
-                        <i class="{{ $isWishlisted ? 'fa-solid' : 'fa-regular' }} fa-heart" id="wishlistIcon" style="{{ $isWishlisted ? 'color: #d70018;' : '' }}"></i> <span id="wishlistText">{{ $isWishlisted ? 'Đã thêm yêu thích' : 'Thêm yêu thích' }}</span>
-=======
                     <button type="button" class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; min-width:140px;">
                         <i class="{{ $isWishlisted ? 'fa-solid' : 'fa-regular' }} fa-heart" id="wishlistIcon" style="{{ $isWishlisted ? 'color:#d70018' : '' }}"></i>
                         <span id="wishlistText">{{ $isWishlisted ? 'Đã thêm yêu thích' : 'Thêm yêu thích' }}</span>
->>>>>>> origin/Hien/Profile
                     </button>
-                </div>
-                <div style="margin-top: 12px; display: flex; justify-content: flex-start; padding-left: 5px;">
-                    <a href="javascript:void(0)" id="btnCompareDetail" onclick="addToCompare('{{ $product->product_id }}')" 
-                       style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 6px; text-decoration: none; transition: 0.2s; font-weight: 500;"
-                       onmouseover="this.style.color='#0046ab'" onmouseout="this.style.color='#666'">
-                        <i class="fa-solid fa-scale-balanced"></i> <span id="compareDetailLabel">So sánh sản phẩm</span>
-                    </a>
                 </div>
                 <div style="margin-top: 12px; display: flex; justify-content: flex-start; padding-left: 5px;">
                     <a href="javascript:void(0)" id="btnCompareDetail" onclick="addToCompare('{{ $product->product_id }}')" 
@@ -432,20 +404,8 @@
         @endif
     </div>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-
-
-    {{-- Legacy review include removed to avoid merge conflicts with Hien/danhgia --}}
-
-=======
-    {{-- Review section removed to avoid merge conflicts with Hien/danhgia --}}
-
->>>>>>> origin/Hien/Profile
-
-=======
->>>>>>> origin/Hien/danhsachyeuthich
+    {{-- Đánh giá sản phẩm --}}
+    @include('frontend.products.partials.reviews')
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())
         <div class="pd-related">
@@ -489,7 +449,7 @@
 </div>
 
 <!-- Modal Trả góp -->
-<div id="installmentModal" style="display: none;">
+<div id="installmentModal">
     <div class="installment-content">
         <div class="installment-header">
             <h3 style="margin:0; font-size:18px;">Thông tin các gói trả góp</h3>
@@ -601,7 +561,7 @@
 </div>
 
 <!-- Modal Zoom Ảnh -->
-<div id="imageZoomModal" style="display: none;">
+<div id="imageZoomModal">
     <i class="fa-solid fa-xmark close-zoom" onclick="closeZoom()"></i>
     <i class="fa-solid fa-chevron-left zoom-nav prev" onclick="prevZoomImage()"></i>
     <img id="zoomedImg" src="" alt="Zoom">
@@ -638,7 +598,7 @@
     </div>
 
     {{-- Promo Success Modal --}}
-    <div id="promoSuccessModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; justify-content: center; align-items: center;">
+    <div id="promoSuccessModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; justify-content: center; align-items: center; display: none;">
         <div style="background: #fff; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
             <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #16a34a; margin-bottom: 20px;"></i>
             <h3 style="font-size: 22px; color: #333; margin-bottom: 10px;">Cảm ơn quý khách!</h3>
@@ -840,9 +800,6 @@ function selectColor(el) {
     calculateVariantPrice();
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 // Khởi tạo trạng thái ban đầu cho chức năng đánh giá sao
 // Sử dụng biến currentRating đã được khai báo hoặc khởi tạo nếu chưa có
 if (typeof currentRating === 'undefined') {
@@ -862,17 +819,19 @@ document.querySelectorAll('.star-rating').forEach(star => {
     });
 });
 
-
-
 // --- Toast & Actions ---
-function showProductToast(msg) {
-    console.log('Toast:', msg);
+function showToast(msg) {
     const toast = document.getElementById('toast');
-    if(!toast) return;
-    document.getElementById('toastMsg').innerText = msg;
-    toast.classList.add('show');
-    setTimeout(() => { toast.classList.remove('show'); }, 2000);
+    if (toast) {
+        const msgEl = document.getElementById('toastMsg');
+        if (msgEl) msgEl.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 2000);
+    }
 }
+
+// Alias for compatibility
+function showProductToast(msg) { showToast(msg); }
 
 // --- Custom Confirm Modal ---
 function openConfirmModal(onConfirm) {
@@ -895,8 +854,7 @@ if (confModal) {
     });
 }
 
-// Review reply functions removed to avoid errors until Hien/danhgia is merged
-
+// Review reply functions
 function replyToUser(parentId, authorName) {
     const form = document.getElementById('replyForm-' + parentId);
     if (form) {
@@ -913,7 +871,7 @@ function submitReply(parentId) {
     const textarea = document.getElementById('replyText-' + parentId);
     const content = textarea.value.trim();
     if (!content) {
-        showProductToast('Vui lòng nhập câu trả lời!');
+        showToast('Vui lòng nhập câu trả lời!');
         return;
     }
 
@@ -922,16 +880,18 @@ function submitReply(parentId) {
     formData.append('parent_id', parentId);
     formData.append('content', content);
 
-    const authorInput = document.getElementById('replyAuthor-' + parentId);
-    let authorName = 'Bạn';
-    if (authorInput) {
-        if (!authorInput.value.trim()) {
-            showProductToast('Vui lòng nhập họ và tên!');
-            return;
+    @if(auth()->check())
+        // User logged in, use their name from backend
+    @else
+        const authorInput = document.getElementById('replyAuthor-' + parentId);
+        if (authorInput) {
+            if (!authorInput.value.trim()) {
+                showToast('Vui lòng nhập họ và tên!');
+                return;
+            }
+            formData.append('author_name', authorInput.value.trim());
         }
-        formData.append('author_name', authorInput.value.trim());
-        authorName = authorInput.value.trim();
-    }
+    @endif
 
     const btn = document.querySelector(`#replyForm-${parentId} button.bg-blue-600`);
     if(btn) { btn.disabled = true; btn.innerText = 'Đang gửi...'; }
@@ -945,94 +905,27 @@ function submitReply(parentId) {
     .then(data => {
         if(btn) { btn.disabled = false; btn.innerText = 'Gửi trả lời'; }
         if (data.success) {
-            const repliesList = document.getElementById('replies-' + parentId);
-            const badgeHTML = @if(auth()->check() && auth()->user()->role_id == 1) '<span style="background: #ef4444; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;">Admin</span>' @elseif(auth()->check() && auth()->user()->role_id == 2) '<span style="background: #3b82f6; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;">Quản lý</span>' @else '' @endif;
-            
-            const newReply = `
-                <div class="reply-item" id="review-${data.review.id}">
-                    <div class="review-user" style="font-weight: 600; font-size: 13px; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
-                        <span style="display:flex; align-items:center; gap:8px;">
-                            <i class="fa-solid fa-turn-up fa-rotate-90" style="color:#94a3b8"></i> 
-                            ${authorName} ${badgeHTML}
-                        </span>
-                        @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
-                        <button onclick="deleteReview(${data.review.id})" title="Xóa" style="background:none; border:none; cursor:pointer; color:#ccc; font-size:13px; transition:0.2s;" onmouseover="this.style.color='#d70018'" onmouseout="this.style.color='#ccc'">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                        @endif
-                    </div>
-                    <div style="color:#999; font-size:11px; margin-bottom:5px; margin-left: 20px;">Vừa xong</div>
-                    <div class="review-content" style="font-size: 13px; color: #444; margin-left: 20px;">${content}</div>
-                </div>
-            `;
-            repliesList.innerHTML += newReply;
-            textarea.value = '';
-            toggleReplyForm(parentId);
-            showProductToast('Đã gửi câu trả lời!');
+            location.reload(); // Simple reload for now to show the reply
         } else {
-            showProductToast('Có lỗi xảy ra!');
+            showToast('Có lỗi xảy ra!');
         }
     })
     .catch(() => {
         if(btn) { btn.disabled = false; btn.innerText = 'Gửi trả lời'; }
-        showProductToast('Lỗi kết nối!');
+        showToast('Lỗi kết nối!');
     });
 }
-=======
 
-// --- Toast & Actions ---
-function showToast(title, message, type = 'success') {
-    if (typeof showToastReview === 'function') {
-        if (arguments.length === 1) {
-            showToastReview('Thông báo', title, 'success');
-        } else {
-            showToastReview(title, message, type);
-        }
-    } else {
-        // Fallback đơn giản nếu partial chưa load xong hoặc lỗi
-        const toast = document.getElementById('toast');
-        const msgEl = document.getElementById('toastMsg');
-        if (toast && msgEl) {
-            msgEl.innerText = message || title;
-            toast.classList.add('show');
-            setTimeout(() => { toast.classList.remove('show'); }, 2000);
-        } else {
-            alert(message || title);
-        }
-    }
-}
-
->>>>>>> origin/Hien/danhgia
-=======
-// Review JS functions removed to avoid merge conflicts with Hien/danhgia
-
->>>>>>> origin/Hien/Profile
-
-=======
->>>>>>> origin/Hien/danhsachyeuthich
 function buyNow() {
-    console.log('Buy Now clicked');
     window.location.href = "{{ route('cart.index') }}";
 }
 
-let userId = '{{ Auth::id() ?? "guest" }}';
-let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || document.getElementById('headerCartBadge')?.innerText || 0);
-
-// --- Toast & Actions ---
-function showToast(msg) {
-    const toast = document.getElementById('toast');
-    if (toast) {
-        const msgEl = document.getElementById('toastMsg');
-        if (msgEl) msgEl.innerText = msg;
-        toast.classList.add('show');
-        setTimeout(() => { toast.classList.remove('show'); }, 2000);
-    }
-}
-
 function addToCart() {
-    showProductToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
+    showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
     
-    // Cập nhật số lượng trên header và lưu vào localStorage theo user
+    // Update cart count logic
+    let userId = '{{ Auth::id() ?? "guest" }}';
+    let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || 0);
     cartCount++;
     localStorage.setItem('cartCount_' + userId, cartCount);
     
@@ -1072,33 +965,20 @@ function toggleWishlist() {
             icon.classList.add('fa-solid');
             icon.style.color = '#d70018';
             text.innerText = 'Đã thêm yêu thích';
-<<<<<<< HEAD
-            showProductToast('Đã thêm vào danh sách yêu thích!');
-=======
-            showToast('Thành công', 'Đã thêm vào danh sách yêu thích!');
->>>>>>> origin/Hien/danhgia
+            showToast('Đã thêm vào danh sách yêu thích!');
         } else if(data.status === 'removed') {
             isWishlist = false;
             btn.classList.remove('active');
             icon.classList.remove('fa-solid');
             icon.classList.add('fa-regular');
             icon.style.color = '';
-<<<<<<< HEAD
-            text.innerText = 'Thêm vào yêu thích';
-            showProductToast('Đã xóa khỏi danh sách yêu thích.');
-=======
             text.innerText = 'Thêm yêu thích';
-            showToast('Thông báo', 'Đã xóa khỏi danh sách yêu thích.');
->>>>>>> origin/Hien/danhgia
+            showToast('Đã xóa khỏi danh sách yêu thích.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-<<<<<<< HEAD
-        showProductToast('Đã xảy ra lỗi!');
-=======
-        showToast('Lỗi', 'Đã xảy ra lỗi!', 'error');
->>>>>>> origin/Hien/danhgia
+        showToast('Đã xảy ra lỗi!');
     });
 }
 

@@ -108,6 +108,11 @@
 @endpush
 
 <div class="pd-reviews">
+    @php
+        $avgRating = $avgRating ?? 5;
+        $reviewCount = $reviewCount ?? 0;
+        $reviews = $reviews ?? collect();
+    @endphp
     <h2><i class="fa-solid fa-comments" style="color:#0046ab"></i> Đánh giá & Nhận xét</h2>
     <div class="review-stats">
         <div class="review-average">

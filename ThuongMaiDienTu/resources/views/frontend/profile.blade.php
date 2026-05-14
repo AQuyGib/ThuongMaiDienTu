@@ -484,6 +484,108 @@
     @keyframes spin { to { transform: rotate(360deg); } }
     
 
+    /* ===== Wishlist Grid ===== */
+    .wishlist-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 20px;
+    }
+    .wishlist-item {
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: 1px solid #eee;
+        position: relative;
+    }
+    .wishlist-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .wishlist-item-img {
+        position: relative;
+        height: 200px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        overflow: hidden;
+    }
+    .wishlist-item-img img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+    .remove-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        color: #666;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: 0.2s;
+    }
+    .remove-btn:hover {
+        background: #d70018;
+        color: #fff;
+    }
+    .wishlist-item-info {
+        padding: 15px;
+    }
+    .wishlist-item-name {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+        text-decoration: none;
+        margin-bottom: 8px;
+        height: 40px;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-height: 1.4;
+    }
+    .wishlist-item-name:hover {
+        color: #0046ab;
+    }
+    .wishlist-item-price {
+        font-size: 16px;
+        font-weight: 700;
+        color: #d70018;
+        margin-bottom: 12px;
+    }
+    .btn-add-cart-wishlist {
+        width: 100%;
+        padding: 10px;
+        background: #0046ab;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-add-cart-wishlist:hover {
+        background: #003580;
+    }
+
     /* ===== Membership & Promo Tab ===== */
     .tier-card {
         background: linear-gradient(135deg, #1e293b, #0f172a);
@@ -966,8 +1068,9 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                         <h3 style="margin: 0;">Danh sách yêu thích ({{ count($wishlistItems) }})</h3>
                         @if(count($wishlistItems) > 0)
-                            <form action="{{ route('profile.wishlist.clear') }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?')">
+                            <form action="{{ route('wishlist.clear') }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?')">
                                 @csrf
+                                @method('DELETE')
                                 <button type="submit" class="btn-outline" style="color: #d70018; border-color: #d70018;">
                                     <i class="fa-solid fa-trash-can"></i> Xóa tất cả
                                 </button>
@@ -1017,59 +1120,6 @@
             </div>
 
             <!-- CÁC TAB KHÁC -->
-            <div id="wishlist-tab" class="profile-tab">
-                <div class="info-form-wrap">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
-                        <h3 style="margin: 0; border: none; padding: 0;">Sản Phẩm Yêu Thích ({{ $wishlist->count() }})</h3>
-                        @if($wishlist->count() > 0)
-                            <a href="javascript:void(0)" onclick="clearWishlist()" style="color: #0046ab; font-size: 13px; font-weight: 600;">Xóa tất cả</a>
-                        @endif
-                    </div>
-                    @if($wishlist->count() > 0)
-                        <div class="wishlist-grid">
-                            @foreach($wishlist as $item)
-                                @php 
-                                    $product = $item->product; 
-                                    $imageUrl = $product->thumbnail;
-                                    if (!$imageUrl || !Str::startsWith($imageUrl, 'http')) {
-                                        $imageUrl = asset('uploads/products/' . ($product->image ?: 'default.jpg'));
-                                    }
-                                @endphp
-                                <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
-                                    <a href="{{ route('product.show', $product->product_id) }}">
-                                        <img src="{{ $imageUrl }}" alt="{{ $product->name }}" class="wishlist-img" onerror="this.src='https://loremflickr.com/400/400/technology?lock={{ $product->product_id }}'; this.onerror=null;">
-                                    </a>
-                                    <h4>
-                                        <a href="{{ route('product.show', $product->product_id) }}" style="color: inherit; text-decoration: none;">
-                                            {{ $product->name }}
-                                        </a>
-                                    </h4>
-                                    <div class="wishlist-price">
-                                        {{ number_format($product->base_price, 0, ',', '.') }}đ
-                                        @if($product->old_price)
-                                            <span style="font-size: 12px; color: #999; text-decoration: line-through; font-weight: 400; margin-left: 5px;">{{ number_format($product->old_price, 0, ',', '.') }}đ</span>
-                                        @endif
-                                    </div>
-                                    <div class="wishlist-actions">
-                                        <button class="btn-wishlist-cart" onclick="addToCart({{ $product->product_id }})">
-                                            <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
-                                        </button>
-                                        <button class="btn-wishlist-remove" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
-                                            <i class="fa-solid fa-trash-can"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="dash-empty" style="padding: 50px 0;">
-                            <i class="fa-regular fa-heart" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
-                            <p>Chưa có sản phẩm nào trong danh sách yêu thích.</p>
-                            <a href="{{ route('home') }}" class="btn-outline">Mua sắm ngay</a>
-                        </div>
-                    @endif
-                </div>
-            </div>
 
 
             <div id="promo-tab" class="profile-tab">

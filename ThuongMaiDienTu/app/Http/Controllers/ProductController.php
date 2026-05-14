@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Review;
+use App\Models\Order;
 use App\Models\WishlistRecentlyViewed;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -52,11 +54,35 @@ class ProductController extends Controller
                 ->exists();
         }
 
+        // Lấy danh sách đánh giá (chỉ lấy review gốc, không phải reply)
+        $reviews = Review::where('product_id', $id)
+            ->whereNull('parent_id')
+            ->with(['user', 'replies'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->count();
+        $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->avg('rating') ?: 5;
+
+        // Kiểm tra user đã mua hàng chưa (cho chức năng đánh giá)
+        $hasPurchased = false;
+        if (Auth::check()) {
+            $hasPurchased = Order::where('user_id', Auth::id())
+                ->whereHas('details.inventoryItem.variant', function ($q) use ($product) {
+                    $q->where('product_id', $product->product_id);
+                })
+                ->exists();
+        }
+
         return view('frontend.products.show', compact(
             'product',
             'discountPercent',
             'relatedProducts',
-            'isWishlisted'
+            'isWishlisted',
+            'reviews',
+            'reviewCount',
+            'avgRating',
+            'hasPurchased'
         ));
     }
 }

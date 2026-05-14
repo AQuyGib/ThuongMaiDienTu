@@ -60,13 +60,13 @@ class ProfileController extends Controller
             }
         }
 
-        $wishlist = $user->wishlists()->where('type', 'Wishlist')->with('product')->get();
+        $wishlistItems = $user->wishlists()->where('type', 'Wishlist')->with('product')->get();
         $loginHistories = \App\Models\LoginHistory::where('user_id', $user->user_id)
             ->orderBy('login_at', 'desc')
             ->limit(10)
             ->get();
 
-        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'wishlist', 'loginHistories'));
+        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'wishlistItems', 'loginHistories'));
     }
 
     /**

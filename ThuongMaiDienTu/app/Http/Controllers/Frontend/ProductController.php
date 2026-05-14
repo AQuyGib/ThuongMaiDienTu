@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Services\FlashSaleService;
 use App\Services\ProductFilterService;
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -67,19 +68,25 @@ class ProductController extends Controller
                 ->exists();
         }
 
-<<<<<<< HEAD
-        return view('frontend.products.show', compact('product', 'relatedProducts', 'hasPurchased', 'flashSaleProduct', 'effectivePrice'));
-=======
-        // Kiểm tra sản phẩm có trong danh sách yêu thích không
-        $isWishlisted = false;
-        if (Auth::check()) {
-            $isWishlisted = \App\Models\WishlistRecentlyViewed::where('user_id', Auth::id())
-                ->where('product_id', $product->product_id)
-                ->where('type', 'wishlist')
-                ->exists();
-        }
+        // Lấy danh sách đánh giá (chỉ lấy review gốc, không phải reply)
+        $reviews = Review::where('product_id', $id)
+            ->whereNull('parent_id')
+            ->with(['user', 'replies'])
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        return view('frontend.products.show', compact('product', 'relatedProducts', 'hasPurchased', 'isWishlisted'));
->>>>>>> origin/Hien/Profile
+        $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->count();
+        $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->avg('rating') ?: 5;
+
+        return view('frontend.products.show', compact(
+            'product', 
+            'relatedProducts', 
+            'hasPurchased', 
+            'flashSaleProduct', 
+            'effectivePrice',
+            'reviews',
+            'reviewCount',
+            'avgRating'
+        ));
     }
 }
