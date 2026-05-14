@@ -58,14 +58,10 @@ class ProfileController extends Controller
                 $tierProgress = ($totalSpent / $targetAmount) * 100;
             }
         }
+        
+        $loginHistories = $user->loginHistories()->orderBy('login_at', 'desc')->take(10)->get();
 
-        $wishlist = $user->wishlists()->where('type', 'wishlist')->with('product')->get();
-        $loginHistories = \App\Models\LoginHistory::where('user_id', $user->user_id)
-            ->orderBy('login_at', 'desc')
-            ->limit(10)
-            ->get();
-
-        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'wishlist', 'loginHistories'));
+        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'loginHistories'));
     }
 
     /**
@@ -241,21 +237,4 @@ class ProfileController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function removeFromWishlist($id)
-    {
-        if (!Auth::check()) {
-            return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
-        }
-
-        $wishlistItem = \App\Models\WishlistRecentlyViewed::where('user_id', Auth::id())
-            ->where('id', $id)
-            ->first();
-
-        if ($wishlistItem) {
-            $wishlistItem->delete();
-            return response()->json(['success' => true]);
-        }
-
-        return response()->json(['error' => 'Không tìm thấy sản phẩm'], 404);
-    }
 }

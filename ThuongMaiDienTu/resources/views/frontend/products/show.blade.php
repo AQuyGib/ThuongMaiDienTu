@@ -341,15 +341,7 @@
                     <button type="button" class="btn-buy" id="btnCompareDetail" onclick="addToCompare('{{ $product->product_id }}')" style="flex:1; background:#eff6ff; color:#2563eb; border:2px solid #bfdbfe; min-width:180px;">
                         <i class="fa-solid fa-scale-balanced"></i> <span id="compareDetailLabel">So sánh</span>
                     </button>
-                    @php
-                        $isWishlisted = false;
-                        if(auth()->check()){
-                            $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'wishlist')->exists();
-                        }
-                    @endphp
-                    <button class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center; min-width:180px;">
-                        <i class="{{ $isWishlisted ? 'fa-solid' : 'fa-regular' }} fa-heart" id="wishlistIcon" style="{{ $isWishlisted ? 'color: #d70018;' : '' }}"></i> <span id="wishlistText">{{ $isWishlisted ? 'Đã thêm yêu thích' : 'Thêm yêu thích' }}</span>
-                    </button>
+
                 </div>
             </div>
 
