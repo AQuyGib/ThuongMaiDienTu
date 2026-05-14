@@ -11,6 +11,8 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WishlistController;
+
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
@@ -82,7 +84,7 @@ Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
 Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
 Route::get('/products/{categorySlug}', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.category');
-Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.detail');
+Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
 Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'getCategoryFilters'])->name('api.categories.filters');
 
 // Admin Customer Management
@@ -105,12 +107,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
     Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
     
-    Route::delete('/profile/wishlist/clear', [ProfileController::class, 'clearWishlist'])->name('profile.wishlist.clear');
-    Route::delete('/profile/wishlist/{id}', [ProfileController::class, 'removeFromWishlist'])->name('profile.wishlist.destroy');
-    Route::post('/wishlist/toggle', [ProfileController::class, 'toggleWishlist'])->name('wishlist.toggle');
+    Route::delete('/wishlist/clear', [WishlistController::class, 'clearWishlist'])->name('wishlist.clear');
+    Route::delete('/wishlist/{id}', [WishlistController::class, 'removeFromWishlist'])->name('wishlist.destroy');
+    Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
+
+
+
 // Product Compare (So sánh sản phẩm)
+
 use App\Http\Controllers\CompareController;
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
 Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');
