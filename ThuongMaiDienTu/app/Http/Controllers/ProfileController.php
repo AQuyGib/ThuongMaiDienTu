@@ -299,7 +299,7 @@ class ProfileController extends Controller
 
             $wishlist = $user->wishlists()
                 ->where('product_id', $productId)
-                ->where('type', 'wishlist')
+                ->where('type', 'Wishlist')
                 ->first();
 
             if ($wishlist) {

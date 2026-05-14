@@ -13,6 +13,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WishlistController;
 
+
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
 // Alias 'login' bắt buộc cho middleware auth của Laravel
@@ -48,13 +49,9 @@ Route::get('/', function () {
     return redirect()->route('home');
 });
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
-<<<<<<< HEAD
 Route::get('/san-pham/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
-=======
-Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show');
->>>>>>> origin/Hien/danhsachyeuthich
 
 // Modules
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -115,7 +112,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
+
+
+
 // Product Compare (So sánh sản phẩm)
+
 use App\Http\Controllers\CompareController;
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
 Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');

@@ -43,10 +43,20 @@ class ProductController extends Controller
             ->take(6)
             ->get();
 
+        // Kiểm tra xem sản phẩm có trong danh sách yêu thích không
+        $isWishlisted = false;
+        if (Auth::check()) {
+            $isWishlisted = WishlistRecentlyViewed::where('user_id', Auth::id())
+                ->where('product_id', $product->product_id)
+                ->where('type', 'wishlist')
+                ->exists();
+        }
+
         return view('frontend.products.show', compact(
             'product',
             'discountPercent',
-            'relatedProducts'
+            'relatedProducts',
+            'isWishlisted'
         ));
     }
 }
