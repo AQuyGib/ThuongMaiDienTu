@@ -377,7 +377,9 @@
 
 
 
-    @include('frontend.products.partials.reviews')
+
+    {{-- Legacy review include removed to avoid merge conflicts with Hien/danhgia --}}
+
 
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())
