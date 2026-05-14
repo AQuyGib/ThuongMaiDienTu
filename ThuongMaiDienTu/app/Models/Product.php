@@ -10,7 +10,6 @@ class Product extends Model
     public $timestamps = false;
     protected $guarded = [];
     protected $casts = [
-        'specifications' => 'array',
     ];
 
     public function category()
@@ -24,6 +23,11 @@ class Product extends Model
     public function variants()
     {
         return $this->hasMany(ProductVariant::class, 'product_id');
+    }
+
+    public function flashSaleProducts()
+    {
+        return $this->hasMany(FlashSaleProduct::class, 'product_id', 'product_id');
     }
 
     // Scopes cho Lọc Nâng Cao

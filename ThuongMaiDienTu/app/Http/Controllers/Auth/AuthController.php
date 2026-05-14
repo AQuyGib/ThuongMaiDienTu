@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\CompareController;
 
 class AuthController extends Controller
 {
@@ -61,6 +62,7 @@ class AuthController extends Controller
             // Không có 2FA → đăng nhập bình thường
             Auth::login($user, $request->has('remember'));
             $request->session()->regenerate();
+            CompareController::migrateSessionToDb();
             return redirect()->route('home');
         }
 
@@ -91,12 +93,13 @@ class AuthController extends Controller
             'email' => $request->email,
             'password_hash' => Hash::make($request->password),
             'is_2fa_enabled' => 0,
-            'role_id' => 3, // Khách hàng
+            'role_id' => 2, // 2 là Khách hàng
             'status' => 'Active',
             'member_tier' => 'Dong'
         ]);
 
         Auth::login($user);
+        CompareController::migrateSessionToDb();
         return redirect()->route('home');
     }
 

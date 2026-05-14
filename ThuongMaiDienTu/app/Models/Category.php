@@ -11,6 +11,15 @@ class Category extends Model {
         'filter_config' => 'array',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($category) {
+            if (empty($category->slug)) {
+                $category->slug = \Illuminate\Support\Str::slug($category->name);
+            }
+        });
+    }
+
     public function parent() {
         return $this->belongsTo(Category::class, 'parent_id');
     }
@@ -19,5 +28,17 @@ class Category extends Model {
     }
     public function products() {
         return $this->hasMany(Product::class, 'category_id');
+    }
+
+    public function getRootCategoryId() {
+        $rootId = $this->category_id;
+        $current = $this;
+        while ($current->parent_id) {
+            $parent = Category::find($current->parent_id);
+            if (!$parent) break;
+            $current = $parent;
+            $rootId = $current->category_id;
+        }
+        return $rootId;
     }
 }

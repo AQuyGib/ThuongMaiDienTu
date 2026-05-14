@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'TechZone - Hệ thống bán lẻ điện thoại di động, máy tính')
+@section('title', 'DienMayPRO - Hệ thống bán lẻ điện thoại di động, máy tính')
 
 @push('styles')
     <style>
@@ -104,9 +104,6 @@
 
         /* Flash Sale Section */
         .flash-sale-section {
-            background: linear-gradient(135deg, #d70018 0%, #ff6a00 100%);
-            border-radius: 15px;
-            padding: 20px;
             margin-top: 30px;
             position: relative;
         }
@@ -115,36 +112,72 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .flash-title {
-            font-size: 28px;
-            font-weight: 900;
-            color: var(--white);
+            font-size: 22px;
+            font-weight: 800;
+            color: #d70018;
             display: flex;
             align-items: center;
             gap: 10px;
             text-transform: uppercase;
             font-style: italic;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .countdown {
             display: flex;
             gap: 5px;
             align-items: center;
-            color: var(--white);
+            color: var(--text-color);
             font-weight: 600;
+            font-size: 15px;
         }
 
         .countdown-box {
-            background: var(--white);
-            color: var(--secondary-color);
+            background: #d70018;
+            color: var(--white);
             padding: 5px 10px;
             border-radius: 5px;
             font-size: 16px;
             font-weight: bold;
+        }
+
+        /* Progress Bar cho Flash Sale */
+        .fs-progress-wrapper {
+            margin-top: 10px;
+            background: #ffcdd2;
+            border-radius: 10px;
+            height: 18px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+        .fs-progress-bar {
+            background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        .fs-progress-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0px 0px 3px rgba(0,0,0,0.5);
+            z-index: 2;
+        }
+        .fs-fire-icon {
+            position: absolute;
+            left: 5px;
+            color: #fff;
+            font-size: 12px;
+            z-index: 2;
         }
 
         /* Product Grid */
@@ -240,9 +273,11 @@
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
-            overflow: hidden;
             height: 40px;
             line-height: 1.4;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
         }
 
         .product-name:hover {
@@ -394,7 +429,7 @@
                 <ul>
                     @foreach($categories as $cat)
                         <li>
-                            <a href="#">
+                            <a href="{{ route('products.category', $cat->slug) }}">
                                 <div class="menu-icon">
                                     <i class="fa-solid {{ $sidebarIcons[$cat->name] ?? 'fa-tag' }} main-icon"></i>
                                     {{ $cat->name }}
@@ -413,7 +448,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#">
+                        <a href="{{ route('articles.index') }}">
                             <div class="menu-icon">
                                 <i class="fa-solid fa-newspaper main-icon"></i> Tin công nghệ
                             </div>
@@ -446,62 +481,98 @@
         <!-- Quick Links - DỮ LIỆU ĐỘNG TỪ DB -->
         <div class="quick-links">
             @foreach($categories as $cat)
-                <a href="#" class="quick-link-item">
+                <a href="{{ route('products.category', $cat->slug) }}" class="quick-link-item">
                     <img src="{{ $quickLinkIcons[$cat->name] ?? 'https://cdn-icons-png.flaticon.com/512/1261/1261163.png' }}" alt="{{ $cat->name }}">
                     <span>{{ $cat->name }}</span>
                 </a>
             @endforeach
         </div>
 
-        <!-- Flash Sale Section - DỮ LIỆU ĐỘNG TỪ DB -->
-        @if($flashSaleProducts->count())
-            <div class="flash-sale-section">
+        <!-- Flash Sale Sections -->
+        @foreach($activeFlashSales as $sale)
+            <div class="flash-sale-section" data-end="{{ $sale->end_at->format('Y-m-d H:i:s') }}">
                 <div class="flash-sale-header">
                     <div class="flash-title">
-                        <i class="fa-solid fa-bolt"></i> F L A S H S A L E
+                        <i class="fa-solid fa-bolt"></i> {{ $sale->name }}
                     </div>
-                    <div class="countdown">
+                    <div class="countdown" id="countdown-{{ $sale->flash_sale_id }}">
                         <span>Kết thúc trong:</span>
-                        <span class="countdown-box" id="countdown-h">02</span> :
-                        <span class="countdown-box" id="countdown-m">45</span> :
-                        <span class="countdown-box" id="countdown-s">30</span>
+                        <span class="countdown-box h">00</span> :
+                        <span class="countdown-box m">00</span> :
+                        <span class="countdown-box s">00</span>
                     </div>
                 </div>
 
-                <div class="product-grid">
-                    @foreach($flashSaleProducts as $product)
-                        <a href="#" class="product-card">
+                <div class="product-grid-white">
+                    @foreach($sale->mapped_products as $product)
+                        <a href="{{ route('product.show', $product->product_id) }}" class="product-card">
                             <span class="badge-top-left">Trả góp 0%</span>
-                            @if($product->old_price)
-                                @php
-                                    $discount = round((($product->old_price - $product->base_price) / $product->old_price) * 100);
-                                @endphp
-                                @if($discount > 0)
-                                    <span class="badge-top-right">-{{ $discount }}%</span>
-                                @endif
+                            @php
+                                $currentPrice = $product->flash_sale_price;
+                                $oldPrice = $product->base_price;
+                                $discount = $oldPrice ? round((($oldPrice - $currentPrice) / $oldPrice) * 100) : 0;
+                            @endphp
+                            @if($discount > 0)
+                                <span class="badge-top-right">-{{ $discount }}%</span>
                             @endif
 
                             <img src="{{ $product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}"
                                 alt="{{ $product->name }}" class="product-img" loading="lazy">
 
                             <span class="category-badge">{{ $product->category->name ?? '' }}</span>
+                            <h3 class="product-name">{{ $product->name }}</h3>
+                            <div class="product-price">{{ number_format($currentPrice, 0, ',', '.') }}đ</div>
+                            <div class="product-old-price">{{ number_format($oldPrice, 0, ',', '.') }}đ</div>
+                            
+                            {{-- Thanh tiến độ Flash Sale --}}
+                            @php
+                                $sold = $product->flash_sale_sold ?? 0;
+                                $limit = $product->flash_sale_limit ?? 1;
+                                $percent = min(100, round(($sold / $limit) * 100));
+                            @endphp
+                            <div class="fs-progress-wrapper">
+                                <div class="fs-progress-bar" style="width: {{ $percent }}%"></div>
+                                <i class="fa-solid fa-fire fs-fire-icon"></i>
+                                <span class="fs-progress-text">
+                                    @if($percent >= 100)
+                                        Đã bán hết
+                                    @else
+                                        Đã bán {{ $sold }}/{{ $limit }}
+                                    @endif
+                                </span>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endforeach
 
+        <!-- Fallback Flash Sale Section (Nếu không có chiến dịch nào) -->
+        @if($activeFlashSales->isEmpty() && $flashSaleProducts->count() > 0)
+            <div class="flash-sale-section">
+                <div class="flash-sale-header">
+                    <div class="flash-title">
+                        <i class="fa-solid fa-bolt"></i> GIẢM GIÁ ĐẶC BIỆT
+                    </div>
+                </div>
+
+                <div class="product-grid-white">
+                    @foreach($flashSaleProducts as $product)
+                        <a href="{{ route('product.show', $product->product_id) }}" class="product-card">
+                            <span class="badge-top-left">Giá sốc</span>
+                            @if($product->old_price && $product->old_price > $product->base_price)
+                                <span class="badge-top-right">-{{ round((($product->old_price - $product->base_price) / $product->old_price) * 100) }}%</span>
+                            @endif
+
+                            <img src="{{ $product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}"
+                                alt="{{ $product->name }}" class="product-img" loading="lazy">
+
+                            <span class="category-badge">{{ $product->category->name ?? '' }}</span>
                             <h3 class="product-name">{{ $product->name }}</h3>
                             <div class="product-price">{{ number_format($product->base_price, 0, ',', '.') }}đ</div>
                             @if($product->old_price)
                                 <div class="product-old-price">{{ number_format($product->old_price, 0, ',', '.') }}đ</div>
-                            @else
-                                <div class="product-old-price" style="visibility: hidden;">0đ</div>
                             @endif
-
-                            <div class="product-rating">
-                                <i class="fa-solid fa-star"></i>
-                                <i class="fa-solid fa-star"></i>
-                                <i class="fa-solid fa-star"></i>
-                                <i class="fa-solid fa-star"></i>
-                                <i class="fa-solid fa-star-half-stroke"></i>
-                                <span>({{ rand(10, 500) }})</span>
-                            </div>
                         </a>
                     @endforeach
                 </div>
@@ -512,11 +583,11 @@
         @if($phoneProducts->count())
             <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
                 <h2 class="section-title"><i class="fa-solid fa-mobile-screen-button"></i> ĐIỆN THOẠI NỔI BẬT NHẤT</h2>
-                <a href="#" style="color:var(--primary-color); font-size:14px; font-weight:600;">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
+                <a href="{{ route('products.category', 'dien-thoai') }}" style="color:var(--primary-color); font-size:14px; font-weight:600;">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
             </div>
             <div class="product-grid-white">
                 @foreach($phoneProducts as $product)
-                    <a href="#" class="product-card">
+                    <a href="{{ route('product.show', $product->product_id) }}" class="product-card">
                         <span class="badge-top-left">Trả góp 0%</span>
                         @if($product->old_price && $product->old_price > $product->base_price)
                             @php
@@ -553,11 +624,11 @@
         @if($laptopProducts->count())
             <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
                 <h2 class="section-title"><i class="fa-solid fa-laptop"></i> LAPTOP GIÁ SỐC</h2>
-                <a href="#" style="color:var(--primary-color); font-size:14px; font-weight:600;">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
+                <a href="{{ route('products.category', 'laptop') }}" style="color:var(--primary-color); font-size:14px; font-weight:600;">Xem tất cả <i class="fa-solid fa-angle-right"></i></a>
             </div>
             <div class="product-grid-white">
                 @foreach($laptopProducts as $product)
-                    <a href="#" class="product-card">
+                    <a href="{{ route('product.show', $product->product_id) }}" class="product-card">
                         @if($product->old_price && $product->old_price > $product->base_price)
                             @php
                                 $discount = round((($product->old_price - $product->base_price) / $product->old_price) * 100);
@@ -606,7 +677,7 @@
                                 <img src="{{ $article->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}" alt="{{ $article->title }}" style="width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px;">
                             </div>
                             <div class="news-info" style="padding: 12px;">
-                                <h3 style="font-size: 14px; font-weight: 600; color: #333; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                <h3 style="font-size: 14px; font-weight: 600; color: #333; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: break-word; word-wrap: break-word; word-break: break-word;">
                                     {{ $article->title }}
                                 </h3>
                             </div>
@@ -647,23 +718,40 @@
 
     // Countdown timer cho Flash Sale
     (function() {
-        let totalSeconds = 2 * 3600 + 45 * 60 + 30;
-        const hEl = document.getElementById('countdown-h');
-        const mEl = document.getElementById('countdown-m');
-        const sEl = document.getElementById('countdown-s');
+        function updateCountdowns() {
+            const now = new Date().getTime();
+            const sections = document.querySelectorAll('.flash-sale-section[data-end]');
 
-        if (!hEl || !mEl || !sEl) return;
+            sections.forEach(section => {
+                const endTimeStr = section.getAttribute('data-end');
+                const endTime = new Date(endTimeStr).getTime();
+                const distance = endTime - now;
 
-        setInterval(() => {
-            if (totalSeconds <= 0) return;
-            totalSeconds--;
-            const h = Math.floor(totalSeconds / 3600);
-            const m = Math.floor((totalSeconds % 3600) / 60);
-            const s = totalSeconds % 60;
-            hEl.textContent = String(h).padStart(2, '0');
-            mEl.textContent = String(m).padStart(2, '0');
-            sEl.textContent = String(s).padStart(2, '0');
-        }, 1000);
+                const hEl = section.querySelector('.countdown-box.h');
+                const mEl = section.querySelector('.countdown-box.m');
+                const sEl = section.querySelector('.countdown-box.s');
+
+                if (!hEl || !mEl || !sEl) return;
+
+                if (distance < 0) {
+                    hEl.textContent = "00";
+                    mEl.textContent = "00";
+                    sEl.textContent = "00";
+                    return;
+                }
+
+                const h = Math.floor(distance / (1000 * 60 * 60));
+                const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((distance % (1000 * 60)) / 1000);
+
+                hEl.textContent = String(h).padStart(2, '0');
+                mEl.textContent = String(m).padStart(2, '0');
+                sEl.textContent = String(s).padStart(2, '0');
+            });
+        }
+
+        setInterval(updateCountdowns, 1000);
+        updateCountdowns();
     })();
 </script>
 @endpush

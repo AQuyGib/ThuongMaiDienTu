@@ -7,22 +7,36 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class TwoFactorController extends Controller
 {
     /**
-     * Trang cài đặt bảo mật 2FA
+     * Trang cài đặt bảo mật 2FA và Quản lý phiên đăng nhập
      */
     public function securityPage()
     {
         $user = Auth::user();
         
-        // 1. Lấy danh sách các phiên đăng nhập
-        $sessions = \Illuminate\Support\Facades\DB::table('sessions')
+        // 1. Lấy và phân tích danh sách các phiên đăng nhập
+        $sessions = DB::table('sessions')
             ->where('user_id', $user->id)
             ->orderBy('last_activity', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($session) {
+                $agent = $this->parseUserAgent($session->user_agent);
+                return (object) [
+                    'id' => $session->id,
+                    'ip_address' => $session->ip_address,
+                    'is_current_device' => $session->id === request()->session()->getId(),
+                    'device' => $agent['device'],
+                    'platform' => $agent['os'],
+                    'browser' => $agent['browser'],
+                    'last_active' => Carbon::createFromTimestamp($session->last_activity)->diffForHumans(),
+                ];
+            });
 
         // 2. Tính toán điểm bảo mật (Security Score)
         $score = 0;
@@ -47,13 +61,12 @@ class TwoFactorController extends Controller
         // Yếu tố 3: Email (Gmail)
         if (!empty($user->email)) {
             $score += 20;
-            // Giả sử nếu có @gmail.com thì uy tín hơn
             $isGmail = str_contains(strtolower($user->email), '@gmail.com');
             $details['email'] = ['status' => 'pass', 'label' => 'Email đã liên kết' . ($isGmail ? ' (Gmail)' : '')];
         }
 
-        // Yếu tố 4: Độ tươi mới của mật khẩu (giả định password_changed_at)
-        if ($user->password_changed_at && \Carbon\Carbon::parse($user->password_changed_at)->diffInDays() < 90) {
+        // Yếu tố 4: Độ tươi mới của mật khẩu
+        if ($user->password_changed_at && Carbon::parse($user->password_changed_at)->diffInDays() < 90) {
             $score += 10;
             $details['password'] = ['status' => 'pass', 'label' => 'Mật khẩu vừa thay đổi gần đây'];
         } else {
@@ -71,11 +84,51 @@ class TwoFactorController extends Controller
     }
 
     /**
+     * Parse User Agent for basic device info
+     */
+    private function parseUserAgent($userAgent)
+    {
+        $os = "Unknown OS";
+        $browser = "Unknown Browser";
+        $device = "Máy tính";
+
+        if (preg_match('/windows|win32/i', $userAgent)) $os = 'Windows';
+        elseif (preg_match('/macintosh|mac os x/i', $userAgent)) $os = 'Mac OS';
+        elseif (preg_match('/linux/i', $userAgent)) $os = 'Linux';
+        elseif (preg_match('/iphone/i', $userAgent)) { $os = 'iOS'; $device = 'iPhone'; }
+        elseif (preg_match('/android/i', $userAgent)) { $os = 'Android'; $device = 'Điện thoại Android'; }
+
+        if (preg_match('/firefox/i', $userAgent)) $browser = 'Firefox';
+        elseif (preg_match('/chrome/i', $userAgent)) $browser = 'Chrome';
+        elseif (preg_match('/safari/i', $userAgent)) $browser = 'Safari';
+        elseif (preg_match('/msie/i', $userAgent)) $browser = 'Internet Explorer';
+        elseif (preg_match('/edge/i', $userAgent)) $browser = 'Edge';
+        
+        return [
+            'os' => $os,
+            'browser' => $browser,
+            'device' => $device
+        ];
+    }
+
+    /**
+     * Đăng xuất một phiên đăng nhập
+     */
+    public function logoutSession($id)
+    {
+        DB::table('sessions')
+            ->where('id', $id)
+            ->where('user_id', Auth::id())
+            ->delete();
+
+        return back()->with('success', 'Đã đăng xuất thiết bị thành công.');
+    }
+
+    /**
      * Hiển thị form xác minh 2FA
      */
     public function show()
     {
-        // Chỉ cho vào nếu đang trong luồng 2FA
         if (!session('2fa_user_id')) {
             return redirect()->route('login_register');
         }
@@ -99,14 +152,12 @@ class TwoFactorController extends Controller
             return redirect()->route('login_register');
         }
 
-        // Sinh mã OTP 6 số
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         $user->two_factor_code = $otp;
         $user->two_factor_expires_at = now()->addMinutes(5);
         $user->save();
 
-        // Gửi email
         Mail::send('emails.two_factor', ['user' => $user, 'otp' => $otp], function ($m) use ($user) {
             $m->to($user->email)
               ->subject('[DienMayPro] Mã xác thực đăng nhập (2FA)');
@@ -129,22 +180,18 @@ class TwoFactorController extends Controller
 
         $user = User::find($userId);
 
-        // Kiểm tra OTP hợp lệ
         if (!$user->two_factor_code || $user->two_factor_code !== $request->otp) {
             return back()->withErrors(['otp' => 'Mã OTP không chính xác.']);
         }
 
-        // Kiểm tra hết hạn (5 phút)
         if (now()->isAfter($user->two_factor_expires_at)) {
             return back()->withErrors(['otp' => 'Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới.']);
         }
 
-        // Xóa OTP sau khi dùng
         $user->two_factor_code = null;
         $user->two_factor_expires_at = null;
         $user->save();
 
-        // Hoàn tất đăng nhập
         Auth::loginUsingId($userId, session('2fa_remember', false));
         session()->forget(['2fa_user_id', '2fa_remember']);
         $request->session()->regenerate();
@@ -158,8 +205,6 @@ class TwoFactorController extends Controller
     public function toggle(Request $request)
     {
         $user = Auth::user();
-        
-        // Sử dụng boolean() để lấy đúng giá trị true/false từ JSON body
         $user->is_2fa_enabled = $request->boolean('is_2fa_enabled');
         $user->save();
 

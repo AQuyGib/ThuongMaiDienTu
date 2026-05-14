@@ -90,7 +90,7 @@
                         @if($article->thumbnail)
                             <div class="mt-3">
                                 <p class="text-sm text-gray-500 mb-1">Ảnh hiện tại:</p>
-                                <img src="{{ $article->thumbnail }}" alt="Thumbnail" class="w-full max-h-40 object-cover rounded-lg border border-gray-200">
+                                <img src="{{ asset($article->thumbnail) }}" alt="Thumbnail" class="w-full max-h-40 object-cover rounded-lg border border-gray-200">
                             </div>
                         @endif
                         <small class="text-gray-500 block mt-1">Chấp nhận JPG, PNG, WEBP (Tối đa 2MB).</small>
@@ -106,7 +106,7 @@
                         <p class="text-sm font-bold">Trạng thái hiện tại: 
                             <span class="text-{{ $article->status === 'approved' ? 'green' : ($article->status === 'pending' ? 'yellow' : 'red') }}-600 uppercase">{{ $article->status }}</span>
                         </p>
-                        <p class="text-sm">Tác giả: {{ $article->author->name ?? 'Unknown' }} (Customer)</p>
+                        <p class="text-sm">Tác giả: {{ $article->author->full_name ?? 'Không xác định' }} (Customer)</p>
                     </div>
 
                     @if($article->status === 'pending')
@@ -149,8 +149,9 @@
     @endif
 </div>
 
-<!-- Tích hợp TinyMCE với API Key -->
-<script src="https://cdn.tiny.cloud/1/89asu0xgqkmcokiuaz1g66ht63x9x3arxhyysxrboqlg0k5u/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<!-- Tích hợp TinyMCE với API Key từ cấu hình -->
+<script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
 <script>
     tinymce.init({
         selector: '#content_editor',
