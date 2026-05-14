@@ -44,6 +44,7 @@ class Order extends Model {
                 'Diamond' => 'Vang',
                 'Gold' => 'Bac',
                 'Silver' => 'Dong',
+                'Bronze' => 'Dong',
                 default => 'Dong',
             };
             $user->save();

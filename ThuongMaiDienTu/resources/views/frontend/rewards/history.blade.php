@@ -16,8 +16,8 @@
       <form method="GET" class="flex flex-wrap gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
         <select name="type" class="px-4 py-2 rounded-xl border border-slate-200 text-sm">
           <option value="" @selected(empty($type))>Tất cả loại</option>
-          <option value="redeem" @selected($type === 'redeem')>Đổi thưởng</option>
-          <option value="spin" @selected($type === 'spin')>Vòng quay</option>
+          <option value="earn" @selected($type === 'earn')>Tích điểm (Cộng)</option>
+          <option value="use" @selected($type === 'use')>Sử dụng (Trừ)</option>
         </select>
         <select name="status" class="px-4 py-2 rounded-xl border border-slate-200 text-sm">
           <option value="" @selected(empty($status))>Tất cả trạng thái</option>
@@ -30,6 +30,53 @@
         </select>
         <button class="px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold text-sm">Lọc</button>
       </form>
+    </div>
+
+    <div class="mb-8">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-xl font-bold">Biến động số dư điểm</h2>
+          <span class="text-sm text-slate-500">{{ $transactions->total() }} giao dịch</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="text-slate-500 text-sm border-b">
+                <th class="py-4 font-semibold">Thời gian</th>
+                <th class="py-4 font-semibold">Loại</th>
+                <th class="py-4 font-semibold">Nội dung</th>
+                <th class="py-4 font-semibold text-right">Số điểm</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              @forelse ($transactions as $tx)
+                <tr class="border-b last:border-0 hover:bg-slate-50/50 transition">
+                  <td class="py-4 text-slate-500">{{ $tx->created_at->format('d/m/Y H:i') }}</td>
+                  <td class="py-4">
+                    <span class="px-2 py-1 rounded-md text-xs font-bold {{ $tx->action === 'earn' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                      {{ $tx->action === 'earn' ? 'CỘNG' : 'TRỪ' }}
+                    </span>
+                  </td>
+                  <td class="py-4">
+                    <p class="font-medium text-slate-900">{{ $tx->description }}</p>
+                    @if ($tx->point_type === 'rank')
+                      <span class="text-[10px] bg-blue-50 text-blue-600 px-1.5 rounded">Rank Point</span>
+                    @endif
+                  </td>
+                  <td class="py-4 text-right font-black {{ $tx->action === 'earn' ? 'text-emerald-600' : 'text-red-600' }}">
+                    {{ $tx->action === 'earn' ? '+' : '-' }}{{ number_format($tx->points) }}
+                  </td>
+                </tr>
+              @empty
+                <tr>
+                  <td colspan="4" class="py-10 text-center text-slate-400">Chưa có giao dịch nào.</td>
+                </tr>
+              @endforelse
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-4">{{ $transactions->links() }}</div>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">

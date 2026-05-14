@@ -14,7 +14,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RewardsController;
 use App\Http\Controllers\RewardsHistoryController;
 use App\Http\Controllers\Admin\RewardsController as AdminRewardsController;
-use App\Http\Controllers\Admin\RewardsController as AdminRewardsController;
+use App\Http\Controllers\Auth\TwoFactorController;
+use App\Http\Controllers\CompareController;
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
@@ -37,7 +38,6 @@ Route::get('/auth/{provider}', [SocialController::class, 'redirectToProvider'])-
 Route::get('/auth/{provider}/callback', [SocialController::class, 'handleProviderCallback']);
 
 // Two-Factor Authentication (2FA)
-use App\Http\Controllers\Auth\TwoFactorController;
 Route::get('/2fa/verify',  [TwoFactorController::class, 'show'])->name('2fa.show');
 Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify');
 Route::post('/2fa/send',   [TwoFactorController::class, 'send'])->name('2fa.send');
@@ -122,7 +122,6 @@ Route::middleware('auth')->group(function () {
 });
 
 // Product Compare (So sánh sản phẩm)
-use App\Http\Controllers\CompareController;
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
 Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');
 Route::post('/compare/sync', [CompareController::class, 'sync'])->name('compare.sync');

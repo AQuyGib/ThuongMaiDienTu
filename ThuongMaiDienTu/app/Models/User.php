@@ -31,6 +31,10 @@ class User extends Authenticatable {
         return $this->hasMany(LuckyWheelSpin::class, 'user_id', 'user_id');
     }
 
+    public function pointWallet() {
+        return $this->hasOne(UserPoint::class, 'user_id', 'user_id');
+    }
+
     public function rewardPoints() {
         return $this->hasMany(RewardPoint::class, 'user_id');
     }
