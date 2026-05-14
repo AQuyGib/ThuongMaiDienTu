@@ -23,7 +23,14 @@ class SocialController extends Controller
     public function handleProviderCallback($provider)
     {
         try {
-            $socialUser = Socialite::driver($provider)->user();
+            $driver = Socialite::driver($provider);
+
+            // Tự động bỏ qua lỗi SSL cURL error 60 khi chạy ở môi trường local
+            if (app()->environment('local')) {
+                $driver->setHttpClient(new \GuzzleHttp\Client(['verify' => false]));
+            }
+
+            $socialUser = $driver->user();
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Social Login Error: ' . $e->getMessage());
             return redirect()->route('login_register')->with('error', 'Đăng nhập thất bại: ' . $e->getMessage());

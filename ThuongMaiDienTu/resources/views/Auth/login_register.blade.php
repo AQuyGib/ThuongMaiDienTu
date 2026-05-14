@@ -1,5 +1,5 @@
 @php
-    $error_message = $errors->first('login_error') ?: $errors->first();
+    $error_message = $errors->first('login_error') ?: ($errors->first() ?: session('error'));
     $success_message = session('success');
     $active_tab = session('active_tab', 'login');
 @endphp
