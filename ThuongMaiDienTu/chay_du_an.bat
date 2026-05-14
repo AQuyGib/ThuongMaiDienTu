@@ -1,7 +1,14 @@
 @echo off
 setlocal enabledelayedexpansion
-title DIENMAYPRO Ultimate Runner v3.8 [Ultimate Automation]
-mode con: cols=110 lines=38
+title DIENMAYPRO Ultimate Runner v4.0 [Maintenance Pro]
+mode con: cols=110 lines=40
+
+:: ======================================================================
+:: KIEM TRA CAC LENH CO BAN
+:: ======================================================================
+where php >nul 2>&1 || (echo [LOI] Chua cai dat PHP! & pause & exit)
+where npm >nul 2>&1 || (echo [LOI] Chua cai dat Node.js! & pause & exit)
+where composer >nul 2>&1 || (echo [LOI] Chua cai dat Composer! & pause & exit)
 
 :MENU
 cls
@@ -15,24 +22,56 @@ echo    ^| ^| ^|  ^| ^| ^| ^| ^|  __^| ^| . ` ^| ^|\ /^| ^| / /\ \   \   /  ^|  
 echo    ^| ^| ^|__^| ^|_^| ^|_^| ^|____^| ^|\  ^| ^|  ^| ^|/ ____ \   ^| ^|   ^| ^|    ^| ^| \ \^| ^|__^| ^|       ^|
 echo    ^| ^|_____/^|_____^|______^|_^| \_^|_^|  ^|_/_/    \_\  ^|_^|   ^|_^|    ^|_^|  \_\ \____/        ^|
 echo    +======================================================================================+
-echo                                 SYSTEM ORCHESTRATOR v3.8 [STABLE]
+echo                                 SYSTEM ORCHESTRATOR v4.0 [MAINTENANCE]
 echo.
 echo    [1] DEV MODE        - Dung cho lap trinh (Vite Dev Server)
 echo    [2] STABLE RUN      - Chay bang file Build (On dinh 100%%)
 echo    [3] RESET DATABASE  - Lam moi Database va Seed du lieu
 echo    [4] VIEW SITEMAP    - Xem danh sach duong link website
 echo    [5] FULL AUTOMATION - [ONE CLICK] Reset DB + Build + Chay ngay
-echo    [6] EXIT            - Thoat
+echo    [6] INITIALIZE      - Cai dat moi cac thu vien (Composer + NPM install)
+echo    [7] UPGRADE ALL     - Nang cap toan bo thu vien len ban moi nhat
+echo    [8] EXIT            - Thoat
 echo.
 echo    ----------------------------------------------------------------------------------------
-set /p choice="   >> Nhap lua chon cua ban (1-6): "
+set /p choice="   >> Nhap lua chon cua ban (1-8): "
 
 if "%choice%"=="1" goto DEV_MODE
 if "%choice%"=="2" goto STABLE_RUN
 if "%choice%"=="3" goto RESET_DB
 if "%choice%"=="4" goto VIEW_SITEMAP
 if "%choice%"=="5" goto FULL_AUTO
-if "%choice%"=="6" exit
+if "%choice%"=="6" goto INITIALIZE
+if "%choice%"=="7" goto UPGRADE_ALL
+if "%choice%"=="8" exit
+goto MENU
+
+:INITIALIZE
+cls
+color 0e
+echo.
+echo    [ HANH DONG ] Dang tai day du thu vien cho du an...
+echo    -------------------------------------------------
+echo    [1/2] Dang tai Backend (Composer Install)...
+call composer install --prefer-dist
+echo    [2/2] Dang tai Frontend (NPM Install)...
+call npm install
+echo    [ OK ] Da tai xong tat ca thu vien!
+pause
+goto MENU
+
+:UPGRADE_ALL
+cls
+color 0e
+echo.
+echo    [ HANH DONG ] Dang nang cap toan bo he thong...
+echo    -------------------------------------------------
+echo    [1/2] Dang nang cap Backend (Composer Update)...
+call composer update
+echo    [2/2] Dang nang cap Frontend (NPM Update)...
+call npm update
+echo    [ OK ] Da nang cap len cac phien ban moi nhat!
+pause
 goto MENU
 
 :FULL_AUTO
@@ -59,10 +98,9 @@ echo    +=======================================================================
 echo.
 echo    --- HE THONG QUAN TRI (ADMIN) ---
 echo    [+] Trang chu Admin:     http://127.0.0.1:8000/admin
-echo    [+] Quan ly tai khoan:   http://127.0.0.1:8000/admin/users
 echo    --- TRANG CHU KHACH HANG (FRONTEND) ---
 echo    [+] Trang chu:           http://127.0.0.1:8000/
-echo    ----------------------------------------------------------------------------------------
+echo.
 echo    Nhan phim bat ky de quay lai Menu...
 pause > nul
 goto MENU
@@ -112,6 +150,11 @@ if %errorlevel% neq 0 (
     goto MENU
 )
 
+if not exist .env (
+    copy .env.example .env > nul
+    php artisan key:generate
+)
+
 echo    [ STEP 2 ] KHOI TAO SERVERS...
 start "Laravel Server" cmd /c "php artisan serve"
 if "%MODE%"=="DEV" (
@@ -122,7 +165,7 @@ if "%MODE%"=="DEV" (
 )
 
 echo    [ STEP 3 ] HOAN THIEN...
-start http://127.0.0.1:8000/admin
+start http://127.0.0.1:8000/
 echo.
 echo    *************************************************
 echo    *   DIENMAYPRO DANG CHAY - NHAN PHIM DE TAT     *
