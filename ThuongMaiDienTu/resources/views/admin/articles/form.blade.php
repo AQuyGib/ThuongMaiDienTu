@@ -149,8 +149,9 @@
     @endif
 </div>
 
-<!-- Tích hợp TinyMCE với API Key -->
-<script src="https://cdn.tiny.cloud/1/89asu0xgqkmcokiuaz1g66ht63x9x3arxhyysxrboqlg0k5u/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<!-- Tích hợp TinyMCE với API Key từ cấu hình -->
+<script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
 <script>
     tinymce.init({
         selector: '#content_editor',

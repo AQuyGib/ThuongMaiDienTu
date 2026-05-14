@@ -244,19 +244,90 @@ class ProfileController extends Controller
 
     public function removeFromWishlist($id)
     {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $user = Auth::user();
+            // Sử dụng relationship để đảm bảo tính nhất quán và bảo mật (chỉ xóa của mình)
+            $wishlistItem = $user->wishlists()->where('id', $id)->first();
+
+            if ($wishlistItem) {
+                $wishlistItem->delete();
+                return response()->json(['success' => true]);
+            }
+
+            return response()->json(['success' => false, 'error' => 'Không tìm thấy sản phẩm trong danh sách yêu thích.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi xóa sản phẩm yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function clearWishlist()
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $user = Auth::user();
+            // Xóa tất cả các mục thuộc loại Wishlist của user
+            $user->wishlists()->whereIn('type', ['Wishlist'])->delete();
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi xóa toàn bộ danh sách yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function toggleWishlist(Request $request)
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $request->validate([
+                'product_id' => 'required'
+            ]);
+
+            $user = Auth::user();
+            $productId = $request->product_id;
+
+            $wishlist = $user->wishlists()
+                ->where('product_id', $productId)
+                ->where('type', 'Wishlist')
+                ->first();
+
+            if ($wishlist) {
+                $wishlist->delete();
+                return response()->json(['status' => 'removed']);
+            } else {
+                $user->wishlists()->create([
+                    'product_id' => $productId,
+                    'type' => 'Wishlist'
+                ]);
+                return response()->json(['status' => 'added']);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi toggle yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function clearAllWishlist()
+    {
         if (!Auth::check()) {
             return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
         }
 
-        $wishlistItem = \App\Models\WishlistRecentlyViewed::where('user_id', Auth::id())
-            ->where('id', $id)
-            ->first();
+        \App\Models\WishlistRecentlyViewed::where('user_id', Auth::id())
+            ->where('type', 'Wishlist')
+            ->delete();
 
-        if ($wishlistItem) {
-            $wishlistItem->delete();
-            return response()->json(['success' => true]);
-        }
-
-        return response()->json(['error' => 'Không tìm thấy sản phẩm'], 404);
+        return response()->json(['success' => true, 'count' => 0]);
     }
 }
