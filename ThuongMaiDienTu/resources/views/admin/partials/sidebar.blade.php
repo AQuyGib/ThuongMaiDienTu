@@ -22,6 +22,13 @@
             'section' => 'Kinh doanh'
         ],
         [
+            'label' => 'Khách hàng',
+            'route' => route('admin.customers.index'),
+            'icon' => 'fa-solid fa-user-group',
+            'active' => request()->is('admin/customers*'),
+            'section' => 'Kinh doanh'
+        ],
+        [
             'label' => 'Sổ Quỹ & Thu chi',
             'route' => route('admin.cashbooks.index'),
             'icon' => 'fa-solid fa-vault',
@@ -33,6 +40,13 @@
             'route' => route('admin.products.index'),
             'icon' => 'fa-solid fa-box-open',
             'active' => request()->is('admin/products*'),
+            'section' => 'Sản phẩm & Kho'
+        ],
+        [
+            'label' => 'Bài viết & CMS',
+            'route' => route('admin.articles.index'),
+            'icon' => 'fa-solid fa-newspaper',
+            'active' => request()->is('admin/articles*'),
             'section' => 'Sản phẩm & Kho'
         ],
         [
@@ -71,6 +85,13 @@
             'route' => Route::has('admin.settings.index') ? route('admin.settings.index') : '#',
             'icon' => 'fa-solid fa-cog',
             'active' => request()->routeIs('admin.settings.index'),
+            'section' => 'Thiết lập'
+        ];
+        $menu[] = [
+            'label' => 'Nhật ký hoạt động',
+            'route' => Route::has('admin.activity-logs.index') ? route('admin.activity-logs.index') : '#',
+            'icon' => 'fa-solid fa-clock-rotate-left',
+            'active' => request()->is('admin/activity-logs*'),
             'section' => 'Thiết lập'
         ];
     }
