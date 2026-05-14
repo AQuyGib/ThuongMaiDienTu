@@ -144,8 +144,13 @@
     padding: 20px;
 }
 .zoom-nav:hover { color: #fff; }
-.zoom-nav.prev { left: 20px; }
 .zoom-nav.next { right: 20px; }
+
+/* Progress Bar cho Flash Sale */
+.fs-progress-wrapper { margin-top: 15px; background: #ffcdd2; border-radius: 10px; height: 22px; position: relative; overflow: hidden; display: flex; align-items: center; }
+.fs-progress-bar { background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%); height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+.fs-progress-text { position: absolute; width: 100%; text-align: center; font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0px 0px 3px rgba(0,0,0,0.5); z-index: 2; }
+.fs-fire-icon { position: absolute; left: 8px; color: #fff; font-size: 14px; z-index: 2; }
 </style>
 @endpush
 
@@ -258,6 +263,25 @@
                     <div class="pd-old-price" id="displayOldPrice">{{ number_format($oldPrice > 0 ? $oldPrice : $basePrice, 0, ',', '.') }}đ</div>
                     <div class="pd-saving" id="displaySaving">
                         Tiết kiệm: {{ number_format(($oldPrice > 0 ? $oldPrice : $basePrice) - ($effectivePrice ?? $basePrice), 0, ',', '.') }}đ
+                    </div>
+                @endif
+                
+                @if($isFlashSale && isset($flashSaleProduct))
+                    @php
+                        $sold = $flashSaleProduct->sold_quantity ?? 0;
+                        $limit = $flashSaleProduct->stock_limit ?? 1;
+                        $percent = min(100, round(($sold / $limit) * 100));
+                    @endphp
+                    <div class="fs-progress-wrapper">
+                        <div class="fs-progress-bar" style="width: {{ $percent }}%"></div>
+                        <i class="fa-solid fa-fire fs-fire-icon"></i>
+                        <span class="fs-progress-text">
+                            @if($percent >= 100)
+                                Đã bán hết (Sale kết thúc)
+                            @else
+                                Đã bán {{ $sold }}/{{ $limit }}
+                            @endif
+                        </span>
                     </div>
                 @endif
             </div>

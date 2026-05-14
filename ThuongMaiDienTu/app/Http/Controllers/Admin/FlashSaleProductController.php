@@ -26,6 +26,26 @@ class FlashSaleProductController extends Controller
             return back()->with('error', 'Giá sale phải nhỏ hơn giá gốc của sản phẩm.');
         }
 
+        // Kiểm tra xem sản phẩm đã có trong Flash Sale nào khác trùng thời gian không
+        $overlapping = FlashSaleProduct::where('product_id', $product->product_id)
+            ->where('flash_sale_id', '!=', $flash_sale->flash_sale_id)
+            ->whereHas('flashSale', function ($query) use ($flash_sale) {
+                $query->where('is_active', true)
+                      ->where('end_at', '>', now())
+                      ->where(function ($q) use ($flash_sale) {
+                          $q->whereBetween('start_at', [$flash_sale->start_at, $flash_sale->end_at])
+                            ->orWhereBetween('end_at', [$flash_sale->start_at, $flash_sale->end_at])
+                            ->orWhere(function ($q2) use ($flash_sale) {
+                                $q2->where('start_at', '<=', $flash_sale->start_at)
+                                   ->where('end_at', '>=', $flash_sale->end_at);
+                            });
+                      });
+            })->exists();
+
+        if ($overlapping) {
+            return back()->with('error', 'Sản phẩm này đã nằm trong một chương trình Flash Sale khác có thời gian trùng lặp.');
+        }
+
         FlashSaleProduct::updateOrCreate(
             [
                 'flash_sale_id' => $flash_sale->flash_sale_id,

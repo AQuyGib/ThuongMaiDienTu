@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\FlashSale;
 use App\Models\FlashSaleProduct;
 use App\Models\Product;
@@ -44,10 +45,12 @@ class FlashSaleTest extends TestCase
 
     public function test_flash_sale_product_is_created_with_valid_sale_price(): void
     {
+        $category = Category::create(['name' => 'Test Category', 'slug' => 'test-category']);
         $product = Product::create([
             'name' => 'Test Product',
-            'category_id' => 1,
+            'category_id' => $category->category_id,
             'base_price' => 1000000,
+            'slug' => 'test-product',
         ]);
 
         $flashSale = FlashSale::create([

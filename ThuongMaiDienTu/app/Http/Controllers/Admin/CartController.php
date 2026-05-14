@@ -58,12 +58,12 @@ class CartController extends Controller
         $newQuantity = $existingQuantity + $quantity;
 
         $salePrice = null;
-        if ($flashSaleProduct && $this->flashSaleService->canApplySale($flashSaleProduct)) {
-            $salePrice = (int) $flashSaleProduct->sale_price;
+        if ($flashSaleProduct && $flashSaleProduct->is_active) {
             $remaining = $this->flashSaleService->getRemainingQuantity($flashSaleProduct);
             if ($newQuantity > $remaining) {
                 return back()->with('error', 'Số lượng Flash Sale còn lại không đủ.');
             }
+            $salePrice = (int) $flashSaleProduct->sale_price;
         }
 
         if (isset($cart[$productId])) {

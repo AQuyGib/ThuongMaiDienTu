@@ -12,6 +12,11 @@ class FlashSaleService
 {
     public function getActiveFlashSale(): ?FlashSale
     {
+        return $this->getActiveFlashSales()->first();
+    }
+
+    public function getActiveFlashSales()
+    {
         $now = Carbon::now();
 
         return FlashSale::query()
@@ -19,8 +24,9 @@ class FlashSaleService
             ->where('is_active', true)
             ->where('start_at', '<=', $now)
             ->where('end_at', '>=', $now)
+            ->whereHas('products', fn ($query) => $query->where('is_active', true))
             ->orderByDesc('start_at')
-            ->first();
+            ->get();
     }
 
     public function getFlashSaleProductFor(Product $product): ?FlashSaleProduct

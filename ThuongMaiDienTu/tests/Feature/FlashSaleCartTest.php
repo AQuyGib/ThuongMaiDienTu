@@ -18,12 +18,14 @@ class FlashSaleCartTest extends TestCase
     {
         $category = Category::create([
             'name' => 'Laptop',
+            'slug' => 'laptop',
         ]);
 
         $product = Product::create([
             'category_id' => $category->category_id,
             'name' => 'Flash Product',
             'base_price' => 1000000,
+            'slug' => 'flash-product',
         ]);
 
         $flashSale = FlashSale::create([
@@ -46,6 +48,7 @@ class FlashSaleCartTest extends TestCase
         $response = $this->post(route('cart.add'), [
             'product_id' => $product->product_id,
             'quantity' => 1,
+            'buy_now' => 1,
         ]);
 
         $response->assertStatus(302);
@@ -60,12 +63,14 @@ class FlashSaleCartTest extends TestCase
     {
         $category = Category::create([
             'name' => 'Laptop',
+            'slug' => 'laptop-2',
         ]);
 
         $product = Product::create([
             'category_id' => $category->category_id,
             'name' => 'Flash Product',
             'base_price' => 1000000,
+            'slug' => 'flash-product-2',
         ]);
 
         $flashSale = FlashSale::create([

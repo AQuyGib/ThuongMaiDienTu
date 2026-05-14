@@ -10,8 +10,8 @@ return new class extends Migration {
         Schema::create('flash_sales', function (Blueprint $table) {
             $table->increments('flash_sale_id');
             $table->string('name', 150);
-            $table->timestamp('start_at');
-            $table->timestamp('end_at');
+            $table->timestamp('start_at')->nullable();
+            $table->timestamp('end_at')->nullable();
             $table->boolean('is_active')->default(true);
             $table->text('description')->nullable();
             $table->timestamps();
