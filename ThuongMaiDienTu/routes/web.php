@@ -40,6 +40,8 @@ Route::get('/2fa/verify',  [TwoFactorController::class, 'show'])->name('2fa.show
 Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify');
 Route::post('/2fa/send',   [TwoFactorController::class, 'send'])->name('2fa.send');
 Route::post('/2fa/toggle', [TwoFactorController::class, 'toggle'])->name('2fa.toggle')->middleware('auth');
+Route::post('/2fa/toggle-request', [TwoFactorController::class, 'toggleRequest'])->name('2fa.toggle.request')->middleware('auth');
+Route::post('/2fa/toggle-confirm', [TwoFactorController::class, 'toggleConfirm'])->name('2fa.toggle.confirm')->middleware('auth');
 Route::get('/security',    [TwoFactorController::class, 'securityPage'])->name('security')->middleware('auth');
 Route::delete('/security/session/{id}', [TwoFactorController::class, 'logoutSession'])->name('security.session.destroy')->middleware('auth');
 
