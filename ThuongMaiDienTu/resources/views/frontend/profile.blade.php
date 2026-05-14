@@ -1063,11 +1063,11 @@
                                     }
                                 @endphp
                                 <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
-                                    <a href="{{ route('product.detail', $product->product_id) }}">
+                                    <a href="{{ route('product.show', $product->product_id) }}">
                                         <img src="{{ $imageUrl }}" alt="{{ $product->name }}" class="wishlist-img" onerror="this.src='https://loremflickr.com/400/400/technology?lock={{ $product->product_id }}'; this.onerror=null;">
                                     </a>
                                     <h4>
-                                        <a href="{{ route('product.detail', $product->product_id) }}" style="color: inherit; text-decoration: none;">
+                                        <a href="{{ route('product.show', $product->product_id) }}" style="color: inherit; text-decoration: none;">
                                             {{ $product->name }}
                                         </a>
                                     </h4>

@@ -63,7 +63,7 @@
 
                 <!-- Product Name -->
                 <h3 class="text-base font-bold text-gray-800 mb-2 line-clamp-2 min-h-[40px]" title="{{ $product->name }}">
-                    <a href="{{ route('product.detail', $product->product_id) }}" class="hover:text-blue-600 transition-colors">
+                    <a href="{{ route('product.show', $product->product_id) }}" class="hover:text-blue-600 transition-colors">
                         {{ $product->name }}
                     </a>
                 </h3>
@@ -156,7 +156,7 @@
 
                 <!-- Action Buttons -->
                 <div class="flex gap-2">
-                    <a href="{{ route('product.detail', $product->product_id) }}"
+                    <a href="{{ route('product.show', $product->product_id) }}"
                         class="flex-1 bg-blue-600 text-white text-center py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
                         Xem chi tiết
                     </a>
