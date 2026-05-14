@@ -1059,6 +1059,34 @@
                             </div>
                         </form>
                     </div>
+
+                    <!-- Xác thực 2 bước (2FA) -->
+                    <div class="acc-card" style="grid-column: 1 / -1;">
+                        <div class="acc-card-header">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <h3>Xác thực 2 bước (2FA)</h3>
+                                @if($user->two_factor_secret)
+                                    <span class="status-badge status-completed" style="font-size: 11px; padding: 2px 8px;">Đã bật <i class="fa-solid fa-shield-check"></i></span>
+                                @else
+                                    <span class="status-badge" style="background:#f1f5f9; color:#64748b; font-size: 11px; padding: 2px 8px;">Chưa bật</span>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <div class="acc-info-row" style="border: none; flex-direction: column; gap: 15px; align-items: flex-start;">
+                            <p style="font-size: 13px; color: #555; margin: 0; line-height: 1.5;">Bảo vệ tài khoản của bạn bằng cách thêm một lớp bảo mật bổ sung. Khi đăng nhập, bạn sẽ cần nhập mã xác minh từ ứng dụng Authenticator ngoài mật khẩu của bạn.</p>
+                            
+                            <div style="display: flex; gap: 10px;">
+                                @if($user->is_2fa_enabled || $user->two_factor_secret)
+                                    <a href="{{ route('security') }}" class="btn-outline" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Cấu hình lại</a>
+                                @else
+                                    <a href="{{ route('security') }}" class="btn-update" style="background: #0046ab; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-shield-halved" style="margin-right: 5px;"></i> Thiết lập 2FA ngay
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
