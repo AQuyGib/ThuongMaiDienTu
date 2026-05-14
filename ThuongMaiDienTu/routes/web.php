@@ -85,6 +85,11 @@ Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'get
 
 // Admin Customer Management
 Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class])->group(function () {
+    Route::get('customers/trash', [\App\Http\Controllers\Admin\CustomerController::class, 'trash'])->name('admin.customers.trash');
+    Route::post('customers/{id}/restore', [\App\Http\Controllers\Admin\CustomerController::class, 'restore'])->name('admin.customers.restore');
+    Route::delete('customers/{id}/force-delete', [\App\Http\Controllers\Admin\CustomerController::class, 'forceDelete'])->name('admin.customers.force-delete');
+    Route::get('customers/export', [\App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('admin.customers.export');
+    Route::post('customers/bulk-action', [\App\Http\Controllers\Admin\CustomerController::class, 'bulkAction'])->name('admin.customers.bulk-action');
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class, ['as' => 'admin']);
 });
 
