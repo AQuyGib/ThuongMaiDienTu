@@ -11,6 +11,7 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WishlistController;
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
