@@ -48,7 +48,7 @@ Route::get('/', function () {
     return redirect()->route('home');
 });
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
-Route::get('/san-pham/{id}', [ProductController::class, 'show'])->name('product.show');
+Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show');
 
 // Modules
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -78,7 +78,7 @@ Route::match(['get', 'post'], '/admin/permissions', function () {
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
 Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
 Route::get('/products/{categorySlug}', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.category');
-Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.detail');
+Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
 Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'getCategoryFilters'])->name('api.categories.filters');
 
 Route::middleware('auth')->group(function () {

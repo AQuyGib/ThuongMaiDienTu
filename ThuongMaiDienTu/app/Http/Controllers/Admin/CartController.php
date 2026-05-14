@@ -30,7 +30,7 @@ class CartController extends Controller
                 'stock' => 10,
                 'selected' => true,
                 'image' => $product->thumbnail,
-                'url' => route('product.detail', $id)
+                'url' => route('product.show', $id)
             ];
         })->filter()->values();
 
