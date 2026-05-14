@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { VercelTabs } from './ui/vercel-tabs';
 import {
-  Users, ShieldCheck, ShieldAlert, Trophy,
+  Users, User, Briefcase, ShieldCheck, ShieldAlert, Trophy,
   Search, Filter, Download, Plus,
   Edit, Trash2, Shield,
   Clock, CheckCircle2, XCircle, X, Loader2,
@@ -154,6 +154,14 @@ export default function UserManagement({ users: initialUsers, roles, stats: init
     sort: new URLSearchParams(window.location.search).get('sort') || 'newest',
     page: new URLSearchParams(window.location.search).get('page') || '1',
   });
+
+  useEffect(() => {
+    if (isModalOpen || isRoleModalOpen) {
+      document.body.classList.add('admin-modal-open');
+    } else {
+      document.body.classList.remove('admin-modal-open');
+    }
+  }, [isModalOpen, isRoleModalOpen]);
 
   const fetchData = useCallback(async (newFilters = filters) => {
     setLoading(true);
@@ -513,168 +521,272 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
   const [loading, setLoading] = useState(false);
   const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
 
-  // Local state for custom selects
   const [memberTier, setMemberTier] = useState(user?.member_tier || '');
   const [roleId, setRoleId] = useState(user?.role_id?.toString() || user?.role?.role_id?.toString() || '');
-  const [status, setStatus] = useState(user?.status || '');
-
-  // Password visibility state
+  const [status, setStatus] = useState(user?.status || 'Active');
   const [showPass, setShowPass] = useState(false);
-  const [showConfirmPass, setShowConfirmPass] = useState(false);
+
+  const formId = "user-management-form";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+    
     try {
-      await axios.post(isEdit ? `/admin/permissions/${user.user_id}` : '/admin/permissions', formData, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'multipart/form-data' }
+      const url = isEdit ? `/admin/permissions/${user.user_id}` : '/admin/permissions';
+      await axios.post(url, formData, {
+        headers: { 
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'multipart/form-data'
+        }
       });
+      
+      const Swal = (window as any).Swal;
+      await Swal.fire({
+        title: 'Thành công!',
+        text: isEdit ? 'Đã cập nhật tài khoản.' : 'Đã tạo tài khoản mới.',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      
       onSuccess();
     } catch (error: any) {
       const Swal = (window as any).Swal;
       Swal.fire({
         title: 'Thất bại!',
-        text: error.response?.data?.message || 'Có lỗi xảy ra khi lưu dữ liệu!',
+        text: error.response?.data?.message || 'Không thể lưu dữ liệu tài khoản.',
         icon: 'error',
         customClass: { popup: 'rounded-[2rem]' }
       });
+    } finally {
+      setLoading(false);
     }
-    finally { setLoading(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="px-10 py-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-          <div>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{isEdit ? 'Cập nhật' : 'Tạo mới'} Tài khoản</h3>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto custom-scrollbar">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-6xl rounded-[3.5rem] shadow-[0_40px_160px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden animate-in zoom-in-95 duration-700 flex flex-col">
+        
+        {/* Master Header */}
+        <div className="px-12 py-10 relative overflow-hidden shrink-0 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-b border-slate-100 dark:border-slate-800">
+          <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] -mr-48 -mt-48" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 rounded-[1.75rem] bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-2xl shadow-blue-600/30 ring-4 ring-blue-500/10">
+                {isEdit ? <Edit size={32} /> : <Plus size={32} />}
+              </div>
+              <div>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                  {isEdit ? 'Cập nhật' : 'Khởi tạo'} Tài khoản
+                </h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Hệ thống quản trị tài nguyên chuyên sâu</p>
+                </div>
+              </div>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="w-14 h-14 flex items-center justify-center rounded-[1.25rem] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-sm transition-all active:scale-90"
+            >
+              <X size={28} />
+            </button>
           </div>
-          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 rounded-2xl text-slate-400 hover:text-rose-500 shadow-sm transition-all"><X size={24} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-10 space-y-6" autoComplete="off">
+        {/* Master Form Content */}
+        <form id={formId} onSubmit={handleSubmit} className="relative" autoComplete="off">
           <input type="hidden" name="_token" value={csrfToken} />
           {isEdit && <input type="hidden" name="_method" value="PUT" />}
           {isEdit && <input type="hidden" name="version" value={user.version || 0} />}
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Họ và tên</label>
-            <input name="full_name" defaultValue={user?.full_name} required className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none" />
-          </div>
+          <div className="flex flex-col lg:flex-row">
+            {/* LEFT PANE: IDENTITY */}
+            <div className="flex-1 p-12 space-y-10">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                  <User size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Thông tin định danh</h4>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Dữ liệu cá nhân & liên lạc</p>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Email</label>
-              <input name="email" type="email" defaultValue={user?.email} required className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="example@gmail.com" autoComplete="off" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Số điện thoại</label>
-              <input name="phone_number" type="tel" defaultValue={user?.phone_number} className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="09xx..." />
-            </div>
-          </div>
+              <div className="space-y-8">
+                <div className="space-y-2.5">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">Họ và tên đầy đủ</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                      <User size={20} />
+                    </div>
+                    <input 
+                      name="full_name" 
+                      defaultValue={isEdit ? user?.full_name : ''} 
+                      required 
+                      autoComplete="off"
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-[1.5rem] font-bold text-base outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
+                      placeholder="VD: Nguyễn Văn A..."
+                    />
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">
-                Mật khẩu {isEdit && <span className="text-xs lowercase opacity-60 font-medium">(Bỏ trống nếu không đổi)</span>}
-              </label>
-              <div className="relative group">
-                <input
-                  name="password"
-                  type={showPass ? "text" : "password"}
-                  required={!isEdit}
-                  className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none pr-12 transition-all"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors p-1"
-                >
-                  {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                <div className="space-y-2.5">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">Địa chỉ Email liên hệ</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                      <Mail size={20} />
+                    </div>
+                    <input 
+                      name="email" 
+                      type="email" 
+                      defaultValue={isEdit ? user?.email : ''} 
+                      required 
+                      autoComplete="off"
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-[1.5rem] font-bold text-base outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">Số điện thoại di động</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                      <Phone size={20} />
+                    </div>
+                    <input 
+                      name="phone_number" 
+                      defaultValue={isEdit ? user?.phone_number : ''} 
+                      autoComplete="off"
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-[1.5rem] font-bold text-base outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
+                      placeholder="09xx..."
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Xác nhận mật khẩu</label>
-              <div className="relative group">
-                <input
-                  name="password_confirmation"
-                  type={showConfirmPass ? "text" : "password"}
-                  required={!isEdit}
-                  className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none pr-12 transition-all"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPass(!showConfirmPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors p-1"
-                >
-                  {showConfirmPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+
+            {/* VERTICAL DIVIDER */}
+            <div className="hidden lg:block w-px bg-slate-100 dark:bg-slate-800 self-stretch my-12" />
+
+            {/* RIGHT PANE: ACCESS & SECURITY */}
+            <div className="flex-1 p-12 space-y-10">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Cấu hình hệ thống</h4>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Quyền hạn & Bảo mật truy cập</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2.5">
+                    <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">Mật khẩu</label>
+                    <div className="relative">
+                      <input 
+                        name="password" 
+                        type={showPass ? "text" : "password"} 
+                        required={!isEdit}
+                        autoComplete="new-password"
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all pr-12 shadow-sm"
+                        placeholder="••••••••"
+                      />
+                      <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600">
+                        {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2.5">
+                    <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">Xác nhận</label>
+                    <input 
+                      name="password_confirmation" 
+                      type={showPass ? "text" : "password"} 
+                      required={!isEdit}
+                      autoComplete="new-password"
+                      className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all shadow-sm"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2.5">
+                    <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">Vai trò hệ thống</label>
+                    <input type="hidden" name="role_id" value={roleId} />
+                    <CustomSelect
+                      options={[
+                        { value: '', label: 'Chọn vai trò...' },
+                        ...roles.map((r: any) => ({ value: r.role_id.toString(), label: r.name, icon: <Shield size={14} /> }))
+                      ]}
+                      value={roleId}
+                      onChange={setRoleId}
+                      placeholder="Chọn vai trò"
+                      icon={<Shield size={16} />}
+                    />
+                  </div>
+                  <div className="space-y-2.5">
+                    <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">Hạng thành viên</label>
+                    <input type="hidden" name="member_tier" value={memberTier} />
+                    <CustomSelect
+                      options={[
+                        { value: '', label: 'Chọn hạng...' },
+                        { value: 'Dong', label: 'Đồng (Bronze)', icon: <Trophy size={14} className="text-orange-500" /> },
+                        { value: 'Bac', label: 'Bạc (Silver)', icon: <Trophy size={14} className="text-slate-400" /> },
+                        { value: 'Vang', label: 'Vàng (Gold)', icon: <Trophy size={14} className="text-amber-500" /> }
+                      ]}
+                      value={memberTier}
+                      onChange={setMemberTier}
+                      placeholder="Chọn hạng"
+                      icon={<Trophy size={16} />}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">Trạng thái vận hành</label>
+                  <input type="hidden" name="status" value={status} />
+                  <CustomSelect
+                    options={[
+                      { value: 'Active', label: 'Hoạt động bình thường', icon: <CheckCircle2 size={14} className="text-emerald-500" /> },
+                      { value: 'Banned', label: 'Bị khóa/Tạm dừng', icon: <XCircle size={14} className="text-rose-500" /> }
+                    ]}
+                    value={status}
+                    onChange={setStatus}
+                    placeholder="Chọn trạng thái"
+                    icon={<Clock size={16} />}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Vai trò</label>
-              <input type="hidden" name="role_id" value={roleId} />
-              <CustomSelect
-                options={[
-                  { value: '', label: 'Chọn vai trò...' },
-                  ...roles.map((r: any) => ({ value: r.role_id.toString(), label: r.name, icon: <Shield size={14} /> }))
-                ]}
-                value={roleId}
-                onChange={setRoleId}
-                placeholder="Chọn vai trò"
-                icon={<Shield size={16} />}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Hạng thành viên</label>
-              <input type="hidden" name="member_tier" value={memberTier} />
-              <CustomSelect
-                options={[
-                  { value: '', label: 'Chọn hạng...' },
-                  { value: 'Dong', label: 'Đồng', icon: <Trophy size={14} className="text-orange-500" /> },
-                  { value: 'Bac', label: 'Bạc', icon: <Trophy size={14} className="text-slate-400" /> },
-                  { value: 'Vang', label: 'Vàng', icon: <Trophy size={14} className="text-amber-500" /> }
-                ]}
-                value={memberTier}
-                onChange={setMemberTier}
-                placeholder="Chọn hạng"
-                icon={<Trophy size={16} />}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Trạng thái</label>
-            <input type="hidden" name="status" value={status} />
-            <CustomSelect
-              options={[
-                { value: '', label: 'Chọn trạng thái...' },
-                { value: 'Active', label: 'Hoạt động', icon: <CheckCircle2 size={14} className="text-emerald-500" /> },
-                { value: 'Banned', label: 'Bị khóa', icon: <XCircle size={14} className="text-rose-500" /> }
-              ]}
-              value={status}
-              onChange={setStatus}
-              placeholder="Chọn trạng thái"
-              icon={<Clock size={16} />}
-            />
-          </div>
-
-          <div className="pt-6 flex gap-4">
-            <Button type="button" variant="outline" className="flex-1 font-black uppercase text-[10px] tracking-widest h-14 rounded-2xl border-slate-200" onClick={onClose}>Hủy bỏ</Button>
-            <Button type="submit" disabled={loading} className="flex-1 font-black uppercase text-[10px] tracking-widest h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/30">
-              {loading ? <Loader2 className="animate-spin" /> : (isEdit ? 'Cập nhật' : 'Tạo mới')}
-            </Button>
           </div>
         </form>
+
+        {/* Master Footer */}
+        <div className="px-12 py-10 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex justify-end gap-6 shrink-0">
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="px-12 h-16 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm" 
+            onClick={onClose}
+          >
+            Hủy yêu cầu
+          </Button>
+          <Button 
+            type="submit" 
+            form={formId}
+            disabled={loading}
+            className="px-16 h-16 rounded-[1.5rem] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-600/30 transition-all active:scale-95 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : (isEdit ? 'Xác nhận Cập nhật' : 'Khởi tạo Tài khoản')}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -684,6 +796,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
 function RoleModal({ role, onClose, onSuccess }: { role: Role | null, onClose: () => void, onSuccess: () => void }) {
   const isEdit = !!role;
   const [loading, setLoading] = useState(false);
+  const formId = "role-management-form";
   const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
 
   const defaultPermissions = {
@@ -702,11 +815,11 @@ function RoleModal({ role, onClose, onSuccess }: { role: Role | null, onClose: (
   });
 
   const permissionGroups = [
-    { title: 'Người dùng', keys: ['user_view', 'user_manage'], labels: ['Xem danh sách', 'Quản lý tài khoản'] },
-    { title: 'Sản phẩm', keys: ['product_view', 'product_manage'], labels: ['Xem sản phẩm', 'Quản lý kho hàng'] },
-    { title: 'Đơn hàng', keys: ['order_view', 'order_manage'], labels: ['Xem đơn hàng', 'Xử lý vận chuyển'] },
-    { title: 'Nội dung', keys: ['content_view', 'content_manage'], labels: ['Xem bài viết', 'Đăng tải nội dung'] },
-    { title: 'Hệ thống', keys: ['system_config'], labels: ['Cấu hình chuyên sâu'] },
+    { title: 'Người dùng', keys: ['user_view', 'user_manage'], labels: ['Xem danh sách', 'Quản lý tài khoản'], icon: <Users size={16} /> },
+    { title: 'Sản phẩm', keys: ['product_view', 'product_manage'], labels: ['Xem sản phẩm', 'Quản lý kho hàng'], icon: <Briefcase size={16} /> },
+    { title: 'Đơn hàng', keys: ['order_view', 'order_manage'], labels: ['Xem đơn hàng', 'Xử lý vận chuyển'], icon: <Clock size={16} /> },
+    { title: 'Nội dung', keys: ['content_view', 'content_manage'], labels: ['Xem bài viết', 'Đăng tải nội dung'], icon: <Calendar size={16} /> },
+    { title: 'Hệ thống', keys: ['system_config'], labels: ['Cấu hình chuyên sâu'], icon: <Shield size={16} /> },
   ];
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -739,45 +852,81 @@ function RoleModal({ role, onClose, onSuccess }: { role: Role | null, onClose: (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
-        <div className="px-10 py-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{isEdit ? 'Cấu hình Vai trò' : 'Tạo Vai trò mới'}</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Phân quyền chi tiết hệ thống</p>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto custom-scrollbar">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-[3rem] shadow-[0_40px_160px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden animate-in zoom-in-95 duration-700 flex flex-col my-8">
+        
+        {/* Header */}
+        <div className="px-10 py-8 relative overflow-hidden shrink-0 bg-gradient-to-r from-indigo-50 to-white dark:from-slate-900 dark:to-slate-800 border-b border-slate-100 dark:border-slate-800">
+          <div className="absolute right-0 top-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-[80px] -mr-40 -mt-40" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center text-white shadow-xl shadow-indigo-600/20 ring-4 ring-indigo-500/5">
+                <Shield size={28} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                  {isEdit ? 'Cấu hình' : 'Tạo mới'} Vai trò
+                </h2>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-0.5">Phân quyền & Kiểm soát truy cập</p>
+              </div>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90"
+            >
+              <X size={24} />
+            </button>
           </div>
-          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 rounded-2xl text-slate-400 hover:text-rose-500 shadow-sm transition-all"><X size={24} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Content */}
+        <form id={formId} onSubmit={handleSubmit} className="p-10 space-y-10 overflow-y-auto custom-scrollbar max-h-[60vh]">
+          {/* Identity Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Tên vai trò</label>
-              <input name="name" defaultValue={role?.name} required className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="VD: Marketing, Accountant..." />
+              <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">Tên định danh</label>
+              <input 
+                name="name" 
+                defaultValue={role?.name} 
+                required 
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-black text-sm outline-none transition-all shadow-sm"
+                placeholder="VD: Quản trị viên..."
+              />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Mô tả ngắn</label>
-              <input name="description" defaultValue={role?.description} className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Mô tả trách nhiệm..." />
+              <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">Mô tả chức trách</label>
+              <input 
+                name="description" 
+                defaultValue={role?.description} 
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all shadow-sm"
+                placeholder="Mô tả ngắn gọn quyền hạn..."
+              />
             </div>
           </div>
 
+          {/* Permissions Matrix */}
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <Shield size={20} className="text-blue-500" />
-              <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Quyền hạn chi tiết</h4>
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600">
+                <ShieldCheck size={16} />
+              </div>
+              <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Ma trận Phân quyền</h4>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {permissionGroups.map((group, gIdx) => (
-                <div key={gIdx} className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border border-slate-100 dark:border-slate-800">
-                  <h5 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4">{group.title}</h5>
-                  <div className="space-y-3">
+                <div key={gIdx} className="p-6 bg-slate-50/50 dark:bg-slate-800/30 rounded-[2rem] border border-slate-100 dark:border-slate-800 transition-all hover:border-indigo-200 dark:hover:border-indigo-900 group">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="text-indigo-500 group-hover:scale-110 transition-transform">{group.icon}</div>
+                    <h5 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.1em]">{group.title}</h5>
+                  </div>
+                  <div className="space-y-3.5">
                     {group.keys.map((key, kIdx) => (
-                      <label key={key} className="flex items-center justify-between group cursor-pointer">
-                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-blue-600 transition-colors">{group.labels[kIdx]}</span>
+                      <label key={key} className="flex items-center justify-between group/item cursor-pointer">
+                        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 group-hover/item:text-indigo-600 transition-colors">{group.labels[kIdx]}</span>
                         <div
                           onClick={() => setPermissions(prev => ({ ...prev, [key]: !prev[key] }))}
-                          className={`w-12 h-6 rounded-full p-1 transition-all duration-300 ${permissions[key] ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'}`}
+                          className={`w-12 h-6 rounded-full p-1 transition-all duration-300 ${permissions[key] ? 'bg-indigo-600 shadow-lg shadow-indigo-500/10' : 'bg-slate-300 dark:bg-slate-700'}`}
                         >
                           <div className={`w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-sm ${permissions[key] ? 'translate-x-6' : 'translate-x-0'}`} />
                         </div>
@@ -788,14 +937,27 @@ function RoleModal({ role, onClose, onSuccess }: { role: Role | null, onClose: (
               ))}
             </div>
           </div>
-
-          <div className="pt-6 flex gap-4">
-            <Button type="button" variant="outline" className="flex-1 font-black uppercase text-[10px] tracking-widest h-14 rounded-2xl border-slate-200" onClick={onClose}>Hủy bỏ</Button>
-            <Button type="submit" disabled={loading} className="flex-1 font-black uppercase text-[10px] tracking-widest h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/30">
-              {loading ? <Loader2 className="animate-spin" /> : (isEdit ? 'Cập nhật' : 'Tạo mới')}
-            </Button>
-          </div>
         </form>
+
+        {/* Footer */}
+        <div className="px-10 py-8 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex justify-end gap-5 shrink-0">
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="px-10 h-14 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 transition-all shadow-sm" 
+            onClick={onClose}
+          >
+            Hủy bỏ
+          </Button>
+          <Button 
+            type="submit" 
+            form={formId}
+            disabled={loading}
+            className="px-14 h-14 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/20 transition-all active:scale-95"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : (isEdit ? 'Lưu cấu hình' : 'Tạo Vai trò')}
+          </Button>
+        </div>
       </div>
     </div>
   );
