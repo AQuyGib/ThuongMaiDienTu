@@ -16,7 +16,6 @@ class CartController extends Controller
     public function index()
     {
         $cart = session()->get('cart', []);
-
         // Chuyển đổi dữ liệu từ session sang format view yêu cầu
         $cartItems = collect($cart)->map(function ($item, $id) {
             $product = Product::find($id);

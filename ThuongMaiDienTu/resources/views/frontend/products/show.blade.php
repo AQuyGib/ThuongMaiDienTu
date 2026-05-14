@@ -82,19 +82,7 @@
 .specs-table td:first-child { width:40%; font-weight:600; color:#555; }
 .specs-table td:last-child { color:#222; }
 
-/* Reviews */
-.pd-reviews { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
-.pd-reviews h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
-.review-stats { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-.review-average { text-align: center; }
-.review-average h3 { font-size: 32px; color: #d70018; margin-bottom: 5px; }
-.review-average .stars { color: #f59e0b; font-size: 14px; }
-.review-item { padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
-.review-item:last-child { border-bottom: none; }
-.review-user { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
-.review-user span { background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;}
-.review-stars { color: #f59e0b; font-size: 12px; margin-bottom: 8px; }
-.review-content { font-size: 14px; color: #444; }
+
 
 /* Media Upload */
 .review-media-upload { margin: 10px 0; }
@@ -1003,6 +991,7 @@ document.querySelectorAll('.star-rating').forEach(star => {
     });
 });
 
+<<<<<<< HEAD
 // Danh sách file đã chọn (dùng DataTransfer để quản lý)
 let selectedMediaFiles = [];
 
@@ -1136,6 +1125,9 @@ function submitReview() {
         showToast('Đã xảy ra lỗi kết nối!');
     });
 }
+=======
+
+>>>>>>> origin/Hien/chitietsanpham
 
 // --- Toast & Actions ---
 function showToast(msg) {
@@ -1326,6 +1318,13 @@ function toggleWishlist() {
         return;
     }
 
+<<<<<<< HEAD
+=======
+    const btn = document.getElementById('btnWishlist');
+    const icon = document.getElementById('wishlistIcon');
+    const text = document.getElementById('wishlistText');
+    
+>>>>>>> origin/Hien/chitietsanpham
     fetch('{{ route("wishlist.toggle") }}', {
         method: 'POST',
         headers: {
@@ -1334,6 +1333,7 @@ function toggleWishlist() {
         },
         body: JSON.stringify({ product_id: '{{ $product->product_id }}' })
     })
+<<<<<<< HEAD
     .then(r => r.json())
     .then(data => {
         const icon = document.getElementById('wishlistIcon');
@@ -1355,6 +1355,31 @@ function toggleWishlist() {
             btn.classList.remove('active');
             showToast('Đã xóa khỏi yêu thích.');
         }
+=======
+    .then(response => response.json())
+    .then(data => {
+        if(data.status === 'added') {
+            isWishlist = true;
+            btn.classList.add('active');
+            icon.classList.remove('fa-regular');
+            icon.classList.add('fa-solid');
+            icon.style.color = '#d70018';
+            text.innerText = 'Đã thêm yêu thích';
+            showToast('Đã thêm vào danh sách yêu thích!');
+        } else if(data.status === 'removed') {
+            isWishlist = false;
+            btn.classList.remove('active');
+            icon.classList.remove('fa-solid');
+            icon.classList.add('fa-regular');
+            icon.style.color = '';
+            text.innerText = 'Thêm vào yêu thích';
+            showToast('Đã xóa khỏi danh sách yêu thích.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Đã xảy ra lỗi!');
+>>>>>>> origin/Hien/chitietsanpham
     });
 }
 
