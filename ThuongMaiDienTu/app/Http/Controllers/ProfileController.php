@@ -278,4 +278,39 @@ class ProfileController extends Controller
             return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
         }
     }
+
+    public function toggleWishlist(Request $request)
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $request->validate([
+                'product_id' => 'required'
+            ]);
+
+            $user = Auth::user();
+            $productId = $request->product_id;
+
+            $wishlist = $user->wishlists()
+                ->where('product_id', $productId)
+                ->where('type', 'wishlist')
+                ->first();
+
+            if ($wishlist) {
+                $wishlist->delete();
+                return response()->json(['status' => 'removed']);
+            } else {
+                $user->wishlists()->create([
+                    'product_id' => $productId,
+                    'type' => 'wishlist'
+                ]);
+                return response()->json(['status' => 'added']);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi toggle yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
 }
