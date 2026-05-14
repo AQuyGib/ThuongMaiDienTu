@@ -52,18 +52,37 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                 </div>
             </div>
 
-            <nav className={`flex-1 space-y-2 overflow-y-auto premium-scrollbar transition-all ${collapsed ? 'p-2 px-3' : 'p-4'}`}>
-                {menu.map((item, idx) => (
-                    <a
-                        key={idx}
-                        href={item.route}
-                        title={collapsed ? item.label : ''}
-                        className={`flex items-center rounded-xl transition-all duration-300 ${collapsed ? 'justify-center py-4 px-0' : 'gap-4 px-4 py-3'} ${item.active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-                    >
-                        <i className={`${item.icon} ${collapsed ? 'text-lg' : 'w-5 text-center'}`}></i>
-                        {!collapsed && <span className="font-bold text-sm truncate">{item.label}</span>}
-                    </a>
-                ))}
+            <nav className={`flex-1 space-y-6 overflow-y-auto premium-scrollbar transition-all ${collapsed ? 'p-2 px-3' : 'p-4'}`}>
+                {(() => {
+                    const sections: { [key: string]: MenuItem[] } = {};
+                    menu.forEach(item => {
+                        const s = item.section || 'Khác';
+                        if (!sections[s]) sections[s] = [];
+                        sections[s].push(item);
+                    });
+
+                    return Object.entries(sections).map(([sectionName, items], sIdx) => (
+                        <div key={sIdx} className="space-y-1">
+                            {!collapsed && (
+                                <div className="px-4 mb-3">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{sectionName}</p>
+                                </div>
+                            )}
+                            {items.map((item, idx) => (
+                                <a
+                                    key={idx}
+                                    href={item.route}
+                                    title={collapsed ? item.label : ''}
+                                    className={`flex items-center rounded-xl transition-all duration-300 ${collapsed ? 'justify-center py-4 px-0' : 'gap-4 px-4 py-3'} ${item.active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                                >
+                                    <i className={`${item.icon} ${collapsed ? 'text-lg' : 'w-5 text-center'}`}></i>
+                                    {!collapsed && <span className="font-bold text-sm truncate">{item.label}</span>}
+                                </a>
+                            ))}
+                            {collapsed && <div className="h-px bg-slate-800/50 my-4 mx-2" />}
+                        </div>
+                    ));
+                })()}
             </nav>
 
             <div className={`bg-slate-950/50 backdrop-blur-xl border-t border-slate-800 transition-all ${collapsed ? 'p-2' : 'p-4'}`}>
