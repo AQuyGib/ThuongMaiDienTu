@@ -20,7 +20,7 @@ class WishlistController extends Controller
 
         $wishlist = WishlistRecentlyViewed::where('user_id', $userId)
             ->where('product_id', $productId)
-            ->where('type', 'wishlist')
+            ->where('type', 'Wishlist')
             ->first();
 
         if ($wishlist) {
@@ -30,7 +30,7 @@ class WishlistController extends Controller
             WishlistRecentlyViewed::create([
                 'user_id' => $userId,
                 'product_id' => $productId,
-                'type' => 'wishlist',
+                'type' => 'Wishlist',
                 'created_at' => now()
             ]);
             return response()->json(['status' => 'added']);

@@ -172,6 +172,11 @@
     if ($oldPrice > 0 && $oldPrice > $basePrice) {
         $discountPercent = round((($oldPrice - $basePrice) / $oldPrice) * 100);
     }
+
+    $isWishlisted = false;
+    if(auth()->check()){
+        $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'Wishlist')->exists();
+    }
 @endphp
 
 <div class="container">
@@ -293,12 +298,6 @@
                     <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700;">
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
-                    @php
-                        $isWishlisted = false;
-                        if(auth()->check()){
-                            $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'wishlist')->exists();
-                        }
-                    @endphp
                     <button class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
                         <i class="{{ $isWishlisted ? 'fa-solid' : 'fa-regular' }} fa-heart" id="wishlistIcon" style="{{ $isWishlisted ? 'color: #d70018;' : '' }}"></i> <span id="wishlistText">{{ $isWishlisted ? 'Đã thêm yêu thích' : 'Thêm yêu thích' }}</span>
                     </button>
