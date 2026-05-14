@@ -460,7 +460,7 @@
 </div>
 
 <!-- Modal Trả góp -->
-<div id="installmentModal" style="display: none;">
+<div id="installmentModal">
     <div class="installment-content">
         <div class="installment-header">
             <h3 style="margin:0; font-size:18px;">Thông tin các gói trả góp</h3>
@@ -572,7 +572,7 @@
 </div>
 
 <!-- Modal Zoom Ảnh -->
-<div id="imageZoomModal" style="display: none;">
+<div id="imageZoomModal">
     <i class="fa-solid fa-xmark close-zoom" onclick="closeZoom()"></i>
     <i class="fa-solid fa-chevron-left zoom-nav prev" onclick="prevZoomImage()"></i>
     <img id="zoomedImg" src="" alt="Zoom">
@@ -609,7 +609,7 @@
     </div>
 
     {{-- Promo Success Modal --}}
-    <div id="promoSuccessModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; justify-content: center; align-items: center;">
+    <div id="promoSuccessModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; display: none; justify-content: center; align-items: center;">
         <div style="background: #fff; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
             <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #16a34a; margin-bottom: 20px;"></i>
             <h3 style="font-size: 22px; color: #333; margin-bottom: 10px;">Cảm ơn quý khách!</h3>
