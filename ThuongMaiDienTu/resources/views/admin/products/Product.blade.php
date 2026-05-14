@@ -101,15 +101,25 @@
                     Quản Lý Sản Phẩm
                     <span class="badge-count">{{ $products->total() }} sản phẩm</span>
                 </h1>
-                <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addModal">
-                    <i class="bi bi-plus-lg"></i> Thêm Sản Phẩm
-                </button>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <a href="{{ route('admin.products.import.form') }}" class="btn btn-cancel">
+                        <i class="bi bi-upload"></i> Import Excel
+                    </a>
+                    <a href="{{ route('admin.products.export') }}" class="btn btn-cancel">
+                        <i class="bi bi-download"></i> Export Excel
+                    </a>
+                    <a href="{{ route('admin.products.template') }}" class="btn btn-cancel">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Tải Mẫu
+                    </a>
+                    <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addModal">
+                        <i class="bi bi-plus-lg"></i> Thêm Sản Phẩm
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- ===== MAIN CONTENT ===== --}}
-    <div class="container py-4">
+    {{-- ===== MAIN CONTENT ===== --}}    <div class="container py-4">
 
         {{-- Flash Messages --}}
         @if(session('success'))
