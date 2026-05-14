@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'So sánh sản phẩm - TechZone')
+@section('title', 'So sánh sản phẩm - DIENMAYPRO')
 
 @push('styles')
 <style>

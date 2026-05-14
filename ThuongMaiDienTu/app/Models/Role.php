@@ -7,6 +7,10 @@ class Role extends Model {
     public $timestamps = false;
     protected $guarded = [];
 
+    protected $casts = [
+        'permissions' => 'array',
+    ];
+
     public function users() {
         return $this->hasMany(User::class, 'role_id');
     }

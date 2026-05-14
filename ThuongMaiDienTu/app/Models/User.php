@@ -1,8 +1,11 @@
 <?php
 namespace App\Models;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable {
+    use SoftDeletes;
+
     protected $primaryKey = 'user_id';
     const UPDATED_AT = null;
     protected $guarded = [];
@@ -73,6 +76,10 @@ class User extends Authenticatable {
 
     public function salesOrders() {
         return $this->hasMany(Order::class, 'staff_id', 'user_id');
+    }
+
+    public function loginHistories() {
+        return $this->hasMany(LoginHistory::class, 'user_id');
     }
 
     public function repairTickets() {

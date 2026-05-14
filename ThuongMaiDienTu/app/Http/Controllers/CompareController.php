@@ -68,6 +68,7 @@ class CompareController extends Controller
                     'review_count' => $product->review_count,
                     'category_name' => $product->category->name ?? null,
                     'category_id' => $product->category_id,
+                    'root_category_id' => $product->category ? $product->category->getRootCategoryId() : $product->category_id,
                     'specifications' => $specs,
                 ];
             })->values(),
@@ -80,7 +81,9 @@ class CompareController extends Controller
         $keyword = $request->get('keyword', '');
         $excludeIds = $this->normalizeIds($request->get('exclude', []));
 
-        $query = Product::query()->select('product_id', 'name', 'thumbnail', 'base_price', 'category_id');
+        $query = Product::query()
+            ->with('category')
+            ->select('product_id', 'name', 'thumbnail', 'base_price', 'category_id');
 
         if (!empty($excludeIds)) {
             $query->whereNotIn('product_id', $excludeIds);
@@ -90,7 +93,14 @@ class CompareController extends Controller
             $query->where('name', 'LIKE', "%{$keyword}%");
         }
 
-        return response()->json($query->limit(10)->get());
+        $results = $query->limit(10)->get();
+        
+        $results->map(function($product) {
+            $product->root_category_id = $product->category ? $product->category->getRootCategoryId() : $product->category_id;
+            return $product;
+        });
+
+        return response()->json($results);
     }
 
     public function sync(Request $request)
