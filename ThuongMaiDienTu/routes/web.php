@@ -50,8 +50,8 @@ Route::get('/', function () {
 });
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
 // Route::get('/product/{id}', [ProductController::class, 'show'])->name('product.show'); // Unified below
-Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
-Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
+// Review routes removed to avoid merge conflicts with Hien/danhgia
+
 
 // Modules
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
