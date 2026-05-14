@@ -96,4 +96,15 @@ class Product extends Model
                 return $query->orderBy('product_id', 'desc');
         }
     }
+    public function crossSells()
+    {
+        return $this->belongsToMany(Product::class, 'product_cross_sells', 'product_id', 'cross_sell_id')
+            ->withPivot('sort_order')
+            ->orderBy('product_cross_sells.sort_order', 'asc');
+    }
+
+    public function wishlistRecentlyViewed()
+    {
+        return $this->hasMany(WishlistRecentlyViewed::class, 'product_id', 'product_id');
+    }
 }

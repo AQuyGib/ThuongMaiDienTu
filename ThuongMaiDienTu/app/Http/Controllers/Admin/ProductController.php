@@ -43,9 +43,36 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        $product = Product::with(['category', 'variants'])->findOrFail($id);
+        $product = Product::with(['category', 'variants', 'crossSells'])->findOrFail($id);
+        
+        // Lấy tất cả sản phẩm khác để admin có thể chọn bán kèm (loại trừ chính nó)
+        // Trong thực tế nếu SP quá nhiều thì nên dùng AJAX search, ở đây ta lấy danh sách đơn giản
+        $allProducts = Product::where('product_id', '!=', $id)
+            ->orderBy('name')
+            ->get(['product_id', 'name', 'base_price']);
 
-        return view('admin.products.ProductDetail', compact('product'));
+        return view('admin.products.ProductDetail', compact('product', 'allProducts'));
+    }
+
+    /**
+     * Cập nhật danh sách sản phẩm bán kèm (Cross-sell)
+     */
+    public function syncCrossSells(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+        
+        // Sync các product_id được chọn vào bảng trung gian
+        // Xóa cache cũ để hiển thị mới ngay lập tức
+        $product->crossSells()->sync($request->cross_sell_ids ?? []);
+        
+        // Xóa cache của cả guest và user (vì cache key có chứa user_id/guest)
+        // Cách nhanh nhất là xóa theo prefix hoặc đơn giản là flush nếu hệ thống nhỏ
+        // Ở đây ta xóa key cụ thể của guest và user hiện tại
+        cache()->forget("cross_sell_v2_{$id}_user_" . (auth()->id() ?? 'guest'));
+        cache()->forget("cross_sell_v2_{$id}_user_guest");
+
+        return redirect()->route('admin.products.show', $id)
+            ->with('success', 'Cập nhật danh sách bán kèm thành công!');
     }
 
     /**

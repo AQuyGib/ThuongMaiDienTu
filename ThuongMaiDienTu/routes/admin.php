@@ -87,10 +87,11 @@ Route::resource('flash-sales', FlashSaleController::class)->except(['create', 'e
 Route::post('flash-sales/{flash_sale}/products', [FlashSaleProductController::class, 'store'])->name('flash-sales.products.store');
 Route::delete('flash-sales/{flash_sale}/products/{flash_sale_product}', [FlashSaleProductController::class, 'destroy'])->name('flash-sales.products.destroy');
 
-// ===== Quản lý Biến Thể Sản Phẩm =====
+// ===== Quản lý Biến Thể & Bán Kèm =====
 Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'])->name('products.variants.store');
 Route::put('/products/{id}/variants/{variantId}', [ProductController::class, 'updateVariant'])->name('products.variants.update');
 Route::delete('/products/{id}/variants/{variantId}', [ProductController::class, 'destroyVariant'])->name('products.variants.destroy');
+Route::post('/products/{id}/cross-sells', [ProductController::class, 'syncCrossSells'])->name('products.cross-sells.sync');
 
 // ===== Phiếu Nhập Kho =====
 Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');

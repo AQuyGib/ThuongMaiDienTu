@@ -362,6 +362,9 @@
         </div>
     </div>
 
+    {{-- Mua kèm Combo tiết kiệm --}}
+    @include('frontend.products._combo_bundle', ['crossSellProducts' => $crossSellProducts])
+
     {{-- Layout Giữa: Giới thiệu + Specs --}}
     <div class="middle-section">
         {{-- Giới thiệu --}}
@@ -414,6 +417,9 @@
 
 
     @include('frontend.products.partials.reviews')
+
+    {{-- Gợi ý bán chéo: Thường mua cùng nhau --}}
+    @include('frontend.products._cross_sell', ['crossSellProducts' => $crossSellProducts])
 
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())

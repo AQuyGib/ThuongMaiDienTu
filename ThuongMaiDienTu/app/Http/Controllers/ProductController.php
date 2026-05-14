@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\WishlistRecentlyViewed;
+use App\Services\CrossSellService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -43,10 +44,15 @@ class ProductController extends Controller
             ->take(6)
             ->get();
 
+        // Gợi ý bán chéo (Cross-selling): FBT → Brand → Flash Sale
+        $crossSellProducts = app(CrossSellService::class)
+            ->getFullCrossSellList($product, 8);
+
         return view('frontend.products.show', compact(
             'product',
             'discountPercent',
-            'relatedProducts'
+            'relatedProducts',
+            'crossSellProducts'
         ));
     }
 }

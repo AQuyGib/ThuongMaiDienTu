@@ -10,10 +10,49 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         :root{--bg-primary:#0f1117;--bg-secondary:#1a1d27;--bg-card:#1e2231;--bg-hover:#262a3a;--accent:#6c5ce7;--accent-hover:#7f71ed;--accent-glow:rgba(108,92,231,0.25);--text-primary:#e8e8ef;--text-secondary:#9ca3b4;--border:#2d3148;--danger:#e74c5e;--danger-hover:#d4364a;--success:#2ed573;--warning:#ffa502}
         *{box-sizing:border-box}
         body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;margin:0}
+        
+        /* Select2 Custom Dark Theme */
+        .select2-container--default .select2-selection--multiple {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 5px;
+        }
+        .select2-container--default.select2-container--focus .select2-selection--multiple {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: var(--accent);
+            border: none;
+            color: #fff;
+            border-radius: 6px;
+            padding: 2px 8px;
+            margin-top: 4px;
+        }
+        .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            color: #fff;
+            margin-right: 5px;
+        }
+        .select2-dropdown {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+        .select2-container--default .select2-search--inline .select2-search__field {
+            color: var(--text-primary);
+        }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: var(--accent);
+        }
+        .select2-container--default .select2-results__option[aria-selected=true] {
+            background-color: var(--bg-hover);
+        }
         .page-header{background:linear-gradient(135deg,var(--bg-secondary) 0%,var(--bg-card) 100%);border-bottom:1px solid var(--border);padding:28px 0}
         .page-header h1{font-size:1.75rem;font-weight:700;margin:0;display:flex;align-items:center;gap:12px}
         .page-header h1 i{font-size:1.5rem;color:var(--accent)}
@@ -167,6 +206,35 @@
                 default => 'Màu Sắc',
             };
         @endphp
+
+        {{-- Sản phẩm bán kèm (Cross-sell) --}}
+        <div class="info-card animate-in">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="mb-0"><i class="bi bi-cart-plus-fill"></i> Sản Phẩm Bán Kèm (Cross-sell)</h5>
+                <span class="badge bg-primary">{{ $product->crossSells->count() }} đã chọn</span>
+            </div>
+            <p class="text-secondary small mb-4">Chọn các sản phẩm (phụ kiện, dịch vụ...) thường được mua kèm với sản phẩm này để hiển thị trong mục "Thường mua cùng nhau".</p>
+            
+            <form action="{{ route('admin.products.cross-sells.sync', $product->product_id) }}" method="POST">
+                @csrf
+                <div class="mb-3">
+                    <label class="form-label">Chọn sản phẩm gợi ý</label>
+                    <select name="cross_sell_ids[]" class="form-select select2-crosssell" multiple="multiple" style="width: 100%">
+                        @foreach($allProducts as $p)
+                            <option value="{{ $p->product_id }}" 
+                                {{ $product->crossSells->contains('product_id', $p->product_id) ? 'selected' : '' }}>
+                                {{ $p->name }} - ({{ number_format($p->base_price, 0, ',', '.') }}₫)
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-accent">
+                        <i class="bi bi-save-fill"></i> Lưu cấu hình bán kèm
+                    </button>
+                </div>
+            </form>
+        </div>
 
         {{-- Bảng biến thể --}}
         <div class="table-card animate-in">
@@ -424,8 +492,17 @@
     </form>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        $(document).ready(function() {
+            $('.select2-crosssell').select2({
+                placeholder: "Tìm kiếm và chọn sản phẩm...",
+                allowClear: true
+            });
+        });
+
         const productId = {{ $product->product_id }};
         const baseUrl = "{{ url('admin/products') }}";
 

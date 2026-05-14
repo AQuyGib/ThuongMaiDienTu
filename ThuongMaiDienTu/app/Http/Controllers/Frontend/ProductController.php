@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\CrossSellService;
 use App\Services\FlashSaleService;
 use App\Services\ProductFilterService;
 use Illuminate\Http\Request;
@@ -15,7 +16,8 @@ class ProductController extends Controller
 {
     public function __construct(
         private readonly ProductFilterService $productFilterService,
-        private readonly FlashSaleService $flashSaleService
+        private readonly FlashSaleService     $flashSaleService,
+        private readonly CrossSellService     $crossSellService
     ) {
     }
 
@@ -67,6 +69,16 @@ class ProductController extends Controller
                 ->exists();
         }
 
-        return view('frontend.products.show', compact('product', 'relatedProducts', 'hasPurchased', 'flashSaleProduct', 'effectivePrice'));
+        // Gợi ý bán chéo: FBT → Brand → Flash Sale → Category
+        $crossSellProducts = $this->crossSellService->getFullCrossSellList($product, 8);
+
+        return view('frontend.products.show', compact(
+            'product',
+            'relatedProducts',
+            'hasPurchased',
+            'flashSaleProduct',
+            'effectivePrice',
+            'crossSellProducts'
+        ));
     }
 }
