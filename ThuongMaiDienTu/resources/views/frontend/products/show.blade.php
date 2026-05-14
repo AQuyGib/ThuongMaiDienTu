@@ -965,7 +965,6 @@ function toggleWishlist() {
     .catch(error => {
         console.error('Error:', error);
         showToast('Đã xảy ra lỗi!');
-    })
     });
 }
 
