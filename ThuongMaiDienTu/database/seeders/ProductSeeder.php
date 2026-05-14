@@ -703,7 +703,6 @@ class ProductSeeder extends Seeder
             $product['slug'] = Str::slug($product['name']);
             Product::create($this->normalizeProductData($product));
         }
-        }
     }
 
     private function normalizeProductData(array $product): array
