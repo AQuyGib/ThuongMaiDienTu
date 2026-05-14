@@ -1107,17 +1107,6 @@
                                         </div>
                                     </div>
                                 @endif
-                                    <div class="wishlist-actions">
-                                        <button class="btn-wishlist-cart"
-                                            onclick="addToCartFromWishlist(this, {{ $product->product_id }})"
-                                            data-product-id="{{ $product->product_id }}">
-                                            <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
-                                        </button>
-                                        <button class="btn-wishlist-remove" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
-                                            <i class="fa-solid fa-trash-can"></i>
-                                        </button>
-                                    </div>
-                                </div>
                             @endforeach
                         </div>
                     @else
