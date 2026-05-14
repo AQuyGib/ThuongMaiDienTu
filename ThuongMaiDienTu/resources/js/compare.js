@@ -81,7 +81,8 @@ function renderSearchResults(results) {
                 name: product.name,
                 image: product.thumbnail,
                 price: new Intl.NumberFormat('vi-VN').format(product.base_price) + 'đ',
-                categoryId: product.category_id
+                categoryId: product.category_id,
+                rootCategoryId: product.root_category_id
             };
             addToCompare(productData);
         };
@@ -143,7 +144,8 @@ window.addToCompare = async function(productOrId) {
                     name: p.name,
                     image: p.thumbnail,
                     price: new Intl.NumberFormat('vi-VN').format(p.base_price) + 'đ',
-                    categoryId: p.category_id
+                    categoryId: p.category_id,
+                    rootCategoryId: p.root_category_id
                 };
             } else {
                 showToast('Không tìm thấy thông tin sản phẩm', 'error');
@@ -158,10 +160,23 @@ window.addToCompare = async function(productOrId) {
         productData = productOrId;
     }
 
-    // Kiểm tra cùng loại sản phẩm
-    const existingSlot = document.querySelector('.compare-slot-filled[data-category-id]:not([data-category-id=""])');
-    if (existingSlot && existingSlot.dataset.categoryId != productData.categoryId) {
-        if (confirm('Sản phẩm này khác loại với danh sách hiện tại. Bạn có muốn xóa danh sách cũ để bắt đầu so sánh loại mới này không?')) {
+    // Kiểm tra cùng loại sản phẩm (sử dụng Root Category)
+    const existingSlot = document.querySelector('.compare-slot-filled[data-root-category-id]:not([data-root-category-id=""])');
+    if (existingSlot && existingSlot.dataset.rootCategoryId != productData.rootCategoryId) {
+        const result = await Swal.fire({
+            title: 'Khác loại sản phẩm',
+            text: 'Sản phẩm này khác loại với danh sách hiện tại. Bạn có muốn xóa danh sách cũ để bắt đầu so sánh loại mới này không?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#0046ab',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Đồng ý, xóa cũ',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true,
+            borderRadius: '15px',
+        });
+
+        if (result.isConfirmed) {
             clearCompare();
         } else {
             return;
@@ -183,6 +198,7 @@ window.addToCompare = async function(productOrId) {
     filledDiv.querySelector('.compare-slot-price').textContent = productData.price;
     filledDiv.dataset.productId = productData.id;
     filledDiv.dataset.categoryId = productData.categoryId;
+    filledDiv.dataset.rootCategoryId = productData.rootCategoryId;
 
     currentSlotIndex = null; // Reset slot index
     updateCount();
@@ -216,6 +232,7 @@ window.clearCompare = function() {
         el.style.display = 'none';
         el.dataset.productId = "";
         el.dataset.categoryId = "";
+        el.dataset.rootCategoryId = "";
     });
     const emptyDivs = document.querySelectorAll('.compare-slot-empty');
     emptyDivs.forEach(el => el.style.display = 'flex');
@@ -280,16 +297,21 @@ function syncWithServer() {
 }
 
 function showToast(message, type = 'success') {
-    const toast = document.getElementById('compareToast');
-    if (!toast) return;
-
-    toast.querySelector('span').textContent = message;
-    toast.className = 'compare-global-toast ' + type;
-    toast.classList.add('show');
-
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.onmouseenter = Swal.stopTimer;
+            toast.onmouseleave = Swal.resumeTimer;
+        }
+    });
+    Toast.fire({
+        icon: type,
+        title: message
+    });
 }
 
 // --- Toggle Collapse ---
@@ -378,12 +400,21 @@ async function loadComparePage() {
 
         if (emptyState) emptyState.classList.add('hidden');
         if (tableWrap) tableWrap.classList.remove('hidden');
+        const chartWrap = document.getElementById('compareChartWrap');
+        if (chartWrap) {
+            if (products.length >= 2) {
+                chartWrap.classList.remove('hidden');
+                renderRadarChart(products, rows);
+            } else {
+                chartWrap.classList.add('hidden');
+            }
+        }
         if (metaEl) metaEl.textContent = `${products.length} sản phẩm`;
 
         // Render Head
         if (headEl) {
             headEl.innerHTML = `
-                <tr class="sticky top-0 z-20 shadow-sm">
+                <tr class="sticky top-[72px] z-20 shadow-sm">
                     <th class="bg-gray-50 p-4 text-left font-semibold text-gray-700 w-56 border-b border-gray-200">Thuộc tính</th>
                     ${products.map(p => `
                         <th class="p-4 text-left min-w-72 align-top bg-white border-b border-gray-200">
@@ -496,6 +527,91 @@ async function loadComparePage() {
     }
 }
 
+let compareRadarChartInstance = null;
+function renderRadarChart(products, rows) {
+    const canvas = document.getElementById('compareRadarChart');
+    if (!canvas) return;
+
+    if (compareRadarChartInstance) {
+        compareRadarChartInstance.destroy();
+    }
+
+    const labels = ['Màn hình', 'RAM', 'Pin', 'Đánh giá', 'Camera'];
+    
+    const datasets = products.map((p, idx) => {
+        // Trích xuất dữ liệu từ rows (dữ liệu đã xử lý)
+        const getVal = (label) => {
+            const row = rows.find(r => r.label.toLowerCase().includes(label.toLowerCase()));
+            if (!row) return 0;
+            const val = row.values[idx];
+            return extractNumber(val) || 0;
+        };
+
+        const screen = getVal('Màn hình');
+        const ram = getVal('RAM');
+        const battery = getVal('Pin');
+        const camera = getVal('Camera');
+        const rating = p.rating || 0;
+
+        // Chuẩn hóa dữ liệu để hiển thị đẹp trên biểu đồ (scale 0-100)
+        const data = [
+            Math.min((screen / 7) * 100, 100), // Max 7 inch
+            Math.min((ram / 16) * 100, 100),   // Max 16GB RAM
+            Math.min((battery / 6000) * 100, 100), // Max 6000mAh
+            (rating / 5) * 100,               // Max 5 sao
+            Math.min((camera / 200) * 100, 100)  // Max 200MP
+        ];
+
+        const colors = [
+            { border: 'rgba(0, 70, 171, 1)', background: 'rgba(0, 70, 171, 0.2)' },
+            { border: 'rgba(215, 0, 24, 1)', background: 'rgba(215, 0, 24, 0.2)' },
+            { border: 'rgba(22, 163, 74, 1)', background: 'rgba(22, 163, 74, 0.2)' }
+        ];
+        const color = colors[idx % colors.length];
+
+        return {
+            label: p.name,
+            data: data,
+            fill: true,
+            backgroundColor: color.background,
+            borderColor: color.border,
+            pointBackgroundColor: color.border,
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: color.border
+        };
+    });
+
+    compareRadarChartInstance = new Chart(canvas, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            elements: {
+                line: { borderWidth: 3 }
+            },
+            scales: {
+                r: {
+                    angleLines: { display: true },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: { display: false }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12, padding: 20, font: { size: 12, weight: 'bold' } }
+                }
+            }
+        }
+    });
+}
+
 window.removeAndRefresh = function(id) {
     const filledDiv = document.querySelector(`.compare-slot-filled[data-product-id="${id}"]`);
     if (filledDiv) {
@@ -528,9 +644,23 @@ window.copyCompareLink = function() {
 
 const clearAllBtn = document.getElementById('compareClearAllBtn');
 if (clearAllBtn) {
-    clearAllBtn.addEventListener('click', () => {
-        clearCompare();
-        loadComparePage();
+    clearAllBtn.addEventListener('click', async () => {
+        const result = await Swal.fire({
+            title: 'Xóa toàn bộ?',
+            text: 'Bạn có chắc chắn muốn xóa tất cả sản phẩm trong danh sách so sánh?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Đồng ý, xóa hết',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true
+        });
+
+        if (result.isConfirmed) {
+            clearCompare();
+            loadComparePage();
+        }
     });
 }
 
@@ -574,6 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 
                                 filled.dataset.productId = productData.product_id;
                                 filled.dataset.categoryId = productData.category_id;
+                                filled.dataset.rootCategoryId = productData.root_category_id;
                             }
                         }
                     }
