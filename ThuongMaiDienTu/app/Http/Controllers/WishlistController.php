@@ -36,4 +36,35 @@ class WishlistController extends Controller
             return response()->json(['status' => 'added']);
         }
     }
+
+    public function removeFromWishlist($id)
+    {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+        }
+
+        $wishlistItem = WishlistRecentlyViewed::where('user_id', Auth::id())
+            ->where('id', $id)
+            ->first();
+
+        if ($wishlistItem) {
+            $wishlistItem->delete();
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['error' => 'Không tìm thấy sản phẩm'], 404);
+    }
+
+    public function clearWishlist()
+    {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+        }
+
+        WishlistRecentlyViewed::where('user_id', Auth::id())
+            ->where('type', 'Wishlist')
+            ->delete();
+
+        return response()->json(['success' => true]);
+    }
 }

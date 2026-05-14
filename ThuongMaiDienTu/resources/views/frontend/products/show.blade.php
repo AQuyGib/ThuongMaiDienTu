@@ -83,9 +83,12 @@
 .specs-table td:first-child { width:40%; font-weight:600; color:#555; }
 .specs-table td:last-child { color:#222; }
 
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> origin/Hien/danhsachyeuthich
 /* ===== RELATED ===== */
 .pd-related { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
 .pd-related h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
@@ -172,10 +175,13 @@
         ];
     })->toJson();
     
+<<<<<<< HEAD
     // Reviews are disabled in this branch
     $reviewCount = 0;
     $avgRating = 0;
 
+=======
+>>>>>>> origin/Hien/danhsachyeuthich
     $discountPercent = 0;
     if ($oldPrice > 0 && $oldPrice > $basePrice) {
         $discountPercent = round((($oldPrice - $basePrice) / $oldPrice) * 100);
@@ -249,16 +255,7 @@
             @endif
 
             <div class="pd-rating">
-                <div class="pd-stars" id="topReviewStars">
-                    @for($i=1; $i<=5; $i++)
-                        @if($i <= round($avgRating))
-                            <i class="fa-solid fa-star" style="color:#f59e0b"></i>
-                        @else
-                            <i class="fa-regular fa-star" style="color:#ccc"></i>
-                        @endif
-                    @endfor
-                </div>
-                <span class="pd-rating-count"><span id="topReviewCount">({{ $reviewCount }} đánh giá)</span> · <span style="color:#16a34a;font-weight:600;">Còn hàng</span></span>
+                <span class="pd-rating-count"><span style="color:#16a34a;font-weight:600;">Còn hàng</span></span>
             </div>
 
             {{-- Giá --}}
@@ -333,10 +330,27 @@
                     <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700;">
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
+<<<<<<< HEAD
                     <button class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
+=======
+                    @php
+                        $isWishlisted = false;
+                        if(auth()->check()){
+                            $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'wishlist')->exists();
+                        }
+                    @endphp
+                    <button class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center; min-width:180px;">
+>>>>>>> origin/Hien/danhsachyeuthich
                         <i class="{{ $isWishlisted ? 'fa-solid' : 'fa-regular' }} fa-heart" id="wishlistIcon" style="{{ $isWishlisted ? 'color: #d70018;' : '' }}"></i> <span id="wishlistText">{{ $isWishlisted ? 'Đã thêm yêu thích' : 'Thêm yêu thích' }}</span>
                     </button>
 
+                </div>
+                <div style="margin-top: 12px; display: flex; justify-content: flex-start; padding-left: 5px;">
+                    <a href="javascript:void(0)" id="btnCompareDetail" onclick="addToCompare('{{ $product->product_id }}')" 
+                       style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 6px; text-decoration: none; transition: 0.2s; font-weight: 500;"
+                       onmouseover="this.style.color='#0046ab'" onmouseout="this.style.color='#666'">
+                        <i class="fa-solid fa-scale-balanced"></i> <span id="compareDetailLabel">So sánh sản phẩm</span>
+                    </a>
                 </div>
             </div>
 
@@ -411,12 +425,15 @@
         @endif
     </div>
 
+<<<<<<< HEAD
 
 
 
     {{-- Legacy review include removed to avoid merge conflicts with Hien/danhgia --}}
 
 
+=======
+>>>>>>> origin/Hien/danhsachyeuthich
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())
         <div class="pd-related">
@@ -812,6 +829,7 @@ function selectColor(el) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Khởi tạo trạng thái ban đầu cho chức năng đánh giá sao
 // Sử dụng biến currentRating đã được khai báo hoặc khởi tạo nếu chưa có
 if (typeof currentRating === 'undefined') {
@@ -973,6 +991,8 @@ function showToast(title, message, type = 'success') {
 
 >>>>>>> origin/Hien/danhgia
 
+=======
+>>>>>>> origin/Hien/danhsachyeuthich
 function buyNow() {
     console.log('Buy Now clicked');
     window.location.href = "{{ route('cart.index') }}";
@@ -980,6 +1000,17 @@ function buyNow() {
 
 let userId = '{{ Auth::id() ?? "guest" }}';
 let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || document.getElementById('headerCartBadge')?.innerText || 0);
+
+// --- Toast & Actions ---
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    if (toast) {
+        const msgEl = document.getElementById('toastMsg');
+        if (msgEl) msgEl.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 2000);
+    }
+}
 
 function addToCart() {
     showProductToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
