@@ -1,38 +1,68 @@
-# AI Memory - Dự án Thương Mại Điện Tử
+# AI Memory - Dự Án Thương Mại Điện Tử
 
-## Tiết độ và Ngữ cảnh hiện tại
-Dự án được khởi tạo cấu trúc cơ sở dữ liệu dựa trên file `databasev1.sql`.
-Toàn bộ 20 bảng SQL đã được chuyển đổi sang chuẩn Migration của Laravel, bao gồm các ràng buộc khóa ngoại, timestamp và soft deletes.
+## Tiến độ và Ngữ cảnh hiện tại
+Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/CMS chuyên nghiệp.
 
-## Các file đã tạo / chỉnh sửa:
-- Đã **xóa** các file migration mặc định của Laravel (users, cache, jobs, etc.) để tránh xung đột.
-- Đã **tạo mới 20 file migration** nằm trong thư mục `database/migrations/`.
-- Đã thiết lập đầy đủ 20 Eloquent Models tại thư mục `app/Models/`.
-- **Khởi tạo cấu trúc thư mục dự án:**
-    - `app/Enums/`: Tạo `OrderStatus.php`, `RoleType.php`.
-    - `app/Http/Controllers/`: Tạo các sub-folder `Admin/`, `Frontend/`, `Api/`.
-    - `app/Http/Requests/`: Thư mục chứa validate.
-    - `app/Services/`: Tạo `InventoryService.php`, `CartService.php`, `RewardPointService.php`.
-    - `app/Observers/`: Thư mục lắng nghe sự kiện Model.
-    - `resources/views/`: Chia folder `admin/`, `frontend/`, `pos/`, `components/`, `emails/`.
-    - `public/assets/`: Chia folder `admin/`, `frontend/` (css, js, img).
-    - `public/uploads/`: Chia folder `products/`, `banners/`.
-    - `routes/admin.php`: Tạo mới file route cho Admin và đăng ký trong `bootstrap/app.php` với tiền tố `/admin`.
+<<<<<<< HEAD
+## Các file đã tạo / chỉnh sửa & Công việc hoàn thành:
+- **Hạ tầng & Database:**
+    - Đã **xóa** các file migration mặc định của Laravel (users, cache, jobs, etc.) để tránh xung đột.
+    - Đã **tạo mới 20 file migration** nằm trong thư mục `database/migrations/` và 20 Eloquent Models hoàn chỉnh.
+    - Thiết lập cấu trúc thư mục chuẩn ERP/E-commerce (Enums, Services, Requests, Partials).
+    - Cấu hình Tailwind CSS xịn qua Vite/NPM.
+    - Thiết lập `RoleSeeder` và `UserSeeder` với dữ liệu mẫu (Admin: admin@techzone.vn / admin123).
+- **Xác thực (Authentication):**
+    - Chuyển logic Auth từ Blade sang `AuthController`.
+    - Fix lỗi mất Session (không lưu đăng nhập).
+    - Phân luồng: Đăng nhập xong về Trang chủ. Admin có link vào Dashboard trên Header.
+- **Frontend Trang chủ:**
+  - `resources/views/layouts/app.blade.php`: Giao diện Master (chứa style tổng thể và gọi include).
+  - `resources/views/partials/header.blade.php`: Tách module Header và Topbar.
+  - `resources/views/partials/footer.blade.php`: Tách module Footer.
+  - `resources/views/home.blade.php`: Trang chủ bao gồm Sidebar Menu, Banner Hero, Flash Sale, Sản phẩm nổi bật.
+  - `app/Http/Controllers/HomeController.php`: Xử lý logic route trang chủ.
+  - Sửa `routes/web.php` trỏ `/` về `HomeController@index`.
+- **Phân hệ Admin (Giai đoạn 1):**
+    - Hoàn thành **Layout Admin Premium** với Sidebar tách biệt (`admin.partials.sidebar`).
+    - Hoàn thành **CRUD Khách hàng** (Tài khoản) với giao diện hiện đại, Modal AJAX, tìm kiếm và phân trang.
+    - Tích hợp SweetAlert2 cho thông báo và xác nhận.
+    - Tạo `AutoLoginAdmin` middleware để thuận tiện dev (tự động đăng nhập Admin khi vào `/admin`).
 
-## Logic Database quan trọng
-- **Phân nhóm bảng (chuỗi tạo khóa ngoại an toàn):** Các file đã được sắp xếp tiền tố theo thứ tự an toàn để khi chạy `php artisan migrate`, SQL engine sẽ không báo lỗi thiếu bảng tham chiếu.
-- **Khóa chính**: Thay vì `$table->id()`, dự án dùng `$table->increments('pk_id')` cho khớp cấu trúc MySQL thuần `INT UNSIGNED AUTO_INCREMENT`.
-- **Kiểu dữ liệu tiền tệ**: Sử dụng `unsignedBigInteger`.
+## Thông tin kỹ thuật:
+- Auth: `user_id`, `password_hash`, custom primary key.
+- Phân quyền: Admin (1), Quản lý (2), Khách hàng (3), Nhân viên (4).
 
 ## TODO (Việc cần làm tiếp theo)
 - [ ] Kết nối dự án Laravel với Database thật (sửa file `.env`).
-- [ ] Chạy lệnh `php artisan migrate` để đồng bộ Database.
+- [x] Chạy lệnh `php artisan migrate` để đồng bộ Database.
 - [x] Khởi tạo các Eloquent Model tương ứng với 20 bảng cơ sở dữ liệu.
-- [x] Khởi tạo cấu trúc thư mục App (Enums, Services, Controllers, Requests).
-- [x] Khởi tạo cấu trúc thư mục Views (Admin, Frontend, POS).
-- [x] Khởi tạo cấu trúc thư mục Public (Assets, Uploads).
-- [ ] Tạo file Seeder để chèn dữ liệu mẫu.
+- [x] Khởi tạo cấu trúc thư mục App & Views.
+- [x] Tạo file Seeder để chèn dữ liệu mẫu (Roles & Users).
+- [x] **Nâng cấp Lọc Sản Phẩm Động (Dynamic Filtering):**
+    - Cấu trúc lại Javascript gọi API cấu hình bộ lọc theo từng danh mục.
+    - Cấu trúc Controller nhận các specs động.
+    - Chỉnh sửa Product Model Scope để sử dụng `whereJsonContains` kết hợp filter linh hoạt qua các cột chuẩn hóa.
+    - Cập nhật hiển thị "Điểm nhấn kỹ thuật" linh động trên thẻ sản phẩm.
+- [ ] Tích hợp lấy dữ liệu động từ Database hiển thị ra trang chủ thay cho giao diện demo hiện tại.
+- [ ] **Giai đoạn 2:** Triển khai CRUD Danh mục và CRUD Sản phẩm (kèm biến thể).
+- [ ] **Giai đoạn 2:** Hiển thị sản phẩm lên trang chủ khách hàng (Frontend).
 - [ ] Bắt đầu viết logic trong `CartService` và `InventoryService`.
+- [x] Triển khai CRUD Bài viết (Articles) tích hợp ecosystem, gamification & shoppable content.
+- [x] **Triển khai Tính Năng So Sánh Sản Phẩm (Compare Feature):**
+    - Migration: `2026_05_08_215800_add_compare_type_to_wishlists_recently_viewed.php` — thêm enum 'Compare'
+    - `app/Services/CompareService.php` — Logic cốt lõi: thu thập specs từ JSON + bảng, cắm cờ `is_different`
+    - `app/Http/Controllers/CompareController.php` — API add/remove/clear, trang so sánh, live search, migrate session→DB
+    - Routes: POST /compare/add, DELETE /compare/remove/{id}, POST /compare/clear, GET /compare, GET /compare/data, GET /api/products/search-compare
+    - `resources/views/partials/compare-bar.blade.php` — Floating bar 3 slots + modal search
+    - `resources/views/frontend/products/compare.blade.php` — Trang so sánh: sticky header, toggle khác biệt, live search slot trống
+    - `public/assets/frontend/js/compare.js` — JS quản lý floating bar, AJAX, toast
+    - Tích hợp CSS floating bar + search modal vào `layouts/app.blade.php`
+    - Thêm nút "So sánh" vào `show.blade.php` (chi tiết SP) và `product_grid.blade.php` (card SP)
+    - Migrate session compare list vào DB khi login trong `AuthController.php`
+    - Product model: thêm alias `productSpecifications()` để tránh conflict với cột JSON `specifications`
+    - Validate: chỉ cho so sánh SP cùng category_id, tối đa 3 SP
 
-## Ghi chú về Models:
-Đã thiết lập đầy đủ 20 Eloquent Models tại thư mục `app/Models/` (Role, Category, Supplier, v.v.). Các Model được gán toàn bộ relation (`hasMany`, `belongsTo`), khóa chính custom (`$primaryKey`), và trạng thái timestamp theo đúng Schema.
+## Ghi chú quan trọng:
+- Đã tách Sidebar thành `resources/views/admin/partials/sidebar.blade.php` để team dễ phối hợp.
+- Sử dụng `primaryKey = 'user_id'` và `password_hash` thay cho mặc định của Laravel để khớp với yêu cầu DB.
+- **Compare Feature**: Dữ liệu thông số lấy từ 2 nguồn: cột JSON `specifications` trên bảng `products` (ưu tiên) và bảng `product_specifications` (fallback). Dùng `getRawOriginal('specifications')` để access cột JSON vì tên relationship `specifications()` conflict.

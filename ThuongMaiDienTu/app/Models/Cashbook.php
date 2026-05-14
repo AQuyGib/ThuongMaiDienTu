@@ -6,4 +6,20 @@ class Cashbook extends Model {
     protected $primaryKey = 'cashbook_id';
     const UPDATED_AT = null;
     protected $guarded = [];
+    
+       public function scopeOfType($query, $type)
+    {
+        return $query->where('type', $type);
+    }
+
+    public function scopeSearch($query, $term)
+    {
+        if ($term) {
+            return $query->where(function($q) use ($term) {
+                $q->where('description', 'like', '%' . $term . '%')
+                  ->orWhere('reference_id', 'like', '%' . $term . '%');
+            });
+        }
+        return $query;
+    }
 }
