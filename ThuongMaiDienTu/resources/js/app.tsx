@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 
 // Lazy load all components to prevent one failure from breaking the whole app
 import AdminSidebar from './components/AdminSidebar';
+import AdminTopbar from './components/AdminTopbar';
 
 // Lazy load other components
 const UserManagement = React.lazy(() => import('./components/UserManagement'));
@@ -34,7 +35,7 @@ const renderComponent = (id: string, Component: React.ElementType) => {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+const init = () => {
     // 1. Mount Admin Sidebar (High Priority - Direct Render)
     const sidebarContainer = document.getElementById('joly-admin-sidebar');
     if (sidebarContainer) {
@@ -51,7 +52,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 2. Other components (Lazy Render)
+    // 2. Mount Admin Topbar (Direct Render)
+    const topbarContainer = document.getElementById('joly-admin-topbar');
+    if (topbarContainer) {
+        console.log('[React] Mounting AdminTopbar (Direct)...');
+        const root = createRoot(topbarContainer);
+        try {
+            const propsStr = topbarContainer.getAttribute('data-props');
+            const props = propsStr ? JSON.parse(propsStr) : {};
+            root.render(<AdminTopbar {...props} />);
+            console.log('[React] AdminTopbar Rendered.');
+        } catch (e) {
+            console.error('[React] Error mounting AdminTopbar:', e);
+            topbarContainer.innerHTML = `<div class="p-4 bg-rose-50 text-rose-500 border border-rose-200 rounded-xl text-[10px] font-bold">LỖI TOPBAR: ${e.message}</div>`;
+        }
+    }
+
+    // 3. Other components (Lazy Render)
     renderComponent('admin-user-management', UserManagement);
     renderComponent('admin-session-management', SessionManagement);
     renderComponent('admin-kpi-dashboard', KPIDashboard);
@@ -65,4 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
             root.render(<Demo />);
         });
     }
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

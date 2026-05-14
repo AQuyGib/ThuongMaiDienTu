@@ -1,6 +1,7 @@
 @extends('admin.layouts.master')
 
-@section('title', 'Quản lý Tài khoản & Phân quyền')
+@section('title', 'Quản lý Tài khoản')
+@section('page-title', 'Quản lý Tài khoản')
 
 @section('content')
 <div class="container-fluid">
