@@ -44,6 +44,17 @@
         </a>
     </div>
 
+    {{-- Radar Chart Section --}}
+    <div id="compareChartWrap" class="hidden bg-white rounded-3xl border border-gray-100 shadow-sm p-6 mb-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-blue-600"></i> Phân tích sức mạnh đa chiều
+        </h2>
+        <div class="h-[400px] w-full flex justify-center">
+            <canvas id="compareRadarChart"></canvas>
+        </div>
+        <p class="text-center text-xs text-gray-400 mt-4 italic">* Chỉ số mang tính chất tham khảo dựa trên thông số kỹ thuật</p>
+    </div>
+
     <div id="compareTableWrap" class="hidden bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="hidden md:block overflow-x-auto">
             <table class="min-w-full text-sm">
@@ -56,6 +67,7 @@
 </div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     window.__COMPARE_PAGE__ = true;
     window.__SERVER_COMPARE_IDS__ = @json($serverCompareIds ?? []);

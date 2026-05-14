@@ -16,6 +16,8 @@
     @vite(['resources/css/app.css', 'resources/js/app.tsx', 'resources/js/compare.js'])
     <!-- Swiper CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
             --primary-color: #0046ab;
@@ -613,6 +615,12 @@
             border-top: 2px solid #0046ab;
             animation: compareSlideUp .35s ease;
             transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .compare-bar-inner {
+            max-width: 1200px; margin: 0 auto; padding: 12px 20px;
+            display: flex; align-items: center; gap: 16px;
+            pointer-events: auto;
         }
         .compare-bar.collapsed {
             left: auto; right: 20px; bottom: 85px; width: auto;
@@ -625,10 +633,6 @@
         @keyframes compareSlideUp {
             from { transform: translateY(100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
-        }
-        .compare-bar-inner {
-            max-width: 1200px; margin: 0 auto; padding: 12px 20px;
-            display: flex; align-items: center; gap: 16px;
         }
         .compare-slots { display: flex; gap: 12px; flex: 1; }
         .compare-slot {
@@ -728,17 +732,6 @@
         .compare-search-result-name { font-size: 13px; font-weight: 600; color: #333; }
         .compare-search-result-price { font-size: 12px; font-weight: 700; color: #d70018; margin-top: 2px; }
 
-        /* Global toast */
-        .compare-global-toast {
-            position: fixed; top: 80px; right: 20px; z-index: 10002;
-            padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 600;
-            display: flex; align-items: center; gap: 10px;
-            box-shadow: 0 8px 24px rgba(0,0,0,.15);
-            transform: translateX(120%); transition: transform .4s cubic-bezier(.4,0,.2,1);
-        }
-        .compare-global-toast.show { transform: translateX(0); }
-        .compare-global-toast.success { background: #16a34a; color: #fff; }
-        .compare-global-toast.error { background: #d70018; color: #fff; }
     </style>
     @stack('styles')
 </head>

@@ -25,31 +25,32 @@ class ProfileController extends Controller
         $totalOrders = $orders->count();
         $totalSpent = $orders->where('status', 'Delivered')->sum('final_amount');
         
-        // Logic tính hạng thành viên thực tế dựa vào dữ liệu trong admin
-        $tierMapping = [
-            'Dong' => 'Đồng',
-            'Bac' => 'Bạc',
-            'Vang' => 'Vàng',
-        ];
-        
-        $currentTier = $tierMapping[$user->member_tier] ?? 'Đồng';
+        // Logic tính hạng thành viên thực tế
+        $currentTier = 'Đồng';
         $nextTier = 'Bạc';
         $spendNeeded = 0;
 
-        if ($currentTier == 'Đồng') {
+        if ($totalSpent < 5000000) {
+            $currentTier = 'Đồng';
             $nextTier = 'Bạc';
-            $spendNeeded = max(0, 5000000 - $totalSpent);
-        } elseif ($currentTier == 'Bạc') {
+            $spendNeeded = 5000000 - $totalSpent;
+        } elseif ($totalSpent < 20000000) {
+            $currentTier = 'Bạc';
             $nextTier = 'Vàng';
-            $spendNeeded = max(0, 20000000 - $totalSpent);
+            $spendNeeded = 20000000 - $totalSpent;
+        } elseif ($totalSpent < 50000000) {
+            $currentTier = 'Vàng';
+            $nextTier = 'Kim Cương';
+            $spendNeeded = 50000000 - $totalSpent;
         } else {
+            $currentTier = 'Kim Cương';
             $nextTier = 'Đã đạt cấp tối đa';
             $spendNeeded = 0;
         }
 
         // Tính % tiến trình cho thanh bar
         $tierProgress = 0;
-        if ($currentTier == 'Vàng') {
+        if ($currentTier == 'Kim Cương') {
             $tierProgress = 100;
         } else {
             // Mục tiêu là số tiền cần đạt để lên hạng tiếp theo
@@ -58,11 +59,14 @@ class ProfileController extends Controller
                 $tierProgress = ($totalSpent / $targetAmount) * 100;
             }
         }
-        
-        $loginHistories = $user->loginHistories()->orderBy('login_at', 'desc')->take(10)->get();
-        $wishlist = $user->wishlists()->where('type', 'wishlist')->with('product')->get();
 
-        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'loginHistories', 'wishlist'));
+        $wishlist = $user->wishlists()->where('type', 'Wishlist')->with('product')->get();
+        $loginHistories = \App\Models\LoginHistory::where('user_id', $user->user_id)
+            ->orderBy('login_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'wishlist', 'loginHistories'));
     }
 
     /**
@@ -275,6 +279,41 @@ class ProfileController extends Controller
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             \Log::error('Lỗi khi xóa toàn bộ danh sách yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function toggleWishlist(Request $request)
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $request->validate([
+                'product_id' => 'required'
+            ]);
+
+            $user = Auth::user();
+            $productId = $request->product_id;
+
+            $wishlist = $user->wishlists()
+                ->where('product_id', $productId)
+                ->where('type', 'wishlist')
+                ->first();
+
+            if ($wishlist) {
+                $wishlist->delete();
+                return response()->json(['status' => 'removed']);
+            } else {
+                $user->wishlists()->create([
+                    'product_id' => $productId,
+                    'type' => 'wishlist'
+                ]);
+                return response()->json(['status' => 'added']);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi toggle yêu thích: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
         }
     }
