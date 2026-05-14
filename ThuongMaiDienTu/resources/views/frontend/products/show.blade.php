@@ -811,6 +811,7 @@ function selectColor(el) {
     calculateVariantPrice();
 }
 
+<<<<<<< HEAD
 // Khởi tạo trạng thái ban đầu cho chức năng đánh giá sao
 // Sử dụng biến currentRating đã được khai báo hoặc khởi tạo nếu chưa có
 if (typeof currentRating === 'undefined') {
@@ -946,6 +947,31 @@ function submitReply(parentId) {
         showProductToast('Lỗi kết nối!');
     });
 }
+=======
+
+// --- Toast & Actions ---
+function showToast(title, message, type = 'success') {
+    if (typeof showToastReview === 'function') {
+        if (arguments.length === 1) {
+            showToastReview('Thông báo', title, 'success');
+        } else {
+            showToastReview(title, message, type);
+        }
+    } else {
+        // Fallback đơn giản nếu partial chưa load xong hoặc lỗi
+        const toast = document.getElementById('toast');
+        const msgEl = document.getElementById('toastMsg');
+        if (toast && msgEl) {
+            msgEl.innerText = message || title;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 2000);
+        } else {
+            alert(message || title);
+        }
+    }
+}
+
+>>>>>>> origin/Hien/danhgia
 
 function buyNow() {
     console.log('Buy Now clicked');
@@ -998,20 +1024,33 @@ function toggleWishlist() {
             icon.classList.add('fa-solid');
             icon.style.color = '#d70018';
             text.innerText = 'Đã thêm yêu thích';
+<<<<<<< HEAD
             showProductToast('Đã thêm vào danh sách yêu thích!');
+=======
+            showToast('Thành công', 'Đã thêm vào danh sách yêu thích!');
+>>>>>>> origin/Hien/danhgia
         } else if(data.status === 'removed') {
             isWishlist = false;
             btn.classList.remove('active');
             icon.classList.remove('fa-solid');
             icon.classList.add('fa-regular');
             icon.style.color = '';
+<<<<<<< HEAD
             text.innerText = 'Thêm vào yêu thích';
             showProductToast('Đã xóa khỏi danh sách yêu thích.');
+=======
+            text.innerText = 'Thêm yêu thích';
+            showToast('Thông báo', 'Đã xóa khỏi danh sách yêu thích.');
+>>>>>>> origin/Hien/danhgia
         }
     })
     .catch(error => {
         console.error('Error:', error);
+<<<<<<< HEAD
         showProductToast('Đã xảy ra lỗi!');
+=======
+        showToast('Lỗi', 'Đã xảy ra lỗi!', 'error');
+>>>>>>> origin/Hien/danhgia
     });
 }
 

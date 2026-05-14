@@ -274,7 +274,7 @@ class ProfileController extends Controller
 
             $user = Auth::user();
             // Xóa tất cả các mục thuộc loại Wishlist của user
-            $user->wishlists()->whereIn('type', ['Wishlist', 'wishlist'])->delete();
+            $user->wishlists()->whereIn('type', ['Wishlist'])->delete();
 
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
@@ -308,7 +308,7 @@ class ProfileController extends Controller
             } else {
                 $user->wishlists()->create([
                     'product_id' => $productId,
-                    'type' => 'wishlist'
+                    'type' => 'Wishlist'
                 ]);
                 return response()->json(['status' => 'added']);
             }

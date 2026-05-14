@@ -12,7 +12,7 @@ class WishlistController extends Controller
     public function toggle(Request $request)
     {
         if (!Auth::check()) {
-            return response()->json(['status' => 'unauthenticated'], 401);
+            return response()->json(['status' => 'unauthenticated', 'error' => 'Vui lòng đăng nhập'], 401);
         }
 
         $productId = $request->input('product_id');
