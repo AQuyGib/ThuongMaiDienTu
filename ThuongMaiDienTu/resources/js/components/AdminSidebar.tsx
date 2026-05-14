@@ -12,6 +12,7 @@ interface AdminSidebarProps {
     user: {
         full_name: string;
         role_name: string;
+        email?: string;
     };
     menu: MenuItem[];
     homeRoute: string;
@@ -35,9 +36,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
             className={`bg-slate-900 text-white h-full flex flex-col border-r-4 border-indigo-600 transition-all duration-300 ${collapsed ? 'w-20' : 'w-72'}`}
             style={{ minHeight: '100vh' }}
         >
-            <div className="h-28 flex items-center px-8 border-b border-slate-800/50">
+            <div className={`h-28 flex items-center border-b border-slate-800/50 transition-all ${collapsed ? 'justify-center px-0' : 'px-8'}`}>
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 rotate-3">
+                    <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 rotate-3 shrink-0">
                         <i className="fa-solid fa-bolt-lightning text-white text-lg"></i>
                     </div>
                     {!collapsed && (
@@ -51,20 +52,21 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                 </div>
             </div>
 
-            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+            <nav className={`flex-1 space-y-2 overflow-y-auto premium-scrollbar transition-all ${collapsed ? 'p-2 px-3' : 'p-4'}`}>
                 {menu.map((item, idx) => (
                     <a
                         key={idx}
                         href={item.route}
-                        className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-colors ${item.active ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                        title={collapsed ? item.label : ''}
+                        className={`flex items-center rounded-xl transition-all duration-300 ${collapsed ? 'justify-center py-4 px-0' : 'gap-4 px-4 py-3'} ${item.active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                     >
-                        <i className={`${item.icon} w-5 text-center`}></i>
+                        <i className={`${item.icon} ${collapsed ? 'text-lg' : 'w-5 text-center'}`}></i>
                         {!collapsed && <span className="font-bold text-sm truncate">{item.label}</span>}
                     </a>
                 ))}
             </nav>
 
-            <div className="p-4 bg-slate-950/50 backdrop-blur-xl border-t border-slate-800">
+            <div className={`bg-slate-950/50 backdrop-blur-xl border-t border-slate-800 transition-all ${collapsed ? 'p-2' : 'p-4'}`}>
                 {!collapsed ? (
                     <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 p-4 rounded-3xl border border-slate-700/50 mb-4 shadow-2xl">
                         <div className="flex items-center gap-3 mb-4">
@@ -76,7 +78,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs font-black truncate uppercase tracking-tight text-white">{user.full_name}</p>
-                                <p className="text-[9px] text-indigo-400 font-black uppercase tracking-widest mt-0.5">{user.role_name}</p>
+                                <div className="flex flex-col gap-0.5 mt-0.5">
+                                    <p className="text-[9px] text-indigo-400 font-black uppercase tracking-widest">{user.role_name}</p>
+                                    {user.email && <p className="text-[8px] text-slate-500 font-medium truncate">{user.email}</p>}
+                                </div>
                             </div>
                         </div>
                         
@@ -100,16 +105,16 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                     </div>
                 ) : (
                     <div className="flex flex-col items-center gap-4 py-2">
-                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-indigo-600/20">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-bold shadow-lg shadow-indigo-600/20 text-white">
                             {user.full_name?.charAt(0)}
                         </div>
-                        <div className="w-px h-8 bg-slate-800"></div>
-                        <a href="/" className="w-10 h-10 bg-slate-800 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-xl flex items-center justify-center transition-all">
+                        <div className="w-full h-px bg-slate-800/50"></div>
+                        <a href="/" title="Home" className="w-10 h-10 bg-slate-800 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-xl flex items-center justify-center transition-all shadow-lg">
                             <i className="fa-solid fa-house"></i>
                         </a>
                         <form action={logoutRoute} method="POST">
                             <input type="hidden" name="_token" value={csrfToken} />
-                            <button type="submit" className="w-10 h-10 bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-xl flex items-center justify-center transition-all">
+                            <button type="submit" title="Exit" className="w-10 h-10 bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-xl flex items-center justify-center transition-all shadow-lg">
                                 <i className="fa-solid fa-power-off"></i>
                             </button>
                         </form>
