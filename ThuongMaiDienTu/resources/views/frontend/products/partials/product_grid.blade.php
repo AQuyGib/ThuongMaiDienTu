@@ -4,6 +4,7 @@
     if (!is_array($compareIds)) {
         $compareIds = [];
     }
+    $flashSaleService = app(\App\Services\FlashSaleService::class);
 @endphp
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" data-total-products="{{ $productCount }}">
@@ -14,6 +15,9 @@
             if (!$imageUrl || !Str::startsWith($imageUrl, 'http')) {
                 $imageUrl = asset('uploads/products/' . ($product->image ?: 'default.jpg'));
             }
+            $flashSaleProduct = $flashSaleService->getFlashSaleProductFor($product);
+            $effectivePrice = $flashSaleService->getEffectivePrice($product);
+            $isFlashSale = $flashSaleProduct && $flashSaleService->canApplySale($flashSaleProduct);
         @endphp
         <div class="product-card group relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg" data-product-id="{{ $product->product_id }}">
             <!-- Image Container -->
@@ -24,6 +28,12 @@
                         <i class="fa-solid fa-check"></i>
                         <span>Đã so sánh</span>
                     </span>
+                    @if($isFlashSale)
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-md shadow-red-100">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span>Flash Sale</span>
+                        </span>
+                    @endif
                 </div>
 
                 <img src="{{ $imageUrl }}" alt="{{ $product->name }}"
@@ -117,10 +127,14 @@
 
                 <!-- Price -->
                 <div class="flex items-center gap-2 mb-3">
-                    <span class="text-lg font-bold text-red-600">
-                        {{ number_format($product->base_price, 0, ',', '.') }} ₫
+                    <span class="text-lg font-bold {{ $isFlashSale ? 'text-red-600' : 'text-red-600' }}">
+                        {{ number_format($effectivePrice, 0, ',', '.') }} ₫
                     </span>
-                    @if($product->old_price && $product->old_price > $product->base_price)
+                    @if($isFlashSale)
+                        <span class="text-sm text-gray-400 line-through">
+                            {{ number_format($product->base_price, 0, ',', '.') }} ₫
+                        </span>
+                    @elseif($product->old_price && $product->old_price > $product->base_price)
                         <span class="text-sm text-gray-400 line-through">
                             {{ number_format($product->old_price, 0, ',', '.') }} ₫
                         </span>

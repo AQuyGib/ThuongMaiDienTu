@@ -144,8 +144,13 @@
     padding: 20px;
 }
 .zoom-nav:hover { color: #fff; }
-.zoom-nav.prev { left: 20px; }
 .zoom-nav.next { right: 20px; }
+
+/* Progress Bar cho Flash Sale */
+.fs-progress-wrapper { margin-top: 15px; background: #ffcdd2; border-radius: 10px; height: 22px; position: relative; overflow: hidden; display: flex; align-items: center; }
+.fs-progress-bar { background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%); height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+.fs-progress-text { position: absolute; width: 100%; text-align: center; font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0px 0px 3px rgba(0,0,0,0.5); z-index: 2; }
+.fs-fire-icon { position: absolute; left: 8px; color: #fff; font-size: 14px; z-index: 2; }
 </style>
 @endpush
 
@@ -173,11 +178,11 @@
     if ($oldPrice > 0 && $oldPrice > $basePrice) {
         $discountPercent = round((($oldPrice - $basePrice) / $oldPrice) * 100);
     }
-
     $isWishlisted = false;
     if(auth()->check()){
         $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'Wishlist')->exists();
     }
+    $isFlashSale = isset($flashSaleProduct) && $flashSaleProduct;
 @endphp
 
 <div class="container">
@@ -233,6 +238,14 @@
 
             <h1 class="pd-name">{{ $product->name }}</h1>
 
+            @if($isFlashSale)
+                <div style="display:inline-flex; align-items:center; gap:8px; background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; padding:8px 12px; border-radius:999px; font-size:13px; font-weight:700; width:fit-content;">
+                    <i class="fa-solid fa-bolt"></i>
+                    Flash Sale đang diễn ra
+                    <span id="flashSaleCountdown" data-end-at="{{ optional($flashSaleProduct->flashSale->end_at)->toIso8601String() }}"></span>
+                </div>
+            @endif
+
             <div class="pd-rating">
                 <div class="pd-stars" id="topReviewStars">
                     @for($i=1; $i<=5; $i++)
@@ -248,11 +261,30 @@
 
             {{-- Giá --}}
             <div class="pd-price-block">
-                <div class="pd-price" id="displayPrice">{{ number_format($basePrice, 0, ',', '.') }}đ</div>
-                @if($oldPrice)
-                    <div class="pd-old-price" id="displayOldPrice">{{ number_format($oldPrice, 0, ',', '.') }}đ</div>
+                <div class="pd-price" id="displayPrice">{{ number_format($effectivePrice ?? $basePrice, 0, ',', '.') }}đ</div>
+                @if($oldPrice || $isFlashSale)
+                    <div class="pd-old-price" id="displayOldPrice">{{ number_format($oldPrice > 0 ? $oldPrice : $basePrice, 0, ',', '.') }}đ</div>
                     <div class="pd-saving" id="displaySaving">
-                        Tiết kiệm: {{ number_format($oldPrice - $basePrice, 0, ',', '.') }}đ
+                        Tiết kiệm: {{ number_format(($oldPrice > 0 ? $oldPrice : $basePrice) - ($effectivePrice ?? $basePrice), 0, ',', '.') }}đ
+                    </div>
+                @endif
+                
+                @if($isFlashSale && isset($flashSaleProduct))
+                    @php
+                        $sold = $flashSaleProduct->sold_quantity ?? 0;
+                        $limit = $flashSaleProduct->stock_limit ?? 1;
+                        $percent = min(100, round(($sold / $limit) * 100));
+                    @endphp
+                    <div class="fs-progress-wrapper">
+                        <div class="fs-progress-bar" style="width: {{ $percent }}%"></div>
+                        <i class="fa-solid fa-fire fs-fire-icon"></i>
+                        <span class="fs-progress-text">
+                            @if($percent >= 100)
+                                Đã bán hết (Sale kết thúc)
+                            @else
+                                Đã bán {{ $sold }}/{{ $limit }}
+                            @endif
+                        </span>
                     </div>
                 @endif
             </div>
@@ -634,7 +666,8 @@ function switchImg(el, src) {
 }
 
 // --- Xử lý Chọn Cấu hình & Đổi Giá ---
-const basePrice = {{ $basePrice }};
+const basePrice = {{ $effectivePrice ?? $basePrice }};
+const originalBasePrice = {{ $basePrice }};
 const oldPrice = {{ $oldPrice ?? 0 }};
 const variants = {!! $variantsJson !!}; 
 
@@ -643,6 +676,24 @@ let currentExtraPrice = 0;
 function formatCurrency(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
 }
+
+function updateFlashSaleCountdown() {
+    const el = document.getElementById('flashSaleCountdown');
+    if (!el) return;
+    const endAt = new Date(el.dataset.endAt);
+    const diff = endAt - new Date();
+    if (diff <= 0) {
+        el.innerText = 'Đã kết thúc';
+        return;
+    }
+    const totalSeconds = Math.floor(diff / 1000);
+    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    el.innerText = `${hours}:${minutes}:${seconds}`;
+}
+setInterval(updateFlashSaleCountdown, 1000);
+updateFlashSaleCountdown();
 
 function updatePriceDisplay() {
     const finalPrice = basePrice + currentExtraPrice;
