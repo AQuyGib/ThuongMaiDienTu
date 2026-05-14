@@ -24,14 +24,14 @@
 .pd-thumb img { max-width:100%; max-height:100%; object-fit:contain; }
 
 /* Modal Zoom Image */
-#imageZoomModal { display: none; position: fixed; z-index: 9999; inset: 0; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
+#imageZoomModal { display: none; position: fixed; z-index: 10005; inset: 0; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
 #imageZoomModal.active { display: flex; }
-#zoomedImg { width: 70vw; height: 70vh; object-fit: contain; }
-.close-zoom { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 30px; cursor: pointer; transition: 0.2s; }
+#zoomedImg { width: 90vw; height: 90vh; object-fit: contain; }
+.close-zoom { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; transition: 0.2s; z-index: 10010; }
 .close-zoom:hover { color: #d70018; }
 
 /* Info */
-.pd-info { display:flex; flex-direction:column; gap:14px; }
+.pd-info { display:flex; flex-direction:column; gap:14px; position: relative; z-index: 500; }
 .pd-category { font-size:12px; font-weight:600; color:#0046ab; background:#eef2ff; padding:3px 10px; border-radius:20px; display:inline-block; width:fit-content; }
 .pd-name { font-size:22px; font-weight:800; color:#1a1a2e; line-height:1.3; }
 .pd-rating { display:flex; align-items:center; gap:8px; font-size:13px; }
@@ -49,7 +49,8 @@
 .variant-btn.selected { border-color:#0046ab; background:#0046ab; color:#fff; }
 
 /* Buttons */
-.pd-actions { display:flex; flex-direction:column; gap:10px; margin-top: 5px; }
+.pd-actions { display:flex; flex-direction:column; gap:10px; margin-top: 5px; position: relative; z-index: 600; }
+.pd-actions button { pointer-events: auto !important; }
 .btn-buy { padding:14px; font-size:16px; font-weight:700; border-radius:10px; border:none; cursor:pointer; transition:.2s; text-align:center; }
 .btn-buy-now { background:linear-gradient(135deg,#d70018,#ff4444); color:#fff; }
 .btn-buy-now:hover { background:linear-gradient(135deg,#b50014,#e03333); transform:translateY(-1px); box-shadow:0 6px 16px rgba(215,0,24,.3); }
@@ -109,12 +110,13 @@
 .bottom-action-bar {
     position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; box-shadow: 0 -4px 15px rgba(0,0,0,0.08); padding: 12px 0; z-index: 9999;
     transform: translateY(100%); transition: transform 0.3s ease;
+    visibility: hidden; pointer-events: none;
 }
-.bottom-action-bar.show { transform: translateY(0); }
+.bottom-action-bar.show { transform: translateY(0); visibility: visible; pointer-events: auto; }
 
 /* Installment Modal */
-#installmentModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10002; align-items: center; justify-content: center; }
-#installmentModal.active { display: flex; }
+#installmentModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10002; align-items: center; justify-content: center; pointer-events: none; }
+#installmentModal.active { display: flex; pointer-events: auto; }
 .installment-content { background: #fff; width: 90%; max-width: 800px; max-height: 90vh; border-radius: 12px; overflow-y: auto; position: relative; }
 .installment-header { position: sticky; top: 0; background: #fff; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10; border-radius: 12px 12px 0 0; }
 .installment-body { padding: 20px; }
@@ -144,8 +146,13 @@
     padding: 20px;
 }
 .zoom-nav:hover { color: #fff; }
-.zoom-nav.prev { left: 20px; }
 .zoom-nav.next { right: 20px; }
+
+/* Progress Bar cho Flash Sale */
+.fs-progress-wrapper { margin-top: 15px; background: #ffcdd2; border-radius: 10px; height: 22px; position: relative; overflow: hidden; display: flex; align-items: center; }
+.fs-progress-bar { background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%); height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+.fs-progress-text { position: absolute; width: 100%; text-align: center; font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0px 0px 3px rgba(0,0,0,0.5); z-index: 2; }
+.fs-fire-icon { position: absolute; left: 8px; color: #fff; font-size: 14px; z-index: 2; }
 </style>
 @endpush
 
@@ -165,15 +172,19 @@
         ];
     })->toJson();
     
-    // Load reviews
-    $reviews = App\Models\Review::with('replies')->where('product_id', $product->product_id)->whereNull('parent_id')->orderBy('created_at', 'desc')->get();
-    $reviewCount = App\Models\Review::where('product_id', $product->product_id)->whereNull('parent_id')->count();
-    $avgRating = $reviewCount > 0 ? round(App\Models\Review::where('product_id', $product->product_id)->whereNull('parent_id')->avg('rating'), 1) : 0;
+    // Reviews are disabled in this branch
+    $reviewCount = 0;
+    $avgRating = 0;
 
     $discountPercent = 0;
     if ($oldPrice > 0 && $oldPrice > $basePrice) {
         $discountPercent = round((($oldPrice - $basePrice) / $oldPrice) * 100);
     }
+    $isWishlisted = false;
+    if(auth()->check()){
+        $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'Wishlist')->exists();
+    }
+    $isFlashSale = isset($flashSaleProduct) && $flashSaleProduct;
 @endphp
 
 <div class="container">
@@ -229,6 +240,14 @@
 
             <h1 class="pd-name">{{ $product->name }}</h1>
 
+            @if($isFlashSale)
+                <div style="display:inline-flex; align-items:center; gap:8px; background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; padding:8px 12px; border-radius:999px; font-size:13px; font-weight:700; width:fit-content;">
+                    <i class="fa-solid fa-bolt"></i>
+                    Flash Sale đang diễn ra
+                    <span id="flashSaleCountdown" data-end-at="{{ optional($flashSaleProduct->flashSale->end_at)->toIso8601String() }}"></span>
+                </div>
+            @endif
+
             <div class="pd-rating">
                 <div class="pd-stars" id="topReviewStars">
                     @for($i=1; $i<=5; $i++)
@@ -244,11 +263,30 @@
 
             {{-- Giá --}}
             <div class="pd-price-block">
-                <div class="pd-price" id="displayPrice">{{ number_format($basePrice, 0, ',', '.') }}đ</div>
-                @if($oldPrice)
-                    <div class="pd-old-price" id="displayOldPrice">{{ number_format($oldPrice, 0, ',', '.') }}đ</div>
+                <div class="pd-price" id="displayPrice">{{ number_format($effectivePrice ?? $basePrice, 0, ',', '.') }}đ</div>
+                @if($oldPrice || $isFlashSale)
+                    <div class="pd-old-price" id="displayOldPrice">{{ number_format($oldPrice > 0 ? $oldPrice : $basePrice, 0, ',', '.') }}đ</div>
                     <div class="pd-saving" id="displaySaving">
-                        Tiết kiệm: {{ number_format($oldPrice - $basePrice, 0, ',', '.') }}đ
+                        Tiết kiệm: {{ number_format(($oldPrice > 0 ? $oldPrice : $basePrice) - ($effectivePrice ?? $basePrice), 0, ',', '.') }}đ
+                    </div>
+                @endif
+                
+                @if($isFlashSale && isset($flashSaleProduct))
+                    @php
+                        $sold = $flashSaleProduct->sold_quantity ?? 0;
+                        $limit = $flashSaleProduct->stock_limit ?? 1;
+                        $percent = min(100, round(($sold / $limit) * 100));
+                    @endphp
+                    <div class="fs-progress-wrapper">
+                        <div class="fs-progress-bar" style="width: {{ $percent }}%"></div>
+                        <i class="fa-solid fa-fire fs-fire-icon"></i>
+                        <span class="fs-progress-text">
+                            @if($percent >= 100)
+                                Đã bán hết (Sale kết thúc)
+                            @else
+                                Đã bán {{ $sold }}/{{ $limit }}
+                            @endif
+                        </span>
                     </div>
                 @endif
             </div>
@@ -291,12 +329,12 @@
                         <i class="fa-solid fa-credit-card"></i> TRẢ GÓP 0%
                     </button>
                 </div>
-                <div style="display:flex; gap:10px; width:100%; margin-top:10px; flex-wrap:wrap;">
-                    <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700; min-width:180px;">
+                <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
+                    <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700;">
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
-                    <button type="button" class="btn-buy" id="btnCompareDetail" onclick="addToCompare('{{ $product->product_id }}')" style="flex:1; background:#eff6ff; color:#2563eb; border:2px solid #bfdbfe; min-width:180px;">
-                        <i class="fa-solid fa-scale-balanced"></i> <span id="compareDetailLabel">So sánh</span>
+                    <button class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
+                        <i class="{{ $isWishlisted ? 'fa-solid' : 'fa-regular' }} fa-heart" id="wishlistIcon" style="{{ $isWishlisted ? 'color: #d70018;' : '' }}"></i> <span id="wishlistText">{{ $isWishlisted ? 'Đã thêm yêu thích' : 'Thêm yêu thích' }}</span>
                     </button>
 
                 </div>
@@ -373,6 +411,8 @@
         @endif
     </div>
 
+
+
     @include('frontend.products.partials.reviews')
 
     {{-- Sản phẩm liên quan --}}
@@ -418,7 +458,7 @@
 </div>
 
 <!-- Modal Trả góp -->
-<div id="installmentModal">
+<div id="installmentModal" style="display: none;">
     <div class="installment-content">
         <div class="installment-header">
             <h3 style="margin:0; font-size:18px;">Thông tin các gói trả góp</h3>
@@ -530,35 +570,17 @@
 </div>
 
 <!-- Modal Zoom Ảnh -->
-<div id="imageZoomModal">
+<div id="imageZoomModal" style="display: none;">
     <i class="fa-solid fa-xmark close-zoom" onclick="closeZoom()"></i>
     <i class="fa-solid fa-chevron-left zoom-nav prev" onclick="prevZoomImage()"></i>
     <img id="zoomedImg" src="" alt="Zoom">
     <i class="fa-solid fa-chevron-right zoom-nav next" onclick="nextZoomImage()"></i>
 </div>
 
-<!-- End Product Display Sections -->
-
-
-
-<!-- Custom Confirm Modal -->
-<div id="confirmModal">
-    <div class="confirm-box">
-        <div class="confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="confirm-title" id="confirmTitle">Xác nhận xóa</div>
-        <div class="confirm-desc" id="confirmDesc">Bạn có chắc chắn muốn xóa đánh giá này không? Hành động này không thể hoàn tác.</div>
-        <div class="confirm-actions">
-            <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirmModal()">Hủy bỏ</button>
-            <button class="confirm-btn confirm-btn-danger" id="confirmOkBtn">Xóa ngay</button>
-        </div>
-    </div>
-</div>
-
-<!-- Media Lightbox -->
-<div id="mediaLightbox" onclick="closeMediaLightbox()">
-    <i class="fa-solid fa-xmark lightbox-close" onclick="closeMediaLightbox()"></i>
-    <img id="lightboxImg" src="" alt="" style="display:none;">
-    <video id="lightboxVideo" src="" controls style="display:none;"></video>
+<!-- Toast -->
+<div class="toast-notification" id="toast">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastMsg">Thêm vào giỏ hàng thành công!</span>
 </div>
 
     {{-- Đăng ký nhận khuyến mãi --}}
@@ -592,7 +614,6 @@
             <p style="font-size: 15px; color: #555; line-height: 1.5; margin-bottom: 0;">Đăng ký nhận khuyến mãi thành công. Chúng tôi sẽ gửi mã giảm giá 10% qua Email và Số điện thoại của quý khách.</p>
         </div>
     </div>
-
 @endsection
 
 @push('scripts')
@@ -647,7 +668,8 @@ function switchImg(el, src) {
 }
 
 // --- Xử lý Chọn Cấu hình & Đổi Giá ---
-const basePrice = {{ $basePrice }};
+const basePrice = {{ $effectivePrice ?? $basePrice }};
+const originalBasePrice = {{ $basePrice }};
 const oldPrice = {{ $oldPrice ?? 0 }};
 const variants = {!! $variantsJson !!}; 
 
@@ -656,6 +678,24 @@ let currentExtraPrice = 0;
 function formatCurrency(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
 }
+
+function updateFlashSaleCountdown() {
+    const el = document.getElementById('flashSaleCountdown');
+    if (!el) return;
+    const endAt = new Date(el.dataset.endAt);
+    const diff = endAt - new Date();
+    if (diff <= 0) {
+        el.innerText = 'Đã kết thúc';
+        return;
+    }
+    const totalSeconds = Math.floor(diff / 1000);
+    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    el.innerText = `${hours}:${minutes}:${seconds}`;
+}
+setInterval(updateFlashSaleCountdown, 1000);
+updateFlashSaleCountdown();
 
 function updatePriceDisplay() {
     const finalPrice = basePrice + currentExtraPrice;
@@ -688,7 +728,7 @@ function updatePriceDisplay() {
         variantStr = ' - ' + [romVal, colorVal].filter(Boolean).join(' ');
     }
     
-    const baseName = `{{ $product->name }}`;
+    const baseName = "{{ $product->name }}";
     const fullName = baseName + variantStr;
     
     const stickyProductName = document.getElementById('stickyProductName');
@@ -770,7 +810,10 @@ function selectColor(el) {
 }
 
 // Khởi tạo trạng thái ban đầu cho chức năng đánh giá sao
-let currentRating = 5;
+// Sử dụng biến currentRating đã được khai báo hoặc khởi tạo nếu chưa có
+if (typeof currentRating === 'undefined') {
+    window.currentRating = 5;
+}
 document.querySelectorAll('.star-rating').forEach(star => {
     star.addEventListener('click', function() {
         const val = this.getAttribute('data-val');
@@ -788,8 +831,10 @@ document.querySelectorAll('.star-rating').forEach(star => {
 
 
 // --- Toast & Actions ---
-function showToast(msg) {
+function showProductToast(msg) {
+    console.log('Toast:', msg);
     const toast = document.getElementById('toast');
+    if(!toast) return;
     document.getElementById('toastMsg').innerText = msg;
     toast.classList.add('show');
     setTimeout(() => { toast.classList.remove('show'); }, 2000);
@@ -797,16 +842,24 @@ function showToast(msg) {
 
 // --- Custom Confirm Modal ---
 function openConfirmModal(onConfirm) {
-    document.getElementById('confirmModal').classList.add('active');
+    const modal = document.getElementById('confirmModal');
+    if (!modal) return;
+    modal.classList.add('active');
     const okBtn = document.getElementById('confirmOkBtn');
-    okBtn.onclick = () => { closeConfirmModal(); onConfirm(); };
+    if (okBtn) {
+        okBtn.onclick = () => { closeConfirmModal(); onConfirm(); };
+    }
 }
 function closeConfirmModal() {
-    document.getElementById('confirmModal').classList.remove('active');
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.classList.remove('active');
 }
-document.getElementById('confirmModal').addEventListener('click', function(e) {
-    if (e.target === this) closeConfirmModal();
-});
+const confModal = document.getElementById('confirmModal');
+if (confModal) {
+    confModal.addEventListener('click', function(e) {
+        if (e.target === this) closeConfirmModal();
+    });
+}
 
 // --- Reply Functions ---
 function toggleReplyForm(id) {
@@ -832,7 +885,7 @@ function submitReply(parentId) {
     const textarea = document.getElementById('replyText-' + parentId);
     const content = textarea.value.trim();
     if (!content) {
-        showToast('Vui lòng nhập câu trả lời!');
+        showProductToast('Vui lòng nhập câu trả lời!');
         return;
     }
 
@@ -845,7 +898,7 @@ function submitReply(parentId) {
     let authorName = 'Bạn';
     if (authorInput) {
         if (!authorInput.value.trim()) {
-            showToast('Vui lòng nhập họ và tên!');
+            showProductToast('Vui lòng nhập họ và tên!');
             return;
         }
         formData.append('author_name', authorInput.value.trim());
@@ -887,20 +940,19 @@ function submitReply(parentId) {
             repliesList.innerHTML += newReply;
             textarea.value = '';
             toggleReplyForm(parentId);
-            showToast('Đã gửi câu trả lời!');
+            showProductToast('Đã gửi câu trả lời!');
         } else {
-            showToast('Có lỗi xảy ra!');
+            showProductToast('Có lỗi xảy ra!');
         }
     })
     .catch(() => {
         if(btn) { btn.disabled = false; btn.innerText = 'Gửi trả lời'; }
-        showToast('Lỗi kết nối!');
+        showProductToast('Lỗi kết nối!');
     });
 }
 
-
-
 function buyNow() {
+    console.log('Buy Now clicked');
     window.location.href = "{{ route('cart.index') }}";
 }
 
@@ -908,7 +960,7 @@ let userId = '{{ Auth::id() ?? "guest" }}';
 let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || document.getElementById('headerCartBadge')?.innerText || 0);
 
 function addToCart() {
-    showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
+    showProductToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
     
     // Cập nhật số lượng trên header và lưu vào localStorage theo user
     cartCount++;
@@ -932,6 +984,7 @@ function toggleWishlist() {
     const btn = document.getElementById('btnWishlist');
     const icon = document.getElementById('wishlistIcon');
     const text = document.getElementById('wishlistText');
+    
     fetch('{{ route("wishlist.toggle") }}', {
         method: 'POST',
         headers: {
@@ -940,51 +993,58 @@ function toggleWishlist() {
         },
         body: JSON.stringify({ product_id: '{{ $product->product_id }}' })
     })
-    .then(r => r.json())
+    .then(response => response.json())
     .then(data => {
-        const icon = document.getElementById('wishlistIcon');
-        const text = document.getElementById('wishlistText');
-        const btn = document.getElementById('btnWishlist');
-
-        if (data.status === 'added') {
+        if(data.status === 'added') {
             isWishlist = true;
-            icon.classList.replace('fa-regular', 'fa-solid');
+            btn.classList.add('active');
+            icon.classList.remove('fa-regular');
+            icon.classList.add('fa-solid');
             icon.style.color = '#d70018';
             text.innerText = 'Đã thêm yêu thích';
-            btn.classList.add('active');
-            showToast('Đã thêm vào yêu thích!');
-        } else {
+            showProductToast('Đã thêm vào danh sách yêu thích!');
+        } else if(data.status === 'removed') {
             isWishlist = false;
-            icon.classList.replace('fa-solid', 'fa-regular');
-            icon.style.color = '';
-            text.innerText = 'Thêm yêu thích';
             btn.classList.remove('active');
-            showToast('Đã xóa khỏi yêu thích.');
+            icon.classList.remove('fa-solid');
+            icon.classList.add('fa-regular');
+            icon.style.color = '';
+            text.innerText = 'Thêm vào yêu thích';
+            showProductToast('Đã xóa khỏi danh sách yêu thích.');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Đã xảy ra lỗi!');
+        showProductToast('Đã xảy ra lỗi!');
     });
 }
 
-// --- Trả góp logic ---
+// --- Installment Modal ---
 let instCurrentBasePrice = basePrice;
 let instSelectedCompany = 'Shinhan Finance';
 let instSelectedMonth = 6;
 
 function checkAuthAndOpenInstallment() {
-    if (!{{ auth()->check() ? 'true' : 'false' }}) {
-        window.location.href = "{{ route('login_register') }}";
-        return;
-    }
-    openInstallmentModal();
+    @auth
+        openInstallmentModal();
+    @else
+        showProductToast('Vui lòng đăng nhập để đăng ký trả góp!');
+        setTimeout(() => {
+            window.location.href = "{{ route('login_register') }}";
+        }, 1500);
+    @endauth
 }
 
 function openInstallmentModal() {
     document.getElementById('installmentModal').classList.add('active');
+    
+    // Reset lại giao diện
+    document.getElementById('instSuccessMsg').style.display = 'none';
+    switchInstTab(0);
+    
     updateInstallmentTable();
 }
+
 function closeInstallmentModal() {
     document.getElementById('installmentModal').classList.remove('active');
 }
@@ -1009,9 +1069,12 @@ function confirmInstallment() {
 }
 
 // Close when clicking outside
-document.getElementById('installmentModal').addEventListener('click', function(e) {
-    if(e.target === this) closeInstallmentModal();
-});
+const instModal = document.getElementById('installmentModal');
+if (instModal) {
+    instModal.addEventListener('click', function(e) {
+        if(e.target === this) closeInstallmentModal();
+    });
+}
 
 function selectCompany(el, company) {
     document.querySelectorAll('.inst-company').forEach(c => c.classList.remove('active'));

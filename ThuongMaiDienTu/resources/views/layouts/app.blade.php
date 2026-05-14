@@ -615,6 +615,12 @@
             border-top: 2px solid #0046ab;
             animation: compareSlideUp .35s ease;
             transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .compare-bar-inner {
+            max-width: 1200px; margin: 0 auto; padding: 12px 20px;
+            display: flex; align-items: center; gap: 16px;
+            pointer-events: auto;
         }
         .compare-bar.collapsed {
             left: auto; right: 20px; bottom: 85px; width: auto;
@@ -627,10 +633,6 @@
         @keyframes compareSlideUp {
             from { transform: translateY(100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
-        }
-        .compare-bar-inner {
-            max-width: 1200px; margin: 0 auto; padding: 12px 20px;
-            display: flex; align-items: center; gap: 16px;
         }
         .compare-slots { display: flex; gap: 12px; flex: 1; }
         .compare-slot {

@@ -7,27 +7,134 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Quản lý Khách hàng</h1>
         <div class="flex gap-2">
+            <a href="{{ route('admin.customers.trash') }}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition flex items-center gap-2 border border-gray-200">
+                <i class="fa-solid fa-trash-can"></i> Thùng rác
+            </a>
             @if(Auth::user()->role_id == 1)
                 <button onclick="toggleModal('logsModal')" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition flex items-center gap-2 border border-gray-200">
                     <i class="fa-solid fa-clock-rotate-left"></i> Nhật ký hoạt động
                 </button>
             @endif
+            <a href="{{ route('admin.customers.export', request()->query()) }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+                <i class="fa-solid fa-file-export"></i> Xuất Excel
+            </a>
             <a href="{{ route('admin.customers.create') }}" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-red-700 transition flex items-center gap-2">
                 <i class="fa-solid fa-plus"></i> Thêm khách hàng
             </a>
         </div>
     </div>
 
-    <!-- Thanh tìm kiếm -->
+    <!-- Widgets Thống kê -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                <i class="fa-solid fa-users text-xl"></i>
+            </div>
+            <div>
+                <div class="text-sm text-gray-500 font-medium">Tổng khách hàng</div>
+                <div class="text-2xl font-bold text-gray-800">{{ \App\Models\User::where('role_id', 3)->count() }}</div>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+                <i class="fa-solid fa-user-check text-xl"></i>
+            </div>
+            <div>
+                <div class="text-sm text-gray-500 font-medium">Đang hoạt động</div>
+                <div class="text-2xl font-bold text-gray-800">{{ \App\Models\User::where('role_id', 3)->where('status', 'Active')->count() }}</div>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+                <i class="fa-solid fa-bolt text-xl"></i>
+            </div>
+            <div>
+                <div class="text-sm text-gray-500 font-medium">Đang Online</div>
+                <div class="text-2xl font-bold text-gray-800">
+                    {{ \App\Models\User::where('role_id', 3)->get()->filter(fn($u) => $u->isOnline())->count() }}
+                </div>
+            </div>
+        </div>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center text-primary">
+                <i class="fa-solid fa-user-plus text-xl"></i>
+            </div>
+            <div>
+                <div class="text-sm text-gray-500 font-medium">Mới hôm nay</div>
+                <div class="text-2xl font-bold text-gray-800">{{ \App\Models\User::where('role_id', 3)->whereDate('created_at', today())->count() }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thanh tìm kiếm & Bộ lọc -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6">
-        <form action="{{ route('admin.customers.index') }}" method="GET" class="flex gap-3">
-            <div class="relative flex-1">
+        <form action="{{ route('admin.customers.index') }}" method="GET" class="flex flex-wrap gap-4">
+            <div class="relative flex-1 min-w-[300px]">
                 <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 <input type="text" name="q" value="{{ request('q') }}" placeholder="Tìm theo tên, email hoặc số điện thoại..." 
                        class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-primary">
             </div>
-            <button type="submit" class="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-black transition">Tìm kiếm</button>
+
+            <div class="w-48">
+                <select name="status" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-primary appearance-none">
+                    <option value="">-- Trạng thái --</option>
+                    <option value="Active" {{ request('status') == 'Active' ? 'selected' : '' }}>Đang hoạt động</option>
+                    <option value="Banned" {{ request('status') == 'Banned' ? 'selected' : '' }}>Bị khóa</option>
+                </select>
+            </div>
+
+            <div class="w-48">
+                <select name="tier" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-primary appearance-none">
+                    <option value="">-- Hạng thành viên --</option>
+                    <option value="Dong" {{ request('tier') == 'Dong' ? 'selected' : '' }}>Hạng Đồng</option>
+                    <option value="Bac" {{ request('tier') == 'Bac' ? 'selected' : '' }}>Hạng Bạc</option>
+                    <option value="Vang" {{ request('tier') == 'Vang' ? 'selected' : '' }}>Hạng Vàng</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input type="date" name="start_date" value="{{ request('start_date') }}" 
+                       class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary">
+                <span class="text-gray-400">đến</span>
+                <input type="date" name="end_date" value="{{ request('end_date') }}" 
+                       class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary">
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="bg-gray-800 text-white px-6 py-2 rounded-lg hover:bg-black transition">
+                    <i class="fa-solid fa-filter mr-1"></i> Lọc
+                </button>
+                @if(request()->anyFilled(['q', 'status', 'tier', 'start_date', 'end_date']))
+                    <a href="{{ route('admin.customers.index') }}" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-200 transition flex items-center">
+                        Xóa lọc
+                    </a>
+                @endif
+            </div>
         </form>
+    </div>
+
+    <!-- Bulk Actions Bar (Ẩn mặc định) -->
+    <div id="bulkActionsBar" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-6 animate-bounce-in">
+        <div class="text-sm font-medium">
+            Đã chọn <span id="selectedCount" class="font-bold text-primary">0</span> khách hàng
+        </div>
+        <div class="h-6 w-px bg-gray-700"></div>
+        <div class="flex gap-3">
+            <button onclick="handleBulkAction('Active')" class="text-sm hover:text-green-400 transition flex items-center gap-2">
+                <i class="fa-solid fa-user-check"></i> Kích hoạt
+            </button>
+            <button onclick="handleBulkAction('Banned')" class="text-sm hover:text-orange-400 transition flex items-center gap-2">
+                <i class="fa-solid fa-user-slash"></i> Khóa
+            </button>
+            @if(in_array(Auth::user()->role_id, [1, 2]))
+                <button onclick="handleBulkAction('delete')" class="text-sm hover:text-red-400 transition flex items-center gap-2">
+                    <i class="fa-solid fa-trash"></i> Xóa tạm
+                </button>
+            @endif
+        </div>
+        <button onclick="clearSelection()" class="ml-4 text-gray-400 hover:text-white">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
     </div>
 
     <!-- Bảng danh sách -->
@@ -35,6 +142,9 @@
         <table class="w-full text-left border-collapse">
             <thead class="bg-gray-50 border-b border-gray-100">
                 <tr>
+                    <th class="px-6 py-4 w-10">
+                        <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-primary focus:ring-primary">
+                    </th>
                     <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">ID</th>
                     <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Khách hàng</th>
                     <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Liên hệ</th>
@@ -46,6 +156,9 @@
             <tbody class="divide-y divide-gray-50">
                 @forelse($customers as $customer)
                     <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4">
+                            <input type="checkbox" name="customer_ids[]" value="{{ $customer->user_id }}" class="customer-checkbox rounded border-gray-300 text-primary focus:ring-primary">
+                        </td>
                         <td class="px-6 py-4 text-sm text-gray-600">#{{ $customer->user_id }}</td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
@@ -74,6 +187,10 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex justify-center gap-2">
+                                <a href="{{ route('admin.customers.show', $customer->user_id) }}" 
+                                   class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition" title="Xem chi tiết">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
                                 <a href="{{ route('admin.customers.edit', $customer->user_id) }}" 
                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Sửa">
                                     <i class="fa-solid fa-edit"></i>
@@ -145,6 +262,65 @@
     function toggleModal(id) {
         const modal = document.getElementById(id);
         modal.classList.toggle('hidden');
+    }
+
+    // Xử lý Checkbox hàng loạt
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.customer-checkbox');
+    const bulkBar = document.getElementById('bulkActionsBar');
+    const selectedCount = document.getElementById('selectedCount');
+
+    function updateBulkBar() {
+        const checked = document.querySelectorAll('.customer-checkbox:checked');
+        if (checked.length > 0) {
+            bulkBar.classList.remove('hidden');
+            selectedCount.innerText = checked.length;
+        } else {
+            bulkBar.classList.add('hidden');
+        }
+    }
+
+    selectAll.addEventListener('change', () => {
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateBulkBar();
+    });
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateBulkBar);
+    });
+
+    function clearSelection() {
+        selectAll.checked = false;
+        checkboxes.forEach(cb => cb.checked = false);
+        updateBulkBar();
+    }
+
+    function handleBulkAction(action) {
+        const ids = Array.from(document.querySelectorAll('.customer-checkbox:checked')).map(cb => cb.value);
+        if (ids.length === 0) return;
+
+        let confirmMsg = `Bạn có chắc muốn thực hiện thao tác này cho ${ids.length} khách hàng?`;
+        if (action === 'delete') confirmMsg = `Bạn có chắc muốn XÓA TẠM ${ids.length} khách hàng đã chọn?`;
+        
+        if (!confirm(confirmMsg)) return;
+
+        // Gửi request hàng loạt
+        fetch("{{ route('admin.customers.bulk-action') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ ids, action })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Có lỗi xảy ra!');
+            }
+        });
     }
 </script>
 @endsection

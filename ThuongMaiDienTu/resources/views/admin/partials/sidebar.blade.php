@@ -36,6 +36,13 @@
             'section' => 'Kinh doanh'
         ],
         [
+            'label' => 'Flash Sale',
+            'route' => route('admin.flash-sales.index'),
+            'icon' => 'fa-solid fa-bolt',
+            'active' => request()->is('admin/flash-sales*'),
+            'section' => 'Kinh doanh'
+        ],
+        [
             'label' => 'Sản phẩm',
             'route' => route('admin.products.index'),
             'icon' => 'fa-solid fa-box-open',
