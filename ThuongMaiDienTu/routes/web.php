@@ -66,6 +66,7 @@ Route::post('/cart/timeout', [CartController::class, 'timeoutOrder'])->name('car
 Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
 Route::get('/orders', [CartController::class, 'tracking'])->name('cart.tracking');
 Route::get('/print-bill', [CartController::class, 'print'])->name('cart.print');
+Route::get('/cart/count', [CartController::class, 'getCartCount'])->name('cart.count');
 
 // Articles & Lifestyle
 Route::get('/lifestyle', [\App\Http\Controllers\ArticleFrontendController::class, 'index'])->name('articles.index');
@@ -77,7 +78,6 @@ Route::middleware('auth')->group(function() {
     Route::delete('/lifestyle/{id}', [\App\Http\Controllers\ArticleFrontendController::class, 'destroy'])->name('articles.destroy');
 });
 Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController::class, 'show'])->name('articles.show');
-
 
 
 // Product Filtering
@@ -112,11 +112,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
-
-
-
 // Product Compare (So sánh sản phẩm)
-
 use App\Http\Controllers\CompareController;
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
 Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');

@@ -1065,6 +1065,7 @@
             <!-- TAB DANH SÁCH YÊU THÍCH -->
             <div id="wishlist-tab" class="profile-tab">
                 <div class="info-form-wrap">
+<<<<<<< HEAD
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                         <h3 style="margin: 0;">Danh sách yêu thích ({{ count($wishlistItems) }})</h3>
                         @if(count($wishlistItems) > 0)
@@ -1075,6 +1076,12 @@
                                     <i class="fa-solid fa-trash-can"></i> Xóa tất cả
                                 </button>
                             </form>
+=======
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+                        <h3 id="wishlist-title" style="margin: 0; border: none; padding: 0;">Sản Phẩm Yêu Thích (<span id="wishlist-count">{{ $wishlist->count() }}</span>)</h3>
+                        @if($wishlist->count() > 0)
+                            <a href="#" id="btn-clear-wishlist" onclick="event.preventDefault(); clearAllWishlist();" style="color: #0046ab; font-size: 13px; font-weight: 600;">Xóa tất cả</a>
+>>>>>>> origin/Hien/Profile+danhsachyeuthich
                         @endif
                     </div>
 
@@ -1106,7 +1113,21 @@
                                             </div>
                                         </div>
                                     </div>
+<<<<<<< HEAD
                                 @endif
+=======
+                                    <div class="wishlist-actions">
+                                        <button class="btn-wishlist-cart"
+                                            onclick="addToCartFromWishlist(this, {{ $product->product_id }})"
+                                            data-product-id="{{ $product->product_id }}">
+                                            <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
+                                        </button>
+                                        <button class="btn-wishlist-remove" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+>>>>>>> origin/Hien/Profile+danhsachyeuthich
                             @endforeach
                         </div>
                     @else
@@ -1508,6 +1529,10 @@
     function closeConfirmModal() {
         document.getElementById('confirmModal').classList.remove('active');
         confirmCallback = null;
+        // Reset lại nút xác nhận về trạng thái ban đầu
+        const btn = document.getElementById('btnDoConfirm');
+        btn.disabled = false;
+        btn.innerHTML = 'Xác nhận xóa';
     }
 
     document.getElementById('btnDoConfirm').addEventListener('click', function() {
@@ -1876,6 +1901,7 @@
         });
     }
 
+<<<<<<< HEAD
     function addToCart(productId) {
         fetch('{{ route('cart.add') }}', {
             method: 'POST',
@@ -1906,6 +1932,13 @@
             console.error(err);
             showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
         });
+=======
+    function updateWishlistCount(count) {
+        const countEl = document.getElementById('wishlist-count');
+        if (countEl) countEl.textContent = count;
+        const clearBtn = document.getElementById('btn-clear-wishlist');
+        if (clearBtn) clearBtn.style.display = count > 0 ? '' : 'none';
+>>>>>>> origin/Hien/Profile+danhsachyeuthich
     }
 
     function removeFromWishlist(id) {
@@ -1927,9 +1960,15 @@
                         item.style.transform = 'scale(0.8)';
                         setTimeout(() => {
                             item.remove();
+<<<<<<< HEAD
                             // Reload if empty
                             const grid = document.querySelector('.wishlist-grid');
                             if(grid && grid.querySelectorAll('.wishlist-item').length === 0) {
+=======
+                            const remaining = document.querySelectorAll('.wishlist-item').length;
+                            updateWishlistCount(remaining);
+                            if(remaining === 0) {
+>>>>>>> origin/Hien/Profile+danhsachyeuthich
                                 window.location.reload();
                             }
                         }, 300);
@@ -1947,9 +1986,47 @@
         });
     }
 
+<<<<<<< HEAD
     function clearWishlist() {
         showConfirm('Xóa tất cả', 'Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?', function() {
             fetch('{{ route('wishlist.clear') }}', {
+=======
+    function addToCartFromWishlist(btn, productId) {
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Đang thêm...';
+
+        fetch('{{ route("cart.add") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ product_id: productId, quantity: 1 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            if (data.success) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã thêm!';
+                showToast('Thành công', data.message, 'success');
+                setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+            } else {
+                btn.innerHTML = originalHTML;
+                showToast('Lỗi', data.message || 'Không thể thêm vào giỏ hàng.', 'error');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+        });
+    }
+
+    function clearAllWishlist() {
+        showConfirm('Xóa tất cả yêu thích', 'Bạn có chắc muốn xóa toàn bộ danh sách sản phẩm yêu thích?', function() {
+            fetch('{{ route("profile.wishlist.clear") }}', {
+>>>>>>> origin/Hien/Profile+danhsachyeuthich
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1959,6 +2036,7 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
+<<<<<<< HEAD
                     showToast('Thành công', 'Đã xóa toàn bộ danh sách yêu thích.', 'success');
                     setTimeout(() => {
                         window.location.reload();
@@ -1966,6 +2044,14 @@
                 } else {
                     closeConfirmModal();
                     showToast('Lỗi', data.error || 'Không thể xóa danh sách lúc này.', 'error');
+=======
+                    closeConfirmModal();
+                    showToast('Đã xóa tất cả', 'Danh sách yêu thích đã được làm trống.', 'success');
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    closeConfirmModal();
+                    showToast('Lỗi', 'Không thể xóa danh sách yêu thích.', 'error');
+>>>>>>> origin/Hien/Profile+danhsachyeuthich
                 }
             })
             .catch(err => {
@@ -1975,7 +2061,10 @@
         });
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/Hien/Profile+danhsachyeuthich
     function deleteAddress(id) {
         showConfirm('Xóa địa chỉ', 'Bạn có chắc chắn muốn xóa địa chỉ này? Thao tác này không thể hoàn tác.', function() {
             fetch(`/profile/address/${id}`, {

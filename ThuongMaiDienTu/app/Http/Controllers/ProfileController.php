@@ -317,4 +317,17 @@ class ProfileController extends Controller
             return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
         }
     }
+
+    public function clearAllWishlist()
+    {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+        }
+
+        \App\Models\WishlistRecentlyViewed::where('user_id', Auth::id())
+            ->where('type', 'Wishlist')
+            ->delete();
+
+        return response()->json(['success' => true, 'count' => 0]);
+    }
 }

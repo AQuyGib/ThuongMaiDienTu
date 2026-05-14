@@ -155,4 +155,13 @@ class CartController extends Controller
     {
         return view('frontend.cart.print');
     }
+
+    /**
+     * Lấy số lượng sản phẩm trong giỏ hàng (session).
+     */
+    public function getCartCount()
+    {
+        $cart = session()->get('cart', []);
+        return response()->json(['cart_count' => count($cart)]);
+    }
 }
