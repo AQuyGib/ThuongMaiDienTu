@@ -52,16 +52,6 @@ class ProductController extends Controller
             ->take(6)
             ->get();
 
-        // Kiểm tra user đăng nhập đã mua sản phẩm này chưa
-        $hasPurchased = false;
-        if (Auth::check()) {
-            $hasPurchased = Order::where('user_id', Auth::id())
-                ->whereHas('details.inventoryItem.variant', function ($q) use ($product) {
-                    $q->where('product_id', $product->product_id);
-                })
-                ->exists();
-        }
-
-        return view('frontend.products.show', compact('product', 'relatedProducts', 'hasPurchased'));
+        return view('frontend.products.show', compact('product', 'relatedProducts'));
     }
 }
