@@ -135,7 +135,7 @@
 
         {{-- Stats Row --}}
         <div class="row g-3 mb-4">
-            <div class="col-md-6 animate-in">
+            <div class="col-md-6 col-lg-3 animate-in">
                 <div class="stat-card d-flex align-items-center gap-3">
                     <div class="stat-icon" style="background:rgba(108,92,231,.15);color:var(--accent);">
                         <i class="bi bi-box-seam-fill"></i>
@@ -146,7 +146,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 animate-in">
+            <div class="col-md-3 animate-in">
                 <div class="stat-card d-flex align-items-center gap-3">
                     <div class="stat-icon" style="background:rgba(46,213,115,.12);color:var(--success);">
                         <i class="bi bi-grid-3x3-gap-fill"></i>
@@ -154,6 +154,17 @@
                     <div>
                         <div class="stat-value">{{ $totalCategories ?? 0 }}</div>
                         <div class="stat-label">Tổng Danh Mục</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 animate-in">
+                <div class="stat-card d-flex align-items-center gap-3">
+                    <div class="stat-icon" style="background:rgba(255,165,2,.12);color:var(--warning);">
+                        <i class="bi bi-palette-fill"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value">{{ $totalVariants ?? 0 }}</div>
+                        <div class="stat-label">Tổng Biến Thể</div>
                     </div>
                 </div>
             </div>
@@ -176,9 +187,9 @@
                             <th style="width:80px;">#</th>
                             <th>Tên Sản Phẩm</th>
                             <th>Danh Mục</th>
-                            <th>Thương Hiệu</th>
+                            <th>Biến Thể</th>
                             <th>Giá Bán</th>
-                            <th style="width:130px;text-align:center;">Thao Tác</th>
+                            <th style="width:160px;text-align:center;">Thao Tác</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -201,13 +212,18 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <span style="color:var(--text-secondary);">—</span>
+                                    <a href="{{ route('admin.products.show', $product->product_id) }}" style="text-decoration:none;">
+                                        <span style="background:rgba(255,165,2,.12);color:var(--warning);font-weight:600;padding:4px 10px;border-radius:8px;font-size:.8rem;">{{ $product->variants_count ?? 0 }} biến thể</span>
+                                    </a>
                                 </td>
                                 <td>
                                     <span class="price-tag">{{ number_format($product->base_price, 0, ',', '.') }}₫</span>
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex gap-2 justify-content-center">
+                                        <a href="{{ route('admin.products.show', $product->product_id) }}" class="btn-action edit" title="Chi tiết & Biến thể" style="text-decoration:none;">
+                                            <i class="bi bi-eye-fill"></i>
+                                        </a>
                                         <button class="btn-action edit" title="Sửa"
                                             onclick="openEditModal({{ $product->product_id }}, '{{ addslashes($product->name) }}', {{ $product->category_id }}, {{ $product->base_price }}, '{{ addslashes($product->seo_description ?? '') }}')">
                                             <i class="bi bi-pencil-fill"></i>
