@@ -36,6 +36,13 @@
             'section' => 'Kinh doanh'
         ],
         [
+            'label' => 'Flash Sale',
+            'route' => route('admin.flash-sales.index'),
+            'icon' => 'fa-solid fa-bolt',
+            'active' => request()->is('admin/flash-sales*'),
+            'section' => 'Kinh doanh'
+        ],
+        [
             'label' => 'Sản phẩm',
             'route' => route('admin.products.index'),
             'icon' => 'fa-solid fa-box-open',
@@ -99,7 +106,8 @@
     $props = [
         'user' => [
             'full_name' => Auth::user()->full_name ?? 'Admin',
-            'role_name' => optional(Auth::user()->role)->name ?? 'Administrator'
+            'role_name' => optional(Auth::user()->role)->name ?? 'Administrator',
+            'email' => Auth::user()->email ?? ''
         ],
         'menu' => $menu,
         'homeRoute' => route('admin.dashboard'),

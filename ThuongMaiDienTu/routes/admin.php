@@ -10,9 +10,12 @@ use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\FlashSaleController;
+use App\Http\Controllers\Admin\FlashSaleProductController;
 use App\Http\Controllers\CashbookController;
 use App\Http\Controllers\Admin\ThemeSettingController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\RoleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +55,13 @@ Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])
 Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
 Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
 
+// Quản lý Vai trò (Roles)
+Route::resource('roles', RoleController::class)->names([
+    'store' => 'roles.store',
+    'update' => 'roles.update',
+    'destroy' => 'roles.destroy',
+])->only(['store', 'update', 'destroy']);
+
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.ShippingCosts');
@@ -71,6 +81,11 @@ Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('
 // ===== Quản lý Sản Phẩm & Danh Mục =====
 Route::resource('products', ProductController::class);
 Route::resource('categories', CategoryController::class);
+
+// ===== Flash Sale =====
+Route::resource('flash-sales', FlashSaleController::class)->except(['create', 'edit', 'show']);
+Route::post('flash-sales/{flash_sale}/products', [FlashSaleProductController::class, 'store'])->name('flash-sales.products.store');
+Route::delete('flash-sales/{flash_sale}/products/{flash_sale_product}', [FlashSaleProductController::class, 'destroy'])->name('flash-sales.products.destroy');
 
 // ===== Quản lý Biến Thể Sản Phẩm =====
 Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'])->name('products.variants.store');

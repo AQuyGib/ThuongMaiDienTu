@@ -3,48 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mã xác thực đăng nhập - DienMayPro</title>
+    <title>Xác thực Bảo mật - DienMayPro</title>
     <style>
-        body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; }
-        .wrapper { max-width: 520px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        .header { background: linear-gradient(135deg, #1e3a8a, #1a2a6c); padding: 36px 40px; text-align: center; }
-        .header h1 { margin: 0; color: #fff; font-size: 22px; font-weight: 700; }
-        .header p { margin: 6px 0 0; color: rgba(255,255,255,0.7); font-size: 13px; }
-        .body { padding: 36px 40px; }
-        .greeting { font-size: 16px; color: #1e293b; margin-bottom: 16px; }
-        .desc { font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 28px; }
-        .otp-box { text-align: center; background: #f8fafc; border: 2px dashed #bfdbfe; border-radius: 16px; padding: 28px 20px; margin-bottom: 24px; }
-        .otp-code { font-size: 42px; font-weight: 900; letter-spacing: 12px; color: #1e3a8a; font-family: 'Courier New', monospace; }
-        .otp-label { font-size: 12px; color: #94a3b8; margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
-        .expiry { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 10px 16px; font-size: 13px; color: #dc2626; font-weight: 600; text-align: center; margin-bottom: 24px; }
-        .security-note { font-size: 13px; color: #94a3b8; line-height: 1.6; }
-        .footer { background: #f8fafc; padding: 20px 40px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+        body { margin: 0; padding: 0; background-color: #f6f6f6; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f6f6f6; padding-top: 40px; padding-bottom: 40px; }
+        .main { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; border: 1px solid #eaeaea; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.04); }
+        .header { padding: 48px 40px 24px; text-align: center; }
+        .logo { width: 48px; height: 48px; background: #000000; color: #ffffff; border-radius: 12px; display: inline-block; line-height: 48px; font-size: 20px; font-weight: 700; margin-bottom: 24px; letter-spacing: -1px; }
+        .title { font-size: 24px; font-weight: 600; color: #111111; margin: 0; letter-spacing: -0.5px; }
+        .content { padding: 0 40px 40px; }
+        .text { font-size: 15px; line-height: 24px; color: #444444; margin-bottom: 32px; text-align: center; }
+        .otp-box { background-color: #fafafa; border: 1px solid #eaeaea; border-radius: 8px; padding: 32px; text-align: center; margin-bottom: 32px; }
+        .otp-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #666666; margin-bottom: 12px; display: block; font-weight: 600; }
+        .otp-code { font-size: 46px; font-weight: 700; color: #000000; letter-spacing: 16px; margin-left: 16px; font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace; }
+        .divider { border-top: 1px solid #eaeaea; margin: 32px 0; }
+        .meta { font-size: 14px; line-height: 22px; color: #666666; text-align: center; }
+        .meta strong { color: #111111; font-weight: 600; }
+        .alert-box { background-color: #fffbfa; border: 1px solid #ffefe6; border-radius: 8px; padding: 16px; text-align: center; margin-top: 32px; }
+        .alert-text { font-size: 13px; line-height: 20px; color: #d946ef; margin: 0; color: #e11d48; }
+        .footer { padding: 32px 40px; background-color: #fafafa; border-top: 1px solid #eaeaea; text-align: center; }
+        .footer-text { font-size: 12px; line-height: 18px; color: #999999; margin: 0; }
+        .footer-link { color: #666666; text-decoration: none; font-weight: 500; }
     </style>
 </head>
 <body>
-<div class="wrapper">
-    <div class="header">
-        <h1>🛡️ DienMayPro - Xác thực đăng nhập</h1>
-        <p>Two-Factor Authentication (2FA)</p>
-    </div>
-    <div class="body">
-        <p class="greeting">Xin chào <strong>{{ $user->full_name }}</strong>,</p>
-        <p class="desc">Chúng tôi nhận thấy có yêu cầu đăng nhập vào tài khoản của bạn. Vui lòng sử dụng mã OTP dưới đây để hoàn tất đăng nhập:</p>
+    <div class="wrapper">
+        <div class="main">
+            <div class="header">
+                <div class="logo">DMP</div>
+                <h1 class="title">Xác thực bảo mật 2 lớp</h1>
+            </div>
+            
+            <div class="content">
+                <p class="text">
+                    Xin chào <strong>{{ $user->full_name }}</strong>,<br>
+                    Để hoàn tất yêu cầu bảo vệ tài khoản của bạn tại hệ thống DienMayPro, vui lòng sử dụng mã xác nhận bên dưới.
+                </p>
+                
+                <div class="otp-box">
+                    <span class="otp-label">Mã bảo mật của bạn</span>
+                    <div class="otp-code">{{ $otp }}</div>
+                </div>
+                
+                <p class="meta">
+                    Mã này có hiệu lực trong <strong>5 phút</strong>.<br>
+                    Tuyệt đối không chia sẻ mã này với bất kỳ ai để đảm bảo an toàn.
+                </p>
 
-        <div class="otp-box">
-            <div class="otp-code">{{ $otp }}</div>
-            <div class="otp-label">Mã xác thực một lần (OTP)</div>
+                <div class="alert-box">
+                    <p class="alert-text">
+                        Nếu bạn không thực hiện yêu cầu này, hãy truy cập <a href="{{ config('app.url') }}/security" style="color:#e11d48; text-decoration:underline;">Trung tâm Bảo mật</a> để đổi mật khẩu ngay lập tức.
+                    </p>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p class="footer-text">
+                    &copy; {{ date('Y') }} DienMayPro Enterprise.<br>
+                    Đây là email tự động từ hệ thống máy chủ, vui lòng không trả lời.<br><br>
+                    <a href="{{ config('app.url') }}" class="footer-link">Trang chủ</a> &nbsp;&bull;&nbsp; 
+                    <a href="{{ config('app.url') }}/security" class="footer-link">Bảo mật</a>
+                </p>
+            </div>
         </div>
-
-        <div class="expiry">⏱️ Mã có hiệu lực trong <strong>5 phút</strong> kể từ lúc nhận email này.</div>
-
-        <p class="security-note">
-            🔒 <strong>Bảo mật:</strong> Nếu bạn không thực hiện đăng nhập này, vui lòng bỏ qua email và đổi mật khẩu ngay lập tức để bảo vệ tài khoản.
-        </p>
     </div>
-    <div class="footer">
-        © {{ date('Y') }} DienMayPro &bull; Email tự động, vui lòng không phản hồi.
-    </div>
-</div>
 </body>
 </html>
