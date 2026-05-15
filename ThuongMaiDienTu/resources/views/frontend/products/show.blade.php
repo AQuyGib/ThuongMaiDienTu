@@ -830,23 +830,54 @@ function showProductToast(msg) {
 }
 
 function buyNow() {
-    window.location.href = "{{ route('cart.index') }}";
+    const productId = '{{ $product->product_id }}';
+    fetch('{{ route("cart.add") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ product_id: productId, quantity: 1, buy_now: true })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.status === 'success') {
+            window.location.href = "{{ route('cart.index') }}";
+        }
+    })
+    .catch(error => console.error('Error:', error));
 }
 
 function addToCart() {
-    showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
-    
-    // Update cart count logic
-    let userId = '{{ Auth::id() ?? "guest" }}';
-    let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || 0);
-    cartCount++;
-    localStorage.setItem('cartCount_' + userId, cartCount);
-    
-    const headerBadge = document.getElementById('headerCartBadge');
-    if (headerBadge) {
-        headerBadge.innerText = cartCount;
-        headerBadge.style.display = 'block';
-    }
+    const productId = '{{ $product->product_id }}';
+    fetch('{{ route("cart.add") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ product_id: productId, quantity: 1 })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.status === 'success') {
+            showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
+            const headerBadge = document.getElementById('headerCartBadge');
+            if (headerBadge) {
+                headerBadge.innerText = data.cart_count;
+                headerBadge.style.display = 'block';
+            }
+            // Đồng bộ với localStorage để Header không bị nhảy số khi load trang khác
+            let userId = '{{ Auth::id() ?? "guest" }}';
+            localStorage.setItem('cartCount_' + userId, data.cart_count);
+        } else if (data.error) {
+            showToast(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Đã xảy ra lỗi!', 'error');
+    });
 }
 
 // Wishlist Toggle

@@ -111,22 +111,18 @@
     function initializeData() {
         try {
             // Lấy dữ liệu từ Laravel gửi qua
-            const raw = '{!! isset($cartItems) ? json_encode($cartItems) : "[]" !!}';
-            window.cartData = JSON.parse(raw);
+            window.cartData = {!! json_encode($cartItems ?? []) !!};
+            console.log("Cart Data initialized:", window.cartData);
             
             // Fallback nếu empty (dành cho demo hoặc nếu controller chưa truyền data)
-            if (window.cartData.length === 0) {
-                 window.cartData = [
-                    { id: 1, name: 'Android Tivi Sony 4K 65 inch KD-65X75K', price: 16990000, quantity: 2, stock: 10, selected: true, image: 'https://dienmay247.com.vn/wp-content/uploads/2022/06/google-tivi-sony-4k-65-inch-kd-65x75k.jpg', url: '#' },
-                    { id: 2, name: 'Tủ lạnh Aqua Inverter 189 lít AQR-T219FA(PB)', price: 4990000, quantity: 1, stock: 5, selected: true, image: 'https://tse3.mm.bing.net/th/id/OIP.LNhrlkGhn21EpGRM9z8O9QHaE8?pid=Api&h=220&P=0', url: '#' }
-                ];
+            if (!window.cartData || window.cartData.length === 0) {
+                 console.log("Cart is empty, checking localStorage fallback...");
+                 // Có thể thử lấy từ sessionStorage nếu checkoutItems tồn tại (tùy logic ứng dụng)
+                 // window.cartData = JSON.parse(sessionStorage.getItem('checkoutItems') || '[]');
             }
         } catch (e) {
-            console.warn("Lỗi parse dữ liệu, sử dụng dữ liệu mặc định.");
-            window.cartData = [
-                { id: 101, name: "Tủ lạnh Samsung Inverter 300L", price: 8500000, quantity: 1, stock: 5, selected: true, image: "https://placehold.co/100x100?text=Samsung", url: "#" },
-                { id: 102, name: "Máy giặt LG cửa ngang 9kg", price: 10200000, quantity: 1, stock: 3, selected: true, image: "https://placehold.co/100x100?text=LG", url: "#" }
-            ];
+            console.error("Lỗi khởi tạo dữ liệu:", e);
+            window.cartData = [];
         }
     }
 
@@ -163,11 +159,13 @@
                             ${item.selected ? 'checked' : ''} 
                             onchange="window.toggleItem(${item.id}, this.checked)">
                     </div>
-                    <div class="w-24 h-24 flex-shrink-0 bg-gray-50 rounded p-2">
+                    <a href="${item.url}" class="w-24 h-24 flex-shrink-0 bg-gray-50 rounded p-2 hover:opacity-80 transition-opacity">
                         <img src="${item.image}" class="w-full h-full object-contain" alt="${item.name}">
-                    </div>
+                    </a>
                     <div class="flex-1">
-                        <h3 class="font-semibold text-gray-800 line-clamp-2 leading-tight pr-6">${item.name}</h3>
+                        <a href="${item.url}" class="hover:text-blue-600 transition-colors">
+                            <h3 class="font-semibold text-gray-800 line-clamp-2 leading-tight pr-6">${item.name}</h3>
+                        </a>
                         <p class="text-red-600 font-bold text-lg mt-1">${formatMoney(item.price)}</p>
                         
                         <div class="flex items-center mt-3 border w-max rounded-lg bg-gray-50">
@@ -321,8 +319,7 @@
             try {
                 sessionStorage.setItem('checkoutItems', JSON.stringify(selectedItems));
             } catch(e) {}
-            window.location.href = `{{ url('/pay') }}`;
-        }
+        window.location.href = `{{ url('/pay') }}`;
         }
     };
 
