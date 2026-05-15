@@ -9,9 +9,9 @@ import {
     KeyRound,
     Mail,
     LogOut,
-    CheckCircle2,
-    XCircle,
-    AlertTriangle,
+    CircleCheck,
+    CircleX,
+    TriangleAlert,
     ArrowLeft,
     Loader2
 } from 'lucide-react';
@@ -59,8 +59,8 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
     const [expireCountdown, setExpireCountdown] = useState(0);
 
     useEffect(() => {
-        let resendTimer: NodeJS.Timeout;
-        let expireTimer: NodeJS.Timeout;
+        let resendTimer: ReturnType<typeof setInterval>;
+        let expireTimer: ReturnType<typeof setInterval>;
 
         if (showOtpModal) {
             if (resendCooldown > 0) {
@@ -136,7 +136,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
 
     const handleLogoutSession = async (sessionId: string) => {
         if (!confirm('Bạn có chắc chắn muốn đăng xuất khỏi thiết bị này?')) return;
-        
+
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const res = await axios.post(`/security/session/${sessionId}`, {
@@ -144,7 +144,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
             }, {
                 headers: { 'X-CSRF-TOKEN': csrfToken }
             });
-            
+
             showToast('Đã đăng xuất thiết bị thành công.', 'success');
             setTimeout(() => window.location.reload(), 1000);
         } catch (error) {
@@ -169,7 +169,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
             {/* Toast Notification */}
             {toastMsg && (
                 <div className={`fixed top-6 right-6 z-[200] flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border bg-white dark:bg-slate-900 animate-in slide-in-from-right duration-300 ${toastMsg.type === 'success' ? 'border-green-100 dark:border-green-900/30' : 'border-rose-100 dark:border-rose-900/30'}`}>
-                    {toastMsg.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <XCircle className="w-5 h-5 text-rose-500" />}
+                    {toastMsg.type === 'success' ? <CircleCheck className="w-5 h-5 text-green-500" /> : <CircleX className="w-5 h-5 text-rose-500" />}
                     <span className="font-bold text-sm text-slate-800 dark:text-white">{toastMsg.message}</span>
                 </div>
             )}
@@ -185,7 +185,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                         <p className="text-sm text-center text-slate-500 dark:text-slate-400 mb-8 px-4">
                             Vui lòng nhập mã OTP gồm 6 chữ số vừa được gửi đến email <strong>{user.email}</strong> để {is2faEnabled ? 'tắt' : 'bật'} 2FA.
                         </p>
-                        
+
                         <div className="mb-6">
                             <input
                                 type="text"
@@ -206,7 +206,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                             ) : (
                                 <p className="text-xs font-bold text-rose-500">Mã OTP đã hết hạn</p>
                             )}
-                            
+
                             <button
                                 onClick={() => handleToggleRequest(true)}
                                 disabled={resendCooldown > 0}
@@ -217,15 +217,15 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                         </div>
 
                         <div className="flex gap-3">
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 className="flex-1 h-12 rounded-xl font-bold border-slate-200"
                                 onClick={() => setShowOtpModal(false)}
                                 disabled={isConfirming}
                             >
                                 Hủy
                             </Button>
-                            <Button 
+                            <Button
                                 className="flex-1 h-12 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
                                 onClick={handleToggleConfirm}
                                 disabled={isConfirming || otp.length !== 6}
@@ -255,7 +255,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                         {/* Security Score Card */}
                         <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full blur-[40px] -mr-10 -mt-10" />
-                            
+
                             <div className="flex items-center justify-between mb-8 relative z-10">
                                 <h3 className="text-base font-black text-slate-800 dark:text-white uppercase tracking-wider">Điểm bảo mật</h3>
                                 {score >= 90 ? <ShieldCheck className="w-8 h-8 text-green-500" /> : <ShieldAlert className="w-8 h-8 text-amber-500" />}
@@ -269,11 +269,11 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
 
                             <div className="space-y-4 relative z-10 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-3xl border border-slate-100 dark:border-slate-700">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Danh mục kiểm tra:</p>
-                                {Object.entries(details).map(([key, detail]) => (
+                                {(Object.entries(details) as [string, Detail][]).map(([key, detail]) => (
                                     <div key={key} className="flex items-start gap-3">
-                                        {detail.status === 'pass' && <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />}
-                                        {detail.status === 'fail' && <XCircle className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />}
-                                        {detail.status === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />}
+                                        {detail.status === 'pass' && <CircleCheck className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />}
+                                        {detail.status === 'fail' && <CircleX className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />}
+                                        {detail.status === 'warning' && <TriangleAlert className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />}
                                         <span className={`text-xs font-bold leading-tight ${detail.status === 'pass' ? 'text-slate-600 dark:text-slate-300' : 'text-slate-800 dark:text-white'}`}>
                                             {detail.label}
                                         </span>
@@ -285,7 +285,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                         {/* Quick Info Card */}
                         <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-indigo-500/30">
                             <h3 className="text-xs font-black uppercase tracking-widest opacity-80 mb-6">Thông tin liên kết</h3>
-                            
+
                             <div className="space-y-6">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
@@ -327,7 +327,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                                 </div>
 
                                 <div className="shrink-0 flex flex-col items-center gap-2">
-                                    <button 
+                                    <button
                                         onClick={() => handleToggleRequest(false)}
                                         disabled={isLoading2fa}
                                         className={`relative inline-flex h-10 w-20 items-center rounded-full transition-colors duration-300 focus:outline-none ${is2faEnabled ? 'bg-green-500 shadow-lg shadow-green-500/30' : 'bg-slate-300 dark:bg-slate-700'}`}
@@ -370,9 +370,9 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                                                 <p className="text-[11px] font-bold text-slate-400">IP: {session.ip_address} • {session.last_active}</p>
                                             </div>
                                         </div>
-                                        
+
                                         {!session.is_current_device && (
-                                            <Button 
+                                            <Button
                                                 variant="outline"
                                                 onClick={() => handleLogoutSession(session.id)}
                                                 className="rounded-xl h-10 px-4 text-rose-500 border-rose-100 hover:bg-rose-50 hover:border-rose-200 dark:border-rose-900/30 dark:hover:bg-rose-900/20 font-bold text-xs"
