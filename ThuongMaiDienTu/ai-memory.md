@@ -38,11 +38,31 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - [x] Khởi tạo các Eloquent Model tương ứng với 20 bảng cơ sở dữ liệu.
 - [x] Khởi tạo cấu trúc thư mục App & Views.
 - [x] Tạo file Seeder để chèn dữ liệu mẫu (Roles & Users).
+- [x] **Nâng cấp Lọc Sản Phẩm Động (Dynamic Filtering):**
+    - Cấu trúc lại Javascript gọi API cấu hình bộ lọc theo từng danh mục.
+    - Cấu trúc Controller nhận các specs động.
+    - Chỉnh sửa Product Model Scope để sử dụng `whereJsonContains` kết hợp filter linh hoạt qua các cột chuẩn hóa.
+    - Cập nhật hiển thị "Điểm nhấn kỹ thuật" linh động trên thẻ sản phẩm.
 - [ ] Tích hợp lấy dữ liệu động từ Database hiển thị ra trang chủ thay cho giao diện demo hiện tại.
 - [ ] **Giai đoạn 2:** Triển khai CRUD Danh mục và CRUD Sản phẩm (kèm biến thể).
 - [ ] **Giai đoạn 2:** Hiển thị sản phẩm lên trang chủ khách hàng (Frontend).
 - [ ] Bắt đầu viết logic trong `CartService` và `InventoryService`.
+- [x] Triển khai CRUD Bài viết (Articles) tích hợp ecosystem, gamification & shoppable content.
+- [x] **Triển khai Tính Năng So Sánh Sản Phẩm (Compare Feature):**
+    - Migration: `2026_05_08_215800_add_compare_type_to_wishlists_recently_viewed.php` — thêm enum 'Compare'
+    - `app/Services/CompareService.php` — Logic cốt lõi: thu thập specs từ JSON + bảng, cắm cờ `is_different`
+    - `app/Http/Controllers/CompareController.php` — API add/remove/clear, trang so sánh, live search, migrate session→DB
+    - Routes: POST /compare/add, DELETE /compare/remove/{id}, POST /compare/clear, GET /compare, GET /compare/data, GET /api/products/search-compare
+    - `resources/views/partials/compare-bar.blade.php` — Floating bar 3 slots + modal search
+    - `resources/views/frontend/products/compare.blade.php` — Trang so sánh: sticky header, toggle khác biệt, live search slot trống
+    - `public/assets/frontend/js/compare.js` — JS quản lý floating bar, AJAX, toast
+    - Tích hợp CSS floating bar + search modal vào `layouts/app.blade.php`
+    - Thêm nút "So sánh" vào `show.blade.php` (chi tiết SP) và `product_grid.blade.php` (card SP)
+    - Migrate session compare list vào DB khi login trong `AuthController.php`
+    - Product model: thêm alias `productSpecifications()` để tránh conflict với cột JSON `specifications`
+    - Validate: chỉ cho so sánh SP cùng category_id, tối đa 3 SP
 
 ## Ghi chú quan trọng:
 - Đã tách Sidebar thành `resources/views/admin/partials/sidebar.blade.php` để team dễ phối hợp.
 - Sử dụng `primaryKey = 'user_id'` và `password_hash` thay cho mặc định của Laravel để khớp với yêu cầu DB.
+- **Compare Feature**: Dữ liệu thông số lấy từ 2 nguồn: cột JSON `specifications` trên bảng `products` (ưu tiên) và bảng `product_specifications` (fallback). Dùng `getRawOriginal('specifications')` để access cột JSON vì tên relationship `specifications()` conflict.

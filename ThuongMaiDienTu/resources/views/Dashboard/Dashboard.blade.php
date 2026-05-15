@@ -38,7 +38,7 @@
                 </div>
             </div>
             <div class="flex items-center space-x-3">
-                <a href="{{ route('cashbooks.index') }}"
+                <a href="{{ route('admin.cashbooks.index') }}"
                    class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-xl font-semibold transition shadow">
                     <i class="fa-solid fa-wallet text-sm"></i>
                     <span class="hidden sm:inline">Sổ Quỹ</span>
@@ -79,7 +79,7 @@
                         </div>
                         
                         <div class="border-t border-slate-100 bg-slate-50">
-                            <a href="{{ route('cashbooks.index') }}" class="block w-full px-4 py-2.5 text-center text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
+                            <a href="{{ route('admin.cashbooks.index') }}" class="block w-full px-4 py-2.5 text-center text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">
                                 Đi tới Sổ Quỹ <i class="fa-solid fa-arrow-right ml-1"></i>
                             </a>
                         </div>
