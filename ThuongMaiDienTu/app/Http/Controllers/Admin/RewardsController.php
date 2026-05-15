@@ -39,6 +39,9 @@ class RewardsController extends Controller
             'discount_amount' => $data['discount_amount'] ?? 0,
             'shipping_discount_amount' => $data['shipping_discount_amount'] ?? 0,
             'stock' => $data['stock'] ?? null,
+            'max_per_user' => $data['max_per_user'] ?? 1,
+            'min_rank_points' => $data['min_rank_points'] ?? 0,
+            'requires_rank_check' => $request->boolean('requires_rank_check'),
             'is_active' => $request->boolean('is_active'),
             'metadata' => [
                 'created_by' => auth()->id(),
@@ -61,6 +64,9 @@ class RewardsController extends Controller
             'discount_amount' => $data['discount_amount'] ?? 0,
             'shipping_discount_amount' => $data['shipping_discount_amount'] ?? 0,
             'stock' => $data['stock'] ?? null,
+            'max_per_user' => $data['max_per_user'] ?? $reward->max_per_user ?? 1,
+            'min_rank_points' => $data['min_rank_points'] ?? $reward->min_rank_points ?? 0,
+            'requires_rank_check' => $request->boolean('requires_rank_check'),
             'is_active' => $request->boolean('is_active'),
             'metadata' => array_merge($reward->metadata ?? [], [
                 'updated_by' => auth()->id(),
@@ -88,20 +94,27 @@ class RewardsController extends Controller
 
     protected function validateReward(Request $request, ?int $ignoreId = null): array
     {
+        $codeUnique = 'unique:reward_catalog,code';
+        if ($ignoreId) {
+            $codeUnique .= ',' . $ignoreId . ',reward_id';
+        }
+
         return $request->validate([
-            'code' => ['required', 'string', 'max:50', 'unique:reward_catalog,code' . ($ignoreId ? ',' . $ignoreId . ',reward_id' : '')],
-            'name' => ['required', 'string', 'max:150'],
+            'code' => ['required', 'string', 'max:50', 'regex:/^[A-Z0-9_\-]+$/', $codeUnique],
+            'name' => ['required', 'string', 'min:3', 'max:150'],
             'reward_type' => ['required', 'in:voucher,shipping,product,wheel_prize'],
             'reward_category' => ['required', 'in:free_ship,discount,gift,wheel'],
-            'points_cost' => ['required', 'integer', 'min:0'],
-            'discount_amount' => ['nullable', 'integer', 'min:0'],
-            'shipping_discount_amount' => ['nullable', 'integer', 'min:0'],
-            'stock' => ['nullable', 'integer', 'min:0'],
+            'points_cost' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'discount_amount' => ['nullable', 'integer', 'min:0', 'max:50000000'],
+            'shipping_discount_amount' => ['nullable', 'integer', 'min:0', 'max:5000000'],
+            'stock' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'max_per_user' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'min_rank_points' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            'requires_rank_check' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
-            'description' => ['nullable', 'string'],
-            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
+            'description' => ['nullable', 'string', 'max:2000'],
         ]);
     }
 

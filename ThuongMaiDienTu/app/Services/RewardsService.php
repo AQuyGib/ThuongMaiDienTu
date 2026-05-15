@@ -27,6 +27,11 @@ class RewardsService
             ->get();
     }
 
+    public function getRankPoints(User $user): int
+    {
+        return (int) (DB::table('user_points')->where('user_id', $user->user_id)->value('rank_points') ?? 0);
+    }
+
     public function redeemVoucher(User $user, int $rewardId): array
     {
         return DB::transaction(function () use ($user, $rewardId) {
@@ -36,6 +41,7 @@ class RewardsService
             }
 
             $this->assertRewardAvailable($reward);
+            $this->assertRewardRankRule($reward, $user);
             $this->assertUserBalance($user, (int) $reward->points_cost);
 
             $wallet = DB::table('user_points')->where('user_id', $user->user_id)->lockForUpdate()->first();
@@ -192,6 +198,20 @@ class RewardsService
         $balance = $this->getWalletBalance($user);
         if ($balance < $pointsCost) {
             throw new RuntimeException('Không đủ điểm tiêu dùng.');
+        }
+    }
+
+    protected function assertRewardRankRule(object $reward, User $user): void
+    {
+        if (! (bool) ($reward->requires_rank_check ?? false)) {
+            return;
+        }
+
+        $rankPoints = (int) (DB::table('user_points')->where('user_id', $user->user_id)->value('rank_points') ?? 0);
+        $minRankPoints = (int) ($reward->min_rank_points ?? 0);
+
+        if ($rankPoints < $minRankPoints) {
+            throw new RuntimeException('Phần thưởng này yêu cầu điểm rank tối thiểu ' . number_format($minRankPoints) . '.');
         }
     }
 }

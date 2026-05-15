@@ -51,9 +51,14 @@
                             <td class="py-4 font-semibold">{{ number_format($item->points_cost) }}</td>
                             <td class="py-4">{{ is_null($item->stock) ? 'Không giới hạn' : $item->stock }}</td>
                             <td class="py-4">
-                                <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $item->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
-                                    {{ $item->is_active ? 'Đang bật' : 'Tắt' }}
-                                </span>
+                                <div class="flex flex-col gap-2">
+                                    <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $item->is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
+                                        {{ $item->status_label }}
+                                    </span>
+                                    <div class="w-28 h-2 rounded-full bg-slate-100 overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-indigo-500 to-violet-500" style="width: {{ $item->progress_percent }}%"></div>
+                                    </div>
+                                </div>
                             </td>
                             <td class="py-4 space-x-2">
                                 <button class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold" onclick='openEditModal(@json($item))'>Sửa</button>
@@ -95,8 +100,8 @@
             @csrf
             <div id="method-field"></div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input name="code" placeholder="Mã" class="border rounded-xl p-3">
-                <input name="name" placeholder="Tên reward" class="border rounded-xl p-3">
+                <input name="code" placeholder="Mã" class="border rounded-xl p-3 uppercase" pattern="[A-Z0-9_\-]+" title="Chỉ dùng A-Z, 0-9, _ hoặc -">
+                <input name="name" placeholder="Tên reward" class="border rounded-xl p-3" minlength="3" maxlength="150">
                 <select name="reward_type" class="border rounded-xl p-3">
                     <option value="voucher">voucher</option>
                     <option value="shipping">shipping</option>
@@ -109,15 +114,35 @@
                     <option value="gift">gift</option>
                     <option value="wheel">wheel</option>
                 </select>
-                <input name="points_cost" type="number" min="0" placeholder="Điểm" class="border rounded-xl p-3">
-                <input name="discount_amount" type="number" min="0" placeholder="Giảm tiền" class="border rounded-xl p-3">
-                <input name="shipping_discount_amount" type="number" min="0" placeholder="Giảm ship" class="border rounded-xl p-3">
-                <input name="stock" type="number" min="0" placeholder="Tồn kho" class="border rounded-xl p-3">
+                <input name="points_cost" type="number" min="0" max="1000000" placeholder="Điểm" class="border rounded-xl p-3">
+                <input name="discount_amount" type="number" min="0" max="50000000" placeholder="Giảm tiền" class="border rounded-xl p-3">
+                <input name="shipping_discount_amount" type="number" min="0" max="5000000" placeholder="Giảm ship" class="border rounded-xl p-3">
+                <input name="stock" type="number" min="0" max="100000" placeholder="Tồn kho" class="border rounded-xl p-3">
+                <input name="max_per_user" type="number" min="1" max="100" placeholder="Giới hạn/user" class="border rounded-xl p-3">
+                <div class="space-y-1">
+                    <input name="min_rank_points" type="number" min="0" max="1000000" placeholder="Min rank points" class="border rounded-xl p-3 w-full">
+                    <p class="text-xs text-slate-500 leading-relaxed">Điểm rank tối thiểu để được đổi. Ví dụ 5000 nghĩa là user phải đạt tối thiểu 5.000 rank points.</p>
+                </div>
+                <div class="space-y-1">
+                    <select name="requires_rank_check" class="border rounded-xl p-3 w-full">
+                        <option value="0">Không bắt buộc rank</option>
+                        <option value="1">Bắt buộc rank</option>
+                    </select>
+                    <p class="text-xs text-slate-500 leading-relaxed">Bật khi reward chỉ dành cho nhóm user đã đạt hạng nhất định.</p>
+                </div>
                 <input name="starts_at" type="datetime-local" class="border rounded-xl p-3">
                 <input name="ends_at" type="datetime-local" class="border rounded-xl p-3">
-                <input name="image" type="file" accept="image/*" class="border rounded-xl p-3 md:col-span-2">
+                <input name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="border rounded-xl p-3 md:col-span-2">
             </div>
-            <textarea name="description" rows="3" placeholder="Mô tả" class="border rounded-xl p-3 w-full mt-4"></textarea>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label class="text-sm font-semibold text-slate-600 block mb-2">Ảnh hiện tại</label>
+                    <div id="image-preview" class="w-full h-40 rounded-2xl bg-slate-100 overflow-hidden flex items-center justify-center text-slate-400 text-sm">Chưa có ảnh</div>
+                </div>
+                <div>
+                    <textarea name="description" rows="7" placeholder="Mô tả" class="border rounded-xl p-3 w-full h-full"></textarea>
+                </div>
+            </div>
             <label class="inline-flex items-center gap-2 mt-3"><input type="checkbox" name="is_active" checked> Kích hoạt</label>
             <div class="flex justify-end gap-2 mt-4">
                 <button type="button" onclick="closeRewardModal()" class="px-4 py-2 rounded-xl bg-slate-100">Đóng</button>
@@ -135,6 +160,7 @@ function openCreateModal(){
   form.action = '{{ route('admin.rewards.store') }}';
   document.getElementById('method-field').innerHTML = '';
   form.reset();
+  document.getElementById('image-preview').textContent = 'Chưa có ảnh';
   modal.classList.remove('hidden'); modal.classList.add('flex');
 }
 function openEditModal(item){
@@ -144,6 +170,12 @@ function openEditModal(item){
   for (const [k,v] of Object.entries(item)) {
     const el = form.querySelector(`[name="${k}"]`);
     if (el) el.value = v ?? '';
+  }
+  const preview = document.getElementById('image-preview');
+  if (item.display_image) {
+    preview.innerHTML = `<img src="/storage/${item.display_image}" class="w-full h-full object-cover" alt="preview">`;
+  } else {
+    preview.textContent = 'Chưa có ảnh';
   }
   modal.classList.remove('hidden'); modal.classList.add('flex');
 }

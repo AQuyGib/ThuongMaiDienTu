@@ -14,6 +14,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RewardsController;
 use App\Http\Controllers\RewardsHistoryController;
 use App\Http\Controllers\Admin\RewardsController as AdminRewardsController;
+use App\Http\Controllers\Admin\RewardImageController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\CompareController;
 
@@ -103,6 +104,7 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::get('rewards', [AdminRewardsController::class, 'index'])->name('admin.rewards.index');
     Route::post('rewards', [AdminRewardsController::class, 'store'])->name('admin.rewards.store');
     Route::put('rewards/{reward}', [AdminRewardsController::class, 'update'])->name('admin.rewards.update');
+    Route::put('rewards/{reward}/image', [RewardImageController::class, 'update'])->name('admin.rewards.image.update');
     Route::delete('rewards/{reward}', [AdminRewardsController::class, 'destroy'])->name('admin.rewards.destroy');
 });
 

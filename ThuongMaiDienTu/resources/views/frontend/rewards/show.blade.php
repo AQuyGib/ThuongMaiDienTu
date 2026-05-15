@@ -11,9 +11,14 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
       <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
         @if($reward->display_image)
-          <img src="{{ asset('storage/'.$reward->display_image) }}" class="w-full h-80 object-cover" alt="{{ $reward->name }}">
+          <div class="relative">
+            <img src="{{ asset('storage/'.$reward->display_image) }}" class="w-full h-[420px] object-cover" alt="{{ $reward->name }}">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent"></div>
+          </div>
         @else
-          <div class="h-80 bg-gradient-to-br from-indigo-500 to-violet-600"></div>
+          <div class="relative h-[420px] bg-gradient-to-br from-indigo-500 via-violet-600 to-fuchsia-600">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,.25),transparent_35%)]"></div>
+          </div>
         @endif
       </div>
       <div class="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">

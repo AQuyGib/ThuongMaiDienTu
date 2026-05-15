@@ -39,11 +39,20 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="reward-grid">
       @forelse ($catalog as $reward)
-        <div class="reward-card bg-white rounded-2xl border border-slate-200 shadow-sm p-5" data-type="{{ $reward->reward_type }}" data-category="{{ $reward->reward_category }}">
+        <div class="reward-card bg-white rounded-2xl border border-slate-200 shadow-sm p-5" data-id="{{ $reward->reward_id }}" data-type="{{ $reward->reward_type }}" data-category="{{ $reward->reward_category }}">
           <div class="flex items-start justify-between gap-4 mb-4">
-            <div>
-              <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">{{ $reward->reward_category }}</span>
-              <h3 class="text-xl font-bold text-slate-900 mt-3">{{ $reward->name }}</h3>
+            <div class="flex items-start gap-3 min-w-0">
+              <div class="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
+                @if($reward->display_image)
+                  <img src="{{ asset('storage/'.$reward->display_image) }}" class="w-full h-full object-cover" alt="{{ $reward->name }}">
+                @else
+                  <div class="w-full h-full bg-gradient-to-br from-indigo-500 to-violet-500"></div>
+                @endif
+              </div>
+              <div class="min-w-0">
+                <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">{{ $reward->reward_category }}</span>
+                <h3 class="text-xl font-bold text-slate-900 mt-3 truncate">{{ $reward->name }}</h3>
+              </div>
             </div>
             <div class="text-right shrink-0">
               <div class="text-2xl font-black text-violet-600">{{ number_format($reward->points_cost) }}</div>
