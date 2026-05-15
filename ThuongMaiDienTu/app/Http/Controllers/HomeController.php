@@ -51,16 +51,18 @@ class HomeController extends Controller
 
         // 3. Lấy linh động các danh mục muốn hiển thị ra trang chủ (Sử dụng slug để tránh hardcode name)
         
-        // Lấy Điện thoại
-        $catDienThoai = Category::where('slug', 'dien-thoai')->first();
+        // Lấy Điện thoại (Bao gồm cả danh mục con)
+        $catDienThoai = Category::where('slug', 'dien-thoai')->with('children')->first();
+        $phoneCatIds = $catDienThoai ? $catDienThoai->children->pluck('category_id')->push($catDienThoai->category_id) : [];
         $phoneProducts = $catDienThoai 
-            ? Product::with('category')->where('category_id', $catDienThoai->category_id)->orderBy('product_id', 'desc')->take(10)->get() 
+            ? Product::with('category')->whereIn('category_id', $phoneCatIds)->orderBy('product_id', 'desc')->take(10)->get() 
             : collect();
-
-        // Lấy Laptop
-        $catLaptop = Category::where('slug', 'laptop')->first();
+    
+        // Lấy Laptop (Bao gồm cả danh mục con)
+        $catLaptop = Category::where('slug', 'laptop')->with('children')->first();
+        $laptopCatIds = $catLaptop ? $catLaptop->children->pluck('category_id')->push($catLaptop->category_id) : [];
         $laptopProducts = $catLaptop 
-            ? Product::with('category')->where('category_id', $catLaptop->category_id)->orderBy('product_id', 'desc')->take(5)->get() 
+            ? Product::with('category')->whereIn('category_id', $laptopCatIds)->orderBy('product_id', 'desc')->take(10)->get() 
             : collect();
 
         // Góc Tin tức & Lifestyle: 5 bài viết mới nhất đã duyệt
@@ -75,7 +77,9 @@ class HomeController extends Controller
             'flashSaleProducts',
             'phoneProducts',
             'laptopProducts',
-            'latestArticles'
+            'latestArticles',
+            'catDienThoai',
+            'catLaptop'
         ));
     }
 }
