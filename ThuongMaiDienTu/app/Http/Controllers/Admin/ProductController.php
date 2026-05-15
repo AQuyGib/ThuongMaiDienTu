@@ -13,18 +13,27 @@ class ProductController extends Controller
     /**
      * Hiển thị danh sách sản phẩm (Trang Quản lý Sản phẩm)
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Lấy danh sách sản phẩm có phân trang, kèm relation category + đếm variants
+        $search = trim((string) $request->get('search', ''));
+
         $products = Product::with('category')
             ->withCount('variants')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('seo_description', 'like', '%' . $search . '%')
+                        ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                            $categoryQuery->where('name', 'like', '%' . $search . '%');
+                        });
+                });
+            })
             ->orderBy('product_id', 'desc')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
-        // Lấy tất cả danh mục (dùng cho dropdown chọn danh mục)
         $allCategories = Category::orderBy('name')->get();
 
-        // Thống kê
         $totalProducts = Product::count();
         $totalCategories = Category::count();
         $totalVariants = ProductVariant::count();
@@ -34,7 +43,8 @@ class ProductController extends Controller
             'allCategories',
             'totalProducts',
             'totalCategories',
-            'totalVariants'
+            'totalVariants',
+            'search'
         ));
     }
 

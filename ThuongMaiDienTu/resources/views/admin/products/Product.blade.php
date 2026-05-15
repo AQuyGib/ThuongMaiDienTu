@@ -114,7 +114,7 @@
             <div>
                 <div class="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700">
                     <i class="fa-solid fa-box-open"></i>
-                    Danh mục sản phẩm
+                    Sản phẩm
                 </div>
                 <h1 class="mt-4 text-2xl font-bold text-slate-900 sm:text-3xl">Quản lý sản phẩm</h1>
                 <p class="mt-2 max-w-2xl text-sm text-slate-500">
@@ -192,10 +192,14 @@
                 <h2 class="text-lg font-semibold text-slate-900">Danh sách sản phẩm</h2>
                 <p class="text-sm text-slate-500">Tìm kiếm nhanh, xem chi tiết và thao tác ngay trên một màn hình.</p>
             </div>
-            <div class="relative w-full lg:max-w-md">
+            <form method="GET" action="{{ route('admin.products.index') }}" class="relative w-full lg:max-w-md">
                 <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Tìm kiếm sản phẩm..." class="soft-input w-full rounded-2xl py-3 pl-11 pr-4 text-sm outline-none">
-            </div>
+                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Tìm kiếm sản phẩm..." class="soft-input w-full rounded-2xl py-3 pl-11 pr-24 text-sm outline-none">
+                @if(!empty($search))
+                    <a href="{{ route('admin.products.index') }}" class="absolute right-16 top-1/2 -translate-y-1/2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">Xóa</a>
+                @endif
+                <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700">Tìm</button>
+            </form>
         </div>
 
         <div class="overflow-x-auto">
@@ -466,12 +470,31 @@
         });
     }
 
-    function filterTable() {
-        const input = document.getElementById('searchInput').value.toLowerCase();
-        document.querySelectorAll('#productTable tbody tr').forEach(row => {
-            row.style.display = row.textContent.toLowerCase().includes(input) ? '' : 'none';
-        });
-    }
+    document.addEventListener('click', function (event) {
+        const editBtn = event.target.closest('[data-product-edit]');
+        if (editBtn) {
+            openEditModal(
+                editBtn.dataset.id,
+                editBtn.dataset.name,
+                editBtn.dataset.categoryId,
+                editBtn.dataset.price,
+                editBtn.dataset.seoDesc,
+                editBtn.dataset.brand
+            );
+            return;
+        }
+
+        const deleteBtn = event.target.closest('[data-product-delete]');
+        if (deleteBtn) {
+            confirmDelete(deleteBtn.dataset.id, deleteBtn.dataset.name);
+            return;
+        }
+
+        const modalBtn = event.target.closest('[data-open-modal]');
+        if (modalBtn) {
+            openModal(modalBtn.dataset.openModal);
+        }
+    });
 
     function previewFile(input, previewId) {
         const preview = document.getElementById(previewId);
@@ -495,13 +518,6 @@
             preview.classList.add('hidden');
         }
     }
-
-    document.querySelectorAll('button[type="button"][onclick^="openModal("]')?.forEach((button) => {
-        button.addEventListener('click', () => {
-            const match = button.getAttribute('onclick')?.match(/openModal\('([^']+)'\)/);
-            if (match?.[1]) openModal(match[1]);
-        });
-    });
 </script>
 @endpush
 @endsection
