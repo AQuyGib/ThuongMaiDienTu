@@ -40,9 +40,14 @@ class ForgotPasswordController extends Controller
                 $message->subject('Mã OTP khôi phục mật khẩu');
             });
         } catch (\Exception $e) {
-            // Log or ignore if mail is not configured, but OTP is generated
-            // For testing purposes locally, we can flash the OTP if mail fails
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'email' => $email, 'message' => 'Mã OTP đã được gửi đến email (Log: ' . $otp . ')']);
+            }
             return redirect()->route('password.request')->with(['email' => $email, 'step' => 2, 'success' => 'Mã OTP đã được gửi đến email (Log: ' . $otp . ')']);
+        }
+
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'email' => $email, 'message' => 'Mã OTP đã được gửi đến email của bạn.']);
         }
 
         return redirect()->route('password.request')->with(['email' => $email, 'step' => 2, 'success' => 'Mã OTP đã được gửi đến email của bạn.']);
@@ -62,29 +67,29 @@ class ForgotPasswordController extends Controller
         $request->validate([
             'email' => 'required|email',
             'otp' => 'required|numeric'
+        ], [
+            'otp.required' => 'Vui lòng nhập mã OTP.',
         ]);
 
         $record = DB::table('password_reset_tokens')->where('email', $request->email)->first();
 
         if (!$record || !Hash::check($request->otp, $record->token)) {
-            return back()->withErrors(['otp' => 'Mã OTP không hợp lệ hoặc đã hết hạn.'])->withInput();
+            $msg = 'Mã OTP không hợp lệ hoặc đã hết hạn.';
+            return $request->ajax() ? response()->json(['success' => false, 'message' => $msg]) : back()->withErrors(['otp' => $msg]);
         }
 
         if (Carbon::parse($record->created_at)->addMinutes(5)->isPast()) {
-            return back()->withErrors(['otp' => 'Mã OTP đã hết hạn.'])->withInput();
+            $msg = 'Mã OTP đã hết hạn.';
+            return $request->ajax() ? response()->json(['success' => false, 'message' => $msg]) : back()->withErrors(['otp' => $msg]);
         }
 
         session(['reset_email' => $request->email, 'otp_verified' => true]);
 
-        return redirect()->route('password.reset.form')->with('success', 'Xác minh thành công. Vui lòng nhập mật khẩu mới.');
-    }
-
-    public function showResetPasswordForm()
-    {
-        if (!session('otp_verified') || !session('reset_email')) {
-            return redirect()->route('password.request')->withErrors(['error' => 'Vui lòng xác minh OTP trước.']);
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Xác minh OTP thành công.']);
         }
-        return view('Auth.reset_password');
+
+        return redirect()->route('password.reset.form')->with('success', 'Xác minh thành công. Vui lòng nhập mật khẩu mới.');
     }
 
     public function resetPassword(Request $request)
@@ -95,9 +100,10 @@ class ForgotPasswordController extends Controller
             'password.confirmed' => 'Mật khẩu xác nhận không khớp.'
         ]);
 
-        $email = session('reset_email');
+        $email = session('reset_email') ?? $request->email;
         if (!$email) {
-            return redirect()->route('password.request')->withErrors(['error' => 'Hết phiên làm việc. Vui lòng thử lại.']);
+            $msg = 'Hết phiên làm việc. Vui lòng thử lại.';
+            return $request->ajax() ? response()->json(['success' => false, 'message' => $msg]) : redirect()->route('password.request')->withErrors(['error' => $msg]);
         }
 
         $user = User::where('email', $email)->first();
@@ -107,8 +113,12 @@ class ForgotPasswordController extends Controller
         }
 
         DB::table('password_reset_tokens')->where('email', $email)->delete();
-        session()->forget(['reset_email', 'otp_verified']);
+        session()->forget(['email', 'step', 'reset_email', 'otp_verified']);
 
-        return redirect()->route('login_register')->with('success', 'Mật khẩu đã được thiết lập lại thành công. Vui lòng đăng nhập.');
+        if ($request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Mật khẩu đã được khôi phục thành công.', 'redirect' => route('login_register')]);
+        }
+
+        return redirect()->route('login_register')->with('success', 'Mật khẩu đã được khôi phục thành công. Vui lòng đăng nhập.');
     }
 }
