@@ -36,7 +36,7 @@ class CartController extends Controller
                 'stock' => 10,
                 'selected' => true,
                 'image' => $product->thumbnail,
-                'url' => route('product.detail', $id)
+                'url' => route('product.show', $id)
             ];
         })->filter()->values();
 
@@ -94,7 +94,23 @@ class CartController extends Controller
      */
     public function shipping()
     {
-        return view('frontend.cart.ShippingCosts');
+        $cart = session()->get('cart', []);
+        $cartItems = collect($cart)->map(function ($item, $id) {
+            $product = Product::find($id);
+            if (!$product) return null;
+            return [
+                'id' => $id,
+                'name' => $product->name,
+                'price' => (int) $product->base_price,
+                'quantity' => $item['quantity'],
+                'stock' => 10,
+                'selected' => true,
+                'image' => $product->thumbnail,
+                'url' => route('product.detail', $id)
+            ];
+        })->filter()->values();
+
+        return view('frontend.cart.ShippingCosts', compact('cartItems'));
     }
 
     public function checkout()
@@ -154,5 +170,14 @@ class CartController extends Controller
     public function print()
     {
         return view('frontend.cart.print');
+    }
+
+    /**
+     * Lấy số lượng sản phẩm trong giỏ hàng (session).
+     */
+    public function getCartCount()
+    {
+        $cart = session()->get('cart', []);
+        return response()->json(['cart_count' => count($cart)]);
     }
 }

@@ -16,7 +16,8 @@ import {
     FileSpreadsheet,
     Loader2,
     Filter,
-    Check
+    Check,
+    X
 } from 'lucide-react';
 import Chart from 'chart.js/auto';
 import { Button } from './ui/button';
@@ -59,6 +60,9 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isRevenueExpanded, setIsRevenueExpanded] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [showCustomDate, setShowCustomDate] = useState(false);
+    const [customStart, setCustomStart] = useState('');
+    const [customEnd, setCustomEnd] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const revenueChartRef = useRef<HTMLCanvasElement>(null);
@@ -71,21 +75,27 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsDropdownOpen(false);
+                setShowCustomDate(false); // Reset custom view on close
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const fetchKPI = async (filter: string) => {
+    const fetchKPI = async (filter: string, start?: string, end?: string) => {
         setIsRefreshing(true);
         setIsDropdownOpen(false);
+        setShowCustomDate(false);
         try {
-            const response = await axios.get(`/admin/kpi?filter=${filter}`, {
+            let url = `/admin/kpi?filter=${filter}`;
+            if (filter === 'custom' && start && end) {
+                url += `&start=${start}&end=${end}`;
+            }
+            const response = await axios.get(url, {
                 headers: { 'Accept': 'application/json' }
             });
             setData(response.data);
-            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?filter=${filter}`;
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?filter=${filter}${start ? `&start=${start}&end=${end}` : ''}`;
             window.history.pushState({ path: newUrl }, '', newUrl);
         } catch (error) {
             console.error("Lỗi tải dữ liệu KPI:", error);
@@ -181,14 +191,26 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
 
     const formatMoney = (val: number) => new Intl.NumberFormat('vi-VN').format(val || 0);
 
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
     const filterOptions = [
         { label: 'Hôm nay', value: 'today' },
+        { label: 'Hôm qua', value: 'yesterday' },
         { label: 'Tuần này', value: 'week' },
         { label: 'Tháng này', value: 'month' },
+        { label: 'Tháng trước', value: 'last_month' },
         { label: 'Năm nay', value: 'year' },
+        { label: 'Tùy chỉnh...', value: 'custom' },
     ];
 
     const currentFilterLabel = filterOptions.find(o => o.value === data.stats.filter)?.label || 'Chọn kỳ';
+
+    // Get today's date in YYYY-MM-DD format for the 'max' attribute
+    const todayStr = new Date().toISOString().split('T')[0];
 
     return (
         <div className="max-w-[1600px] mx-auto space-y-4 pb-16 animate-in fade-in duration-500 relative">
@@ -204,7 +226,17 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
                     <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shadow-inner">
                         <Activity className="w-5 h-5" />
                     </div>
-                    <h1 className="text-xl font-black text-slate-800 tracking-tight">Thống kê KPI</h1>
+                    <div>
+                        <h1 className="text-xl font-black text-slate-800 tracking-tight">Thống kê KPI</h1>
+                        {data.stats.start_date && data.stats.end_date && (
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kỳ thống kê:</span>
+                                <span className="text-[11px] font-black text-indigo-600 tracking-tight">
+                                    {formatDate(data.stats.start_date)} - {formatDate(data.stats.end_date)}
+                                </span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -220,20 +252,64 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
                         </button>
 
                         {isDropdownOpen && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden ring-1 ring-slate-900/5">
-                                {filterOptions.map((option) => (
-                                    <button
-                                        key={option.value}
-                                        onClick={() => fetchKPI(option.value)}
-                                        className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold transition-colors ${data.stats.filter === option.value
-                                                ? 'bg-indigo-50 text-indigo-600'
-                                                : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'
-                                            }`}
-                                    >
-                                        {option.label}
-                                        {data.stats.filter === option.value && <Check className="w-4 h-4" />}
-                                    </button>
-                                ))}
+                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden ring-1 ring-slate-900/5">
+                                {!showCustomDate ? (
+                                    filterOptions.map((option) => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => {
+                                                if (option.value === 'custom') {
+                                                    setShowCustomDate(true);
+                                                } else {
+                                                    fetchKPI(option.value);
+                                                }
+                                            }}
+                                            className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold transition-colors ${data.stats.filter === option.value
+                                                    ? 'bg-indigo-50 text-indigo-600'
+                                                    : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'
+                                                }`}
+                                        >
+                                            {option.label}
+                                            {data.stats.filter === option.value && <Check className="w-4 h-4" />}
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="p-4 space-y-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Tùy chỉnh ngày</span>
+                                            <button onClick={() => setShowCustomDate(false)} className="text-slate-400 hover:text-rose-500"><X className="w-4 h-4" /></button>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Từ ngày</label>
+                                                <input 
+                                                    type="date" 
+                                                    max={todayStr}
+                                                    value={customStart}
+                                                    onChange={e => setCustomStart(e.target.value)}
+                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Đến ngày</label>
+                                                <input 
+                                                    type="date" 
+                                                    max={todayStr}
+                                                    value={customEnd}
+                                                    onChange={e => setCustomEnd(e.target.value)}
+                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                        <Button 
+                                            className="w-full h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-widest"
+                                            disabled={!customStart || !customEnd || customStart > customEnd}
+                                            onClick={() => fetchKPI('custom', customStart, customEnd)}
+                                        >
+                                            Áp dụng
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

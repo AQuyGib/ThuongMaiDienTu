@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Services\FlashSaleService;
 use App\Services\ProductFilterService;
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -67,6 +68,25 @@ class ProductController extends Controller
                 ->exists();
         }
 
-        return view('frontend.products.show', compact('product', 'relatedProducts', 'hasPurchased', 'flashSaleProduct', 'effectivePrice'));
+        // Lấy danh sách đánh giá (chỉ lấy review gốc, không phải reply)
+        $reviews = Review::where('product_id', $id)
+            ->whereNull('parent_id')
+            ->with(['user', 'replies'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->count();
+        $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->avg('rating') ?: 5;
+
+        return view('frontend.products.show', compact(
+            'product', 
+            'relatedProducts', 
+            'hasPurchased', 
+            'flashSaleProduct', 
+            'effectivePrice',
+            'reviews',
+            'reviewCount',
+            'avgRating'
+        ));
     }
 }

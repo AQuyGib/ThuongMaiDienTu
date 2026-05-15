@@ -108,6 +108,11 @@
 @endpush
 
 <div class="pd-reviews">
+    @php
+        $avgRating = $avgRating ?? 5;
+        $reviewCount = $reviewCount ?? 0;
+        $reviews = $reviews ?? collect();
+    @endphp
     <h2><i class="fa-solid fa-comments" style="color:#0046ab"></i> Đánh giá & Nhận xét</h2>
     <div class="review-stats">
         <div class="review-average">
@@ -346,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (data.isModal) {
             showAlert(data.title, data.msg, 'success');
         } else {
-            showToast(data.title, data.msg, data.type);
+            showToastReview(data.title, data.msg, data.type);
         }
         sessionStorage.removeItem('review_toast');
     }
@@ -578,22 +583,22 @@ function deleteReview(id) {
                     element.style.transition = '0.3s';
                     setTimeout(() => element.remove(), 300);
                 }
-                showToast('Thành công', 'Đã xóa đánh giá thành công!', 'success');
+                showToastReview('Thành công', 'Đã xóa đánh giá thành công!', 'success');
                 closeConfirmModal();
             } else {
-                showToast('Lỗi', data.message || 'Không thể xóa đánh giá.', 'error');
+                showToastReview('Lỗi', data.message || 'Không thể xóa đánh giá.', 'error');
                 closeConfirmModal();
             }
         })
         .catch(err => {
-            showToast('Lỗi', 'Đã xảy ra lỗi kết nối!', 'error');
+            showToastReview('Lỗi', 'Đã xảy ra lỗi kết nối!', 'error');
             closeConfirmModal();
         });
     });
 }
 
 /* ===== Toast Notification System ===== */
-function showToast(title, message, type = 'success') {
+function showToastReview(title, message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
