@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $product->name . ' - TechZone')
+@section('title', $product->name . ' - DIENMAYPRO')
 
 @push('styles')
 <style>
@@ -24,14 +24,14 @@
 .pd-thumb img { max-width:100%; max-height:100%; object-fit:contain; }
 
 /* Modal Zoom Image */
-#imageZoomModal { display: none; position: fixed; z-index: 9999; inset: 0; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
+#imageZoomModal { display: none; position: fixed; z-index: 10005; inset: 0; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
 #imageZoomModal.active { display: flex; }
-#zoomedImg { width: 70vw; height: 70vh; object-fit: contain; }
-.close-zoom { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 30px; cursor: pointer; transition: 0.2s; }
+#zoomedImg { width: 90vw; height: 90vh; object-fit: contain; }
+.close-zoom { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; transition: 0.2s; z-index: 10010; }
 .close-zoom:hover { color: #d70018; }
 
 /* Info */
-.pd-info { display:flex; flex-direction:column; gap:14px; }
+.pd-info { display:flex; flex-direction:column; gap:14px; position: relative; z-index: 500; }
 .pd-category { font-size:12px; font-weight:600; color:#0046ab; background:#eef2ff; padding:3px 10px; border-radius:20px; display:inline-block; width:fit-content; }
 .pd-name { font-size:22px; font-weight:800; color:#1a1a2e; line-height:1.3; }
 .pd-rating { display:flex; align-items:center; gap:8px; font-size:13px; }
@@ -49,7 +49,8 @@
 .variant-btn.selected { border-color:#0046ab; background:#0046ab; color:#fff; }
 
 /* Buttons */
-.pd-actions { display:flex; flex-direction:column; gap:10px; margin-top: 5px; }
+.pd-actions { display:flex; flex-direction:column; gap:10px; margin-top: 5px; position: relative; z-index: 600; }
+.pd-actions button { pointer-events: auto !important; }
 .btn-buy { padding:14px; font-size:16px; font-weight:700; border-radius:10px; border:none; cursor:pointer; transition:.2s; text-align:center; }
 .btn-buy-now { background:linear-gradient(135deg,#d70018,#ff4444); color:#fff; }
 .btn-buy-now:hover { background:linear-gradient(135deg,#b50014,#e03333); transform:translateY(-1px); box-shadow:0 6px 16px rgba(215,0,24,.3); }
@@ -82,20 +83,6 @@
 .specs-table td:first-child { width:40%; font-weight:600; color:#555; }
 .specs-table td:last-child { color:#222; }
 
-/* Reviews */
-.pd-reviews { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
-.pd-reviews h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
-.review-stats { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-.review-average { text-align: center; }
-.review-average h3 { font-size: 32px; color: #d70018; margin-bottom: 5px; }
-.review-average .stars { color: #f59e0b; font-size: 14px; }
-.review-item { padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
-.review-item:last-child { border-bottom: none; }
-.review-user { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
-.review-user span { background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;}
-.review-stars { color: #f59e0b; font-size: 12px; margin-bottom: 8px; }
-.review-content { font-size: 14px; color: #444; }
-
 /* ===== RELATED ===== */
 .pd-related { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
 .pd-related h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
@@ -120,12 +107,13 @@
 .bottom-action-bar {
     position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; box-shadow: 0 -4px 15px rgba(0,0,0,0.08); padding: 12px 0; z-index: 9999;
     transform: translateY(100%); transition: transform 0.3s ease;
+    visibility: hidden; pointer-events: none;
 }
-.bottom-action-bar.show { transform: translateY(0); }
+.bottom-action-bar.show { transform: translateY(0); visibility: visible; pointer-events: auto; }
 
 /* Installment Modal */
-#installmentModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10002; align-items: center; justify-content: center; }
-#installmentModal.active { display: flex; }
+#installmentModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10002; align-items: center; justify-content: center; pointer-events: none; }
+#installmentModal.active { display: flex; pointer-events: auto; }
 .installment-content { background: #fff; width: 90%; max-width: 800px; max-height: 90vh; border-radius: 12px; overflow-y: auto; position: relative; }
 .installment-header { position: sticky; top: 0; background: #fff; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10; border-radius: 12px 12px 0 0; }
 .installment-body { padding: 20px; }
@@ -155,14 +143,20 @@
     padding: 20px;
 }
 .zoom-nav:hover { color: #fff; }
-.zoom-nav.prev { left: 20px; }
 .zoom-nav.next { right: 20px; }
+
+/* Progress Bar cho Flash Sale */
+.fs-progress-wrapper { margin-top: 15px; background: #ffcdd2; border-radius: 10px; height: 22px; position: relative; overflow: hidden; display: flex; align-items: center; }
+.fs-progress-bar { background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%); height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+.fs-progress-text { position: absolute; width: 100%; text-align: center; font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0px 0px 3px rgba(0,0,0,0.5); z-index: 2; }
+.fs-fire-icon { position: absolute; left: 8px; color: #fff; font-size: 14px; z-index: 2; }
 </style>
 @endpush
 
 @section('content')
 
 @php
+    $isWishlisted = $isWishlisted ?? false;
     $basePrice = $product->base_price;
     $oldPrice = $product->old_price;
     
@@ -176,10 +170,16 @@
         ];
     })->toJson();
     
-    // Load reviews
-    $reviews = App\Models\Review::where('product_id', $product->product_id)->orderBy('created_at', 'desc')->get();
-    $reviewCount = $reviews->count();
-    $avgRating = $reviewCount > 0 ? round($reviews->avg('rating'), 1) : 0;
+
+    $discountPercent = 0;
+    if ($oldPrice > 0 && $oldPrice > $basePrice) {
+        $discountPercent = round((($oldPrice - $basePrice) / $oldPrice) * 100);
+    }
+    $isWishlisted = false;
+    if(auth()->check()){
+        $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'Wishlist')->exists();
+    }
+    $isFlashSale = isset($flashSaleProduct) && $flashSaleProduct;
 @endphp
 
 <div class="container">
@@ -235,26 +235,44 @@
 
             <h1 class="pd-name">{{ $product->name }}</h1>
 
-            <div class="pd-rating">
-                <div class="pd-stars" id="topReviewStars">
-                    @for($i=1; $i<=5; $i++)
-                        @if($i <= round($avgRating))
-                            <i class="fa-solid fa-star" style="color:#f59e0b"></i>
-                        @else
-                            <i class="fa-regular fa-star" style="color:#ccc"></i>
-                        @endif
-                    @endfor
+            @if($isFlashSale)
+                <div style="display:inline-flex; align-items:center; gap:8px; background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; padding:8px 12px; border-radius:999px; font-size:13px; font-weight:700; width:fit-content;">
+                    <i class="fa-solid fa-bolt"></i>
+                    Flash Sale đang diễn ra
+                    <span id="flashSaleCountdown" data-end-at="{{ optional($flashSaleProduct->flashSale->end_at)->toIso8601String() }}"></span>
                 </div>
-                <span class="pd-rating-count"><span id="topReviewCount">({{ $reviewCount }} đánh giá)</span> · <span style="color:#16a34a;font-weight:600;">Còn hàng</span></span>
+            @endif
+
+            <div class="pd-rating">
+                <span class="pd-rating-count"><span style="color:#16a34a;font-weight:600;">Còn hàng</span></span>
             </div>
 
             {{-- Giá --}}
             <div class="pd-price-block">
-                <div class="pd-price" id="displayPrice">{{ number_format($basePrice, 0, ',', '.') }}đ</div>
-                @if($oldPrice)
-                    <div class="pd-old-price" id="displayOldPrice">{{ number_format($oldPrice, 0, ',', '.') }}đ</div>
+                <div class="pd-price" id="displayPrice">{{ number_format($effectivePrice ?? $basePrice, 0, ',', '.') }}đ</div>
+                @if($oldPrice || $isFlashSale)
+                    <div class="pd-old-price" id="displayOldPrice">{{ number_format($oldPrice > 0 ? $oldPrice : $basePrice, 0, ',', '.') }}đ</div>
                     <div class="pd-saving" id="displaySaving">
-                        Tiết kiệm: {{ number_format($oldPrice - $basePrice, 0, ',', '.') }}đ
+                        Tiết kiệm: {{ number_format(($oldPrice > 0 ? $oldPrice : $basePrice) - ($effectivePrice ?? $basePrice), 0, ',', '.') }}đ
+                    </div>
+                @endif
+                
+                @if($isFlashSale && isset($flashSaleProduct))
+                    @php
+                        $sold = $flashSaleProduct->sold_quantity ?? 0;
+                        $limit = $flashSaleProduct->stock_limit ?? 1;
+                        $percent = min(100, round(($sold / $limit) * 100));
+                    @endphp
+                    <div class="fs-progress-wrapper">
+                        <div class="fs-progress-bar" style="width: {{ $percent }}%"></div>
+                        <i class="fa-solid fa-fire fs-fire-icon"></i>
+                        <span class="fs-progress-text">
+                            @if($percent >= 100)
+                                Đã bán hết (Sale kết thúc)
+                            @else
+                                Đã bán {{ $sold }}/{{ $limit }}
+                            @endif
+                        </span>
                     </div>
                 @endif
             </div>
@@ -301,9 +319,17 @@
                     <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700;">
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
-                    <button class="btn-wishlist" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; justify-content:center;">
-                        <i class="fa-regular fa-heart" id="wishlistIcon"></i> <span id="wishlistText">Thêm yêu thích</span>
+                    <button type="button" class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; min-width:140px;">
+                        <i class="{{ $isWishlisted ? 'fa-solid' : 'fa-regular' }} fa-heart" id="wishlistIcon" style="{{ $isWishlisted ? 'color:#d70018' : '' }}"></i>
+                        <span id="wishlistText">{{ $isWishlisted ? 'Đã thêm yêu thích' : 'Thêm yêu thích' }}</span>
                     </button>
+                </div>
+                <div style="margin-top: 12px; display: flex; justify-content: flex-start; padding-left: 5px;">
+                    <a href="javascript:void(0)" id="btnCompareDetail" onclick="addToCompare('{{ $product->product_id }}')" 
+                       style="font-size: 12px; color: #666; display: flex; align-items: center; gap: 6px; text-decoration: none; transition: 0.2s; font-weight: 500;"
+                       onmouseover="this.style.color='#0046ab'" onmouseout="this.style.color='#666'">
+                        <i class="fa-solid fa-scale-balanced"></i> <span id="compareDetailLabel">So sánh sản phẩm</span>
+                    </a>
                 </div>
             </div>
 
@@ -351,11 +377,11 @@
         </div>
 
         {{-- Thông số kỹ thuật --}}
-        @if($product->specifications->count())
+        @if($product->productSpecifications->count())
             <div class="pd-specs">
                 <h2><i class="fa-solid fa-microchip" style="color:#0046ab"></i> Cấu hình chi tiết</h2>
                 <table class="specs-table">
-                    @php $spec = $product->specifications->first(); @endphp
+                    @php $spec = $product->productSpecifications->first(); @endphp
                     @if($spec->cpu_chip)
                         <tr><td>Vi xử lý (CPU)</td><td>{{ $spec->cpu_chip }}</td></tr>
                     @endif
@@ -379,69 +405,7 @@
     </div>
 
     {{-- Đánh giá sản phẩm --}}
-    <div class="pd-reviews">
-        <h2><i class="fa-solid fa-comments" style="color:#0046ab"></i> Đánh giá & Nhận xét</h2>
-        <div class="review-stats">
-            <div class="review-average">
-                <h3 id="avgReviewScore">{{ $avgRating }}/5</h3>
-                <div class="stars" id="avgReviewStars">
-                    @for($i=1; $i<=5; $i++)
-                        @if($i <= round($avgRating))
-                            <i class="fa-solid fa-star" style="color:#f59e0b"></i>
-                        @else
-                            <i class="fa-regular fa-star" style="color:#ccc"></i>
-                        @endif
-                    @endfor
-                </div>
-                <p style="font-size:12px; color:#666; margin-top:5px;" id="totalReviewCount">{{ $reviewCount }} đánh giá</p>
-            </div>
-            <div style="flex:1;">
-                <p style="font-size:14px; color:#555;" id="reviewStatusText">
-                    @if($reviewCount > 0)
-                        Đã có {{ $reviewCount }} đánh giá cho sản phẩm này.
-                    @else
-                        Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!
-                    @endif
-                </p>
-            </div>
-        </div>
-        
-        <div class="review-form" style="margin-bottom: 25px; background: #f9f9f9; padding: 20px; border-radius: 10px;">
-            <h4 style="margin-bottom: 15px; font-size: 15px;">Viết đánh giá của bạn</h4>
-            <div style="margin-bottom: 10px; display: flex; gap: 10px; color: #ccc; font-size: 20px; cursor: pointer;">
-                <i class="fa-solid fa-star star-rating" data-val="1" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="2" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="3" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="4" style="color:#f59e0b"></i>
-                <i class="fa-solid fa-star star-rating" data-val="5" style="color:#f59e0b"></i>
-            </div>
-            <textarea id="reviewText" placeholder="Nhập đánh giá của bạn về sản phẩm này..." style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; resize: none;"></textarea>
-            <button type="button" onclick="submitReview()" style="background: #0046ab; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">Gửi đánh giá</button>
-        </div>
-        
-        <div class="review-list">
-            @if($reviewCount > 0)
-                @foreach($reviews as $r)
-                    <div class="review-item" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">
-                        <div class="review-user" style="font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">Khách hàng <span style="background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;"><i class="fa-solid fa-check"></i> Đã mua hàng</span></div>
-                        <div class="review-stars" style="color: #f59e0b; font-size: 12px; margin-bottom: 8px;">
-                            @for($i=1; $i<=5; $i++)
-                                @if($i <= $r->rating)
-                                    <i class="fa-solid fa-star"></i>
-                                @else
-                                    <i class="fa-regular fa-star"></i>
-                                @endif
-                            @endfor
-                        </div>
-                        <div class="review-content" style="font-size: 14px; color: #444;">{{ $r->content }}</div>
-                    </div>
-                @endforeach
-            @else
-                <p id="noReviewMsg" style="text-align: center; color: #888; font-style: italic; padding: 20px 0;">Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đánh giá!</p>
-            @endif
-        </div>
-    </div>
-
+    @include('frontend.products.partials.reviews')
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())
         <div class="pd-related">
@@ -634,7 +598,7 @@
     </div>
 
     {{-- Promo Success Modal --}}
-    <div id="promoSuccessModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; justify-content: center; align-items: center;">
+    <div id="promoSuccessModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; justify-content: center; align-items: center; display: none;">
         <div style="background: #fff; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
             <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #16a34a; margin-bottom: 20px;"></i>
             <h3 style="font-size: 22px; color: #333; margin-bottom: 10px;">Cảm ơn quý khách!</h3>
@@ -695,7 +659,8 @@ function switchImg(el, src) {
 }
 
 // --- Xử lý Chọn Cấu hình & Đổi Giá ---
-const basePrice = {{ $basePrice }};
+const basePrice = {{ $effectivePrice ?? $basePrice }};
+const originalBasePrice = {{ $basePrice }};
 const oldPrice = {{ $oldPrice ?? 0 }};
 const variants = {!! $variantsJson !!}; 
 
@@ -704,6 +669,24 @@ let currentExtraPrice = 0;
 function formatCurrency(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
 }
+
+function updateFlashSaleCountdown() {
+    const el = document.getElementById('flashSaleCountdown');
+    if (!el) return;
+    const endAt = new Date(el.dataset.endAt);
+    const diff = endAt - new Date();
+    if (diff <= 0) {
+        el.innerText = 'Đã kết thúc';
+        return;
+    }
+    const totalSeconds = Math.floor(diff / 1000);
+    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    el.innerText = `${hours}:${minutes}:${seconds}`;
+}
+setInterval(updateFlashSaleCountdown, 1000);
+updateFlashSaleCountdown();
 
 function updatePriceDisplay() {
     const finalPrice = basePrice + currentExtraPrice;
@@ -736,7 +719,7 @@ function updatePriceDisplay() {
         variantStr = ' - ' + [romVal, colorVal].filter(Boolean).join(' ');
     }
     
-    const baseName = `{{ $product->name }}`;
+    const baseName = "{{ $product->name }}";
     const fullName = baseName + variantStr;
     
     const stickyProductName = document.getElementById('stickyProductName');
@@ -818,7 +801,10 @@ function selectColor(el) {
 }
 
 // Khởi tạo trạng thái ban đầu cho chức năng đánh giá sao
-let currentRating = 5;
+// Sử dụng biến currentRating đã được khai báo hoặc khởi tạo nếu chưa có
+if (typeof currentRating === 'undefined') {
+    window.currentRating = 5;
+}
 document.querySelectorAll('.star-rating').forEach(star => {
     star.addEventListener('click', function() {
         const val = this.getAttribute('data-val');
@@ -833,82 +819,113 @@ document.querySelectorAll('.star-rating').forEach(star => {
     });
 });
 
-function submitReview() {
-    const textarea = document.getElementById('reviewText');
-    const content = textarea.value.trim();
-    if(!content) { 
-        alert('Vui lòng nhập nội dung đánh giá!'); 
-        return; 
-    }
-    
-    // Gọi AJAX lưu vào DB
-    fetch('{{ route("reviews.store") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            product_id: '{{ $product->product_id }}',
-            rating: currentRating,
-            content: content
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.success) {
-            // Render sao
-            let starsHtml = '';
-            for(let i=1; i<=5; i++) {
-                starsHtml += (i <= currentRating) ? '<i class="fa-solid fa-star"></i>' : '<i class="fa-regular fa-star"></i>';
-            }
-            
-            const reviewList = document.querySelector('.review-list');
-            if(document.getElementById('noReviewMsg')) {
-                document.getElementById('noReviewMsg').remove(); // Xóa dòng "Chưa có đánh giá nào..."
-            }
-            
-            // Thêm review mới lên đầu
-            reviewList.innerHTML = `
-                <div class="review-item" style="padding: 15px 0; border-bottom: 1px solid #f5f5f5;">
-                    <div class="review-user" style="font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">Bạn <span style="background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;"><i class="fa-solid fa-check"></i> Vừa đánh giá</span></div>
-                    <div class="review-stars" style="color: #f59e0b; font-size: 12px; margin-bottom: 8px;">${starsHtml}</div>
-                    <div class="review-content" style="font-size: 14px; color: #444;">${content}</div>
-                </div>
-            ` + reviewList.innerHTML;
-            
-            textarea.value = '';
-            showToast('Đã gửi đánh giá thành công!');
-        } else {
-            alert('Đã xảy ra lỗi khi lưu đánh giá.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Đã xảy ra lỗi kết nối!');
-    });
-}
-
 // --- Toast & Actions ---
 function showToast(msg) {
     const toast = document.getElementById('toast');
-    document.getElementById('toastMsg').innerText = msg;
-    
-    toast.classList.add('show');
-    setTimeout(() => { toast.classList.remove('show'); }, 2000);
+    if (toast) {
+        const msgEl = document.getElementById('toastMsg');
+        if (msgEl) msgEl.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 2000);
+    }
+}
+
+// Alias for compatibility
+function showProductToast(msg) { showToast(msg); }
+
+// --- Custom Confirm Modal ---
+function openConfirmModal(onConfirm) {
+    const modal = document.getElementById('confirmModal');
+    if (!modal) return;
+    modal.classList.add('active');
+    const okBtn = document.getElementById('confirmOkBtn');
+    if (okBtn) {
+        okBtn.onclick = () => { closeConfirmModal(); onConfirm(); };
+    }
+}
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.classList.remove('active');
+}
+const confModal = document.getElementById('confirmModal');
+if (confModal) {
+    confModal.addEventListener('click', function(e) {
+        if (e.target === this) closeConfirmModal();
+    });
+}
+
+// Review reply functions
+function replyToUser(parentId, authorName) {
+    const form = document.getElementById('replyForm-' + parentId);
+    if (form) {
+        form.style.display = 'block';
+        const textarea = document.getElementById('replyText-' + parentId);
+        if (textarea) {
+            textarea.value = `@${authorName} `;
+            textarea.focus();
+        }
+    }
+}
+
+function submitReply(parentId) {
+    const textarea = document.getElementById('replyText-' + parentId);
+    const content = textarea.value.trim();
+    if (!content) {
+        showToast('Vui lòng nhập câu trả lời!');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('product_id', '{{ $product->product_id }}');
+    formData.append('parent_id', parentId);
+    formData.append('content', content);
+
+    @if(auth()->check())
+        // User logged in, use their name from backend
+    @else
+        const authorInput = document.getElementById('replyAuthor-' + parentId);
+        if (authorInput) {
+            if (!authorInput.value.trim()) {
+                showToast('Vui lòng nhập họ và tên!');
+                return;
+            }
+            formData.append('author_name', authorInput.value.trim());
+        }
+    @endif
+
+    const btn = document.querySelector(`#replyForm-${parentId} button.bg-blue-600`);
+    if(btn) { btn.disabled = true; btn.innerText = 'Đang gửi...'; }
+
+    fetch('{{ route("reviews.store") }}', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        if(btn) { btn.disabled = false; btn.innerText = 'Gửi trả lời'; }
+        if (data.success) {
+            location.reload(); // Simple reload for now to show the reply
+        } else {
+            showToast('Có lỗi xảy ra!');
+        }
+    })
+    .catch(() => {
+        if(btn) { btn.disabled = false; btn.innerText = 'Gửi trả lời'; }
+        showToast('Lỗi kết nối!');
+    });
 }
 
 function buyNow() {
     window.location.href = "{{ route('cart.index') }}";
 }
 
-let userId = '{{ Auth::id() ?? "guest" }}';
-let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || document.getElementById('headerCartBadge')?.innerText || 0);
-
 function addToCart() {
     showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
     
-    // Cập nhật số lượng trên header và lưu vào localStorage theo user
+    // Update cart count logic
+    let userId = '{{ Auth::id() ?? "guest" }}';
+    let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || 0);
     cartCount++;
     localStorage.setItem('cartCount_' + userId, cartCount);
     
@@ -920,24 +937,49 @@ function addToCart() {
 }
 
 // Wishlist Toggle
-let isWishlist = false;
+let isWishlist = {{ $isWishlisted ? 'true' : 'false' }};
 function toggleWishlist() {
+    if (!{{ auth()->check() ? 'true' : 'false' }}) {
+        window.location.href = "{{ route('login_register') }}";
+        return;
+    }
+
     const btn = document.getElementById('btnWishlist');
     const icon = document.getElementById('wishlistIcon');
     const text = document.getElementById('wishlistText');
     
-    isWishlist = !isWishlist;
-    if(isWishlist) {
-        btn.classList.add('active');
-        icon.classList.remove('fa-regular');
-        icon.classList.add('fa-solid');
-        text.innerText = 'Đã thêm yêu thích';
-    } else {
-        btn.classList.remove('active');
-        icon.classList.remove('fa-solid');
-        icon.classList.add('fa-regular');
-        text.innerText = 'Thêm vào yêu thích';
-    }
+    fetch('{{ route("wishlist.toggle") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ product_id: '{{ $product->product_id }}' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.status === 'added') {
+            isWishlist = true;
+            btn.classList.add('active');
+            icon.classList.remove('fa-regular');
+            icon.classList.add('fa-solid');
+            icon.style.color = '#d70018';
+            text.innerText = 'Đã thêm yêu thích';
+            showToast('Đã thêm vào danh sách yêu thích!');
+        } else if(data.status === 'removed') {
+            isWishlist = false;
+            btn.classList.remove('active');
+            icon.classList.remove('fa-solid');
+            icon.classList.add('fa-regular');
+            icon.style.color = '';
+            text.innerText = 'Thêm yêu thích';
+            showToast('Đã xóa khỏi danh sách yêu thích.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Đã xảy ra lỗi!');
+    });
 }
 
 // --- Installment Modal ---
@@ -949,7 +991,7 @@ function checkAuthAndOpenInstallment() {
     @auth
         openInstallmentModal();
     @else
-        showToast('Vui lòng đăng nhập để đăng ký trả góp!');
+        showProductToast('Vui lòng đăng nhập để đăng ký trả góp!');
         setTimeout(() => {
             window.location.href = "{{ route('login_register') }}";
         }, 1500);
@@ -990,9 +1032,12 @@ function confirmInstallment() {
 }
 
 // Close when clicking outside
-document.getElementById('installmentModal').addEventListener('click', function(e) {
-    if(e.target === this) closeInstallmentModal();
-});
+const instModal = document.getElementById('installmentModal');
+if (instModal) {
+    instModal.addEventListener('click', function(e) {
+        if(e.target === this) closeInstallmentModal();
+    });
+}
 
 function selectCompany(el, company) {
     document.querySelectorAll('.inst-company').forEach(c => c.classList.remove('active'));

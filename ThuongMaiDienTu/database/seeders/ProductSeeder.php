@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use App\Models\Product;
 use App\Models\Category;
 
@@ -699,11 +700,12 @@ class ProductSeeder extends Seeder
         ];
 
         foreach ($products as $product) {
+            $product['slug'] = Str::slug($product['name']);
             Product::create($this->normalizeProductData($product));
         }
     }
 
-    private function normalizeProductData(array $product): array
+    private function normalizeProductData(array $product) : array
     {
         $specifications = json_decode($product['specifications'], true) ?: [];
         $productName = $product['name'];
@@ -731,7 +733,7 @@ class ProductSeeder extends Seeder
             }
         }
 
-        return 'TechZone';
+        return 'DIENMAYPRO';
     }
 
     private function detectWarranty(string $productName): string

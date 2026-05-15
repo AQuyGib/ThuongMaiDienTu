@@ -15,7 +15,10 @@ class Cashbook extends Model {
     public function scopeSearch($query, $term)
     {
         if ($term) {
-            return $query->where('description', 'like', '%' . $term . '%');
+            return $query->where(function($q) use ($term) {
+                $q->where('description', 'like', '%' . $term . '%')
+                  ->orWhere('reference_id', 'like', '%' . $term . '%');
+            });
         }
         return $query;
     }
