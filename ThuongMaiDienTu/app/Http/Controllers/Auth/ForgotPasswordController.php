@@ -42,10 +42,10 @@ class ForgotPasswordController extends Controller
         } catch (\Exception $e) {
             // Log or ignore if mail is not configured, but OTP is generated
             // For testing purposes locally, we can flash the OTP if mail fails
-            return redirect()->route('password.verify.form')->with('email', $email)->with('success', 'Mã OTP đã được gửi đến email (Log: ' . $otp . ')');
+            return redirect()->route('password.request')->with(['email' => $email, 'step' => 2, 'success' => 'Mã OTP đã được gửi đến email (Log: ' . $otp . ')']);
         }
 
-        return redirect()->route('password.verify.form')->with('email', $email)->with('success', 'Mã OTP đã được gửi đến email của bạn.');
+        return redirect()->route('password.request')->with(['email' => $email, 'step' => 2, 'success' => 'Mã OTP đã được gửi đến email của bạn.']);
     }
 
     public function showVerifyOtpForm(Request $request)
