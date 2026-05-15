@@ -267,14 +267,21 @@ class UserController extends Controller
      */
     public function revokeSessions($id)
     {
+        $user = User::findOrFail($id);
+        
+        // 1. Xóa toàn bộ các phiên trong database
         DB::table('sessions')->where('user_id', $id)->delete();
         
+        // 2. Quan trọng: Xóa remember_token để ngăn chặn việc tự động đăng nhập lại từ cookie
+        $user->remember_token = null;
+        $user->save();
+        
         if (request()->ajax()) {
-            return response()->json(['message' => 'Đã đăng xuất tất cả các phiên làm việc thành công.']);
+            return response()->json(['message' => 'Đã thu hồi toàn bộ phiên làm việc và vô hiệu hóa ghi nhớ đăng nhập thành công.']);
         }
 
         return redirect()->back()
-            ->with('success', 'Đã đăng xuất tất cả các phiên làm việc thành công.');
+            ->with('success', 'Đã thu hồi toàn bộ phiên làm việc thành công.');
     }
 
     /**
@@ -304,9 +311,21 @@ class UserController extends Controller
      */
     public function deleteSession($sessionId)
     {
-        DB::table('sessions')->where('id', $sessionId)->delete();
+        $session = DB::table('sessions')->where('id', $sessionId)->first();
+        if ($session) {
+            $userId = $session->user_id;
+            DB::table('sessions')->where('id', $sessionId)->delete();
+            
+            // Xóa remember_token của user để tránh tự động đăng nhập lại
+            $user = User::find($userId);
+            if ($user) {
+                $user->remember_token = null;
+                $user->save();
+            }
+        }
+
         if (request()->ajax()) {
-            return response()->json(['message' => 'Đã xóa phiên đăng nhập thành công.']);
+            return response()->json(['message' => 'Đã thu hồi phiên đăng nhập và vô hiệu hóa ghi nhớ đăng nhập thành công.']);
         }
         return redirect()->back()->with('success', 'Đã xóa phiên đăng nhập thành công.');
     }
