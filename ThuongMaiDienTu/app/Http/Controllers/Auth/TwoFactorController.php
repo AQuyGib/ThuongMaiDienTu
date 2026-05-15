@@ -8,8 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Jenssegers\Agent\Agent;
 
 class TwoFactorController extends Controller
 {
@@ -86,40 +88,66 @@ class TwoFactorController extends Controller
     /**
      * Parse User Agent for basic device info
      */
-    private function parseUserAgent($userAgent)
+    private function parseUserAgent($userAgent = null)
     {
-        $os = "Unknown OS";
-        $browser = "Unknown Browser";
-        $device = "Máy tính";
+        $agent = new Agent();
 
-        if (preg_match('/windows|win32/i', $userAgent)) $os = 'Windows';
-        elseif (preg_match('/macintosh|mac os x/i', $userAgent)) $os = 'Mac OS';
-        elseif (preg_match('/linux/i', $userAgent)) $os = 'Linux';
-        elseif (preg_match('/iphone/i', $userAgent)) { $os = 'iOS'; $device = 'iPhone'; }
-        elseif (preg_match('/android/i', $userAgent)) { $os = 'Android'; $device = 'Điện thoại Android'; }
+        if ($userAgent) {
+            $agent->setUserAgent($userAgent);
+        }
 
-        if (preg_match('/firefox/i', $userAgent)) $browser = 'Firefox';
-        elseif (preg_match('/chrome/i', $userAgent)) $browser = 'Chrome';
-        elseif (preg_match('/safari/i', $userAgent)) $browser = 'Safari';
-        elseif (preg_match('/msie/i', $userAgent)) $browser = 'Internet Explorer';
-        elseif (preg_match('/edge/i', $userAgent)) $browser = 'Edge';
-        
+        $device = 'Máy tính'; 
+        if ($agent->isMobile()) {
+            $device = 'Điện thoại';
+        } elseif ($agent->isTablet()) {
+            $device = 'Máy tính bảng';
+        }
+
+        $os = $agent->platform() ?: 'Unknown OS';
+        $browser = $agent->browser() ?: 'Unknown Browser';
+
         return [
-            'os' => $os,
+            'os'      => $os,
             'browser' => $browser,
-            'device' => $device
+            'device'  => $device
         ];
     }
 
     /**
      * Đăng xuất một phiên đăng nhập
      */
-    public function logoutSession($id)
+    public function logoutSession(Request $request, $id)
     {
-        DB::table('sessions')
-            ->where('id', $id)
-            ->where('user_id', Auth::id())
-            ->delete();
+        Log::info('logoutSession called', ['id' => $id, 'is_current_device' => $request->boolean('is_current_device'), 'session_id' => $request->session()->getId()]);
+
+        // Kiểm tra xem frontend có báo đây là phiên hiện tại không (hoặc ID trùng khớp)
+        if ($request->boolean('is_current_device') || $id === $request->session()->getId()) {
+            Log::info('Logging out current device');
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        } else {
+            Log::info('Logging out other device');
+            // Xóa phiên của thiết bị khác
+            DB::table('sessions')
+                ->where('id', $id)
+                ->where('user_id', Auth::id())
+                ->delete();
+            
+            // Xóa remember_token để ngăn thiết bị đó tự động đăng nhập lại
+            if (Auth::check()) {
+                $user = Auth::user();
+                $user->remember_token = null;
+                $user->save();
+            }
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã đăng xuất thiết bị thành công.'
+            ]);
+        }
 
         return back()->with('success', 'Đã đăng xuất thiết bị thành công.');
     }
