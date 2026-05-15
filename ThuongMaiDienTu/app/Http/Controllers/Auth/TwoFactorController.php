@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Http\Controllers\CompareController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Jenssegers\Agent\Agent;
+use Illuminate\Support\Facades\RateLimiter;
 
 class TwoFactorController extends Controller
 {
@@ -170,6 +172,7 @@ class TwoFactorController extends Controller
      */
     public function send(Request $request)
     {
+        // 1. Kiểm tra session xem có đang trong luồng 2FA không
         $userId = session('2fa_user_id');
         if (!$userId) {
             return redirect()->route('login_register');
@@ -180,18 +183,41 @@ class TwoFactorController extends Controller
             return redirect()->route('login_register');
         }
 
-        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        // 2. CHỐNG SPAM: Giới hạn tần suất gửi mã (Cooldown 60 giây)
+        $throttleKey = 'resend-otp:' . $user->user_id;
+        if (RateLimiter::tooManyAttempts($throttleKey, 1)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return back()->with('error', "Bạn vừa gửi mã xong. Vui lòng đợi {$seconds} giây nữa để yêu cầu mã mới.");
+        }
 
-        $user->two_factor_code = $otp;
-        $user->two_factor_expires_at = now()->addMinutes(5);
-        $user->save();
+        try {
+            // 3. Tạo mã OTP ngẫu nhiên 6 chữ số
+            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
-        Mail::send('emails.two_factor', ['user' => $user, 'otp' => $otp], function ($m) use ($user) {
-            $m->to($user->email)
-              ->subject('[DienMayPro] Mã xác thực đăng nhập (2FA)');
-        });
+            // 4. Lưu mã và thời gian hết hạn (5 phút)
+            $user->two_factor_code = $otp;
+            $user->two_factor_expires_at = now()->addMinutes(5);
+            $user->save();
 
-        return back()->with('success', 'Mã OTP đã được gửi đến ' . $user->email . '. Vui lòng kiểm tra hộp thư.');
+            // 5. Gửi email xác thực
+            Mail::send('emails.two_factor', ['user' => $user, 'otp' => $otp], function ($m) use ($user) {
+                $m->to($user->email)
+                  ->subject('[DienMayPro] Mã xác thực đăng nhập (2FA)');
+            });
+
+            // Ghi nhận lượt gửi thành công để kích hoạt cooldown
+            RateLimiter::hit($throttleKey, 60);
+
+            Log::info("2FA OTP sent successfully to user: {$user->email}");
+
+            return back()->with('success', 'Mã OTP mới đã được gửi đến ' . $user->email . '. Hãy kiểm tra hộp thư của bạn.');
+
+        } catch (\Exception $e) {
+            // Log lỗi nếu mail server gặp vấn đề
+            Log::error("2FA OTP Send Error: " . $e->getMessage());
+            
+            return back()->with('error', 'Không thể gửi email lúc này. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.');
+        }
     }
 
     /**
@@ -199,32 +225,66 @@ class TwoFactorController extends Controller
      */
     public function verify(Request $request)
     {
+        // 1. Xác thực định dạng mã OTP
         $request->validate(['otp' => 'required|digits:6']);
 
+        // 2. Kiểm tra thông tin người dùng từ session
         $userId = session('2fa_user_id');
         if (!$userId) {
-            return redirect()->route('login_register')->withErrors(['Phiên đăng nhập đã hết hạn.']);
+            return redirect()->route('login_register')->withErrors(['login_error' => 'Phiên đăng nhập đã hết hạn. Vui lòng thử lại.']);
         }
 
         $user = User::find($userId);
+        if (!$user) {
+            return redirect()->route('login_register');
+        }
 
+        // 3. BẢO MẬT: Chống dò mã (Brute Force Protection)
+        // Giới hạn 5 lần thử sai trong vòng 10 phút
+        $throttleKey = 'verify-otp:' . $user->user_id;
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            return back()->withErrors(['otp' => "Bạn đã nhập sai quá nhiều lần. Vui lòng thử lại sau {$seconds} giây."]);
+        }
+
+        // 4. KIỂM TRA MÃ OTP VÀ THỜI GIAN HẾT HẠN
         if (!$user->two_factor_code || $user->two_factor_code !== $request->otp) {
-            return back()->withErrors(['otp' => 'Mã OTP không chính xác.']);
+            RateLimiter::hit($throttleKey, 600); // Ghi nhận 1 lần sai
+            return back()->withErrors(['otp' => 'Mã xác thực không chính xác.']);
         }
 
         if (now()->isAfter($user->two_factor_expires_at)) {
-            return back()->withErrors(['otp' => 'Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới.']);
+            return back()->withErrors(['otp' => 'Mã xác thực đã hết hạn. Vui lòng yêu cầu mã mới.']);
         }
 
+        // 5. XỬ LÝ ĐĂNG NHẬP THÀNH CÔNG
+        // Xóa mã OTP và giới hạn lần thử
         $user->two_factor_code = null;
         $user->two_factor_expires_at = null;
         $user->save();
+        RateLimiter::clear($throttleKey);
 
-        Auth::loginUsingId($userId, session('2fa_remember', false));
+        // Đăng nhập chính thức
+        Auth::login($user, session('2fa_remember', false));
+        
+        // Di chuyển dữ liệu so sánh/giỏ hàng từ session khách sang database
+        if (class_exists(CompareController::class)) {
+            CompareController::migrateSessionToDb();
+        }
+
+        // Dọn dẹp session tạm thời
         session()->forget(['2fa_user_id', '2fa_remember']);
         $request->session()->regenerate();
 
-        return redirect()->route('home');
+        Log::info("User {$user->email} authenticated via 2FA successfully.");
+
+        // 6. ĐIỀU HƯỚNG THÔNG MINH
+        // Nếu là Admin hoặc Nhân viên (Role 1, 2) thì vào Dashboard
+        if (in_array($user->role_id, [1, 2])) {
+            return redirect()->route('dashboard')->with('success', 'Xác thực thành công. Chào mừng Quản trị viên!');
+        }
+
+        return redirect()->intended('/')->with('success', 'Chào mừng bạn đã quay trở lại!');
     }
 
     /**

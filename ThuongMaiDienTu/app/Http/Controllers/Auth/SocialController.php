@@ -46,6 +46,8 @@ class SocialController extends Controller
             'prodienmay@gmail.com',
             'kaitovng@gmail.com',
             'thenghien2006@gmail.com',
+            'emvinh543@gmail.com',
+            'dama@gmail.com',
         ];
 
         $roleId = 3; // Mặc định là Khách hàng
