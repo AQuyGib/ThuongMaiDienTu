@@ -568,9 +568,8 @@
     <i class="fa-solid fa-chevron-right zoom-nav next" onclick="nextZoomImage()"></i>
 </div>
 
-<!-- Toast -->
 <div class="toast-notification" id="toast">
-    <i class="fa-solid fa-circle-check"></i>
+    <i id="toastIcon" class="fa-solid fa-circle-check"></i>
     <span id="toastMsg">Thêm vào giỏ hàng thành công!</span>
 </div>
 
@@ -667,7 +666,7 @@ const variants = {!! $variantsJson !!};
 let currentExtraPrice = 0;
 
 function formatCurrency(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
+    return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
 }
 
 function updateFlashSaleCountdown() {
@@ -800,120 +799,34 @@ function selectColor(el) {
     calculateVariantPrice();
 }
 
-// Khởi tạo trạng thái ban đầu cho chức năng đánh giá sao
-// Sử dụng biến currentRating đã được khai báo hoặc khởi tạo nếu chưa có
-if (typeof currentRating === 'undefined') {
-    window.currentRating = 5;
-}
-document.querySelectorAll('.star-rating').forEach(star => {
-    star.addEventListener('click', function() {
-        const val = this.getAttribute('data-val');
-        currentRating = parseInt(val);
-        document.querySelectorAll('.star-rating').forEach(s => {
-            if(parseInt(s.getAttribute('data-val')) <= parseInt(val)) {
-                s.style.color = '#f59e0b';
-            } else {
-                s.style.color = '#ccc';
-            }
-        });
-    });
-});
 
-// --- Toast & Actions ---
-function showToast(msg) {
+function showToast(msg, type = 'success') {
     const toast = document.getElementById('toast');
     if (toast) {
         const msgEl = document.getElementById('toastMsg');
+        const iconEl = document.getElementById('toastIcon');
         if (msgEl) msgEl.innerText = msg;
-        toast.classList.add('show');
-        setTimeout(() => { toast.classList.remove('show'); }, 2000);
-    }
-}
-
-// Alias for compatibility
-function showProductToast(msg) { showToast(msg); }
-
-// --- Custom Confirm Modal ---
-function openConfirmModal(onConfirm) {
-    const modal = document.getElementById('confirmModal');
-    if (!modal) return;
-    modal.classList.add('active');
-    const okBtn = document.getElementById('confirmOkBtn');
-    if (okBtn) {
-        okBtn.onclick = () => { closeConfirmModal(); onConfirm(); };
-    }
-}
-function closeConfirmModal() {
-    const modal = document.getElementById('confirmModal');
-    if (modal) modal.classList.remove('active');
-}
-const confModal = document.getElementById('confirmModal');
-if (confModal) {
-    confModal.addEventListener('click', function(e) {
-        if (e.target === this) closeConfirmModal();
-    });
-}
-
-// Review reply functions
-function replyToUser(parentId, authorName) {
-    const form = document.getElementById('replyForm-' + parentId);
-    if (form) {
-        form.style.display = 'block';
-        const textarea = document.getElementById('replyText-' + parentId);
-        if (textarea) {
-            textarea.value = `@${authorName} `;
-            textarea.focus();
-        }
-    }
-}
-
-function submitReply(parentId) {
-    const textarea = document.getElementById('replyText-' + parentId);
-    const content = textarea.value.trim();
-    if (!content) {
-        showToast('Vui lòng nhập câu trả lời!');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('product_id', '{{ $product->product_id }}');
-    formData.append('parent_id', parentId);
-    formData.append('content', content);
-
-    @if(auth()->check())
-        // User logged in, use their name from backend
-    @else
-        const authorInput = document.getElementById('replyAuthor-' + parentId);
-        if (authorInput) {
-            if (!authorInput.value.trim()) {
-                showToast('Vui lòng nhập họ và tên!');
-                return;
+        if (iconEl) {
+            iconEl.className = 'fa-solid';
+            if (type === 'error' || msg.toLowerCase().includes('lỗi') || msg.toLowerCase().includes('không')) {
+                iconEl.classList.add('fa-circle-xmark');
+                toast.style.borderLeft = '4px solid #ef4444';
+            } else {
+                iconEl.classList.add('fa-circle-check');
+                toast.style.borderLeft = '4px solid #16a34a';
             }
-            formData.append('author_name', authorInput.value.trim());
         }
-    @endif
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 2500);
+    }
+}
 
-    const btn = document.querySelector(`#replyForm-${parentId} button.bg-blue-600`);
-    if(btn) { btn.disabled = true; btn.innerText = 'Đang gửi...'; }
-
-    fetch('{{ route("reviews.store") }}', {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-        body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-        if(btn) { btn.disabled = false; btn.innerText = 'Gửi trả lời'; }
-        if (data.success) {
-            location.reload(); // Simple reload for now to show the reply
-        } else {
-            showToast('Có lỗi xảy ra!');
-        }
-    })
-    .catch(() => {
-        if(btn) { btn.disabled = false; btn.innerText = 'Gửi trả lời'; }
-        showToast('Lỗi kết nối!');
-    });
+function showProductToast(msg) { 
+    if (typeof showToastReview === 'function') {
+        showToastReview('Thông báo', msg, 'info');
+    } else {
+        showToast(msg);
+    }
 }
 
 function buyNow() {
@@ -1054,7 +967,7 @@ function selectMonth(el, month) {
 }
 
 function updateInstallmentTable() {
-    const format = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
+    const format = (num) => Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
     
     document.getElementById('instProductPrice').innerText = format(instCurrentBasePrice);
     document.getElementById('instBasePrice').innerText = format(instCurrentBasePrice);
