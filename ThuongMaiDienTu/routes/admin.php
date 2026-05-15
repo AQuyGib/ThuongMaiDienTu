@@ -10,9 +10,12 @@ use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\FlashSaleController;
+use App\Http\Controllers\Admin\FlashSaleProductController;
 use App\Http\Controllers\CashbookController;
 use App\Http\Controllers\Admin\ThemeSettingController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\RoleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,24 +55,18 @@ Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])
 Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
 Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
 
-// ===== Quản lý Danh Mục =====
-Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
-Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
-Route::put('/categories/{id}', [CategoryController::class, 'update'])->name('categories.update');
-Route::delete('/categories/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');
-
-// ===== Quản lý Sản Phẩm =====
-Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
-Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
-Route::delete('/products/{id}', [ProductController::class, 'destroy'])->name('products.destroy');
+// Quản lý Vai trò (Roles)
+Route::resource('roles', RoleController::class)->names([
+    'store' => 'roles.store',
+    'update' => 'roles.update',
+    'destroy' => 'roles.destroy',
+])->only(['store', 'update', 'destroy']);
 
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
-Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
+Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.ShippingCosts');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
-Route::get('/ai', [CartController::class, 'ai'])->name('cart.ai');
+Route::get('/ai', [CartController::class, 'ai'])->name('cart.qr');
 
 // ===== Quản lý Bài viết (Articles / Ecosystem) =====
 Route::resource('articles', ArticleController::class);
@@ -80,6 +77,15 @@ Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.
 Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
 Route::put('/suppliers/{id}', [SupplierController::class, 'update'])->name('suppliers.update');
 Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
+
+// ===== Quản lý Sản Phẩm & Danh Mục =====
+Route::resource('products', ProductController::class);
+Route::resource('categories', CategoryController::class);
+
+// ===== Flash Sale =====
+Route::resource('flash-sales', FlashSaleController::class)->except(['create', 'edit', 'show']);
+Route::post('flash-sales/{flash_sale}/products', [FlashSaleProductController::class, 'store'])->name('flash-sales.products.store');
+Route::delete('flash-sales/{flash_sale}/products/{flash_sale_product}', [FlashSaleProductController::class, 'destroy'])->name('flash-sales.products.destroy');
 
 // ===== Quản lý Biến Thể Sản Phẩm =====
 Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'])->name('products.variants.store');

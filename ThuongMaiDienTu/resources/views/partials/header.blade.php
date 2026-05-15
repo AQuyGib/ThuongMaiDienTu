@@ -38,7 +38,7 @@
         </div>
         <div class="top-bar-right">
             <span><i class="fa-solid fa-store"></i> Cửa hàng gần bạn</span>
-            <span><i class="fa-solid fa-truck"></i> Tra cứu đơn hàng</span>
+            <a href="/orders" class="hover:text-white transition"><span><i class="fa-solid fa-truck"></i> Tra cứu đơn hàng</span></a>
             <span><i class="fa-solid fa-phone"></i> <strong>1800 2097</strong></span>
         </div>
     </div>
@@ -137,8 +137,7 @@
         <!-- CỘT TRÁI: Danh mục + icon -->
         <div class="mega-col-left">
             @foreach($headerCategories as $cat)
-                <a href="{{ route('products.category', $cat->slug) }}" 
-                   class="mega-cat-item {{ $loop->first ? 'active' : '' }}"
+                <a href="{{ $cat->slug ? route('products.category', $cat->slug) : route('products.index') }}" class="mega-cat-item {{ $loop->first ? 'active' : '' }}"
                    data-cat="{{ $cat->category_id }}">
                     <i class="fa-solid {{ $categoryIcons[$cat->name] ?? 'fa-tag' }}"></i>
                     <span>{{ $cat->name }}</span>
@@ -164,8 +163,9 @@
                             <h4 class="mega-section-title">Dòng sản phẩm {{ $cat->name }}</h4>
                             <div class="mega-tags">
                                 @foreach($cat->children as $child)
-                                    <a href="{{ route('products.category', $child->slug) }}" class="mega-tag">{{ $child->name }}</a>
+                                    <a href="{{ $child->slug ? route('products.category', $child->slug) : route('products.index') }}" class="mega-tag">{{ $child->name }}</a>
                                 @endforeach
+                                <a href="{{ $cat->slug ? route('products.category', $cat->slug) : route('products.index') }}" class="mega-tag see-all">Xem tất cả {{ $cat->name }}</a>
                             </div>
                         </div>
                     @endif

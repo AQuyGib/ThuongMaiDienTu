@@ -200,27 +200,70 @@ class TwoFactorController extends Controller
     }
 
     /**
-     * Bật / Tắt 2FA cho tài khoản hiện tại
+     * Yêu cầu Bật/Tắt 2FA (Gửi mã OTP xác nhận)
      */
-    public function toggle(Request $request)
+    public function toggleRequest(Request $request)
     {
         $user = Auth::user();
-        $user->is_2fa_enabled = $request->boolean('is_2fa_enabled');
+        $intendedState = $request->boolean('is_2fa_enabled');
+
+        // Tạo mã OTP
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $user->two_factor_code = $otp;
+        $user->two_factor_expires_at = now()->addMinutes(5);
+        $user->save();
+
+        // Gửi OTP qua email
+        try {
+            Mail::send('emails.two_factor', ['user' => $user, 'otp' => $otp], function ($m) use ($user) {
+                $m->to($user->email)
+                  ->subject('[DienMayPro] Mã xác nhận thao tác Bảo mật 2 Lớp');
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Mã OTP đã được gửi đến email ' . $user->email . '. Vui lòng kiểm tra hộp thư.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể gửi email OTP. Vui lòng kiểm tra lại cấu hình mail.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Xác nhận Bật/Tắt 2FA với mã OTP
+     */
+    public function toggleConfirm(Request $request)
+    {
+        $request->validate(['otp' => 'required|digits:6']);
+        $user = Auth::user();
+        $intendedState = $request->boolean('is_2fa_enabled');
+
+        if (!$user->two_factor_code || $user->two_factor_code !== $request->otp) {
+            return response()->json(['success' => false, 'message' => 'Mã OTP không chính xác.'], 400);
+        }
+
+        if (now()->isAfter($user->two_factor_expires_at)) {
+            return response()->json(['success' => false, 'message' => 'Mã OTP đã hết hạn. Vui lòng thử lại.'], 400);
+        }
+
+        // OTP hợp lệ, tiến hành bật/tắt 2FA
+        $user->is_2fa_enabled = $intendedState;
+        $user->two_factor_code = null;
+        $user->two_factor_expires_at = null;
         $user->save();
 
         $status = $user->is_2fa_enabled ? 'BẬT' : 'TẮT';
         $message = "Đã $status xác thực hai bước thành công.";
 
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'is_enabled' => $user->is_2fa_enabled,
-                'message' => $message,
-                'status_text' => $user->is_2fa_enabled ? 'Hoạt động' : 'Vô hiệu',
-                'type' => $user->is_2fa_enabled ? 'success' : 'danger'
-            ]);
-        }
-
-        return back()->with('success', $message);
+        return response()->json([
+            'success' => true,
+            'is_enabled' => $user->is_2fa_enabled,
+            'message' => $message,
+            'status_text' => $user->is_2fa_enabled ? 'Hoạt động' : 'Vô hiệu',
+            'type' => $user->is_2fa_enabled ? 'success' : 'danger'
+        ]);
     }
 }
