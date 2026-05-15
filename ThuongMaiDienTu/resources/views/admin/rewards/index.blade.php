@@ -62,6 +62,7 @@
                             </td>
                             <td class="py-4 space-x-2">
                                 <button class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold" onclick='openEditModal(@json($item))'>Sửa</button>
+                                <button class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold" onclick='openImageModal(@json($item))'>Đổi ảnh</button>
                                 <form action="{{ route('admin.rewards.destroy', $item->reward_id) }}" method="POST" class="inline" onsubmit="return confirm('Xóa reward này?')">
                                     @csrf
                                     @method('DELETE')
@@ -93,10 +94,12 @@
     </div>
 </div>
 
+@include('admin.rewards.partials.image-modal')
+
 <div id="reward-modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-3xl p-6 max-w-2xl w-full">
         <h3 id="modal-title" class="text-xl font-bold mb-4">Tạo reward</h3>
-        <form id="reward-form" method="POST" enctype="multipart/form-data">
+        <form id="reward-form" method="POST">
             @csrf
             <div id="method-field"></div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -132,12 +135,12 @@
                 </div>
                 <input name="starts_at" type="datetime-local" class="border rounded-xl p-3">
                 <input name="ends_at" type="datetime-local" class="border rounded-xl p-3">
-                <input name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="border rounded-xl p-3 md:col-span-2">
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
                     <label class="text-sm font-semibold text-slate-600 block mb-2">Ảnh hiện tại</label>
                     <div id="image-preview" class="w-full h-40 rounded-2xl bg-slate-100 overflow-hidden flex items-center justify-center text-slate-400 text-sm">Chưa có ảnh</div>
+                    <p class="text-xs text-slate-500 mt-2">Ảnh reward được cập nhật riêng qua nút "Đổi ảnh" trong danh sách.</p>
                 </div>
                 <div>
                     <textarea name="description" rows="7" placeholder="Mô tả" class="border rounded-xl p-3 w-full h-full"></textarea>
@@ -155,6 +158,8 @@
 <script>
 const modal = document.getElementById('reward-modal');
 const form = document.getElementById('reward-form');
+const imageModal = document.getElementById('reward-image-modal');
+const imageForm = document.getElementById('reward-image-form');
 function openCreateModal(){
   document.getElementById('modal-title').textContent = 'Tạo reward';
   form.action = '{{ route('admin.rewards.store') }}';
@@ -180,5 +185,35 @@ function openEditModal(item){
   modal.classList.remove('hidden'); modal.classList.add('flex');
 }
 function closeRewardModal(){ modal.classList.add('hidden'); modal.classList.remove('flex'); }
+function openImageModal(item){
+  imageForm.action = `/admin/rewards/${item.reward_id}/image`;
+  const preview = document.getElementById('reward-image-preview');
+  const placeholder = document.getElementById('reward-image-placeholder');
+  if (item.display_image) {
+    preview.src = `/storage/${item.display_image}`;
+    preview.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  } else {
+    preview.src = '';
+    preview.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+  }
+  imageModal.classList.remove('hidden'); imageModal.classList.add('flex');
+}
+function closeImageModal(){ imageModal.classList.add('hidden'); imageModal.classList.remove('flex'); }
+
+document.getElementById('reward-image-form')?.addEventListener('change', (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const preview = document.getElementById('reward-image-preview');
+    const placeholder = document.getElementById('reward-image-placeholder');
+    preview.src = reader.result;
+    preview.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  };
+  reader.readAsDataURL(file);
+});
 </script>
 @endsection

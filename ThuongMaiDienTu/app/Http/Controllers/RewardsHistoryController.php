@@ -18,8 +18,7 @@ class RewardsHistoryController extends Controller
 
         $redemptions = RewardRedemption::with('reward')
             ->where('user_id', $user->user_id)
-            ->when($type === 'redeem' || ! $type, fn ($q) => $q)
-            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($status && in_array($status, ['issued', 'approved', 'pending', 'cancelled'], true), fn ($q) => $q->where('status', $status))
             ->when($search, fn ($q) => $q->where(function ($sub) use ($search) {
                 $sub->where('redemption_code', 'like', '%' . $search . '%')
                     ->orWhereHas('reward', fn ($rq) => $rq->where('name', 'like', '%' . $search . '%'));
@@ -30,8 +29,7 @@ class RewardsHistoryController extends Controller
 
         $spins = LuckyWheelSpin::with('reward')
             ->where('user_id', $user->user_id)
-            ->when($type === 'spin' || ! $type, fn ($q) => $q)
-            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($status && in_array($status, ['won', 'lost', 'pending', 'cancelled'], true), fn ($q) => $q->where('status', $status))
             ->when($search, fn ($q) => $q->where(function ($sub) use ($search) {
                 $sub->where('spin_code', 'like', '%' . $search . '%')
                     ->orWhereHas('reward', fn ($rq) => $rq->where('name', 'like', '%' . $search . '%'));

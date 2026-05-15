@@ -30,12 +30,9 @@ class RewardsController extends Controller
     public function store(Request $request)
     {
         $data = $this->validateReward($request);
-        $imagePath = $this->handleImageUpload($request);
 
         RewardCatalog::create([
             ...$data,
-            'image_path' => $imagePath,
-            'thumbnail_path' => $imagePath,
             'discount_amount' => $data['discount_amount'] ?? 0,
             'shipping_discount_amount' => $data['shipping_discount_amount'] ?? 0,
             'stock' => $data['stock'] ?? null,
@@ -55,12 +52,9 @@ class RewardsController extends Controller
     public function update(Request $request, RewardCatalog $reward)
     {
         $data = $this->validateReward($request, $reward->reward_id);
-        $imagePath = $this->handleImageUpload($request, $reward);
 
         $reward->update([
             ...$data,
-            'image_path' => $imagePath ?? $reward->image_path,
-            'thumbnail_path' => $imagePath ?? $reward->thumbnail_path,
             'discount_amount' => $data['discount_amount'] ?? 0,
             'shipping_discount_amount' => $data['shipping_discount_amount'] ?? 0,
             'stock' => $data['stock'] ?? null,
@@ -110,11 +104,12 @@ class RewardsController extends Controller
             'stock' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'max_per_user' => ['nullable', 'integer', 'min:1', 'max:100'],
             'min_rank_points' => ['nullable', 'integer', 'min:0', 'max:1000000'],
-            'requires_rank_check' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
+            'requires_rank_check' => ['nullable', 'boolean'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
             'description' => ['nullable', 'string', 'max:2000'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
         ]);
     }
 
