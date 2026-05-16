@@ -41,9 +41,9 @@ class Order extends Model {
         $user = $order->user;
         if ($user && $user->member_tier !== $newTier) {
             $user->member_tier = match ($newTier) {
-                'Diamond' => 'Vang',
-                'Gold' => 'Bac',
-                'Silver' => 'Dong',
+                'Diamond' => 'KimCuong',
+                'Gold' => 'Vang',
+                'Silver' => 'Bac',
                 'Bronze' => 'Dong',
                 default => 'Dong',
             };

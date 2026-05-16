@@ -9,11 +9,12 @@ use RuntimeException;
 
 class PointsService
 {
-    public const POINT_RATE = 1000;
+    public const EARN_RATE = 10000; // 10,000 VND = 1 point
+    public const POINT_VALUE = 1000; // 1 point = 1,000 VND discount
 
     public function calculateEarnedPoints(int|float $amount): int
     {
-        return (int) floor(max(0, $amount) / self::POINT_RATE);
+        return (int) floor(max(0, $amount) / self::EARN_RATE);
     }
 
     public function getBalance(User $user): array

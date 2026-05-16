@@ -129,7 +129,7 @@ class CartController extends Controller
         $subtotal = (int) $cartItems->sum(fn ($item) => $item['price'] * $item['quantity']);
         $discount = (int) session('checkout_discount', 0);
         $walletPointsUsed = (int) session('checkout_wallet_points', 0);
-        $walletReduction = $walletPointsUsed * PointsService::POINT_RATE;
+        $walletReduction = $walletPointsUsed * PointsService::POINT_VALUE;
         $finalAmount = max(0, $subtotal - $discount - $walletReduction);
         $balance = Auth::check()
             ? $pointsService->getBalance(Auth::user())
@@ -164,7 +164,7 @@ class CartController extends Controller
         return response()->json([
             'success' => true,
             'wallet_points' => $walletPoints,
-            'wallet_reduction' => $walletPoints * PointsService::POINT_RATE,
+            'wallet_reduction' => $walletPoints * PointsService::POINT_VALUE,
         ]);
     }
 
@@ -188,7 +188,7 @@ class CartController extends Controller
         $shippingFee = 0;
         $discount = (int) session('checkout_discount', 0);
         $walletPointsUsed = (int) session('checkout_wallet_points', 0);
-        $walletReduction = $walletPointsUsed * PointsService::POINT_RATE;
+        $walletReduction = $walletPointsUsed * PointsService::POINT_VALUE;
         $finalAmount = max(0, $subtotal + $shippingFee - $discount - $walletReduction);
         $user = Auth::user();
 
