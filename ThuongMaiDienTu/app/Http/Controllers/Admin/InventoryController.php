@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InventoryItem;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
@@ -28,12 +29,31 @@ class InventoryController extends Controller
         $items = $query->orderBy('item_id', 'desc')->paginate(15)->appends($request->query());
 
         // Thống kê
-        $totalInStock  = InventoryItem::where('status', 'In_Stock')->count();
-        $totalSold     = InventoryItem::where('status', 'Sold')->count();
+        $totalInStock = InventoryItem::where('status', 'In_Stock')->count();
+        $totalSold = InventoryItem::where('status', 'Sold')->count();
         $totalDefective = InventoryItem::where('status', 'Defective')->count();
+        $totalProducts = Product::count();
+
+        $productStats = Product::query()
+            ->leftJoin('product_variants', 'products.product_id', '=', 'product_variants.product_id')
+            ->leftJoin('inventory_items', 'product_variants.variant_id', '=', 'inventory_items.variant_id')
+            ->select('products.product_id', 'products.name')
+            ->selectRaw('COUNT(DISTINCT product_variants.variant_id) as variant_count')
+            ->selectRaw("COUNT(CASE WHEN inventory_items.status = 'In_Stock' THEN 1 END) as in_stock_count")
+            ->selectRaw("COUNT(CASE WHEN inventory_items.status = 'Sold' THEN 1 END) as sold_count")
+            ->selectRaw("COUNT(CASE WHEN inventory_items.status = 'Defective' THEN 1 END) as defective_count")
+            ->selectRaw('COUNT(inventory_items.item_id) as total_items')
+            ->groupBy('products.product_id', 'products.name')
+            ->orderByDesc('total_items')
+            ->get();
 
         return view('admin.inventory.index', compact(
-            'items', 'totalInStock', 'totalSold', 'totalDefective'
+            'items',
+            'totalInStock',
+            'totalSold',
+            'totalDefective',
+            'totalProducts',
+            'productStats'
         ));
     }
 
