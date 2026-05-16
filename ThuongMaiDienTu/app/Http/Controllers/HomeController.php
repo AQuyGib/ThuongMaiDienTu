@@ -49,19 +49,32 @@ class HomeController extends Controller
                 ->get();
         }
 
-        // 3. Lấy linh động các danh mục muốn hiển thị ra trang chủ (Sử dụng slug để tránh hardcode name)
-        
-        // Lấy Điện thoại
-        $catDienThoai = Category::where('slug', 'dien-thoai')->first();
-        $phoneProducts = $catDienThoai 
-            ? Product::with('category')->where('category_id', $catDienThoai->category_id)->orderBy('product_id', 'desc')->take(10)->get() 
-            : collect();
-
-        // Lấy Laptop
-        $catLaptop = Category::where('slug', 'laptop')->first();
-        $laptopProducts = $catLaptop 
-            ? Product::with('category')->where('category_id', $catLaptop->category_id)->orderBy('product_id', 'desc')->take(5)->get() 
-            : collect();
+        // 3. Lấy linh động các khung sản phẩm tùy biến từ Admin
+        $homeSections = \App\Models\HomeSection::where('status', true)
+            ->with(['category.children', 'products.category']) // Eager load products ở đây
+            ->orderBy('order', 'asc')
+            ->get()
+            ->map(function($section) {
+                if ($section instanceof \App\Models\HomeSection) {
+                    if ($section->type === 'category' && $section->category) {
+                        $catIds = $section->category->children->pluck('category_id')->push($section->category_id);
+                        $section->products_list = Product::with('category')
+                            ->whereIn('category_id', $catIds)
+                            ->orderBy('product_id', 'desc')
+                            ->take($section->limit)
+                            ->get();
+                    } elseif ($section->type === 'manual') {
+                        // Vì đã eager load 'products', ta lấy trực tiếp từ collection
+                        $section->products_list = $section->products->take($section->limit);
+                    } else { // latest
+                        $section->products_list = Product::with('category')
+                            ->orderBy('product_id', 'desc')
+                            ->take($section->limit)
+                            ->get();
+                    }
+                }
+                return $section;
+            });
 
         // Góc Tin tức & Lifestyle: 5 bài viết mới nhất đã duyệt
         $latestArticles = \App\Models\Article::where('status', 'approved')
@@ -73,8 +86,7 @@ class HomeController extends Controller
             'categories',
             'activeFlashSales',
             'flashSaleProducts',
-            'phoneProducts',
-            'laptopProducts',
+            'homeSections',
             'latestArticles'
         ));
     }
