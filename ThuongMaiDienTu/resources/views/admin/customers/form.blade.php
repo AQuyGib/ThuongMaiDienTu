@@ -16,6 +16,9 @@
         @csrf
         @if($customer->user_id)
             @method('PUT')
+            <input type="hidden" name="version" value="{{ $customer->version }}">
+        @else
+            <input type="hidden" name="version" value="1">
         @endif
 
         <div class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">

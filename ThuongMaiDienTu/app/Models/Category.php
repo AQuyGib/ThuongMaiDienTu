@@ -29,4 +29,16 @@ class Category extends Model {
     public function products() {
         return $this->hasMany(Product::class, 'category_id');
     }
+
+    public function getRootCategoryId() {
+        $rootId = $this->category_id;
+        $current = $this;
+        while ($current->parent_id) {
+            $parent = Category::find($current->parent_id);
+            if (!$parent) break;
+            $current = $parent;
+            $rootId = $current->category_id;
+        }
+        return $rootId;
+    }
 }

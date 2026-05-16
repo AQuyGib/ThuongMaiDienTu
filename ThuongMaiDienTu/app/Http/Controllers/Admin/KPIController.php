@@ -23,10 +23,29 @@ class KPIController extends Controller
 
         if ($filter === 'today') {
             $startDate = now()->startOfDay();
+        } elseif ($filter === 'yesterday') {
+            $startDate = now()->subDay()->startOfDay();
+            $endDate = now()->subDay()->endOfDay();
         } elseif ($filter === 'week') {
             $startDate = now()->startOfWeek();
+        } elseif ($filter === 'last_month') {
+            $startDate = now()->subMonth()->startOfMonth();
+            $endDate = now()->subMonth()->endOfMonth();
         } elseif ($filter === 'year') {
             $startDate = now()->startOfYear();
+        } elseif ($filter === 'custom') {
+            $requestStart = $request->input('start');
+            $requestEnd = $request->input('end');
+            
+            if ($requestStart && $requestEnd) {
+                $startDate = \Carbon\Carbon::parse($requestStart)->startOfDay();
+                $endDate = \Carbon\Carbon::parse($requestEnd)->endOfDay();
+                
+                // Đảm bảo không vượt quá ngày hiện tại
+                if ($endDate > now()) {
+                    $endDate = now()->endOfDay();
+                }
+            }
         }
 
         // 2. Thống kê Sales KPI

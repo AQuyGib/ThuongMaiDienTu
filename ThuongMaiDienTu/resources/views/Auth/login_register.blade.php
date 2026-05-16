@@ -220,6 +220,12 @@
             box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); 
         }
 
+        /* Ẩn con mắt mặc định của trình duyệt (Edge) để tránh 2 con mắt */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
         .forgot-link { font-size: 13px; color: var(--text-muted); text-decoration: none; font-weight: 600; transition: color 0.3s; }
         .forgot-link:hover { color: var(--tech-blue); text-decoration: underline; }
 
@@ -404,9 +410,32 @@
             <!-- Đưa tên thương hiệu lên trên -->
             <div class="form-header">
                 <h2 class="brand-title">DienMay<span class="highlight">Pro</span></h2>
-                <p class="brand-slogan">Chào mừng đến với cửa hàng điện máy thông minh</p>
+                <p class="brand-slogan">Chào mừng bạn quay trở lại</p>
             </div>
 
+            <!-- HIỂN THỊ LỖI HỆ THỐNG -->
+            @if(session('error'))
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #b91c1c; display: flex; align-items: center; gap: 10px; animation: shake 0.5s ease;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #b91c1c; animation: shake 0.5s ease;">
+                    @foreach ($errors->all() as $error)
+                        <p>• {{ $error }}</p>
+                    @endforeach
+                </div>
+            @endif
+
+            <style>
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+            </style>
             <div class="tabs">
                 <div class="tab" id="tabLogin">Đăng nhập</div>
                 <div class="tab" id="tabRegister">Đăng ký</div>
@@ -532,18 +561,23 @@
         }
 
         // Khởi tạo 80 hạt
+        // Khởi tạo danh sách 80 hạt (particles) ban đầu
         for (let i = 0; i < 80; i++) particles.push(new Particle());
 
+        // Hàm vẽ các đường nối giữa các hạt khi chúng ở gần nhau
         function drawConnections() {
             for (let i = 0; i < particles.length; i++) {
                 for (let j = i + 1; j < particles.length; j++) {
                     const dx = particles[i].x - particles[j].x;
                     const dy = particles[i].y - particles[j].y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    // Nếu khoảng cách giữa 2 hạt nhỏ hơn 70px thì vẽ đường nối
                     if (dist < 70) {
                         ctx.beginPath();
                         ctx.moveTo(particles[i].x, particles[i].y);
                         ctx.lineTo(particles[j].x, particles[j].y);
+                        // Độ đậm nhạt của đường nối phụ thuộc vào khoảng cách (càng gần càng rõ)
                         ctx.strokeStyle = `rgba(255,255,255,${0.06 * (1 - dist/70)})`;
                         ctx.lineWidth = 0.5;
                         ctx.stroke();
@@ -552,12 +586,22 @@
             }
         }
 
+        // Hàm vòng lặp chính để xử lý hiệu ứng hoạt họa (Animation Loop)
         function animateParticles() {
+            // Xóa toàn bộ canvas để chuẩn bị vẽ khung hình mới
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Vẽ các đường liên kết giữa các hạt
             drawConnections();
+            
+            // Cập nhật vị trí và vẽ từng hạt một
             particles.forEach(p => { p.update(); p.draw(); });
+            
+            // Yêu cầu trình duyệt gọi lại hàm này ở khung hình tiếp theo
             requestAnimationFrame(animateParticles);
         }
+        
+        // Bắt đầu chạy hiệu ứng
         animateParticles();
 
         /* ===== PASSWORD TOGGLE ===== */
@@ -571,29 +615,39 @@
                 : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`;
         }
 
+        /* ===== CHUYỂN ĐỔI TAB ĐĂNG NHẬP / ĐĂNG KÝ ===== */
+        // Lấy các phần tử DOM của nút Tab
         const tabLogin = document.getElementById('tabLogin');
         const tabRegister = document.getElementById('tabRegister');
+        
+        // Lấy các phần tử DOM của Form hiển thị
         const formLoginView = document.getElementById('formLoginView');
         const formRegisterView = document.getElementById('formRegisterView');
 
+        // Hàm hiển thị Form Đăng nhập
         function showLogin() {
-            tabLogin.classList.add('active');
-            tabRegister.classList.remove('active');
-            formLoginView.classList.remove('hidden');
-            formRegisterView.classList.add('hidden');
+            tabLogin.classList.add('active'); // Làm nổi bật tab Đăng nhập
+            tabRegister.classList.remove('active'); // Tắt nổi bật tab Đăng ký
+            formLoginView.classList.remove('hidden'); // Hiện form Đăng nhập
+            formRegisterView.classList.add('hidden'); // Ẩn form Đăng ký
         }
 
+        // Hàm hiển thị Form Đăng ký
         function showRegister() {
-            tabRegister.classList.add('active');
-            tabLogin.classList.remove('active');
-            formRegisterView.classList.remove('hidden');
-            formLoginView.classList.add('hidden');
+            tabRegister.classList.add('active'); // Làm nổi bật tab Đăng ký
+            tabLogin.classList.remove('active'); // Tắt nổi bật tab Đăng nhập
+            formRegisterView.classList.remove('hidden'); // Hiện form Đăng ký
+            formLoginView.classList.add('hidden'); // Ẩn form Đăng nhập
         }
 
+        // Gắn sự kiện click cho các tab
         tabLogin.addEventListener('click', showLogin);
         tabRegister.addEventListener('click', showRegister);
 
+        // Lấy trạng thái tab đang active từ backend (mặc định là 'login')
         const currentActiveTab = '{{ $active_tab }}';
+        
+        // Hiển thị tab tương ứng khi vừa load trang
         if (currentActiveTab === 'register') {
             showRegister();
         } else {

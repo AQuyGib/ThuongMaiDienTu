@@ -119,13 +119,18 @@
                                     d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                         </div>
-                        <h1 class="text-lg font-bold text-gray-800">
-                            @if($currentCategory)
-                                {{ $currentCategory->name }} — Hiển thị <span id="product-count" class="text-red-600">{{ $products->total() }}</span> sản phẩm
-                            @else
-                                Hiển thị <span id="product-count" class="text-red-600">{{ $products->total() }}</span> sản phẩm
-                            @endif
-                        </h1>
+                        <div>
+                            <h1 class="text-lg font-bold text-gray-800">
+                                @if($currentCategory)
+                                    {{ $currentCategory->name }} — Hiển thị <span id="product-count" class="text-red-600">{{ $products->total() }}</span> sản phẩm
+                                @else
+                                    Hiển thị <span id="product-count" class="text-red-600">{{ $products->total() }}</span> sản phẩm
+                                @endif
+                            </h1>
+                            <div class="mt-1 inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600 border border-red-100">
+                                Flash Sale phase 1: nền dữ liệu + service đã sẵn sàng
+                            </div>
+                        </div>
                     </div>
                     <div
                         class="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">

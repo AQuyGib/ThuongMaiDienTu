@@ -495,88 +495,107 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     
-    /* ===== Wishlist Tab ===== */
+
+    /* ===== Wishlist Grid ===== */
     .wishlist-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
         gap: 20px;
-        margin-top: 20px;
     }
     .wishlist-item {
         background: #fff;
-        border: 1px solid #eee;
         border-radius: 12px;
-        padding: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: 1px solid #eee;
         position: relative;
-        transition: 0.3s;
-        display: flex;
-        flex-direction: column;
     }
     .wishlist-item:hover {
-        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
         transform: translateY(-5px);
-        border-color: #0046ab;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     }
-    .wishlist-img {
-        width: 100%;
-        aspect-ratio: 1/1;
+    .wishlist-item-img {
+        position: relative;
+        height: 200px;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        overflow: hidden;
+    }
+    .wishlist-item-img img {
+        max-width: 100%;
+        max-height: 100%;
         object-fit: contain;
-        margin-bottom: 15px;
-        border-radius: 8px;
     }
-    .wishlist-item h4 {
+    .remove-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        color: #666;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: 0.2s;
+    }
+    .remove-btn:hover {
+        background: #d70018;
+        color: #fff;
+    }
+    .wishlist-item-info {
+        padding: 15px;
+    }
+    .wishlist-item-name {
+        display: block;
         font-size: 14px;
+        font-weight: 600;
         color: #333;
-        margin-bottom: 10px;
-        line-height: 1.4;
+        text-decoration: none;
+        margin-bottom: 8px;
         height: 40px;
         overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
+        line-height: 1.4;
     }
-    .wishlist-price {
+    .wishlist-item-name:hover {
+        color: #0046ab;
+    }
+    .wishlist-item-price {
         font-size: 16px;
         font-weight: 700;
-        color: #0046ab;
-        margin-bottom: 15px;
+        color: #d70018;
+        margin-bottom: 12px;
     }
-    .wishlist-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: auto;
-    }
-    .btn-wishlist-cart {
-        flex: 1;
+    .btn-add-cart-wishlist {
+        width: 100%;
+        padding: 10px;
         background: #0046ab;
         color: #fff;
         border: none;
-        padding: 8px;
-        border-radius: 6px;
-        font-size: 12px;
+        border-radius: 8px;
+        font-size: 13px;
         font-weight: 600;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-    }
-    .btn-wishlist-remove {
-        width: 35px;
-        height: 35px;
-        background: #fee2e2;
-        color: #e21033;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
         transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
-    .btn-wishlist-remove:hover {
-        background: #fecaca;
+    .btn-add-cart-wishlist:hover {
+        background: #003580;
     }
 
     /* ===== Membership & Promo Tab ===== */
@@ -718,6 +737,9 @@
                 </div>
                 <div class="profile-nav-item" onclick="switchTab('info-tab', this)">
                     <i class="fa-solid fa-user-pen"></i> Thông tin tài khoản
+                </div>
+                <div class="profile-nav-item" onclick="switchTab('wishlist-tab', this)">
+                    <i class="fa-solid fa-heart"></i> Danh sách yêu thích
                 </div>
 
                 <div class="nav-divider"></div>
@@ -1058,18 +1080,95 @@
                             </div>
                         </form>
                     </div>
+
+                    <!-- Xác thực 2 bước (2FA) -->
+                    <div class="acc-card" style="grid-column: 1 / -1;">
+                        <div class="acc-card-header">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <h3>Xác thực 2 bước (2FA)</h3>
+                                @if($user->two_factor_secret)
+                                    <span class="status-badge status-completed" style="font-size: 11px; padding: 2px 8px;">Đã bật <i class="fa-solid fa-shield-check"></i></span>
+                                @else
+                                    <span class="status-badge" style="background:#f1f5f9; color:#64748b; font-size: 11px; padding: 2px 8px;">Chưa bật</span>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <div class="acc-info-row" style="border: none; flex-direction: column; gap: 15px; align-items: flex-start;">
+                            <p style="font-size: 13px; color: #555; margin: 0; line-height: 1.5;">Bảo vệ tài khoản của bạn bằng cách thêm một lớp bảo mật bổ sung. Khi đăng nhập, bạn sẽ cần nhập mã xác minh từ ứng dụng Authenticator ngoài mật khẩu của bạn.</p>
+                            
+                            <div style="display: flex; gap: 10px;">
+                                @if($user->is_2fa_enabled || $user->two_factor_secret)
+                                    <a href="{{ route('security') }}" class="btn-outline" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Cấu hình lại</a>
+                                @else
+                                    <a href="{{ route('security') }}" class="btn-update" style="background: #0046ab; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">
+                                        <i class="fa-solid fa-shield-halved" style="margin-right: 5px;"></i> Thiết lập 2FA ngay
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB DANH SÁCH YÊU THÍCH -->
+            <div id="wishlist-tab" class="profile-tab">
+                <div class="info-form-wrap">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h3 style="margin: 0;">Danh sách yêu thích ({{ count($wishlist) }})</h3>
+                        @if(count($wishlist) > 0)
+                            <form action="{{ route('wishlist.clear') }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-outline" style="color: #d70018; border-color: #d70018;">
+                                    <i class="fa-solid fa-trash-can"></i> Xóa tất cả
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+
+                    @if(count($wishlist) > 0)
+                        <div class="wishlist-grid">
+                            @foreach($wishlist as $item)
+                                @if($item->product)
+                                    <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
+                                        <div class="wishlist-item-img">
+                                            <a href="{{ route('product.show', $item->product->product_id) }}">
+                                                <img src="{{ $item->product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}" alt="{{ $item->product->name }}">
+                                            </a>
+                                            <button class="remove-btn" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                        <div class="wishlist-item-info">
+                                            <a href="{{ route('product.show', $item->product->product_id) }}" class="wishlist-item-name">{{ $item->product->name }}</a>
+                                            <div class="wishlist-item-price">{{ number_format($item->product->base_price, 0, ',', '.') }}đ</div>
+                                            <button class="btn-add-cart-wishlist" onclick="addToCart('{{ $item->product->product_id }}')">
+                                                <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
+                                            </button>
+                                            <div style="margin-top: 10px; text-align: center;">
+                                                <a href="javascript:void(0)" onclick="addToCompare('{{ $item->product->product_id }}')" 
+                                                   style="font-size: 11px; color: #666; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 500;"
+                                                   onmouseover="this.style.color='#0046ab'" onmouseout="this.style.color='#666'">
+                                                    <i class="fa-solid fa-scale-balanced"></i> So sánh
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="dash-empty" style="padding: 50px 0;">
+                            <i class="fa-solid fa-heart-crack" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
+                            <p>Danh sách yêu thích của bạn đang trống.</p>
+                            <a href="{{ route('home') }}" class="btn-outline">Khám phá sản phẩm</a>
+                        </div>
+                    @endif
                 </div>
             </div>
 
             <!-- CÁC TAB KHÁC -->
-            <div id="wishlist-tab" class="profile-tab">
-                <div class="info-form-wrap">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
-                        <h3 style="margin: 0; border: none; padding: 0;">Sản Phẩm Yêu Thích ({{ $wishlist->count() }})</h3>
-                        @if($wishlist->count() > 0)
-                            <a href="javascript:void(0)" onclick="clearWishlist()" style="color: #0046ab; font-size: 13px; font-weight: 600;">Xóa tất cả</a>
-                        @endif
-                    </div>
 
 
             <div id="promo-tab" class="profile-tab">
@@ -1458,6 +1557,10 @@
     function closeConfirmModal() {
         document.getElementById('confirmModal').classList.remove('active');
         confirmCallback = null;
+        // Reset lại nút xác nhận về trạng thái ban đầu
+        const btn = document.getElementById('btnDoConfirm');
+        btn.disabled = false;
+        btn.innerHTML = 'Xác nhận xóa';
     }
 
     document.getElementById('btnDoConfirm').addEventListener('click', function() {
@@ -1840,16 +1943,15 @@
         })
         .then(res => res.json())
         .then(data => {
-            if(data.status === 'success') {
-                showToast('Thành công', 'Đã thêm sản phẩm vào giỏ hàng!', 'success');
-                // Cập nhật số lượng giỏ hàng trên header nếu có
+            if(data.status === 'success' || data.success) {
+                showToast('Thành công', data.message || 'Đã thêm sản phẩm vào giỏ hàng!', 'success');
                 const badge = document.getElementById('headerCartBadge');
                 if(badge) {
                     badge.innerText = data.cart_count;
                     badge.style.display = 'block';
                 }
             } else {
-                showToast('Lỗi', 'Không thể thêm vào giỏ hàng.', 'error');
+                showToast('Lỗi', data.message || 'Không thể thêm vào giỏ hàng.', 'error');
             }
         })
         .catch(err => {
@@ -1858,9 +1960,14 @@
         });
     }
 
+    function updateWishlistCount(count) {
+        const countEl = document.getElementById('wishlist-count');
+        if (countEl) countEl.textContent = count;
+    }
+
     function removeFromWishlist(id) {
         showConfirm('Xóa khỏi yêu thích', 'Bạn muốn bỏ sản phẩm này khỏi danh sách yêu thích?', function() {
-            fetch(`/profile/wishlist/${id}`, {
+            fetch(`/wishlist/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1869,6 +1976,7 @@
             })
             .then(res => res.json())
             .then(data => {
+                closeConfirmModal();
                 if(data.success) {
                     showToast('Đã xóa', 'Đã bỏ sản phẩm khỏi danh sách yêu thích.', 'success');
                     const item = document.getElementById(`wishlist-item-${id}`);
@@ -1877,14 +1985,14 @@
                         item.style.transform = 'scale(0.8)';
                         setTimeout(() => {
                             item.remove();
-                            if(document.querySelectorAll('.wishlist-item').length === 0) {
+                            const remaining = document.querySelectorAll('.wishlist-item').length;
+                            updateWishlistCount(remaining);
+                            if(remaining === 0) {
                                 window.location.reload();
                             }
                         }, 300);
                     }
-                    closeConfirmModal();
                 } else {
-                    closeConfirmModal();
                     showToast('Lỗi', data.error || 'Không thể thực hiện thao tác này.', 'error');
                 }
             })
@@ -1897,7 +2005,7 @@
 
     function clearWishlist() {
         showConfirm('Xóa tất cả', 'Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?', function() {
-            fetch('{{ route('profile.wishlist.clear') }}', {
+            fetch('{{ route('wishlist.clear') }}', {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1906,13 +2014,11 @@
             })
             .then(res => res.json())
             .then(data => {
+                closeConfirmModal();
                 if(data.success) {
                     showToast('Thành công', 'Đã xóa toàn bộ danh sách yêu thích.', 'success');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
+                    setTimeout(() => window.location.reload(), 1000);
                 } else {
-                    closeConfirmModal();
                     showToast('Lỗi', data.error || 'Không thể xóa danh sách lúc này.', 'error');
                 }
             })
@@ -1920,6 +2026,38 @@
                 closeConfirmModal();
                 showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
             });
+        });
+    }
+
+    function addToCartFromWishlist(btn, productId) {
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Đang thêm...';
+
+        fetch('{{ route("cart.add") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ product_id: productId, quantity: 1 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            if (data.status === 'success' || data.success) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã thêm!';
+                showToast('Thành công', data.message || 'Đã thêm vào giỏ hàng!', 'success');
+                setTimeout(() => { btn.innerHTML = originalHTML; }, 2000);
+            } else {
+                btn.innerHTML = originalHTML;
+                showToast('Lỗi', data.message || 'Không thể thêm vào giỏ hàng.', 'error');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            showToast('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
         });
     }
 
@@ -1934,6 +2072,7 @@
             })
             .then(res => res.json())
             .then(data => {
+                closeConfirmModal();
                 if(data.success) {
                     sessionStorage.setItem('profile_toast', JSON.stringify({
                         title: 'Đã xóa',
@@ -1942,7 +2081,6 @@
                     }));
                     window.location.href = '?tab=info-tab';
                 } else {
-                    closeConfirmModal();
                     showToast('Lỗi', 'Không thể xóa địa chỉ này.', 'error');
                 }
             })
@@ -1955,7 +2093,6 @@
 
     // Initialize Active Tab & Notifications
     document.addEventListener('DOMContentLoaded', function() {
-        // Kiểm tra toast từ sessionStorage (được set trước khi reload trang)
         const toastData = sessionStorage.getItem('profile_toast');
         if (toastData) {
             const data = JSON.parse(toastData);
@@ -1975,7 +2112,10 @@
                 case 'promo-tab': index = 4; break;
                 case 'login-history-tab': index = 5; break;
             }
-            switchTab(tab, document.querySelectorAll('.profile-nav-item')[index]);
+            const navItems = document.querySelectorAll('.profile-nav-item');
+            if (navItems[index]) {
+                switchTab(tab, navItems[index]);
+            }
         }
     });
 </script>

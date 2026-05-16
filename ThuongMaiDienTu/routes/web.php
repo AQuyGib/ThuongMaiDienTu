@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\RewardsController as AdminRewardsController;
 use App\Http\Controllers\Admin\RewardImageController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\CompareController;
+use App\Http\Controllers\WishlistController;
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
@@ -43,6 +44,8 @@ Route::get('/2fa/verify',  [TwoFactorController::class, 'show'])->name('2fa.show
 Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify');
 Route::post('/2fa/send',   [TwoFactorController::class, 'send'])->name('2fa.send');
 Route::post('/2fa/toggle', [TwoFactorController::class, 'toggle'])->name('2fa.toggle')->middleware('auth');
+Route::post('/2fa/toggle-request', [TwoFactorController::class, 'toggleRequest'])->name('2fa.toggle.request')->middleware('auth');
+Route::post('/2fa/toggle-confirm', [TwoFactorController::class, 'toggleConfirm'])->name('2fa.toggle.confirm')->middleware('auth');
 Route::get('/security',    [TwoFactorController::class, 'securityPage'])->name('security')->middleware('auth');
 Route::delete('/security/session/{id}', [TwoFactorController::class, 'logoutSession'])->name('security.session.destroy')->middleware('auth');
 
@@ -52,7 +55,7 @@ Route::get('/', function () {
     return redirect()->route('home');
 });
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
-Route::get('/san-pham/{id}', [ProductController::class, 'show'])->name('product.show');
+Route::get('/san-pham/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
 
@@ -66,9 +69,13 @@ Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::post('/pay/wallet-points', [CartController::class, 'applyWalletPoints'])->name('cart.pay.wallet-points');
 Route::post('/pay/place-order', [CartController::class, 'placeOrder'])->name('cart.place-order');
 Route::get('/order-confirmation/{orderId}', [CartController::class, 'confirmation'])->name('cart.confirmation');
+Route::post('/cart/confirm', [CartController::class, 'confirmOrder'])->name('cart.confirm');
+Route::post('/cart/cancel', [CartController::class, 'cancelOrder'])->name('cart.cancel');
+Route::post('/cart/timeout', [CartController::class, 'timeoutOrder'])->name('cart.timeout');
 Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
 Route::get('/orders', [CartController::class, 'tracking'])->name('cart.tracking');
 Route::get('/print-bill', [CartController::class, 'print'])->name('cart.print');
+Route::get('/cart/count', [CartController::class, 'getCartCount'])->name('cart.count');
 
 Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');
 Route::get('/rewards/{reward}', [RewardsController::class, 'show'])->name('rewards.show');
@@ -87,19 +94,21 @@ Route::middleware('auth')->group(function() {
 });
 Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController::class, 'show'])->name('articles.show');
 
-Route::match(['get', 'post'], '/admin/permissions', function () {
-    return view('admin.permissions.index');
-})->name('admin.permissions.index')->middleware([\App\Http\Middleware\IsAdmin::class]);
 
 // Product Filtering
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
 Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
 Route::get('/products/{categorySlug}', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.category');
-Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.detail');
+Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
 Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'getCategoryFilters'])->name('api.categories.filters');
 
 // Admin Customer Management
 Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class])->group(function () {
+    Route::get('customers/trash', [\App\Http\Controllers\Admin\CustomerController::class, 'trash'])->name('admin.customers.trash');
+    Route::post('customers/{id}/restore', [\App\Http\Controllers\Admin\CustomerController::class, 'restore'])->name('admin.customers.restore');
+    Route::delete('customers/{id}/force-delete', [\App\Http\Controllers\Admin\CustomerController::class, 'forceDelete'])->name('admin.customers.force-delete');
+    Route::get('customers/export', [\App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('admin.customers.export');
+    Route::post('customers/bulk-action', [\App\Http\Controllers\Admin\CustomerController::class, 'bulkAction'])->name('admin.customers.bulk-action');
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class, ['as' => 'admin']);
     Route::get('rewards', [AdminRewardsController::class, 'index'])->name('admin.rewards.index');
     Route::post('rewards', [AdminRewardsController::class, 'store'])->name('admin.rewards.store');
@@ -118,10 +127,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
     Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
     
-    Route::delete('/profile/wishlist/clear', [ProfileController::class, 'clearWishlist'])->name('profile.wishlist.clear');
-    Route::delete('/profile/wishlist/{id}', [ProfileController::class, 'removeFromWishlist'])->name('profile.wishlist.destroy');
-    Route::post('/wishlist/toggle', [ProfileController::class, 'toggleWishlist'])->name('wishlist.toggle');
+    Route::delete('/wishlist/clear', [WishlistController::class, 'clearWishlist'])->name('wishlist.clear');
+    Route::delete('/wishlist/{id}', [WishlistController::class, 'removeFromWishlist'])->name('wishlist.destroy');
+    Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
+
+// Search & Suggestions
+use App\Http\Controllers\Frontend\SearchController;
+Route::get('/search', [SearchController::class, 'index'])->name('search.index');
+Route::get('/api/search/suggestions', [SearchController::class, 'suggestions'])->name('api.search.suggestions');
+Route::get('/api/category-products/{id}', [SearchController::class, 'getProductsByCategory'])->name('api.category.products');
 
 // Product Compare (So sánh sản phẩm)
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
