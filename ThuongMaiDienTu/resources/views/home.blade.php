@@ -518,34 +518,31 @@
         .section-tabs {
             display: flex;
             gap: 12px;
+            align-items: center; /* Đảm bảo các tab thẳng hàng */
         }
 
         .section-tab-item {
-            padding: 10px 24px;
-            border-radius: 14px;
-            font-size: 14px;
+            padding: 8px 20px;
+            height: 38px; /* Cố định chiều cao để không bị lệch */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 13px;
             font-weight: 700;
             color: var(--text-muted);
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s;
             background: #f1f5f9;
             border: 1px solid rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .section-tab-item:hover {
-            color: var(--primary-color);
-            background: #eef2ff;
+            white-space: nowrap;
         }
 
         .section-tab-item.active {
             background: var(--primary-gradient);
             color: white;
-            box-shadow: 0 8px 20px rgba(0, 70, 171, 0.3);
-            border-color: transparent;
-            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 70, 171, 0.25);
+            border: none;
         }
 
         .filter-tags {
@@ -573,22 +570,23 @@
             border-color: rgba(0, 70, 171, 0.1);
         }
 
-        /* Thẻ sản phẩm Premium v2.0 */
+        /* Nâng cấp Thẻ sản phẩm Premium v3.0 - FIX OVERLAP */
         .product-card-premium {
             background: var(--white);
-            border-radius: 20px;
-            padding: 20px;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 18px;
+            padding: 12px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             border: 1px solid #f1f5f9;
             display: flex;
             flex-direction: column;
             height: 100%;
+            min-height: 380px; /* Cố định chiều cao tối thiểu */
         }
 
         .product-card-premium:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 30px 60px -15px rgba(0, 70, 171, 0.12);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px -10px rgba(0, 70, 171, 0.15);
             border-color: rgba(0, 70, 171, 0.1);
         }
 
@@ -600,52 +598,48 @@
             transform: scale(1.12) rotate(2deg);
         }
 
-        /* Nhãn (Badges) - Xếp chồng bên trái */
+        /* Nhãn (Badges) */
         .badge-container {
             position: absolute;
             top: 10px;
             left: 10px;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
             z-index: 5;
+        }
+
+        .badge-promo, .badge-installment {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            width: fit-content;
         }
 
         .badge-promo {
             background: #d70018;
             color: white;
-            padding: 3px 10px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 800;
-            box-shadow: 0 4px 8px rgba(215, 0, 24, 0.2);
-            width: fit-content;
         }
 
         .badge-installment {
             background: #f0f7ff;
             color: var(--primary-color);
-            padding: 3px 10px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 700;
-            border: 1px solid rgba(0, 70, 171, 0.2);
-            width: fit-content;
+            border: 1px solid rgba(0, 70, 171, 0.1);
         }
 
-        /* Nút chức năng - Xếp dọc bên phải */
+        /* Nút chức năng */
         .product-card-actions {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 10px;
+            right: 10px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
             opacity: 0;
             transform: translateX(10px);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 50; /* Tăng z-index lên cực cao */
-            pointer-events: all; /* Đảm bảo nhận sự kiện chuột */
+            transition: 0.3s ease;
+            z-index: 10;
         }
 
         .product-card-premium:hover .product-card-actions {
@@ -654,19 +648,18 @@
         }
 
         .action-btn-circle {
-            width: 38px;
-            height: 38px;
-            background: var(--white);
-            border: 1px solid #f1f5f9;
-            border-radius: 12px;
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid #eee;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-muted);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s;
+            font-size: 14px;
+            color: #666;
             cursor: pointer;
-            pointer-events: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
 
         .action-btn-circle:hover {
@@ -1145,79 +1138,38 @@
             </div>
         @endif
 
-        <!-- Điện thoại nổi bật - PREMIUM LAYOUT -->
-        @if($phoneProducts->count())
-            <div class="product-section-wrapper">
+        <!-- CÁC KHUNG SẢN PHẨM TÙY BIẾN (DYNAMICAL SECTIONS) -->
+        @foreach($homeSections as $section)
+            <div class="product-section-wrapper" id="section-{{ $section->id }}">
                 <!-- Banner dọc bên trái -->
+                @if($section->sidebar_banner)
                 <div class="section-sidebar-banner">
-                    <img src="https://images.unsplash.com/photo-1616348436168-de43ad0db179?w=400" alt="Phone Banner">
+                    <a href="{{ $section->sidebar_link ?? '#' }}">
+                        <img src="{{ $section->sidebar_banner }}" alt="{{ $section->title }}">
+                    </a>
                 </div>
+                @endif
 
                 <div class="section-main-content">
                     <div class="section-header-premium">
-                        <h2 class="section-title-premium">ĐIỆN THOẠI NỔI BẬT NHẤT</h2>
-                        <div class="section-tabs" data-target="phone-grid">
-                            <span class="section-tab-item active" data-id="{{ $catDienThoai->category_id ?? '' }}">Tất cả</span>
-                            @if($catDienThoai)
-                                @foreach($catDienThoai->children->take(4) as $child)
+                        <h2 class="section-title-premium">{{ $section->title }}</h2>
+                        <div class="section-tabs" data-target="grid-{{ $section->id }}">
+                            <span class="section-tab-item active" data-id="{{ $section->category_id ?? '' }}">Tất cả</span>
+                            @if($section->type === 'category' && $section->category)
+                                @foreach($section->category->children->take(4) as $child)
                                     <span class="section-tab-item" data-id="{{ $child->category_id }}">{{ $child->name }}</span>
                                 @endforeach
+                                <a href="{{ route('products.category', $section->category->slug) }}" class="section-tab-item">Xem tất cả</a>
                             @endif
-                            <a href="{{ route('products.category', 'dien-thoai') }}" class="section-tab-item">Xem tất cả</a>
                         </div>
                     </div>
 
-                    <!-- Filter Tags (Có thể giữ nguyên hoặc làm động tùy ý) -->
-                    <div class="filter-tags">
-                        <a href="#" class="filter-tag-item">iPhone 15</a>
-                        <a href="#" class="filter-tag-item">Galaxy S24</a>
-                        <a href="#" class="filter-tag-item">Xiaomi 14</a>
-                        <a href="#" class="filter-tag-item">Trả góp 0%</a>
-                    </div>
-
-                    <div class="product-grid" id="phone-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; position: relative;">
-                        @include('partials.product_grid_items', ['products' => $phoneProducts])
+                    <div class="product-grid" id="grid-{{ $section->id }}" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; position: relative;">
+                        @include('partials.product_grid_items', ['products' => $section->products_list])
                     </div>
                 </div>
             </div>
-        @endif
-
-        <!-- Laptop nổi bật - PREMIUM LAYOUT -->
-        @if($laptopProducts->count())
-            <div class="product-section-wrapper">
-                <!-- Banner dọc bên trái -->
-                <div class="section-sidebar-banner">
-                    <img src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400" alt="Laptop Banner">
-                </div>
-
-                <div class="section-main-content">
-                    <div class="section-header-premium">
-                        <h2 class="section-title-premium">LAPTOP GIÁ SỐC</h2>
-                        <div class="section-tabs" data-target="laptop-grid">
-                            <span class="section-tab-item active" data-id="{{ $catLaptop->category_id ?? '' }}">Tất cả</span>
-                            @if($catLaptop)
-                                @foreach($catLaptop->children->take(4) as $child)
-                                    <span class="section-tab-item" data-id="{{ $child->category_id }}">{{ $child->name }}</span>
-                                @endforeach
-                            @endif
-                            <a href="{{ route('products.category', 'laptop') }}" class="section-tab-item">Xem tất cả</a>
-                        </div>
-                    </div>
-
-                    <!-- Filter Tags -->
-                    <div class="filter-tags">
-                        <a href="#" class="filter-tag-item">MacBook</a>
-                        <a href="#" class="filter-tag-item">Asus ROG</a>
-                        <a href="#" class="filter-tag-item">Dell XPS</a>
-                        <a href="#" class="filter-tag-item">HP Pavilion</a>
-                    </div>
-
-                    <div class="product-grid" id="laptop-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; position: relative;">
-                        @include('partials.product_grid_items', ['products' => $laptopProducts])
-                    </div>
-                </div>
-            </div>
-        @endif
+        @endforeach
         <!-- Góc Tin tức & Lifestyle - GIỐNG SFORUM -->
         @if($latestArticles->count())
             <div class="news-section" style="margin-top: 40px; margin-bottom: 40px;">

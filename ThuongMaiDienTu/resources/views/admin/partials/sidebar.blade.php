@@ -76,6 +76,13 @@
             'icon' => 'fa-solid fa-paint-brush',
             'active' => request()->routeIs('admin.settings.theme'),
             'section' => 'Thiết lập'
+        ],
+        [
+            'label' => 'Quản lý Trang chủ',
+            'route' => route('admin.home-sections.index'),
+            'icon' => 'fa-solid fa-house-laptop',
+            'active' => request()->is('admin/home-sections*'),
+            'section' => 'Thiết lập'
         ]
     ];
 
