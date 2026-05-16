@@ -51,24 +51,27 @@ class HomeController extends Controller
 
         // 3. Lấy linh động các khung sản phẩm tùy biến từ Admin
         $homeSections = \App\Models\HomeSection::where('status', true)
-            ->with(['category.children'])
+            ->with(['category.children', 'products.category']) // Eager load products ở đây
             ->orderBy('order', 'asc')
             ->get()
             ->map(function($section) {
-                if ($section->type === 'category' && $section->category) {
-                    $catIds = $section->category->children->pluck('category_id')->push($section->category_id);
-                    $section->products_list = Product::with('category')
-                        ->whereIn('category_id', $catIds)
-                        ->orderBy('product_id', 'desc')
-                        ->take($section->limit)
-                        ->get();
-                } elseif ($section->type === 'manual') {
-                    $section->products_list = $section->products()->with('category')->get();
-                } else { // latest
-                    $section->products_list = Product::with('category')
-                        ->orderBy('product_id', 'desc')
-                        ->take($section->limit)
-                        ->get();
+                if ($section instanceof \App\Models\HomeSection) {
+                    if ($section->type === 'category' && $section->category) {
+                        $catIds = $section->category->children->pluck('category_id')->push($section->category_id);
+                        $section->products_list = Product::with('category')
+                            ->whereIn('category_id', $catIds)
+                            ->orderBy('product_id', 'desc')
+                            ->take($section->limit)
+                            ->get();
+                    } elseif ($section->type === 'manual') {
+                        // Vì đã eager load 'products', ta lấy trực tiếp từ collection
+                        $section->products_list = $section->products->take($section->limit);
+                    } else { // latest
+                        $section->products_list = Product::with('category')
+                            ->orderBy('product_id', 'desc')
+                            ->take($section->limit)
+                            ->get();
+                    }
                 }
                 return $section;
             });
