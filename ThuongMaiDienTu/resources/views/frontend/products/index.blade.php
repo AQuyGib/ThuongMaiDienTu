@@ -2,6 +2,22 @@
 
 @section('content')
     <div class="container mx-auto px-4 py-8">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-xs md:text-sm text-gray-500 mb-4 font-medium">
+            <a href="{{ route('home') }}" class="flex items-center gap-1.5 hover:text-red-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Trang chủ
+            </a>
+            <span class="text-gray-300 font-normal">/</span>
+            @if($currentCategory)
+                <span class="text-gray-800 font-semibold">{{ $currentCategory->name }}</span>
+            @else
+                <span class="text-gray-800 font-semibold">Tất cả sản phẩm</span>
+            @endif
+        </nav>
+
         <!-- Horizontal Filter Bar Section -->
         <div class="mb-8 space-y-6">
             <!-- Filter Container -->
@@ -127,9 +143,6 @@
                                     Hiển thị <span id="product-count" class="text-red-600">{{ $products->total() }}</span> sản phẩm
                                 @endif
                             </h1>
-                            <div class="mt-1 inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600 border border-red-100">
-                                Flash Sale phase 1: nền dữ liệu + service đã sẵn sàng
-                            </div>
                         </div>
                     </div>
                     <div
