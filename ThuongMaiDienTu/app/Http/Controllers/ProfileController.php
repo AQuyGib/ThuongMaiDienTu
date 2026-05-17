@@ -25,31 +25,32 @@ class ProfileController extends Controller
         $totalOrders = $orders->count();
         $totalSpent = $orders->where('status', 'Delivered')->sum('final_amount');
         
-        // Logic tính hạng thành viên thực tế dựa vào dữ liệu trong admin
-        $tierMapping = [
-            'Dong' => 'Đồng',
-            'Bac' => 'Bạc',
-            'Vang' => 'Vàng',
-        ];
-        
-        $currentTier = $tierMapping[$user->member_tier] ?? 'Đồng';
+        // Logic tính hạng thành viên thực tế
+        $currentTier = 'Đồng';
         $nextTier = 'Bạc';
         $spendNeeded = 0;
 
-        if ($currentTier == 'Đồng') {
+        if ($totalSpent < 5000000) {
+            $currentTier = 'Đồng';
             $nextTier = 'Bạc';
-            $spendNeeded = max(0, 5000000 - $totalSpent);
-        } elseif ($currentTier == 'Bạc') {
+            $spendNeeded = 5000000 - $totalSpent;
+        } elseif ($totalSpent < 20000000) {
+            $currentTier = 'Bạc';
             $nextTier = 'Vàng';
-            $spendNeeded = max(0, 20000000 - $totalSpent);
+            $spendNeeded = 20000000 - $totalSpent;
+        } elseif ($totalSpent < 50000000) {
+            $currentTier = 'Vàng';
+            $nextTier = 'Kim Cương';
+            $spendNeeded = 50000000 - $totalSpent;
         } else {
+            $currentTier = 'Kim Cương';
             $nextTier = 'Đã đạt cấp tối đa';
             $spendNeeded = 0;
         }
 
         // Tính % tiến trình cho thanh bar
         $tierProgress = 0;
-        if ($currentTier == 'Vàng') {
+        if ($currentTier == 'Kim Cương') {
             $tierProgress = 100;
         } else {
             // Mục tiêu là số tiền cần đạt để lên hạng tiếp theo
@@ -59,7 +60,7 @@ class ProfileController extends Controller
             }
         }
 
-        $wishlist = $user->wishlists()->where('type', 'wishlist')->with('product')->get();
+        $wishlist = $user->wishlists()->where('type', 'Wishlist')->with('product')->get();
         $loginHistories = \App\Models\LoginHistory::where('user_id', $user->user_id)
             ->orderBy('login_at', 'desc')
             ->limit(10)
@@ -243,19 +244,90 @@ class ProfileController extends Controller
 
     public function removeFromWishlist($id)
     {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $user = Auth::user();
+            // Sử dụng relationship để đảm bảo tính nhất quán và bảo mật (chỉ xóa của mình)
+            $wishlistItem = $user->wishlists()->where('id', $id)->first();
+
+            if ($wishlistItem) {
+                $wishlistItem->delete();
+                return response()->json(['success' => true]);
+            }
+
+            return response()->json(['success' => false, 'error' => 'Không tìm thấy sản phẩm trong danh sách yêu thích.'], 404);
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi xóa sản phẩm yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function clearWishlist()
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $user = Auth::user();
+            // Xóa tất cả các mục thuộc loại Wishlist của user
+            $user->wishlists()->whereIn('type', ['Wishlist'])->delete();
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi xóa toàn bộ danh sách yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function toggleWishlist(Request $request)
+    {
+        try {
+            if (!Auth::check()) {
+                return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+            }
+
+            $request->validate([
+                'product_id' => 'required'
+            ]);
+
+            $user = Auth::user();
+            $productId = $request->product_id;
+
+            $wishlist = $user->wishlists()
+                ->where('product_id', $productId)
+                ->where('type', 'Wishlist')
+                ->first();
+
+            if ($wishlist) {
+                $wishlist->delete();
+                return response()->json(['status' => 'removed']);
+            } else {
+                $user->wishlists()->create([
+                    'product_id' => $productId,
+                    'type' => 'Wishlist'
+                ]);
+                return response()->json(['status' => 'added']);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi toggle yêu thích: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function clearAllWishlist()
+    {
         if (!Auth::check()) {
             return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
         }
 
-        $wishlistItem = \App\Models\WishlistRecentlyViewed::where('user_id', Auth::id())
-            ->where('id', $id)
-            ->first();
+        \App\Models\WishlistRecentlyViewed::where('user_id', Auth::id())
+            ->where('type', 'Wishlist')
+            ->delete();
 
-        if ($wishlistItem) {
-            $wishlistItem->delete();
-            return response()->json(['success' => true]);
-        }
-
-        return response()->json(['error' => 'Không tìm thấy sản phẩm'], 404);
+        return response()->json(['success' => true, 'count' => 0]);
     }
 }

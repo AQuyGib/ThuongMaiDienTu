@@ -9,14 +9,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Mở rộng enum type thêm 'Compare' cho tính năng so sánh sản phẩm
-        DB::statement("ALTER TABLE wishlists_recently_viewed MODIFY COLUMN type ENUM('Wishlist', 'Viewed', 'Compare')");
+        // SQLite không hỗ trợ MODIFY COLUMN. Tuy nhiên SQLite cho phép chèn bất kỳ giá trị chuỗi nào vào enum
+        if (DB::getDriverName() !== 'sqlite') {
+            // Mở rộng enum type thêm 'Compare' cho tính năng so sánh sản phẩm
+            DB::statement("ALTER TABLE wishlists_recently_viewed MODIFY COLUMN type ENUM('Wishlist', 'Viewed', 'Compare')");
+        }
     }
 
     public function down(): void
     {
-        // Xóa các record Compare trước khi thu hẹp enum
-        DB::table('wishlists_recently_viewed')->where('type', 'Compare')->delete();
-        DB::statement("ALTER TABLE wishlists_recently_viewed MODIFY COLUMN type ENUM('Wishlist', 'Viewed')");
+        if (DB::getDriverName() !== 'sqlite') {
+            // Xóa các record Compare trước khi thu hẹp enum
+            DB::table('wishlists_recently_viewed')->where('type', 'Compare')->delete();
+            DB::statement("ALTER TABLE wishlists_recently_viewed MODIFY COLUMN type ENUM('Wishlist', 'Viewed')");
+        }
     }
 };

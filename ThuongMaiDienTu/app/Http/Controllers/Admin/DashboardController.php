@@ -12,6 +12,10 @@ class DashboardController extends Controller
      */
     public function index()
     {
+        // Nếu là nhân viên (Role 4), chỉ được xem trang khách hàng
+        if (auth()->user()->role_id == 4) {
+            return redirect()->route('admin.customers.index');
+        }
         $stats = [
             'total_products' => \App\Models\Product::count(),
             'total_users'    => \App\Models\User::count(),

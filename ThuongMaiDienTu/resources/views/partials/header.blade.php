@@ -38,7 +38,7 @@
         </div>
         <div class="top-bar-right">
             <span><i class="fa-solid fa-store"></i> Cửa hàng gần bạn</span>
-            <span><i class="fa-solid fa-truck"></i> Tra cứu đơn hàng</span>
+            <a href="/orders" class="hover:text-white transition"><span><i class="fa-solid fa-truck"></i> Tra cứu đơn hàng</span></a>
             <span><i class="fa-solid fa-phone"></i> <strong>1800 2097</strong></span>
         </div>
     </div>
@@ -67,11 +67,106 @@
 
         <!-- Thanh tìm kiếm -->
         <div class="search-bar">
-            <form action="/search" method="GET">
-                <input type="text" name="q" placeholder="Bạn muốn mua gì hôm nay?">
+            <form action="{{ route('search.index') }}" method="GET" id="globalSearchForm">
+                <input type="text" name="q" id="globalSearchInput" placeholder="Bạn muốn mua gì hôm nay?" autocomplete="off">
                 <button type="submit"><i class="fa-solid fa-search"></i></button>
             </form>
+            
+            <!-- Hộp gợi ý thông minh -->
+            <div id="searchSuggestions" class="search-suggestions">
+                {{-- Dữ liệu đổ từ JS --}}
+            </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const searchInput = document.getElementById('globalSearchInput');
+                const suggestionsBox = document.getElementById('searchSuggestions');
+                let debounceTimer;
+
+                if (searchInput && suggestionsBox) {
+                    searchInput.addEventListener('input', function() {
+                        const query = this.value.trim();
+                        
+                        clearTimeout(debounceTimer);
+                        
+                        if (query.length < 2) {
+                            suggestionsBox.classList.remove('show');
+                            return;
+                        }
+
+                        debounceTimer = setTimeout(() => {
+                            fetch(`{{ route('api.search.suggestions') }}?q=${encodeURIComponent(query)}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    renderSuggestions(data, query);
+                                })
+                                .catch(err => console.error('Search error:', err));
+                        }, 300);
+                    });
+
+                    // Đóng khi click ngoài
+                    document.addEventListener('click', function(e) {
+                        if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                            suggestionsBox.classList.remove('show');
+                        }
+                    });
+
+                    // Hiện lại khi focus nếu đã có chữ
+                    searchInput.addEventListener('focus', function() {
+                        if (this.value.trim().length >= 2) {
+                            suggestionsBox.classList.add('show');
+                        }
+                    });
+                }
+
+                function renderSuggestions(data, query) {
+                    let html = '';
+
+                    if (data.categories.length === 0 && data.products.length === 0) {
+                        html = '<div class="no-results">Không tìm thấy kết quả cho "' + query + '"</div>';
+                    } else {
+                        // Nhóm danh mục
+                        if (data.categories.length > 0) {
+                            html += '<div class="suggestion-group">';
+                            html += '   <div class="suggestion-header">Danh mục gợi ý</div>';
+                            data.categories.forEach(cat => {
+                                html += `<a href="/products/${cat.slug}" class="suggestion-cat">
+                                            <i class="fa-solid fa-magnifying-glass"></i>
+                                            <span>${cat.name}</span>
+                                         </a>`;
+                            });
+                            html += '</div>';
+                        }
+
+                        // Nhóm sản phẩm
+                        if (data.products.length > 0) {
+                            html += '<div class="suggestion-group">';
+                            html += '   <div class="suggestion-header">Sản phẩm tìm thấy</div>';
+                            data.products.forEach(prod => {
+                                const price = new Intl.NumberFormat('vi-VN').format(prod.base_price) + 'đ';
+                                const thumbnail = prod.thumbnail || 'https://via.placeholder.com/50';
+                                html += `<a href="/san-pham/${prod.product_id}" class="suggestion-item">
+                                            <img src="${thumbnail}" alt="${prod.name}">
+                                            <div class="suggestion-info">
+                                                <div class="suggestion-name">${prod.name}</div>
+                                                <div class="suggestion-price">${price}</div>
+                                            </div>
+                                         </a>`;
+                            });
+                            html += '</div>';
+                        }
+                        
+                        html += `<a href="{{ route('search.index') }}?q=${encodeURIComponent(query)}" class="suggestion-cat" style="justify-content: center; background: #f0f7ff; border-top: 1px solid #e5e7eb;">
+                                    <strong>Xem tất cả kết quả cho "${query}"</strong>
+                                 </a>`;
+                    }
+
+                    suggestionsBox.innerHTML = html;
+                    suggestionsBox.classList.add('show');
+                }
+            });
+        </script>
 
         <!-- Hành động -->
         <div class="header-actions">
@@ -137,13 +232,11 @@
         <!-- CỘT TRÁI: Danh mục + icon -->
         <div class="mega-col-left">
             @foreach($headerCategories as $cat)
-                <a href="{{ route('products.category', $cat->slug) }}" class="mega-cat-item {{ $loop->first ? 'active' : '' }}"
+                <a href="{{ $cat->slug ? route('products.category', $cat->slug) : route('products.index') }}" class="mega-cat-item {{ $loop->first ? 'active' : '' }}"
                    data-cat="{{ $cat->category_id }}">
                     <i class="fa-solid {{ $categoryIcons[$cat->name] ?? 'fa-tag' }}"></i>
                     <span>{{ $cat->name }}</span>
-                    @if($cat->children->count())
-                        <i class="fa-solid fa-angle-right mega-arrow"></i>
-                    @endif
+                    <i class="fa-solid fa-angle-right mega-arrow"></i>
                 </a>
             @endforeach
             {{-- Mục bổ sung --}}
@@ -158,22 +251,53 @@
             @foreach($headerCategories as $cat)
                 <div class="mega-detail-panel {{ $loop->first ? 'active' : '' }}"
                      data-panel="{{ $cat->category_id }}">
+                    
+                    {{-- Section 1: Danh mục con --}}
                     @if($cat->children->count())
-                        <div class="mega-section">
-                            <h4 class="mega-section-title">{{ $cat->name }}</h4>
+                        <div class="mega-section mb-6">
+                            <h4 class="mega-section-title">Dòng sản phẩm {{ $cat->name }}</h4>
                             <div class="mega-tags">
                                 @foreach($cat->children as $child)
-                                    <a href="{{ route('products.category', $child->slug) }}" class="mega-tag">{{ $child->name }}</a>
+                                    <a href="{{ $child->slug ? route('products.category', $child->slug) : route('products.index') }}" class="mega-tag">{{ $child->name }}</a>
                                 @endforeach
-                                <a href="{{ route('products.category', $cat->slug) }}" class="mega-tag see-all">Xem tất cả {{ $cat->name }}</a>
+                                <a href="{{ $cat->slug ? route('products.category', $cat->slug) : route('products.index') }}" class="mega-tag see-all">Xem tất cả {{ $cat->name }}</a>
                             </div>
                         </div>
-                    @else
-                        <div class="mega-section">
-                            <h4 class="mega-section-title">{{ $cat->name }}</h4>
-                            <p style="color:#888; font-size:13px;">Đang cập nhật danh mục con...</p>
+                    @endif
+
+                    {{-- Section 2: Hãng sản xuất (Lấy động hoặc gợi ý theo tên danh mục) --}}
+                    <div class="mega-section mb-6">
+                        <h4 class="mega-section-title">Hãng sản xuất phổ biến</h4>
+                        <div class="mega-tags">
+                            @php
+                                $brands = [];
+                                if(Str::contains($cat->name, 'Laptop')) $brands = ['Apple (MacBook)', 'Asus', 'HP', 'Dell', 'Lenovo', 'MSI', 'Acer'];
+                                elseif(Str::contains($cat->name, 'Điện thoại')) $brands = ['iPhone', 'Samsung', 'Oppo', 'Xiaomi', 'Vivo', 'Realme'];
+                                elseif(Str::contains($cat->name, 'Tablet')) $brands = ['iPad', 'Samsung', 'Xiaomi', 'Lenovo'];
+                            @endphp
+                            @foreach($brands as $brand)
+                                <a href="{{ route('products.category', $cat->slug) }}?brand={{ Str::before($brand, ' ') }}" class="mega-tag">{{ $brand }}</a>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Section 3: Lọc theo nhu cầu --}}
+                    @if(Str::contains($cat->name, ['Laptop', 'Điện thoại']))
+                        <div class="mega-section mb-6">
+                            <h4 class="mega-section-title">Chọn theo nhu cầu</h4>
+                            <div class="mega-tags">
+                                <a href="{{ route('products.category', $cat->slug) }}?needs=gaming" class="mega-tag">🎮 Chơi game/Đồ họa</a>
+                                <a href="{{ route('products.category', $cat->slug) }}?needs=student" class="mega-tag">🎓 Học tập/Văn phòng</a>
+                                <a href="{{ route('products.category', $cat->slug) }}?eco_friendly=1" class="mega-tag">🌱 Thân thiện môi trường</a>
+                            </div>
                         </div>
                     @endif
+
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <a href="{{ route('products.category', $cat->slug) }}" class="text-primary font-bold hover:underline">
+                            <i class="fa-solid fa-arrow-right-long mr-2"></i> Xem tất cả {{ $cat->name }}
+                        </a>
+                    </div>
                 </div>
             @endforeach
         </div>

@@ -1,8 +1,11 @@
 <?php
 namespace App\Models;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable {
+    use SoftDeletes;
+
     protected $primaryKey = 'user_id';
     const UPDATED_AT = null;
     protected $guarded = [];
@@ -75,7 +78,19 @@ class User extends Authenticatable {
         return $this->hasMany(Order::class, 'staff_id', 'user_id');
     }
 
+    public function loginHistories() {
+        return $this->hasMany(LoginHistory::class, 'user_id');
+    }
+
     public function repairTickets() {
         return $this->hasMany(RepairTicket::class, 'technician_id', 'user_id');
+    }
+
+    /**
+     * Kiểm tra người dùng có đang online không (trong vòng 5 phút qua)
+     */
+    public function isOnline()
+    {
+        return $this->sessions()->where('last_active', '>=', now()->subMinutes(5))->exists();
     }
 }

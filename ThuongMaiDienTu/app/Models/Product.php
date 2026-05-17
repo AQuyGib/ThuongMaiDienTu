@@ -25,6 +25,11 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class, 'product_id');
     }
 
+    public function flashSaleProducts()
+    {
+        return $this->hasMany(FlashSaleProduct::class, 'product_id', 'product_id');
+    }
+
     // Scopes cho Lọc Nâng Cao
     public function scopeFilterCategory($query, $categoryId, $categorySlug = null)
     {

@@ -3,33 +3,42 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
 use App\Models\Category;
 use App\Models\Order;
+use App\Models\Product;
+use App\Services\FlashSaleService;
+use App\Services\ProductFilterService;
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
+    public function __construct(
+        private readonly ProductFilterService $productFilterService,
+        private readonly FlashSaleService $flashSaleService
+    ) {
+    }
+
     /**
      * Hiển thị danh sách sản phẩm.
      */
-    public function index($categorySlug = null)
+    public function index(Request $request, $categorySlug = null)
     {
         $currentCategory = null;
 
         if ($categorySlug) {
             $currentCategory = Category::where('slug', $categorySlug)->first();
-        } elseif (request('category_id')) {
-            $currentCategory = Category::find(request('category_id'));
+        } elseif ($request->filled('category_id')) {
+            $currentCategory = Category::find($request->category_id);
         }
 
-        $query = Product::whereNull('deleted_at');
-        if ($currentCategory) {
-            $query->where('category_id', $currentCategory->category_id);
+        $params = $request->all();
+        if ($currentCategory && empty($params['category_id'])) {
+            $params['category_id'] = $currentCategory->category_id;
         }
 
-        $products = $query->paginate(12);
+        $products = $this->productFilterService->filter($params, 12);
         $categories = Category::whereNull('parent_id')->get();
 
         return view('frontend.products.index', compact('products', 'categories', 'currentCategory'));
@@ -41,6 +50,8 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = Product::with(['category', 'productSpecifications', 'variants'])->findOrFail($id);
+        $flashSaleProduct = $this->flashSaleService->getFlashSaleProductFor($product);
+        $effectivePrice = $this->flashSaleService->getEffectivePrice($product);
 
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('product_id', '<>', $product->product_id)
@@ -57,6 +68,25 @@ class ProductController extends Controller
                 ->exists();
         }
 
-        return view('frontend.products.show', compact('product', 'relatedProducts', 'hasPurchased'));
+        // Lấy danh sách đánh giá (chỉ lấy review gốc, không phải reply)
+        $reviews = Review::where('product_id', $id)
+            ->whereNull('parent_id')
+            ->with(['user', 'replies'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->count();
+        $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->avg('rating') ?: 5;
+
+        return view('frontend.products.show', compact(
+            'product', 
+            'relatedProducts', 
+            'hasPurchased', 
+            'flashSaleProduct', 
+            'effectivePrice',
+            'reviews',
+            'reviewCount',
+            'avgRating'
+        ));
     }
 }
