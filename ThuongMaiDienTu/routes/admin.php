@@ -124,5 +124,6 @@ Route::get('service-invoices/{serviceInvoice}/pdf', [ServiceInvoiceController::c
 Route::get('service-invoices/{serviceInvoice}/pdf/open', [ServiceInvoiceController::class, 'openPdf'])->name('service-invoices.pdf.open');
 Route::get('service-invoices/{serviceInvoice}/pdf/save', [ServiceInvoiceController::class, 'savePdf'])->name('service-invoices.pdf.save');
 Route::get('service-invoices/{serviceInvoice}/pdf/download', [ServiceInvoiceController::class, 'downloadSavedPdf'])->name('service-invoices.pdf.download');
+Route::get('repair-tickets', [RepairTicketInvoiceController::class, 'index'])->name('repair-tickets.index');
 Route::get('repair-tickets/{repairTicket}/invoice/create', [RepairTicketInvoiceController::class, 'create'])->name('repair-tickets.invoice.create');
 Route::post('repair-tickets/invoice', [RepairTicketInvoiceController::class, 'store'])->name('repair-tickets.invoice.store');

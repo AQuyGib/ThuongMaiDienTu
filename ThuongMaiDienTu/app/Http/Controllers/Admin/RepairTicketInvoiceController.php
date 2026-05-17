@@ -12,6 +12,12 @@ use Illuminate\View\View;
 
 class RepairTicketInvoiceController extends Controller
 {
+    public function index(): View
+    {
+        $repairTickets = RepairTicket::with('serviceInvoice')->latest('ticket_id')->paginate(10);
+        return view('admin.repair-tickets.index', compact('repairTickets'));
+    }
+
     public function create(RepairTicket $repairTicket): View
     {
         return view('admin.service-invoices.create', [

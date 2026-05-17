@@ -13,6 +13,9 @@ class RepairTicket extends Model
     public $timestamps = false;
     
     protected $fillable = [
+        'user_id',
+        'imei_serial',
+        'issue_desc',
         'customer_name',
         'customer_phone',
         'service_name',
@@ -39,5 +42,10 @@ class RepairTicket extends Model
     public function articles()
     {
         return $this->hasMany(Article::class, 'related_ticket_id', 'ticket_id');
+    }
+
+    public function serviceInvoice()
+    {
+        return $this->belongsTo(ServiceInvoice::class, 'invoice_no', 'invoice_no');
     }
 }

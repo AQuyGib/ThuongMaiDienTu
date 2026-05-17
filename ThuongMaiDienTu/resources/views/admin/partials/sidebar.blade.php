@@ -43,6 +43,13 @@
             'section' => 'Kinh doanh'
         ],
         [
+            'label' => 'Phiếu sửa chữa',
+            'route' => route('admin.repair-tickets.index'),
+            'icon' => 'fa-solid fa-wrench',
+            'active' => request()->is('admin/repair-tickets*'),
+            'section' => 'Kinh doanh'
+        ],
+        [
             'label' => 'Flash Sale',
             'route' => route('admin.flash-sales.index'),
             'icon' => 'fa-solid fa-bolt',

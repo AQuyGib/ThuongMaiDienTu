@@ -90,20 +90,14 @@ class ServiceInvoiceController extends Controller
 
     public function pdf(ServiceInvoice $serviceInvoice): StreamedResponse
     {
-        $pdf = Pdf::loadView('admin.service-invoices.print', [
-            'serviceInvoice' => $serviceInvoice,
-            'isPdf' => true,
-        ]);
+        $pdf = Pdf::loadView('admin.service-invoices.print', compact('serviceInvoice'));
 
         return $pdf->download($serviceInvoice->invoice_no . '.pdf');
     }
 
     public function savePdf(ServiceInvoice $serviceInvoice): BinaryFileResponse
     {
-        $pdf = Pdf::loadView('admin.service-invoices.print', [
-            'serviceInvoice' => $serviceInvoice,
-            'isPdf' => true,
-        ]);
+        $pdf = Pdf::loadView('admin.service-invoices.print', compact('serviceInvoice'));
         $filename = $serviceInvoice->invoice_no . '.pdf';
         $path = 'invoices/' . $filename;
 
@@ -119,10 +113,7 @@ class ServiceInvoiceController extends Controller
         $path = 'invoices/' . $serviceInvoice->invoice_no . '.pdf';
 
         if (! Storage::disk('public')->exists($path)) {
-            $pdf = Pdf::loadView('admin.service-invoices.print', [
-                'serviceInvoice' => $serviceInvoice,
-                'isPdf' => true,
-            ]);
+            $pdf = Pdf::loadView('admin.service-invoices.print', compact('serviceInvoice'));
             Storage::disk('public')->put($path, $pdf->output());
         }
 
@@ -134,10 +125,7 @@ class ServiceInvoiceController extends Controller
         $path = 'invoices/' . $serviceInvoice->invoice_no . '.pdf';
 
         if (! Storage::disk('public')->exists($path)) {
-            $pdf = Pdf::loadView('admin.service-invoices.print', [
-                'serviceInvoice' => $serviceInvoice,
-                'isPdf' => true,
-            ]);
+            $pdf = Pdf::loadView('admin.service-invoices.print', compact('serviceInvoice'));
             Storage::disk('public')->put($path, $pdf->output());
         }
 
