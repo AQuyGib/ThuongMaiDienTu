@@ -1,3 +1,9 @@
+@extends('admin.layouts.master')
+
+@section('title', 'Hóa đơn dịch vụ')
+@section('page-title', 'Hóa đơn dịch vụ')
+
+@section('content')
 <div class="p-6 space-y-6">
     <div class="flex items-center justify-between">
         <div>
@@ -88,3 +94,4 @@
         {{ $invoices->links() }}
     </div>
 </div>
+@endsection

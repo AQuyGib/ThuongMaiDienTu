@@ -1,3 +1,9 @@
+@extends('admin.layouts.master')
+
+@section('title', 'Chi tiết hóa đơn')
+@section('page-title', 'Chi tiết hóa đơn')
+
+@section('content')
 <div class="p-6 space-y-6">
     <div class="flex items-center justify-between">
         <div>
@@ -101,3 +107,4 @@
         </div>
     </div>
 </div>
+@endsection

@@ -1,3 +1,9 @@
+@extends('admin.layouts.master')
+
+@section('title', 'Tạo hóa đơn dịch vụ')
+@section('page-title', 'Tạo hóa đơn dịch vụ')
+
+@section('content')
 <div class="p-6 space-y-6">
     <div class="flex items-center justify-between">
         <div>
@@ -81,3 +87,4 @@
         </div>
     </form>
 </div>
+@endsection
