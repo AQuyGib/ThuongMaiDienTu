@@ -897,6 +897,9 @@
 
     @include('partials.footer')
 
+    {{-- AI Chatbot --}}
+    @include('partials.chatbot')
+
     {{-- Floating Compare Bar --}}
     @include('partials.compare-bar')
 
