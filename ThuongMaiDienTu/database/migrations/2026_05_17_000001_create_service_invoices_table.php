@@ -22,7 +22,8 @@ return new class extends Migration
             $table->decimal('total_amount', 15, 2)->default(0);
             $table->enum('status', ['draft', 'issued', 'paid', 'cancelled'])->default('draft');
             $table->date('issued_date')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users', 'user_id')->nullOnDelete();
+            $table->unsignedInteger('created_by')->nullable();
+            $table->foreign('created_by')->references('user_id')->on('users')->nullOnDelete();
             $table->timestamps();
         });
     }
