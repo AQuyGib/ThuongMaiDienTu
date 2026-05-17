@@ -60,9 +60,11 @@
     </div>
 
     <div class="invoice">
+        @if(!isset($isPdf) || !$isPdf)
         <div class="actions">
             <a href="javascript:window.print()" class="btn">In hóa đơn</a>
         </div>
+        @endif
 
         <div style="text-align:center; margin-bottom: 16px;">
             <h1 class="title">HÓA ĐƠN DỊCH VỤ</h1>
