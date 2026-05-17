@@ -14,9 +14,8 @@
             variant="secondary"
             :href="route('admin.service-invoices.index')"
             title="Quay lại danh sách"
-            :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M12.5 15.5 7 10l5.5-5.5\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>'"
         >
-            Quay lại
+            <i class="fa-solid fa-chevron-left"></i> Quay lại
         </x-ui.button>
     </div>
 
@@ -80,9 +79,8 @@
             <x-ui.button
                 variant="primary"
                 title="Lưu hóa đơn"
-                :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4.5 3.5h8l3 3V16a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.6\"/><path d=\"M6 3.5v4h6v-4\" stroke=\"currentColor\" stroke-width=\"1.6\"/></svg>'"
             >
-                Lưu hóa đơn
+                <i class="fa-solid fa-floppy-disk"></i> Lưu hóa đơn
             </x-ui.button>
         </div>
     </form>

@@ -15,18 +15,16 @@
                 variant="secondary"
                 :href="route('admin.service-invoices.index')"
                 title="Quay lại danh sách"
-                :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M12.5 15.5 7 10l5.5-5.5\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>'"
             >
-                Quay lại
+                <i class="fa-solid fa-chevron-left"></i> Quay lại
             </x-ui.button>
             <x-ui.button
                 variant="info"
                 :href="route('admin.service-invoices.print', $serviceInvoice)"
                 target="_blank"
                 title="Mở bản in"
-                :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M6 6V3.8A1.8 1.8 0 0 1 7.8 2h4.4A1.8 1.8 0 0 1 14 3.8V6\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/><path d=\"M5 14H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/><path d=\"M6 12h8v6H6z\" stroke=\"currentColor\" stroke-width=\"1.6\"/></svg>'"
             >
-                In hóa đơn
+                <i class="fa-solid fa-print"></i> In hóa đơn
             </x-ui.button>
         </div>
     </div>

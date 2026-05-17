@@ -14,9 +14,8 @@
             variant="primary"
             :href="route('admin.service-invoices.create')"
             title="Tạo hóa đơn dịch vụ mới"
-            :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M10 4v12M4 10h12\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg>'"
         >
-            Tạo hóa đơn mới
+            <i class="fa-solid fa-plus"></i> Tạo hóa đơn mới
         </x-ui.button>
     </div>
 
@@ -40,8 +39,12 @@
             <input type="date" name="to_date" value="{{ request('to_date') }}" class="w-full rounded-lg border-gray-300 text-sm">
         </div>
         <div class="flex items-end gap-2">
-            <x-ui.button variant="secondary" type="submit" title="Áp dụng bộ lọc" :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 5h12M6 10h8M8 15h4\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg>'">Lọc</x-ui.button>
-            <x-ui.button variant="secondary" :href="route('admin.service-invoices.index')" title="Xóa toàn bộ điều kiện lọc" :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M5 5l10 10M15 5L5 15\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\"/></svg>'">Xóa lọc</x-ui.button>
+            <x-ui.button variant="secondary" type="submit" title="Áp dụng bộ lọc">
+                <i class="fa-solid fa-filter"></i> Lọc
+            </x-ui.button>
+            <x-ui.button variant="secondary" :href="route('admin.service-invoices.index')" title="Xóa toàn bộ điều kiện lọc">
+                <i class="fa-solid fa-filter-circle-xmark"></i> Xóa lọc
+            </x-ui.button>
         </div>
     </form>
 
@@ -72,12 +75,24 @@
                         <td class="px-4 py-4 text-gray-600">{{ optional($invoice->issued_date)->format('d/m/Y') ?? '-' }}</td>
                         <td class="px-4 py-4 text-right">
                             <div class="inline-flex flex-wrap justify-end gap-2">
-                                <x-ui.button variant="secondary" :href="route('admin.service-invoices.show', $invoice)" title="Xem chi tiết hóa đơn" :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M1.5 10s3.25-5.5 8.5-5.5S18.5 10 18.5 10s-3.25 5.5-8.5 5.5S1.5 10 1.5 10Z\" stroke=\"currentColor\" stroke-width=\"1.6\"/><circle cx=\"10\" cy=\"10\" r=\"2.25\" stroke=\"currentColor\" stroke-width=\"1.6\"/></svg>'">Xem</x-ui.button>
-                                <x-ui.button variant="secondary" :href="route('admin.service-invoices.print', $invoice)" target="_blank" title="Mở bản in để in nhanh" :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M6 6V3.8A1.8 1.8 0 0 1 7.8 2h4.4A1.8 1.8 0 0 1 14 3.8V6\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/><path d=\"M5 14H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/><path d=\"M6 12h8v6H6z\" stroke=\"currentColor\" stroke-width=\"1.6\"/></svg>'">In</x-ui.button>
-                                <x-ui.button variant="primary" :href="route('admin.service-invoices.pdf', $invoice)" title="Tải PDF tạo ngay" :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M10 2v9m0 0 3-3m-3 3-3-3\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M4 14.5V16a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 16 16v-1.5\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg>'">Tải PDF</x-ui.button>
-                                <x-ui.button variant="success" :href="route('admin.service-invoices.pdf.save', $invoice)" title="Lưu PDF vào thư mục storage" :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4.5 3.5h8l3 3V16a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z\" stroke=\"currentColor\" stroke-width=\"1.6\"/><path d=\"M6 3.5v4h6v-4\" stroke=\"currentColor\" stroke-width=\"1.6\"/><path d=\"M7 10.5h6M7 13h6\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg>'">Lưu file PDF</x-ui.button>
-                                <x-ui.button variant="info" :href="route('admin.service-invoices.pdf.open', $invoice)" target="_blank" title="Mở file PDF đã lưu" :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M10 4h6v6\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M9 11l7-7\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/><path d=\"M5 6h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z\" stroke=\"currentColor\" stroke-width=\"1.6\"/></svg>'">Mở PDF đã lưu</x-ui.button>
-                                <x-ui.button variant="warning" :href="route('admin.service-invoices.pdf.download', $invoice)" title="Tải lại file PDF đã lưu" :icon="'<svg class=\"h-4 w-4\" viewBox=\"0 0 20 20\" fill=\"none\" aria-hidden=\"true\"><path d=\"M10 2v9m0 0 3-3m-3 3-3-3\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M4 14h12\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\"/></svg>'">Tải PDF đã lưu</x-ui.button>
+                                <x-ui.button variant="secondary" :href="route('admin.service-invoices.show', $invoice)" title="Xem chi tiết hóa đơn">
+                                    <i class="fa-solid fa-eye"></i> Xem
+                                </x-ui.button>
+                                <x-ui.button variant="secondary" :href="route('admin.service-invoices.print', $invoice)" target="_blank" title="Mở bản in để in nhanh">
+                                    <i class="fa-solid fa-print"></i> In
+                                </x-ui.button>
+                                <x-ui.button variant="primary" :href="route('admin.service-invoices.pdf', $invoice)" title="Tải PDF tạo ngay">
+                                    <i class="fa-solid fa-file-pdf"></i> Tải PDF
+                                </x-ui.button>
+                                <x-ui.button variant="success" :href="route('admin.service-invoices.pdf.save', $invoice)" title="Lưu PDF vào thư mục storage">
+                                    <i class="fa-solid fa-floppy-disk"></i> Lưu file PDF
+                                </x-ui.button>
+                                <x-ui.button variant="info" :href="route('admin.service-invoices.pdf.open', $invoice)" target="_blank" title="Mở file PDF đã lưu">
+                                    <i class="fa-solid fa-folder-open"></i> Mở PDF đã lưu
+                                </x-ui.button>
+                                <x-ui.button variant="warning" :href="route('admin.service-invoices.pdf.download', $invoice)" title="Tải lại file PDF đã lưu">
+                                    <i class="fa-solid fa-download"></i> Tải PDF đã lưu
+                                </x-ui.button>
                             </div>
                         </td>
                     </tr>
