@@ -27,7 +27,7 @@
                     <div
                         class="flex flex-nowrap md:flex-wrap gap-2 items-center overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                         <button type="button"
-                            class="filter-trigger px-4 py-2 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-red-200 active:scale-95 whitespace-nowrap"
+                            class="filter-trigger px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-blue-200 active:scale-95 whitespace-nowrap"
                             data-filter="filter">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -64,20 +64,20 @@
                             <span class="text-xs font-bold text-gray-400 uppercase mr-2 whitespace-nowrap">Gợi ý
                                 nhanh:</span>
                             <button type="button"
-                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium text-sm hover:bg-blue-100 border border-blue-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap"
+                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 rounded-xl font-medium text-sm hover:shadow-sm transition-all duration-200 whitespace-nowrap"
                                 data-name="needs" data-value="gaming">🎮 Chơi mượt Genshin</button>
                             <button type="button"
-                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium text-sm hover:bg-blue-100 border border-blue-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap"
+                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 rounded-xl font-medium text-sm hover:shadow-sm transition-all duration-200 whitespace-nowrap"
                                 data-name="needs" data-value="student">🎓 Học Web Dev</button>
 
                             <span
                                 class="text-xs font-bold text-gray-400 uppercase ml-4 mr-2 whitespace-nowrap hidden md:inline">Kinh
                                 tế tuần hoàn:</span>
                             <button type="button"
-                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium text-sm hover:bg-blue-100 border border-blue-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap"
+                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 rounded-xl font-medium text-sm hover:shadow-sm transition-all duration-200 whitespace-nowrap"
                                 data-name="high_repairability" data-value="1">🔧 Dễ sửa chữa (9-10đ)</button>
                             <button type="button"
-                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium text-sm hover:bg-blue-100 border border-blue-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap"
+                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 rounded-xl font-medium text-sm hover:shadow-sm transition-all duration-200 whitespace-nowrap"
                                 data-name="eco_friendly" data-value="1">🌱 Thân thiện môi trường</button>
                         </div>
                     </div>

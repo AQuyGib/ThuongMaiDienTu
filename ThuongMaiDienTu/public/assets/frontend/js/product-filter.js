@@ -157,9 +157,16 @@ document.addEventListener('DOMContentLoaded', function () {
         popup.style.top = `${rect.bottom + window.scrollY + 8}px`;
         popup.style.left = `${rect.left}px`;
 
-        let html = `<div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900">${(filterConfigs[type] && filterConfigs[type].label) || type}</h3><button class="close-popup p-1.5 rounded-full text-gray-400 hover:bg-gray-100">×</button></div>`;
+        let label = 'Bộ lọc';
+        if (type !== 'filter' && filterConfigs[type]) {
+            label = filterConfigs[type].label || type;
+        }
 
-        if (filterConfigs[type] && filterConfigs[type].type === 'range') {
+        let html = `<div class="flex justify-between items-center mb-4"><h3 class="font-bold text-gray-900 text-lg">${label}</h3><button class="close-popup p-1.5 rounded-full text-gray-400 hover:bg-gray-100 text-xl font-bold">×</button></div>`;
+
+        if (type === 'filter') {
+            html += renderAllFilters();
+        } else if (filterConfigs[type] && filterConfigs[type].type === 'range') {
             html += renderPriceRange();
         } else if (filterConfigs[type] && Array.isArray(filterConfigs[type].options)) {
             html += renderPills(type, filterConfigs[type]);
@@ -167,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
             html += '<div class="text-sm text-gray-500 py-4 text-center italic">Tính năng này đang được cập nhật...</div>';
         }
 
-        html += '<div class="flex gap-3 mt-5 pt-4 border-t border-gray-100"><button type="button" class="close-popup flex-1 px-4 py-2.5 text-sm font-medium text-gray-500 bg-gray-50 rounded-xl">Đóng</button><button type="button" class="apply-filter flex-1 px-4 py-2.5 text-sm font-bold text-white bg-red-600 rounded-xl">Xem kết quả</button></div>';
+        html += '<div class="flex gap-3 mt-5 pt-4 border-t border-gray-100"><button type="button" class="close-popup flex-1 px-4 py-2.5 text-sm font-medium text-gray-500 bg-gray-50 rounded-xl">Đóng</button><button type="button" class="apply-filter flex-1 px-4 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl">Xem kết quả</button></div>';
         popup.innerHTML = html;
         popupsContainer.appendChild(popup);
 
@@ -183,6 +190,56 @@ document.addEventListener('DOMContentLoaded', function () {
         popup.querySelectorAll('.popup-price-input').forEach(input => input.addEventListener('input', e => { state.filters[e.target.name] = e.target.value; }));
     }
 
+    function renderAllFilters() {
+        let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-5 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin">';
+        Object.keys(filterConfigs).forEach(key => {
+            const config = filterConfigs[key];
+            if (!config || key === 'filter') return;
+
+            html += `<div class="bg-gray-50/70 p-4 rounded-2xl border border-gray-100">
+                <h4 class="font-bold text-gray-800 text-xs mb-3 uppercase tracking-wider">${config.label || key}</h4>`;
+
+            if (config.type === 'range') {
+                html += renderPriceRangeInline();
+            } else if (Array.isArray(config.options)) {
+                html += renderPillsInline(key, config);
+            } else {
+                html += '<p class="text-xs text-gray-400 italic">Không có tùy chọn</p>';
+            }
+            html += '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    function renderPriceRangeInline() {
+        return `<div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Từ (đ)</label>
+                <input type="number" name="min_price" value="${state.filters.min_price || ''}" placeholder="0" class="popup-price-input w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:border-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Đến (đ)</label>
+                <input type="number" name="max_price" value="${state.filters.max_price || ''}" placeholder="∞" class="popup-price-input w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:border-blue-500 outline-none">
+            </div>
+        </div>`;
+    }
+
+    function renderPillsInline(key, config) {
+        return `<div class="flex flex-wrap gap-1.5">
+            ${(config.options || []).map(opt => {
+                const label = typeof opt === 'object' ? opt.label : opt;
+                const value = typeof opt === 'object' ? opt.value : opt;
+                const selected = Array.isArray(state.filters[key]) ? state.filters[key].includes(value) : state.filters[key] === value;
+                return `<button type="button" class="filter-pill px-3 py-1.5 rounded-lg border text-xs transition-all duration-150 ${
+                    selected 
+                        ? 'border-blue-500 bg-blue-50 text-blue-600 font-semibold shadow-sm' 
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-blue-300 hover:bg-blue-50/30'
+                }" data-key="${key}" data-value="${value}">${label}</button>`;
+            }).join('')}
+        </div>`;
+    }
+
     function toggleFilterPill(pill) {
         const key = pill.dataset.key;
         const value = pill.dataset.value;
@@ -190,10 +247,13 @@ document.addEventListener('DOMContentLoaded', function () {
         state.filters[key] = toggleArray(state.filters[key], value);
 
         const active = state.filters[key].includes(value);
-        pill.classList.toggle('border-red-500', active);
-        pill.classList.toggle('bg-red-50', active);
-        pill.classList.toggle('text-red-600', active);
-        pill.classList.toggle('font-semibold', active);
+        if (active) {
+            pill.classList.remove('border-gray-200', 'bg-white', 'text-gray-700', 'text-gray-600');
+            pill.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-600', 'font-semibold');
+        } else {
+            pill.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-600', 'font-semibold');
+            pill.classList.add('border-gray-200', 'bg-white', 'text-gray-600');
+        }
     }
 
     function renderPills(key, config) {
@@ -201,12 +261,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const label = typeof opt === 'object' ? opt.label : opt;
             const value = typeof opt === 'object' ? opt.value : opt;
             const selected = Array.isArray(state.filters[key]) ? state.filters[key].includes(value) : state.filters[key] === value;
-            return `<button type="button" class="filter-pill px-4 py-2 rounded-lg border text-sm ${selected ? 'border-red-500 bg-red-50 text-red-600 font-semibold' : 'border-gray-200 bg-white text-gray-700'}" data-key="${key}" data-value="${value}">${label}</button>`;
+            return `<button type="button" class="filter-pill px-4 py-2 rounded-lg border text-sm ${
+                selected 
+                    ? 'border-blue-500 bg-blue-50 text-blue-600 font-semibold' 
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50/30'
+            }" data-key="${key}" data-value="${value}">${label}</button>`;
         }).join('')}</div>`;
     }
 
     function renderPriceRange() {
-        return `<div class="grid grid-cols-2 gap-3">${(filterConfigs.price.fields || []).map(field => `<div><label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">${field.label}</label><input type="number" name="${field.name}" value="${state.filters[field.name] || ''}" placeholder="${field.placeholder}" class="popup-price-input w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"></div>`).join('')}</div>`;
+        return `<div class="grid grid-cols-2 gap-3">${(filterConfigs.price.fields || []).map(field => `<div><label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">${field.label}</label><input type="number" name="${field.name}" value="${state.filters[field.name] || ''}" placeholder="${field.placeholder}" class="popup-price-input w-full px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:border-blue-500 outline-none"></div>`).join('')}</div>`;
     }
 
     function closePopup() {
@@ -303,10 +367,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? (state.filters[name] || []).includes(value)
                 : !!state.filters[name];
 
-            btn.classList.toggle('bg-blue-600', active);
-            btn.classList.toggle('text-white', active);
-            btn.classList.toggle('bg-blue-50', !active);
-            btn.classList.toggle('text-blue-700', !active);
+            if (active) {
+                btn.classList.remove('bg-blue-50', 'text-blue-700', 'border-blue-200', 'hover:bg-blue-100', 'hover:text-blue-800');
+                btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600', 'hover:bg-blue-700', 'hover:text-white');
+            } else {
+                btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600', 'hover:bg-blue-700', 'hover:text-white');
+                btn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200', 'hover:bg-blue-100', 'hover:text-blue-800');
+            }
         });
     }
 
