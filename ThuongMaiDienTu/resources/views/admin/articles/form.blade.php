@@ -382,7 +382,7 @@
     const previewDeviceLabel = document.getElementById('previewDeviceLabel');
     const deviceButtons = document.querySelectorAll('.device-btn');
     const insertSampleBtn = document.getElementById('insertSampleBtn');
-    const sidebarArticles = JSON.parse(@json($sidebarArticlesJson ?? '[]'));
+    const sidebarArticles = {!! $sidebarArticlesJson ?? '[]' !!};
 
     let currentDevice = 'desktop';
 

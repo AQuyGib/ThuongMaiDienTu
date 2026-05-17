@@ -111,6 +111,6 @@ Route::get('/api/products/{id}/variants', [PurchaseOrderController::class, 'getV
 
 // ===== Quản lý Khung Sản phẩm Trang chủ =====
 use App\Http\Controllers\Admin\HomeSectionController;
-Route::resource('home-sections', HomeSectionController::class)->names('admin.home-sections');
-Route::get('/api/products/search', [HomeSectionController::class, 'searchProducts'])->name('admin.api.products.search');
-Route::post('/home-sections/reorder', [HomeSectionController::class, 'reorder'])->name('admin.home-sections.reorder');
+Route::resource('home-sections', HomeSectionController::class);
+Route::get('/api/products/search', [HomeSectionController::class, 'searchProducts'])->name('api.products.search');
+Route::post('/home-sections/reorder', [HomeSectionController::class, 'reorder'])->name('home-sections.reorder');

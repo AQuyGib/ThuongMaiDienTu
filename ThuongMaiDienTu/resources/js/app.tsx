@@ -195,7 +195,10 @@ document.addEventListener('click', (e) => {
 });
 
 window.addEventListener('popstate', () => {
-    softNavigate(window.location.href);
+    const isInAdminArea = document.getElementById('joly-admin-sidebar') !== null;
+    if (isInAdminArea && window.location.pathname.startsWith('/admin')) {
+        softNavigate(window.location.href);
+    }
 });
 
 if (document.readyState === 'loading') {
