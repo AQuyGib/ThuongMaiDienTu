@@ -67,6 +67,9 @@ class User extends Authenticatable {
     public function wishlists() {
         return $this->hasMany(WishlistRecentlyViewed::class, 'user_id');
     }
+    public function notifications() {
+        return $this->hasMany(Notification::class, 'user_id', 'user_id')->latest('notification_id');
+    }
     public function articles() {
         return $this->hasMany(Article::class, 'author_id');
     }

@@ -15,9 +15,7 @@
     // 34 tỉnh thành Việt Nam mới nhất (Nghị quyết 202/2025/QH15, từ 01/07/2025)
     // 6 TP trực thuộc TW + 28 tỉnh
     $provinces = [
-        // 6 Thành phố trực thuộc Trung ương
         'TP. Hồ Chí Minh', 'TP. Hà Nội', 'TP. Hải Phòng', 'TP. Đà Nẵng', 'TP. Cần Thơ', 'TP. Huế',
-        // 28 Tỉnh (theo thứ tự ABC)
         'An Giang', 'Bắc Ninh', 'Cà Mau', 'Cao Bằng',
         'Đắk Lắk', 'Điện Biên', 'Đồng Nai', 'Đồng Tháp',
         'Gia Lai', 'Hà Tĩnh', 'Hưng Yên', 'Khánh Hòa',
@@ -26,6 +24,15 @@
         'Quảng Ninh', 'Quảng Trị', 'Sơn La', 'Tây Ninh',
         'Thái Nguyên', 'Thanh Hóa', 'Tuyên Quang', 'Vĩnh Long',
     ];
+
+    $currentUser = auth()->user();
+    $headerNotifications = collect();
+    $unreadNotificationCount = 0;
+
+    if ($currentUser) {
+        $headerNotifications = $currentUser->notifications()->limit(5)->get();
+        $unreadNotificationCount = $currentUser->notifications()->whereNull('read_at')->count();
+    }
 @endphp
 
 <!-- Top Bar -->
@@ -47,25 +54,21 @@
 <!-- Header -->
 <header class="header-main">
     <div class="container header-content">
-        <!-- Logo -->
         <a href="/" class="logo">
             <i class="fa-solid fa-bolt"></i>
             DIENMAY<span>PRO</span>
         </a>
 
-        <!-- Nút Danh mục -->
         <div class="header-category-btn" id="categoryToggleBtn">
             <i class="fa-solid fa-bars"></i> Danh mục <i class="fa-solid fa-chevron-down" style="font-size:10px; margin-left:2px;"></i>
         </div>
 
-        <!-- Nút Tỉnh thành -->
         <div class="header-province-btn" id="provinceToggleBtn">
             <i class="fa-solid fa-location-dot"></i>
             <span id="selectedProvinceName">TP. Hồ Chí Minh</span>
             <i class="fa-solid fa-chevron-down" style="font-size:10px;"></i>
         </div>
 
-        <!-- Thanh tìm kiếm -->
         <div class="search-bar">
             <form action="/search" method="GET">
                 <input type="text" name="q" placeholder="Bạn muốn mua gì hôm nay?">
@@ -73,12 +76,44 @@
             </form>
         </div>
 
-        <!-- Hành động -->
         <div class="header-actions">
             <a href="/orders" class="action-item">
                 <i class="fa-solid fa-truck-fast"></i>
                 <span>Tra cứu đơn</span>
             </a>
+            @auth
+                <div class="action-item group" style="position: relative;">
+                    <a href="{{ route('notifications.index') }}" class="action-item" id="notificationBell" style="position: relative;">
+                        <i class="fa-regular fa-bell"></i>
+                        @if($unreadNotificationCount > 0)
+                            <span id="notificationBadge" style="position: absolute; top: 0px; right: 8px; background: #d70018; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 10px;">{{ $unreadNotificationCount }}</span>
+                        @else
+                            <span id="notificationBadge" style="position: absolute; top: 0px; right: 8px; background: #d70018; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 10px; display:none;">0</span>
+                        @endif
+                        <span>Thông báo</span>
+                    </a>
+                    <div class="notification-dropdown">
+                        <div class="notification-dropdown-header">
+                            <strong>Thông báo mới</strong>
+                            <a href="{{ route('notifications.index') }}">Xem tất cả</a>
+                        </div>
+                        <div class="notification-dropdown-body">
+                            @forelse($headerNotifications as $notification)
+                                <a href="{{ $notification->action_url ?: route('notifications.index') }}" class="notification-dropdown-item {{ $notification->read_at ? '' : 'unread' }}">
+                                    <div class="notification-dot"></div>
+                                    <div class="notification-content">
+                                        <div class="notification-title">{{ $notification->title }}</div>
+                                        <div class="notification-text">{{ \Illuminate\Support\Str::limit($notification->content, 70) }}</div>
+                                        <div class="notification-time">{{ $notification->created_at?->diffForHumans() }}</div>
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="notification-empty">Chưa có thông báo mới.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            @endauth
             <a href="{{ route('cart.index') }}" class="action-item" style="position: relative;">
                 <i class="fa-solid fa-cart-shopping"></i>
                 <span id="headerCartBadge" style="position: absolute; top: 0px; right: 8px; background: #d70018; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 10px; display: none;">0</span>
@@ -103,7 +138,6 @@
                         <i class="fa-regular fa-circle-user"></i>
                         <span style="max-width: 70px; overflow: hidden; text-overflow: ellipsis;">{{ explode(' ', Auth::user()->full_name)[0] }}</span>
                     </a>
-                    <!-- Dropdown mini -->
                     <div class="user-dropdown">
                         @if(in_array(Auth::user()->role_id, [1, 2, 4]))
                             <a href="{{ route('admin.dashboard') }}" style="color: #d70018; font-weight: bold;">
@@ -128,13 +162,9 @@
     </div>
 </header>
 
-<!-- =====================================================
-     MEGA MENU DANH MỤC (hiển thị khi click nút Danh mục)
-     ===================================================== -->
 <div class="mega-menu-overlay" id="megaMenuOverlay"></div>
 <div class="mega-menu" id="megaMenu">
     <div class="container mega-menu-inner">
-        <!-- CỘT TRÁI: Danh mục + icon -->
         <div class="mega-col-left">
             @foreach($headerCategories as $cat)
                 <a href="{{ $cat->slug ? route('products.category', $cat->slug) : route('products.index') }}" class="mega-cat-item {{ $loop->first ? 'active' : '' }}"
@@ -144,20 +174,14 @@
                     <i class="fa-solid fa-angle-right mega-arrow"></i>
                 </a>
             @endforeach
-            {{-- Mục bổ sung --}}
             <a href="#" class="mega-cat-item"><i class="fa-solid fa-gamepad"></i><span>Thu cũ đổi mới</span></a>
             <a href="#" class="mega-cat-item"><i class="fa-solid fa-tags"></i><span>Hàng cũ</span></a>
             <a href="#" class="mega-cat-item"><i class="fa-solid fa-percent"></i><span>Khuyến mãi</span></a>
             <a href="{{ route('articles.index') }}" class="mega-cat-item"><i class="fa-solid fa-newspaper"></i><span>Tin công nghệ</span></a>
         </div>
-
-        <!-- CỘT PHẢI: Nội dung chi tiết theo danh mục -->
         <div class="mega-col-right">
             @foreach($headerCategories as $cat)
-                <div class="mega-detail-panel {{ $loop->first ? 'active' : '' }}"
-                     data-panel="{{ $cat->category_id }}">
-                    
-                    {{-- Section 1: Danh mục con --}}
+                <div class="mega-detail-panel {{ $loop->first ? 'active' : '' }}" data-panel="{{ $cat->category_id }}">
                     @if($cat->children->count())
                         <div class="mega-section mb-6">
                             <h4 class="mega-section-title">Dòng sản phẩm {{ $cat->name }}</h4>
@@ -169,8 +193,6 @@
                             </div>
                         </div>
                     @endif
-
-                    {{-- Section 2: Hãng sản xuất (Lấy động hoặc gợi ý theo tên danh mục) --}}
                     <div class="mega-section mb-6">
                         <h4 class="mega-section-title">Hãng sản xuất phổ biến</h4>
                         <div class="mega-tags">
@@ -185,8 +207,6 @@
                             @endforeach
                         </div>
                     </div>
-
-                    {{-- Section 3: Lọc theo nhu cầu --}}
                     @if(Str::contains($cat->name, ['Laptop', 'Điện thoại']))
                         <div class="mega-section mb-6">
                             <h4 class="mega-section-title">Chọn theo nhu cầu</h4>
@@ -197,7 +217,6 @@
                             </div>
                         </div>
                     @endif
-
                     <div class="mt-4 pt-4 border-t border-gray-100">
                         <a href="{{ route('products.category', $cat->slug) }}" class="text-primary font-bold hover:underline">
                             <i class="fa-solid fa-arrow-right-long mr-2"></i> Xem tất cả {{ $cat->name }}
@@ -209,9 +228,6 @@
     </div>
 </div>
 
-<!-- =====================================================
-     MODAL CHỌN TỈNH THÀNH
-     ===================================================== -->
 <div class="province-modal-overlay" id="provinceModalOverlay">
     <div class="province-modal">
         <div class="province-modal-header">
@@ -224,8 +240,7 @@
         <p class="province-hint">Vui lòng chọn tỉnh, thành phố để biết chính xác giá, khuyến mãi và tồn kho</p>
         <div class="province-list" id="provinceList">
             @foreach($provinces as $prov)
-                <div class="province-item {{ $prov === 'TP. Hồ Chí Minh' ? 'selected' : '' }}"
-                     data-province="{{ $prov }}">
+                <div class="province-item {{ $prov === 'TP. Hồ Chí Minh' ? 'selected' : '' }}" data-province="{{ $prov }}">
                     {{ $prov }}
                     @if($prov === 'TP. Hồ Chí Minh')
                         <i class="fa-solid fa-circle-check"></i>
@@ -235,3 +250,21 @@
         </div>
     </div>
 </div>
+
+<style>
+.notification-dropdown{display:none; position:absolute; top:100%; right:0; width:360px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 20px 50px rgba(0,0,0,.16); overflow:hidden; z-index:1002;}
+.action-item.group:hover .notification-dropdown{display:block;}
+.notification-dropdown-header{display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:#f8fafc; border-bottom:1px solid #e5e7eb; font-size:13px;}
+.notification-dropdown-header a{color:#0046ab; font-weight:700;}
+.notification-dropdown-body{max-height:360px; overflow:auto;}
+.notification-dropdown-item{display:flex; gap:10px; padding:12px 14px; border-bottom:1px solid #f3f4f6; align-items:flex-start;}
+.notification-dropdown-item.unread{background:#f8fbff;}
+.notification-dropdown-item:hover{background:#f0f7ff;}
+.notification-dot{width:9px; height:9px; border-radius:50%; background:#d1d5db; margin-top:5px; flex-shrink:0;}
+.notification-dropdown-item.unread .notification-dot{background:#0046ab;}
+.notification-content{min-width:0; flex:1;}
+.notification-title{font-size:13px; font-weight:700; color:#111827; margin-bottom:3px;}
+.notification-text{font-size:12px; color:#4b5563; line-height:1.45;}
+.notification-time{font-size:11px; color:#9ca3af; margin-top:4px;}
+.notification-empty{padding:18px 14px; font-size:13px; color:#6b7280; text-align:center;}
+</style>

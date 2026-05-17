@@ -69,6 +69,13 @@
             'icon' => 'fa-solid fa-paint-brush',
             'active' => request()->routeIs('admin.settings.theme'),
             'section' => 'Thiết lập'
+        ],
+        [
+            'label' => 'Thông báo',
+            'route' => route('admin.notifications.index'),
+            'icon' => 'fa-regular fa-bell',
+            'active' => request()->is('admin/notifications*'),
+            'section' => 'Thiết lập'
         ]
     ];
 
