@@ -73,40 +73,22 @@
                                     </x-ui.button>
                                     
                                     <x-ui.button 
-                                        variant="primary" 
+                                        variant="info" 
                                         class="!px-2.5 !py-1 !text-xs" 
-                                        :href="route('admin.service-invoices.pdf', $repairTicket->serviceInvoice)" 
-                                        title="Tải PDF tạo ngay"
+                                        :href="route('admin.service-invoices.pdf.open', $repairTicket->serviceInvoice)" 
+                                        target="_blank" 
+                                        title="Xem file PDF trực tiếp"
                                     >
-                                        <i class="fa-solid fa-file-pdf text-[10px]"></i> Tải PDF
+                                        <i class="fa-solid fa-folder-open text-[10px]"></i> Mở PDF
                                     </x-ui.button>
                                     
                                     <x-ui.button 
                                         variant="success" 
                                         class="!px-2.5 !py-1 !text-xs" 
-                                        :href="route('admin.service-invoices.pdf.save', $repairTicket->serviceInvoice)" 
-                                        title="Lưu PDF vào thư mục storage"
-                                    >
-                                        <i class="fa-solid fa-floppy-disk text-[10px]"></i> Lưu file PDF
-                                    </x-ui.button>
-                                    
-                                    <x-ui.button 
-                                        variant="info" 
-                                        class="!px-2.5 !py-1 !text-xs" 
-                                        :href="route('admin.service-invoices.pdf.open', $repairTicket->serviceInvoice)" 
-                                        target="_blank" 
-                                        title="Mở file PDF đã lưu"
-                                    >
-                                        <i class="fa-solid fa-folder-open text-[10px]"></i> Mở PDF đã lưu
-                                    </x-ui.button>
-                                    
-                                    <x-ui.button 
-                                        variant="warning" 
-                                        class="!px-2.5 !py-1 !text-xs" 
                                         :href="route('admin.service-invoices.pdf.download', $repairTicket->serviceInvoice)" 
-                                        title="Tải lại file PDF đã lưu"
+                                        title="Tải file PDF về máy"
                                     >
-                                        <i class="fa-solid fa-download text-[10px]"></i> Tải PDF đã lưu
+                                        <i class="fa-solid fa-download text-[10px]"></i> Tải PDF
                                     </x-ui.button>
                                 </div>
                             @else

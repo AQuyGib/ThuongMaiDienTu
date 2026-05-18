@@ -81,17 +81,11 @@
                                 <x-ui.button variant="secondary" :href="route('admin.service-invoices.print', $invoice)" target="_blank" title="Mở bản in để in nhanh">
                                     <i class="fa-solid fa-print"></i> In
                                 </x-ui.button>
-                                <x-ui.button variant="primary" :href="route('admin.service-invoices.pdf', $invoice)" title="Tải PDF tạo ngay">
-                                    <i class="fa-solid fa-file-pdf"></i> Tải PDF
+                                <x-ui.button variant="info" :href="route('admin.service-invoices.pdf.open', $invoice)" target="_blank" title="Xem file PDF trực tiếp">
+                                    <i class="fa-solid fa-folder-open"></i> Mở PDF
                                 </x-ui.button>
-                                <x-ui.button variant="success" :href="route('admin.service-invoices.pdf.save', $invoice)" title="Lưu PDF vào thư mục storage">
-                                    <i class="fa-solid fa-floppy-disk"></i> Lưu file PDF
-                                </x-ui.button>
-                                <x-ui.button variant="info" :href="route('admin.service-invoices.pdf.open', $invoice)" target="_blank" title="Mở file PDF đã lưu">
-                                    <i class="fa-solid fa-folder-open"></i> Mở PDF đã lưu
-                                </x-ui.button>
-                                <x-ui.button variant="warning" :href="route('admin.service-invoices.pdf.download', $invoice)" title="Tải lại file PDF đã lưu">
-                                    <i class="fa-solid fa-download"></i> Tải PDF đã lưu
+                                <x-ui.button variant="success" :href="route('admin.service-invoices.pdf.download', $invoice)" title="Tải file PDF về máy">
+                                    <i class="fa-solid fa-download"></i> Tải PDF
                                 </x-ui.button>
                             </div>
                         </td>

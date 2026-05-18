@@ -19,12 +19,27 @@
                 <i class="fa-solid fa-chevron-left"></i> Quay lại
             </x-ui.button>
             <x-ui.button
-                variant="info"
+                variant="secondary"
                 :href="route('admin.service-invoices.print', $serviceInvoice)"
                 target="_blank"
-                title="Mở bản in"
+                title="Mở bản in để in nhanh"
             >
-                <i class="fa-solid fa-print"></i> In hóa đơn
+                <i class="fa-solid fa-print"></i> In
+            </x-ui.button>
+            <x-ui.button
+                variant="info"
+                :href="route('admin.service-invoices.pdf.open', $serviceInvoice)"
+                target="_blank"
+                title="Xem file PDF trực tiếp"
+            >
+                <i class="fa-solid fa-folder-open"></i> Mở PDF
+            </x-ui.button>
+            <x-ui.button
+                variant="success"
+                :href="route('admin.service-invoices.pdf.download', $serviceInvoice)"
+                title="Tải file PDF về máy"
+            >
+                <i class="fa-solid fa-download"></i> Tải PDF
             </x-ui.button>
         </div>
     </div>
