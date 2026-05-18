@@ -268,7 +268,6 @@
     </div>
 </div>
 
-{{-- Add Modal --}}
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-panel">
         <div class="modal-content">
@@ -312,7 +311,6 @@
     </div>
 </div>
 
-{{-- Edit Modal --}}
 <div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-panel">
         <div class="modal-content">
@@ -361,6 +359,7 @@
     @method('DELETE')
 </form>
 
+@push('scripts')
 <script>
     function openModal(id) {
         const el = document.getElementById(id);
@@ -420,4 +419,5 @@
         });
     });
 </script>
+@endpush
 @endsection

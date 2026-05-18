@@ -218,7 +218,6 @@ document.addEventListener('click', (e) => {
         softNavigate(anchor.href);
     }
 });
-
 window.addEventListener('popstate', () => {
     const isInAdminArea = document.getElementById('joly-admin-sidebar') !== null;
     if (isInAdminArea && window.location.pathname.startsWith('/admin')) {
