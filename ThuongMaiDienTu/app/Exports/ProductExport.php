@@ -3,14 +3,12 @@
 namespace App\Exports;
 
 use App\Models\Product;
-use Illuminate\Contracts\Support\Responsable;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
-class ProductExport implements FromCollection, WithHeadings, WithMapping, Responsable
+class ProductExport implements FromCollection, WithHeadings, WithMapping
 {
-    public string $fileName = 'products-export.xlsx';
 
     public function __construct(protected array $filters = [])
     {
