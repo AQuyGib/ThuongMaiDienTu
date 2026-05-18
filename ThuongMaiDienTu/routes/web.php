@@ -114,6 +114,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
 
+// Search & Suggestions
+use App\Http\Controllers\Frontend\SearchController;
+Route::get('/search', [SearchController::class, 'index'])->name('search.index');
+Route::get('/api/search/suggestions', [SearchController::class, 'suggestions'])->name('api.search.suggestions');
+Route::get('/api/category-products/{id}', [SearchController::class, 'getProductsByCategory'])->name('api.category.products');
+
 // Product Compare (So sánh sản phẩm)
 use App\Http\Controllers\CompareController;
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');

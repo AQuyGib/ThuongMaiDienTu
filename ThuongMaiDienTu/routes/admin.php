@@ -108,3 +108,9 @@ Route::resource('cashbooks', CashbookController::class);
 
 // API lấy variants theo product (cho form tạo phiếu nhập)
 Route::get('/api/products/{id}/variants', [PurchaseOrderController::class, 'getVariants'])->name('api.product.variants');
+
+// ===== Quản lý Khung Sản phẩm Trang chủ =====
+use App\Http\Controllers\Admin\HomeSectionController;
+Route::resource('home-sections', HomeSectionController::class);
+Route::get('/api/products/search', [HomeSectionController::class, 'searchProducts'])->name('api.products.search');
+Route::post('/home-sections/reorder', [HomeSectionController::class, 'reorder'])->name('home-sections.reorder');

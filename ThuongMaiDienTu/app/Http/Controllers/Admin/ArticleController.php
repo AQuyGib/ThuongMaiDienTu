@@ -13,13 +13,19 @@ class ArticleController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('q');
+        $status = $request->input('status');
 
         $articles = Article::with('author')
+            ->when($status, function ($query, $status) {
+                $query->where('status', $status);
+            })
             ->when($search, function ($query, $search) {
-                return $query->where('title', 'like', "%{$search}%")
-                    ->orWhereHas('author', function ($q) use ($search) {
-                        $q->where('full_name', 'like', "%{$search}%");
-                    });
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                      ->orWhereHas('author', function ($authorQuery) use ($search) {
+                          $authorQuery->where('full_name', 'like', "%{$search}%");
+                      });
+                });
             })
             ->orderBy('created_at', 'desc')
             ->paginate(10)
@@ -31,7 +37,19 @@ class ArticleController extends Controller
     public function create()
     {
         $article = new Article(); // Empty model for the form
-        return view('admin.articles.form', compact('article'));
+        $recentArticles = Article::with('author')
+            ->where('status', 'approved')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        $sidebarArticlesJson = $recentArticles->map(fn ($item) => [
+            'title' => $item->title,
+            'slug' => route('articles.show', $item->slug),
+            'thumbnail' => $item->thumbnail ? asset($item->thumbnail) : 'https://images.unsplash.com/photo-1593640495253-23196b27a87f?w=400',
+        ])->values()->toJson();
+
+        return view('admin.articles.form', compact('article', 'recentArticles', 'sidebarArticlesJson'));
     }
 
     public function store(Request $request)
@@ -69,7 +87,19 @@ class ArticleController extends Controller
     public function edit(string $id)
     {
         $article = Article::findOrFail($id);
-        return view('admin.articles.form', compact('article'));
+        $recentArticles = Article::with('author')
+            ->where('status', 'approved')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        $sidebarArticlesJson = $recentArticles->map(fn ($item) => [
+            'title' => $item->title,
+            'slug' => route('articles.show', $item->slug),
+            'thumbnail' => $item->thumbnail ? asset($item->thumbnail) : 'https://images.unsplash.com/photo-1593640495253-23196b27a87f?w=400',
+        ])->values()->toJson();
+
+        return view('admin.articles.form', compact('article', 'recentArticles', 'sidebarArticlesJson'));
     }
 
     public function update(Request $request, string $id)
