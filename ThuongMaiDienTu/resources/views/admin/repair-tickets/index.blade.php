@@ -8,7 +8,7 @@
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Danh sách phiếu sửa chữa</h1>
-            <p class="text-sm text-gray-500">Quản lý phiếu sửa chữa dịch vụ kỹ thuật và xuất hóa đơn tương ứng.</p>
+            <p class="text-sm text-gray-500">Quản lý phiếu sửa chữa và xuất hóa đơn dịch vụ tương ứng.</p>
         </div>
     </div>
 

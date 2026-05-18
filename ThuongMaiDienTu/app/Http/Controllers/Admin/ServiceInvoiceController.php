@@ -88,14 +88,14 @@ class ServiceInvoiceController extends Controller
         return view('admin.service-invoices.print', compact('serviceInvoice'));
     }
 
-    public function pdf(ServiceInvoice $serviceInvoice): StreamedResponse
+    public function pdf(ServiceInvoice $serviceInvoice)
     {
         $pdf = Pdf::loadView('admin.service-invoices.print', compact('serviceInvoice'));
 
         return $pdf->download($serviceInvoice->invoice_no . '.pdf');
     }
 
-    public function savePdf(ServiceInvoice $serviceInvoice): BinaryFileResponse
+    public function savePdf(ServiceInvoice $serviceInvoice)
     {
         $pdf = Pdf::loadView('admin.service-invoices.print', compact('serviceInvoice'));
         $filename = $serviceInvoice->invoice_no . '.pdf';
@@ -120,7 +120,7 @@ class ServiceInvoiceController extends Controller
         return response()->file(storage_path('app/public/' . $path));
     }
 
-    public function downloadSavedPdf(ServiceInvoice $serviceInvoice): BinaryFileResponse
+    public function downloadSavedPdf(ServiceInvoice $serviceInvoice)
     {
         $path = 'invoices/' . $serviceInvoice->invoice_no . '.pdf';
 
