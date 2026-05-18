@@ -64,6 +64,13 @@
             'section' => 'Sản phẩm & Kho'
         ],
         [
+            'label' => 'Nhà cung cấp',
+            'route' => route('admin.suppliers.index'),
+            'icon' => 'fa-solid fa-truck-field',
+            'active' => request()->is('admin/suppliers*'),
+            'section' => 'Sản phẩm & Kho'
+        ],
+        [
             'label' => 'Danh mục',
             'route' => route('admin.categories.index'),
             'icon' => 'fa-solid fa-layer-group',
