@@ -8,19 +8,16 @@
         background: linear-gradient(180deg, rgba(17, 24, 39, 0.03) 0%, rgba(17, 24, 39, 0) 220px);
     }
 
-    .page-hero {
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    .page-hero,
+    .glass-card {
+        background: #fff;
         border: 1px solid #e5e7eb;
-        border-radius: 24px;
+        border-radius: 20px;
         box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
     }
 
-    .glass-card {
-        background: rgba(255, 255, 255, 0.86);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(229, 231, 235, 0.9);
-        border-radius: 20px;
-        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+    .page-hero {
+        border-radius: 24px;
     }
 
     .soft-input {
@@ -41,6 +38,7 @@
         letter-spacing: .08em;
         color: #64748b;
         border-bottom: 1px solid #e5e7eb !important;
+        white-space: nowrap;
     }
 
     .table-modern td {
@@ -48,27 +46,17 @@
         vertical-align: middle;
     }
 
-    .badge-soft {
-        background: #eef2ff;
-        color: #4338ca;
-    }
-
-    .badge-category {
-        background: #ecfeff;
-        color: #0f766e;
-    }
+    .badge-soft { background: #eef2ff; color: #4338ca; }
+    .badge-category { background: #ecfeff; color: #0f766e; }
 
     .btn-primary-soft {
         background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
+        color: #fff;
         border: none;
         box-shadow: 0 10px 20px rgba(99, 102, 241, .18);
     }
 
-    .btn-primary-soft:hover {
-        color: white;
-        transform: translateY(-1px);
-    }
+    .btn-primary-soft:hover { color: #fff; transform: translateY(-1px); }
 
     .icon-btn {
         width: 40px;
@@ -81,6 +69,7 @@
         background: #fff;
         color: #64748b;
         transition: all .2s ease;
+        text-decoration: none;
     }
 
     .icon-btn:hover {
@@ -94,10 +83,6 @@
         border-color: #fecaca;
         color: #b91c1c;
         background: #fef2f2;
-    }
-
-    .modal-backdrop-custom {
-        background: rgba(15, 23, 42, .55);
     }
 
     .modal-panel {
@@ -122,27 +107,34 @@
                 </p>
             </div>
 
-            <button type="button" class="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700" onclick="openModal('addProductModal')">
-                <i class="fa-solid fa-plus"></i>
-                Thêm sản phẩm
-            </button>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ route('admin.products.import.form') }}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-upload me-1"></i> Import Excel
+                </a>
+                <button type="button" class="btn btn-outline-secondary" onclick="window.location.href='{{ route('admin.products.export') }}'">
+                    <i class="fa-solid fa-download me-1"></i> Export Excel
+                </button>
+                <button type="button" class="btn btn-primary-soft" onclick="openModal('addProductModal')">
+                    <i class="fa-solid fa-plus me-1"></i> Thêm sản phẩm
+                </button>
+            </div>
         </div>
     </div>
 
     @if(session('success'))
         <div class="glass-card border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
-            <i class="fa-solid fa-circle-check mr-2"></i>{{ session('success') }}
+            <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
         </div>
     @endif
     @if(session('error'))
         <div class="glass-card border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">
-            <i class="fa-solid fa-circle-exclamation mr-2"></i>{{ session('error') }}
+            <i class="fa-solid fa-circle-exclamation me-2"></i>{{ session('error') }}
         </div>
     @endif
     @if($errors->any())
         <div class="glass-card border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">
-            <div class="font-semibold mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Vui lòng kiểm tra lại</div>
-            <div class="space-y-1 text-sm">
+            <div class="fw-semibold mb-2"><i class="fa-solid fa-triangle-exclamation me-2"></i>Vui lòng kiểm tra lại</div>
+            <div class="small">
                 @foreach($errors->all() as $error)
                     <div>{{ $error }}</div>
                 @endforeach
@@ -150,60 +142,67 @@
         </div>
     @endif
 
-    <div class="grid gap-4 md:grid-cols-3">
-        <div class="glass-card p-5">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-slate-500">Tổng sản phẩm</p>
-                    <p class="mt-2 text-3xl font-bold text-slate-900">{{ $totalProducts ?? 0 }}</p>
-                </div>
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                    <i class="fa-solid fa-boxes-stacked"></i>
-                </div>
-            </div>
-        </div>
-        <div class="glass-card p-5">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-slate-500">Tổng danh mục</p>
-                    <p class="mt-2 text-3xl font-bold text-slate-900">{{ $totalCategories ?? 0 }}</p>
-                </div>
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
-                    <i class="fa-solid fa-layer-group"></i>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="glass-card p-5">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <p class="text-sm text-slate-500 mb-1">Tổng sản phẩm</p>
+                        <p class="mt-2 text-3xl font-bold text-slate-900 mb-0">{{ $totalProducts ?? 0 }}</p>
+                    </div>
+                    <div class="d-flex h-12 w-12 align-items-center justify-content-center rounded-2xl bg-indigo-50 text-indigo-600" style="width:48px;height:48px;">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="glass-card p-5">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-slate-500">Tổng biến thể</p>
-                    <p class="mt-2 text-3xl font-bold text-slate-900">{{ $totalVariants ?? 0 }}</p>
+        <div class="col-md-4">
+            <div class="glass-card p-5">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <p class="text-sm text-slate-500 mb-1">Tổng danh mục</p>
+                        <p class="mt-2 text-3xl font-bold text-slate-900 mb-0">{{ $totalCategories ?? 0 }}</p>
+                    </div>
+                    <div class="d-flex h-12 w-12 align-items-center justify-content-center rounded-2xl bg-cyan-50 text-cyan-600" style="width:48px;height:48px;">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
                 </div>
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
-                    <i class="fa-solid fa-sliders"></i>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="glass-card p-5">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <p class="text-sm text-slate-500 mb-1">Tổng biến thể</p>
+                        <p class="mt-2 text-3xl font-bold text-slate-900 mb-0">{{ $totalVariants ?? 0 }}</p>
+                    </div>
+                    <div class="d-flex h-12 w-12 align-items-center justify-content-center rounded-2xl bg-amber-50 text-amber-600" style="width:48px;height:48px;">
+                        <i class="fa-solid fa-sliders"></i>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="glass-card overflow-hidden">
-        <div class="flex flex-col gap-4 border-b border-slate-200 p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div class="d-flex flex-column gap-4 border-bottom border-slate-200 p-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <h2 class="text-lg font-semibold text-slate-900">Danh sách sản phẩm</h2>
-                <p class="text-sm text-slate-500">Tìm kiếm nhanh, xem chi tiết và thao tác ngay trên một màn hình.</p>
+                <h2 class="text-lg font-semibold text-slate-900 mb-1">Danh sách sản phẩm</h2>
+                <p class="text-sm text-slate-500 mb-0">Tìm kiếm nhanh, xem chi tiết và thao tác ngay trên một màn hình.</p>
             </div>
-            <form method="GET" action="{{ route('admin.products.index') }}" class="relative w-full lg:max-w-md">
-                <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Tìm kiếm sản phẩm..." class="soft-input w-full rounded-2xl py-3 pl-11 pr-24 text-sm outline-none">
+
+            <form method="GET" action="{{ route('admin.products.index') }}" class="position-relative" style="width:min(100%,420px)">
+                <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-slate-400"></i>
+                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Tìm kiếm sản phẩm..." class="soft-input w-100 rounded-2xl py-3 ps-5 pe-5 text-sm outline-none" style="padding-left:2.75rem;padding-right:6.5rem;">
                 @if(!empty($search))
-                    <a href="{{ route('admin.products.index') }}" class="absolute right-16 top-1/2 -translate-y-1/2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">Xóa</a>
+                    <a href="{{ route('admin.products.index') }}" class="position-absolute top-50 end-0 translate-middle-y me-5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs fw-semibold text-slate-600 text-decoration-none">Xóa</a>
                 @endif
-                <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700">Tìm</button>
+                <button type="submit" class="position-absolute top-50 end-0 translate-middle-y me-1 btn btn-primary btn-sm rounded-xl" style="font-size:.8rem;">Tìm</button>
             </form>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-left text-sm table-modern" id="productTable">
+        <div class="table-responsive">
+            <table class="table table-modern mb-0" id="productTable">
                 <thead class="bg-slate-50">
                     <tr>
                         <th class="px-5 py-4">#</th>
@@ -216,213 +215,146 @@
                 </thead>
                 <tbody class="bg-white">
                     @forelse($products as $product)
-                        <tr class="hover:bg-slate-50/80">
-                            <td class="px-5 py-4">
-                                <span class="inline-flex rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">#{{ $product->product_id }}</span>
-                            </td>
+                        <tr>
+                            <td class="px-5 py-4"><span class="badge border border-slate-200 bg-slate-50 text-slate-600">#{{ $product->product_id }}</span></td>
                             <td class="px-5 py-4">
                                 <div class="space-y-1">
-                                    <div class="font-semibold text-slate-900">{{ $product->name }}</div>
+                                    <div class="fw-semibold text-slate-900">{{ $product->name }}</div>
                                     @if($product->seo_description)
-                                        <div class="max-w-xl text-xs text-slate-500">{{ Str::limit($product->seo_description, 70) }}</div>
+                                        <div class="small text-slate-500">{{ \Illuminate\Support\Str::limit($product->seo_description, 70) }}</div>
                                     @endif
                                 </div>
                             </td>
+                            <td class="px-5 py-4"><span class="badge badge-category">{{ $product->category->name ?? '—' }}</span></td>
+                            <td class="px-5 py-4"><span class="badge badge-soft">{{ $product->variants_count ?? 0 }}</span></td>
+                            <td class="px-5 py-4 text-slate-700">{{ number_format($product->base_price, 0, ',', '.') }} đ</td>
                             <td class="px-5 py-4">
-                                @if($product->category)
-                                    <span class="badge-category inline-flex rounded-full px-3 py-1 text-xs font-semibold">{{ $product->category->name }}</span>
-                                @else
-                                    <span class="text-slate-400">—</span>
-                                @endif
-                            </td>
-                            <td class="px-5 py-4">
-                                <a href="{{ route('admin.products.show', $product->product_id) }}" class="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100">
-                                    {{ $product->variants_count ?? 0 }} biến thể
-                                </a>
-                            </td>
-                            <td class="px-5 py-4 font-semibold text-emerald-600">{{ number_format($product->base_price, 0, ',', '.') }}₫</td>
-                            <td class="px-5 py-4">
-                                <div class="flex items-center justify-center gap-2">
+                                <div class="d-flex justify-content-center gap-2 flex-wrap">
                                     <a href="{{ route('admin.products.show', $product->product_id) }}" class="icon-btn" title="Chi tiết">
-                                        <i class="fa-regular fa-eye"></i>
+                                        <i class="fa-solid fa-eye"></i>
                                     </a>
-                                    <button type="button" class="icon-btn" title="Sửa" onclick="openEditModal({{ $product->product_id }}, @js($product->name), {{ $product->category_id ?? 'null' }}, {{ $product->base_price }}, @js($product->seo_description ?? ''), @js($product->brand ?? ''))">
-                                        <i class="fa-regular fa-pen-to-square"></i>
+                                    <button type="button"
+                                            class="icon-btn js-edit-product"
+                                            title="Sửa"
+                                            data-id="{{ $product->product_id }}"
+                                            data-name="{{ e($product->name) }}"
+                                            data-category-id="{{ $product->category_id }}"
+                                            data-price="{{ $product->base_price }}"
+                                            data-seo="{{ e($product->seo_description ?? '') }}">
+                                        <i class="fa-solid fa-pen-to-square"></i>
                                     </button>
-                                    <button type="button" class="icon-btn danger" title="Xóa" onclick="confirmDelete({{ $product->product_id }}, @js($product->name))">
-                                        <i class="fa-regular fa-trash-can"></i>
+                                    <button type="button"
+                                            class="icon-btn danger js-delete-product"
+                                            title="Xóa"
+                                            data-id="{{ $product->product_id }}"
+                                            data-name="{{ e($product->name) }}">
+                                        <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-5 py-16 text-center text-slate-500">
-                                <i class="fa-regular fa-inbox mb-3 text-4xl text-slate-300"></i>
-                                <div class="font-medium">Chưa có sản phẩm nào.</div>
-                                <div class="text-sm">Hãy tạo sản phẩm đầu tiên để bắt đầu quản lý.</div>
-                            </td>
+                            <td colspan="6" class="py-5 text-center text-slate-500">Chưa có sản phẩm nào.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        @if(method_exists($products, 'links'))
-            <div class="border-t border-slate-200 px-5 py-4">
-                <div class="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white px-5 py-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-                    <div class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-sm">
-                        <span class="font-semibold uppercase tracking-wide text-slate-900">Kết quả: {{ $products->total() }}</span>
-                        <span class="h-5 w-px bg-slate-200"></span>
-                        <span class="font-semibold uppercase tracking-wide text-slate-900">Trang {{ $products->currentPage() }} / {{ $products->lastPage() }}</span>
-                    </div>
-                    <div class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 shadow-sm">
-                        @if($products->onFirstPage())
-                            <span class="inline-flex h-10 min-w-[92px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold uppercase tracking-wide text-slate-300">Trước</span>
-                        @else
-                            <a href="{{ $products->previousPageUrl() }}" class="inline-flex h-10 min-w-[92px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold uppercase tracking-wide text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">Trước</a>
-                        @endif
-
-                        @if($products->hasMorePages())
-                            <a href="{{ $products->nextPageUrl() }}" class="inline-flex h-10 min-w-[92px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold uppercase tracking-wide text-slate-700 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">Tiếp</a>
-                        @else
-                            <span class="inline-flex h-10 min-w-[92px] items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold uppercase tracking-wide text-slate-300">Tiếp</span>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        @endif
+        <div class="border-top border-slate-200 px-4 py-3">
+            {{ $products->links('pagination::bootstrap-5') }}
+        </div>
     </div>
 </div>
 
-@php
-    $categoryOptions = $allCategories->map(fn($cat) => ['id' => $cat->category_id, 'name' => $cat->name])->values();
-@endphp
-
-<div id="addProductModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
-    <div class="absolute inset-0 modal-backdrop-custom" onclick="closeModal('addProductModal')"></div>
-    <div class="relative w-full max-w-3xl rounded-3xl bg-white shadow-2xl modal-panel">
-        <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="p-6 sm:p-8">
-            @csrf
-            <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
-                <div>
-                    <h3 class="text-xl font-bold text-slate-900">Thêm sản phẩm mới</h3>
-                    <p class="mt-1 text-sm text-slate-500">Nhập thông tin theo cùng một phong cách với các trang quản trị khác.</p>
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-panel">
+        <div class="modal-content">
+            <form method="POST" action="{{ route('admin.products.store') }}">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm sản phẩm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <button type="button" class="icon-btn" onclick="closeModal('addProductModal')"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="mt-6 grid gap-4 md:grid-cols-2">
-                <div class="md:col-span-2">
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Tên sản phẩm</label>
-                    <input type="text" name="name" required maxlength="150" class="soft-input w-full rounded-2xl px-4 py-3 outline-none" placeholder="VD: iPhone 15 Pro Max">
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Giá bán (₫)</label>
-                    <input type="number" name="base_price" required min="0" class="soft-input w-full rounded-2xl px-4 py-3 outline-none" placeholder="VD: 29990000">
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Danh mục</label>
-                    <select name="category_id" required class="soft-input w-full rounded-2xl px-4 py-3 outline-none">
-                        <option value="">— Chọn danh mục —</option>
-                        @foreach($allCategories as $cat)
-                            <option value="{{ $cat->category_id }}">{{ $cat->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Thương hiệu</label>
-                    <input type="text" name="brand" maxlength="100" class="soft-input w-full rounded-2xl px-4 py-3 outline-none" placeholder="VD: Apple, Samsung...">
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Mô tả SEO</label>
-                    <input type="text" name="seo_description" maxlength="255" class="soft-input w-full rounded-2xl px-4 py-3 outline-none" placeholder="Mô tả ngắn cho SEO...">
-                </div>
-                <div class="md:col-span-2 grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label class="mb-2 block text-sm font-medium text-slate-700">Ảnh từ máy tính</label>
-                        <input type="file" name="image_file" accept="image/*" class="soft-input w-full rounded-2xl px-4 py-3 outline-none" onchange="previewFile(this, 'addFilePreview')">
-                        <img id="addFilePreview" class="mt-3 hidden max-h-48 rounded-2xl border border-slate-200 object-cover" alt="Preview">
-                    </div>
-                    <div>
-                        <label class="mb-2 block text-sm font-medium text-slate-700">Hoặc URL ảnh</label>
-                        <input type="text" name="image_url" class="soft-input w-full rounded-2xl px-4 py-3 outline-none" placeholder="https://..." oninput="previewUrl(this, 'addUrlPreview')">
-                        <img id="addUrlPreview" class="mt-3 hidden max-h-48 rounded-2xl border border-slate-200 object-cover" alt="Preview">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Tên sản phẩm</label>
+                            <input type="text" name="name" class="form-control" required maxlength="150">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Danh mục</label>
+                            <select name="category_id" class="form-select" required>
+                                <option value="">-- Chọn danh mục --</option>
+                                @foreach($allCategories as $category)
+                                    <option value="{{ $category->category_id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Giá bán</label>
+                            <input type="number" name="base_price" class="form-control" min="0" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Mô tả SEO</label>
+                            <input type="text" name="seo_description" class="form-control" maxlength="255">
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="mt-8 flex justify-end gap-3 border-t border-slate-200 pt-5">
-                <button type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" onclick="closeModal('addProductModal')">Hủy</button>
-                <button type="submit" class="btn-primary-soft rounded-2xl px-5 py-3 text-sm font-semibold">Thêm sản phẩm</button>
-            </div>
-        </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary-soft">Thêm</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-<div id="editProductModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
-    <div class="absolute inset-0 modal-backdrop-custom" onclick="closeModal('editProductModal')"></div>
-    <div class="relative w-full max-w-3xl rounded-3xl bg-white shadow-2xl modal-panel">
-        <form id="editForm" method="POST" enctype="multipart/form-data" class="p-6 sm:p-8">
-            @csrf
-            @method('PUT')
-            <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
-                <div>
-                    <h3 class="text-xl font-bold text-slate-900">Cập nhật sản phẩm</h3>
-                    <p class="mt-1 text-sm text-slate-500">Giữ phong cách thống nhất với phần quản trị còn lại.</p>
+<div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-panel">
+        <div class="modal-content">
+            <form id="editProductForm" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="modal-header">
+                    <h5 class="modal-title">Sửa sản phẩm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <button type="button" class="icon-btn" onclick="closeModal('editProductModal')"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="mt-6 grid gap-4 md:grid-cols-2">
-                <div class="md:col-span-2">
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Tên sản phẩm</label>
-                    <input type="text" name="name" id="editName" required maxlength="150" class="soft-input w-full rounded-2xl px-4 py-3 outline-none">
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Giá bán (₫)</label>
-                    <input type="number" name="base_price" id="editPrice" required min="0" class="soft-input w-full rounded-2xl px-4 py-3 outline-none">
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Danh mục</label>
-                    <select name="category_id" id="editCategoryId" required class="soft-input w-full rounded-2xl px-4 py-3 outline-none">
-                        <option value="">— Chọn danh mục —</option>
-                        @foreach($allCategories as $cat)
-                            <option value="{{ $cat->category_id }}">{{ $cat->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Thương hiệu</label>
-                    <input type="text" name="brand" id="editBrand" maxlength="100" class="soft-input w-full rounded-2xl px-4 py-3 outline-none">
-                </div>
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Mô tả SEO</label>
-                    <input type="text" name="seo_description" id="editSeoDesc" maxlength="255" class="soft-input w-full rounded-2xl px-4 py-3 outline-none">
-                </div>
-                <div class="md:col-span-2 grid gap-4 md:grid-cols-2">
-                    <div>
-                        <label class="mb-2 block text-sm font-medium text-slate-700">Ảnh từ máy tính</label>
-                        <input type="file" name="image_file" accept="image/*" class="soft-input w-full rounded-2xl px-4 py-3 outline-none" onchange="previewFile(this, 'editFilePreview')">
-                        <img id="editFilePreview" class="mt-3 hidden max-h-48 rounded-2xl border border-slate-200 object-cover" alt="Preview">
-                    </div>
-                    <div>
-                        <label class="mb-2 block text-sm font-medium text-slate-700">Hoặc URL ảnh</label>
-                        <input type="text" name="image_url" id="editImageUrl" class="soft-input w-full rounded-2xl px-4 py-3 outline-none" placeholder="https://..." oninput="previewUrl(this, 'editUrlPreview')">
-                        <img id="editUrlPreview" class="mt-3 hidden max-h-48 rounded-2xl border border-slate-200 object-cover" alt="Preview">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Tên sản phẩm</label>
+                            <input type="text" name="name" id="editProductName" class="form-control" required maxlength="150">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Danh mục</label>
+                            <select name="category_id" id="editProductCategory" class="form-select" required>
+                                @foreach($allCategories as $category)
+                                    <option value="{{ $category->category_id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Giá bán</label>
+                            <input type="number" name="base_price" id="editProductPrice" class="form-control" min="0" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Mô tả SEO</label>
+                            <input type="text" name="seo_description" id="editProductSeo" class="form-control" maxlength="255">
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="mt-8 flex justify-end gap-3 border-t border-slate-200 pt-5">
-                <button type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" onclick="closeModal('editProductModal')">Hủy</button>
-                <button type="submit" class="btn-primary-soft rounded-2xl px-5 py-3 text-sm font-semibold">Lưu thay đổi</button>
-            </div>
-        </form>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary-soft">Cập nhật</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-<form id="deleteForm" method="POST" class="hidden">
+<form id="deleteProductForm" method="POST" class="d-none">
     @csrf
     @method('DELETE')
 </form>
@@ -432,92 +364,60 @@
     function openModal(id) {
         const el = document.getElementById(id);
         if (!el) return;
-        el.classList.remove('hidden');
-        el.classList.add('flex');
+        bootstrap.Modal.getOrCreateInstance(el).show();
     }
 
-    function closeModal(id) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.classList.add('hidden');
-        el.classList.remove('flex');
-    }
-
-    function openEditModal(id, name, categoryId, price, seoDesc, brand) {
-        document.getElementById('editName').value = name || '';
-        document.getElementById('editCategoryId').value = categoryId || '';
-        document.getElementById('editPrice').value = price || '';
-        document.getElementById('editSeoDesc').value = seoDesc || '';
-        document.getElementById('editBrand').value = brand || '';
-        document.getElementById('editForm').action = "{{ url('admin/products') }}/" + id;
+    function openEditModal(id, name, categoryId, price, seo) {
+        document.getElementById('editProductName').value = name || '';
+        document.getElementById('editProductCategory').value = categoryId || '';
+        document.getElementById('editProductPrice').value = price || '';
+        document.getElementById('editProductSeo').value = seo || '';
+        document.getElementById('editProductForm').action = "{{ url('admin/products') }}/" + id;
         openModal('editProductModal');
     }
 
     function confirmDelete(id, name) {
         Swal.fire({
-            title: 'Xác nhận xóa?',
-            html: `Bạn có chắc muốn xóa sản phẩm <strong>${name}</strong>?`,
+            title: 'Xác nhận xóa sản phẩm',
+            html: 'Bạn có chắc muốn xóa sản phẩm <strong>' + name + '</strong> không?',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Xóa',
-            cancelButtonText: 'Hủy'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const form = document.getElementById('deleteForm');
-                form.action = "{{ url('admin/products') }}/" + id;
-                form.submit();
+            cancelButtonText: 'Hủy',
+            reverseButtons: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            background: '#fff',
+            customClass: {
+                popup: 'rounded-4 shadow-lg',
+                confirmButton: 'px-4 py-2',
+                cancelButton: 'px-4 py-2'
             }
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            const form = document.getElementById('deleteProductForm');
+            form.action = "{{ url('admin/products') }}/" + id;
+            form.submit();
         });
     }
 
-    document.addEventListener('click', function (event) {
-        const editBtn = event.target.closest('[data-product-edit]');
-        if (editBtn) {
+    document.querySelectorAll('.js-edit-product').forEach(button => {
+        button.addEventListener('click', function () {
             openEditModal(
-                editBtn.dataset.id,
-                editBtn.dataset.name,
-                editBtn.dataset.categoryId,
-                editBtn.dataset.price,
-                editBtn.dataset.seoDesc,
-                editBtn.dataset.brand
+                this.dataset.id,
+                this.dataset.name,
+                this.dataset.categoryId,
+                this.dataset.price,
+                this.dataset.seo
             );
-            return;
-        }
-
-        const deleteBtn = event.target.closest('[data-product-delete]');
-        if (deleteBtn) {
-            confirmDelete(deleteBtn.dataset.id, deleteBtn.dataset.name);
-            return;
-        }
-
-        const modalBtn = event.target.closest('[data-open-modal]');
-        if (modalBtn) {
-            openModal(modalBtn.dataset.openModal);
-        }
+        });
     });
 
-    function previewFile(input, previewId) {
-        const preview = document.getElementById(previewId);
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                preview.src = e.target.result;
-                preview.classList.remove('hidden');
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function previewUrl(input, previewId) {
-        const preview = document.getElementById(previewId);
-        if (input.value.trim()) {
-            preview.src = input.value.trim();
-            preview.classList.remove('hidden');
-            preview.onerror = () => preview.classList.add('hidden');
-        } else {
-            preview.classList.add('hidden');
-        }
-    }
+    document.querySelectorAll('.js-delete-product').forEach(button => {
+        button.addEventListener('click', function () {
+            confirmDelete(this.dataset.id, this.dataset.name);
+        });
+    });
 </script>
 @endpush
 @endsection
