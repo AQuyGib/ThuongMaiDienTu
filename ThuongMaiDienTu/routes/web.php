@@ -88,6 +88,7 @@ Route::middleware(['auth', \App\Http\Middleware\IsAdmin::class])->prefix('admin'
     Route::patch('/notifications/{notification}/read', [NotificationCampaignController::class, 'markAsRead'])->name('admin.notifications.read');
     Route::delete('/notifications/{notification}', [NotificationCampaignController::class, 'destroy'])->name('admin.notifications.destroy');
     Route::post('/notifications/bulk-delete', [NotificationCampaignController::class, 'bulkDestroy'])->name('admin.notifications.bulk-destroy');
+    Route::post('/notifications/low-stock-check', [NotificationCampaignController::class, 'lowStockCheck'])->name('admin.notifications.low-stock-check');
 });
 
 // Product Filtering
@@ -120,17 +121,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
-});
-
-Route::middleware(['auth', \App\Http\Middleware\IsAdmin::class])->prefix('admin')->group(function () {
-    Route::get('/notifications', [NotificationCampaignController::class, 'index'])->name('admin.notifications.index');
-    Route::get('/notifications/create', [NotificationCampaignController::class, 'create'])->name('admin.notifications.create');
-    Route::post('/notifications', [NotificationCampaignController::class, 'store'])->name('admin.notifications.store');
-    Route::get('/notifications/{notification}', [NotificationCampaignController::class, 'show'])->name('admin.notifications.show');
-    Route::patch('/notifications/{notification}/read', [NotificationCampaignController::class, 'markAsRead'])->name('admin.notifications.read');
-    Route::delete('/notifications/{notification}', [NotificationCampaignController::class, 'destroy'])->name('admin.notifications.destroy');
-    Route::post('/notifications/bulk-delete', [NotificationCampaignController::class, 'bulkDestroy'])->name('admin.notifications.bulk-destroy');
-    Route::post('/notifications/low-stock-check', [NotificationCampaignController::class, 'lowStockCheck'])->name('admin.notifications.low-stock-check');
 });
 
 // Product Compare (So sánh sản phẩm)

@@ -130,6 +130,31 @@
                             badge.style.display = 'block';
                         }
                     }
+
+                    // AJAX Polling for Client Unread Notifications Count
+                    if (userId !== 'guest') {
+                        const notifBadge = document.getElementById('notificationBadge');
+                        const endpoint = '{{ route('notifications.unread-count') }}';
+
+                        const refreshNotifications = () => {
+                            fetch(endpoint, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                                .then(response => response.ok ? response.json() : null)
+                                .then(data => {
+                                    if (!notifBadge || !data) return;
+                                    const count = Number(data.unread_count || 0);
+                                    notifBadge.textContent = count;
+                                    if (count > 0) {
+                                        notifBadge.style.display = 'block';
+                                    } else {
+                                        notifBadge.style.display = 'none';
+                                    }
+                                })
+                                .catch(() => {});
+                        };
+
+                        refreshNotifications();
+                        setInterval(refreshNotifications, 30000); // every 30 seconds
+                    }
                 });
             </script>
             @auth
