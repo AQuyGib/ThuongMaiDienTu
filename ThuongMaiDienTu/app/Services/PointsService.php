@@ -164,6 +164,123 @@ class PointsService
         });
     }
 
+    public function cancelOrderPoints(Order $order): array
+    {
+        if (! $order->user_id) {
+            return ['processed' => false, 'reason' => 'missing_user'];
+        }
+
+        $pointsUsed = (int) ($order->wallet_points_used ?? 0);
+        $pointsEarned = (int) ($order->wallet_points_earned ?? 0);
+
+        if ($pointsUsed === 0 && $pointsEarned === 0) {
+            return ['processed' => false, 'reason' => 'no_points_action_needed'];
+        }
+
+        return DB::transaction(function () use ($order, $pointsUsed, $pointsEarned) {
+            $userPoints = DB::table('user_points')
+                ->where('user_id', $order->user_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $userPoints) {
+                DB::table('user_points')->insert([
+                    'user_id' => $order->user_id,
+                    'wallet_points' => 0,
+                    'rank_points' => 0,
+                    'wallet_total_earned' => 0,
+                    'wallet_total_used' => 0,
+                    'rank_total_earned' => 0,
+                    'current_rank' => 'Bronze',
+                    'last_rank_updated_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $userPoints = DB::table('user_points')
+                    ->where('user_id', $order->user_id)
+                    ->lockForUpdate()
+                    ->first();
+            }
+
+            $newWallet = (int) $userPoints->wallet_points;
+            $newRank = (int) $userPoints->rank_points;
+            $newWalletTotalUsed = (int) $userPoints->wallet_total_used;
+            $newWalletTotalEarned = (int) $userPoints->wallet_total_earned;
+            $newRankTotalEarned = (int) $userPoints->rank_total_earned;
+
+            // 1. Hoàn lại số điểm tiêu dùng khách hàng đã sử dụng
+            if ($pointsUsed > 0) {
+                $newWallet += $pointsUsed;
+                $newWalletTotalUsed = max(0, $newWalletTotalUsed - $pointsUsed);
+
+                $this->insertTransaction(
+                    $order->user_id,
+                    'wallet',
+                    'refund',
+                    $pointsUsed,
+                    $order,
+                    'Hoàn trả điểm tiêu dùng từ đơn hàng đã hủy'
+                );
+            }
+
+            // 2. Thu hồi điểm tích lũy đã cộng (chỉ khi đơn hàng ở trạng thái processed points)
+            if ($pointsEarned > 0 && ($order->points_status ?? 'pending') === 'processed') {
+                $newWallet = max(0, $newWallet - $pointsEarned);
+                $newRank = max(0, $newRank - $pointsEarned);
+                $newWalletTotalEarned = max(0, $newWalletTotalEarned - $pointsEarned);
+                $newRankTotalEarned = max(0, $newRankTotalEarned - $pointsEarned);
+
+                $this->insertTransaction(
+                    $order->user_id,
+                    'wallet',
+                    'use',
+                    $pointsEarned,
+                    $order,
+                    'Thu hồi điểm tiêu dùng từ đơn hàng đã hủy'
+                );
+
+                $this->insertTransaction(
+                    $order->user_id,
+                    'rank',
+                    'use',
+                    $pointsEarned,
+                    $order,
+                    'Thu hồi điểm rank từ đơn hàng đã hủy'
+                );
+            }
+
+            $newRankLevel = $this->resolveRankLevel($newRank);
+
+            DB::table('user_points')
+                ->where('user_id', $order->user_id)
+                ->update([
+                    'wallet_points' => $newWallet,
+                    'rank_points' => $newRank,
+                    'wallet_total_used' => $newWalletTotalUsed,
+                    'wallet_total_earned' => $newWalletTotalEarned,
+                    'rank_total_earned' => $newRankTotalEarned,
+                    'current_rank' => $newRankLevel,
+                    'last_rank_updated_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+            DB::table('orders')
+                ->where('order_id', $order->order_id)
+                ->update([
+                    'points_status' => 'cancelled',
+                    'points_processed_at' => now(),
+                ]);
+
+            return [
+                'processed' => true,
+                'wallet_points' => $newWallet,
+                'rank_points' => $newRank,
+                'current_rank' => $newRankLevel,
+            ];
+        });
+    }
+
     public function resolveRankLevel(int $rankPoints): string
     {
         if ($rankPoints >= 10000) {

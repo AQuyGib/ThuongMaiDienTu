@@ -64,7 +64,7 @@
               <div class="flex justify-between"><span class="text-gray-500">Tạm tính</span><span>{{ number_format($order->total_amount) }}đ</span></div>
               <div class="flex justify-between"><span class="text-gray-500">Phí giao hàng</span><span>{{ number_format($order->shipping_fee) }}đ</span></div>
               <div class="flex justify-between"><span class="text-gray-500">Giảm giá</span><span class="text-green-600">-{{ number_format($order->discount_amount ?? 0) }}đ</span></div>
-              <div class="flex justify-between"><span class="text-gray-500">Điểm tiêu dùng</span><span class="text-green-600">-{{ number_format(($order->wallet_points_used ?? 0) * \App\Services\PointsService::POINT_RATE) }}đ</span></div>
+              <div class="flex justify-between"><span class="text-gray-500">Điểm tiêu dùng</span><span class="text-green-600">-{{ number_format(($order->wallet_points_used ?? 0) * \App\Services\PointsService::POINT_VALUE) }}đ</span></div>
               <div class="flex justify-between pt-3 border-t font-bold text-lg"><span>Thành tiền</span><span class="text-red-600">{{ number_format($order->final_amount) }}đ</span></div>
             </div>
           </div>

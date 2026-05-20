@@ -20,9 +20,14 @@ class Order extends Model {
     protected static function booted()
     {
         static::saved(function ($order) {
-            if ($order->wasChanged('status') && self::isCompletedStatus($order->status)) {
-                app(PointsService::class)->applyOrderCompletedPoints($order);
-                self::syncMemberTierByPoints($order);
+            if ($order->wasChanged('status')) {
+                if (self::isCompletedStatus($order->status)) {
+                    app(PointsService::class)->applyOrderCompletedPoints($order);
+                    self::syncMemberTierByPoints($order);
+                } elseif (strtolower((string) $order->status) === 'cancelled') {
+                    app(PointsService::class)->cancelOrderPoints($order);
+                    self::syncMemberTierByPoints($order);
+                }
             }
         });
     }

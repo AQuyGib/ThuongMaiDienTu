@@ -30,9 +30,13 @@ class RewardsController extends Controller
     public function store(Request $request)
     {
         $data = $this->validateReward($request);
+        $imagePath = $this->handleImageUpload($request);
+        unset($data['image']);
 
         RewardCatalog::create([
             ...$data,
+            'image_path' => $imagePath,
+            'thumbnail_path' => $imagePath,
             'discount_amount' => $data['discount_amount'] ?? 0,
             'shipping_discount_amount' => $data['shipping_discount_amount'] ?? 0,
             'stock' => $data['stock'] ?? null,
@@ -52,8 +56,10 @@ class RewardsController extends Controller
     public function update(Request $request, RewardCatalog $reward)
     {
         $data = $this->validateReward($request, $reward->reward_id);
+        $imagePath = $this->handleImageUpload($request, $reward);
+        unset($data['image']);
 
-        $reward->update([
+        $updateData = [
             ...$data,
             'discount_amount' => $data['discount_amount'] ?? 0,
             'shipping_discount_amount' => $data['shipping_discount_amount'] ?? 0,
@@ -66,7 +72,14 @@ class RewardsController extends Controller
                 'updated_by' => auth()->id(),
                 'slug' => Str::slug($data['name']),
             ]),
-        ]);
+        ];
+
+        if ($imagePath) {
+            $updateData['image_path'] = $imagePath;
+            $updateData['thumbnail_path'] = $imagePath;
+        }
+
+        $reward->update($updateData);
 
         return back()->with('success', 'Đã cập nhật phần thưởng.');
     }
