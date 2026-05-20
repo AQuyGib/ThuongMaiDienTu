@@ -21,6 +21,9 @@ class ChatbotController extends Controller
      * Danh sách các model Gemini fallback (thử lần lượt)
      */
     private array $models = [
+        'gemini-3.1-flash-lite',
+        'gemini-3.5-flash',
+        'gemini-3-flash-preview',
         'gemini-2.5-flash',
         'gemini-2.5-flash-lite',
     ];
@@ -122,7 +125,7 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
 
         foreach ($keywords as $word) {
             $word = trim(preg_replace('/[^\p{L}\p{N}\s]/u', '', $word));
-            if (mb_strlen($word) > 2 && !in_array($word, $this->stopwords)) {
+            if (mb_strlen($word) >= 2 && !in_array($word, $this->stopwords)) {
                 $searchTerms[] = $word;
             }
         }
@@ -132,17 +135,30 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
         }
 
         try {
+            // Thử tìm kiếm khớp đồng thời tất cả các từ khóa (AND) trước để đạt độ chính xác cao nhất
             $query = DB::table('products')->whereNull('deleted_at');
-
             $query->where(function ($q) use ($searchTerms) {
                 foreach ($searchTerms as $term) {
-                    $q->orWhere('name', 'LIKE', "%{$term}%");
+                    $q->where('name', 'LIKE', "%{$term}%");
                 }
             });
 
             $foundProducts = $query->select('product_id', 'name', 'base_price')
                 ->limit(10)
                 ->get();
+
+            // Nếu không có sản phẩm nào khớp tất cả các từ khóa, fallback sang khớp một trong các từ khóa (OR)
+            if ($foundProducts->isEmpty()) {
+                $query = DB::table('products')->whereNull('deleted_at');
+                $query->where(function ($q) use ($searchTerms) {
+                    foreach ($searchTerms as $term) {
+                        $q->orWhere('name', 'LIKE', "%{$term}%");
+                    }
+                });
+                $foundProducts = $query->select('product_id', 'name', 'base_price')
+                    ->limit(10)
+                    ->get();
+            }
 
             if ($foundProducts->isEmpty()) {
                 return "Hệ thống không tìm thấy sản phẩm nào khớp chính xác với từ khóa.\n";
@@ -203,7 +219,16 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
                 }
             }
 
-            $lastError = $curlError ? "CURL Error: {$curlError}" : "HTTP {$httpCode}";
+            if ($response !== false) {
+                $resData = json_decode($response, true);
+                if (isset($resData['error']['message'])) {
+                    $lastError = "Gemini API Error: " . $resData['error']['message'];
+                } else {
+                    $lastError = $curlError ? "CURL Error: {$curlError}" : "HTTP {$httpCode} - Response: {$response}";
+                }
+            } else {
+                $lastError = "CURL Error: {$curlError}";
+            }
         }
 
         Log::warning('Chatbot Gemini API failed: ' . $lastError);
