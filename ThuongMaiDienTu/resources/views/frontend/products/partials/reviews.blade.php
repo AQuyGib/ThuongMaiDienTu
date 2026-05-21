@@ -108,10 +108,15 @@
 @endpush
 
 <div class="pd-reviews">
+    @php
+        $avgRating = $avgRating ?? 5;
+        $reviewCount = $reviewCount ?? 0;
+        $reviews = $reviews ?? collect();
+    @endphp
     <h2><i class="fa-solid fa-comments" style="color:#0046ab"></i> Đánh giá & Nhận xét</h2>
     <div class="review-stats">
         <div class="review-average">
-            <h3 id="avgReviewScore">{{ $avgRating }}/5</h3>
+            <h3 id="avgReviewScore">{{ round($avgRating, 1) }}/5</h3>
             <div class="stars" id="avgReviewStars">
                 @for($i=1; $i<=5; $i++)
                     @if($i <= round($avgRating))
@@ -159,7 +164,7 @@
         </div>
         <div class="media-preview-grid" id="mediaPreviewGrid"></div>
 
-        <button type="button" onclick="submitReview()" style="background: #0046ab; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px;">Gửi đánh giá</button>
+        <button type="button" onclick="submitReview()" class="btn-submit-review" style="background: #0046ab; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px;">Gửi đánh giá</button>
     </div>
     
     <div class="review-list">
@@ -346,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (data.isModal) {
             showAlert(data.title, data.msg, 'success');
         } else {
-            showToast(data.title, data.msg, data.type);
+            showToastReview(data.title, data.msg, data.type);
         }
         sessionStorage.removeItem('review_toast');
     }
@@ -447,6 +452,12 @@ function submitReview() {
         formData.append('media[]', file);
     });
 
+    const btn = document.querySelector('.btn-submit-review');
+    if(btn) { 
+        btn.disabled = true; 
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...'; 
+    }
+
     fetch('{{ route("reviews.store") }}', {
         method: 'POST',
         headers: { 
@@ -470,10 +481,18 @@ function submitReview() {
             }));
             location.reload(); 
         } else {
+            if(btn) { 
+                btn.disabled = false; 
+                btn.innerHTML = 'Gửi đánh giá'; 
+            }
             showAlert('Lỗi', data.message || 'Lỗi khi gửi đánh giá.');
         }
     })
     .catch(error => {
+        if(btn) { 
+            btn.disabled = false; 
+            btn.innerHTML = 'Gửi đánh giá'; 
+        }
         console.error('Submit review error:', error);
         showAlert('Không thể gửi', 'Đã có lỗi xảy ra: ' + error.message);
     });
@@ -525,11 +544,12 @@ function showAllReplies(reviewId, btn) {
 }
 
 function submitReply(parentId) {
-    const text = document.getElementById('replyText-' + parentId).value.trim();
+    const textarea = document.getElementById('replyText-' + parentId);
+    const text = textarea.value.trim();
     const authorInput = document.getElementById('replyAuthor-' + parentId);
     const authorName = authorInput ? authorInput.value.trim() : null;
 
-    if(!text) { showAlert('Thiếu nội dung', 'Vui lòng nhập câu trả lời của bạn!'); return; }
+    if(!text) { showToastReview('Thiếu nội dung', 'Vui lòng nhập câu trả lời của bạn!', 'warning'); return; }
     
     const formData = new FormData();
     formData.append('product_id', '{{ $product->product_id }}');
@@ -537,6 +557,12 @@ function submitReply(parentId) {
     formData.append('content', text);
     formData.append('rating', 5);
     if(authorName) formData.append('author_name', authorName);
+
+    const btn = document.querySelector(`#replyForm-${parentId} .btn-submit-reply`);
+    if(btn) { 
+        btn.disabled = true; 
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...'; 
+    }
 
     fetch('{{ route("reviews.store") }}', {
         method: 'POST',
@@ -546,7 +572,13 @@ function submitReply(parentId) {
         },
         body: formData
     })
-    .then(response => response.json())
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || `Lỗi hệ thống (${response.status})`);
+        }
+        return data;
+    })
     .then(data => {
         if(data.success) {
             sessionStorage.setItem('review_toast', JSON.stringify({
@@ -554,9 +586,37 @@ function submitReply(parentId) {
                 isCenter: true
             }));
             location.reload();
+        } else {
+            if(btn) { 
+                btn.disabled = false; 
+                btn.innerHTML = 'Gửi trả lời'; 
+            }
+            showToastReview('Lỗi', data.message || 'Lỗi khi gửi câu trả lời.', 'error');
         }
+    })
+    .catch(err => {
+        if(btn) { 
+            btn.disabled = false; 
+            btn.innerHTML = 'Gửi trả lời'; 
+        }
+        showToastReview('Lỗi kết nối', 'Đã xảy ra lỗi: ' + err.message, 'error');
     });
 }
+
+// Cho phép nhấn Enter để gửi (Shift+Enter để xuống dòng)
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        const target = e.target;
+        if (target.id === 'reviewText') {
+            e.preventDefault();
+            submitReview();
+        } else if (target.id && target.id.startsWith('replyText-')) {
+            e.preventDefault();
+            const parentId = target.id.split('-')[1];
+            submitReply(parentId);
+        }
+    }
+});
 
 function deleteReview(id) {
     showConfirm('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa đánh giá này không?', function() {
@@ -578,22 +638,22 @@ function deleteReview(id) {
                     element.style.transition = '0.3s';
                     setTimeout(() => element.remove(), 300);
                 }
-                showToast('Thành công', 'Đã xóa đánh giá thành công!', 'success');
+                showToastReview('Thành công', 'Đã xóa đánh giá thành công!', 'success');
                 closeConfirmModal();
             } else {
-                showToast('Lỗi', data.message || 'Không thể xóa đánh giá.', 'error');
+                showToastReview('Lỗi', data.message || 'Không thể xóa đánh giá.', 'error');
                 closeConfirmModal();
             }
         })
         .catch(err => {
-            showToast('Lỗi', 'Đã xảy ra lỗi kết nối!', 'error');
+            showToastReview('Lỗi', 'Đã xảy ra lỗi kết nối!', 'error');
             closeConfirmModal();
         });
     });
 }
 
 /* ===== Toast Notification System ===== */
-function showToast(title, message, type = 'success') {
+function showToastReview(title, message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
@@ -713,4 +773,3 @@ function closeMediaLightbox() {
 }
 </script>
 @endpush
->>>>>>> origin/Hien/danhgia

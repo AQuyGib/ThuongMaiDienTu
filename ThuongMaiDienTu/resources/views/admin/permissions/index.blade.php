@@ -14,21 +14,9 @@
         </div>
     </div>
 </div>
-@endsection
 
 @push('scripts')
-<script>
-    // Xử lý các thông báo từ Laravel Flash Session nếu cần
-    @if(session('success'))
-        Swal.fire({
-            icon: 'success',
-            title: 'Thành công',
-            text: "{{ session('success') }}",
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000
-        });
-    @endif
-</script>
+    @viteReactRefresh
+    @vite(['resources/js/app.tsx'])
 @endpush
+@endsection

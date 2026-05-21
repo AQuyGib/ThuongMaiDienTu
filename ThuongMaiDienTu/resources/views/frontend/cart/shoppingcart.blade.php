@@ -100,13 +100,6 @@
     </div>
 </main>
 
-<!-- Toast Thông báo -->
-<div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded-xl shadow-2xl transform transition-all duration-300 translate-y-20 opacity-0 flex items-center gap-3 z-50">
-    <div id="toast-icon" class="text-green-400">
-        <i class="fa-solid fa-circle-check text-xl"></i>
-    </div>
-    <span id="toast-message" class="font-medium">Đã cập nhật giỏ hàng.</span>
-</div>
 
 @endsection
 
@@ -262,16 +255,40 @@
         }
     };
 
-    window.deleteItem = (id) => {
-        if(confirm('Bạn muốn xóa sản phẩm này khỏi giỏ hàng?')) {
+    window.deleteItem = async (id) => {
+        const result = await Swal.fire({
+            title: 'Xóa sản phẩm?',
+            text: 'Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true
+        });
+
+        if (result.isConfirmed) {
             window.cartData = window.cartData.filter(i => i.id !== id);
             window.renderCart();
             showToast("Đã xóa sản phẩm", "info");
         }
     };
 
-    window.clearCart = () => {
-        if(confirm('Bạn muốn làm trống giỏ hàng?')) {
+    window.clearCart = async () => {
+        const result = await Swal.fire({
+            title: 'Làm trống giỏ hàng?',
+            text: 'Bạn có chắc chắn muốn xóa toàn bộ sản phẩm khỏi giỏ hàng?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Làm trống',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true
+        });
+
+        if (result.isConfirmed) {
             window.cartData = [];
             window.renderCart();
             showToast("Đã làm trống giỏ hàng");
@@ -279,29 +296,22 @@
     };
 
     function showToast(msg, type = "success") {
-        const t = document.getElementById('toast');
-        const m = document.getElementById('toast-message');
-        const icon = document.getElementById('toast-icon');
-        
-        if (!t || !m) return;
-        
-        m.innerText = msg;
-        
-        if (type === 'warning') {
-            icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-xl text-orange-400"></i>';
-        } else {
-            icon.innerHTML = type === "success" 
-                ? '<i class="fa-solid fa-circle-check text-xl text-green-400"></i>'
-                : '<i class="fa-solid fa-circle-info text-xl text-blue-400"></i>';
-        }
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'bottom-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
 
-        t.classList.remove('translate-y-20', 'opacity-0');
-        t.classList.add('translate-y-0', 'opacity-100');
-        
-        setTimeout(() => {
-            t.classList.add('translate-y-20', 'opacity-0');
-            t.classList.remove('translate-y-0', 'opacity-100');
-        }, 3000);
+        Toast.fire({
+            icon: type,
+            title: msg
+        });
     }
 
     window.proceedToCheckout = () => {

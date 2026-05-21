@@ -2,73 +2,71 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Review;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use App\Models\Review;
 
 class ReviewController extends Controller
 {
+    /**
+     * Store a newly created review in storage.
+     */
     public function store(Request $request)
     {
         $request->validate([
-            'product_id'  => 'required|string',
-            'rating'      => 'required_without:parent_id|integer|min:1|max:5',
-            'content'     => 'required|string',
-            'media.*'     => 'nullable|file|mimes:jpg,jpeg,png,gif,webp,mp4,mov,avi,mkv|max:51200', // max 50MB mỗi file
+            'product_id' => 'required|exists:products,product_id',
+            'rating' => 'required|integer|min:1|max:5',
+            'content' => 'required|string',
+            'parent_id' => 'nullable|exists:reviews,id',
             'author_name' => 'nullable|string|max:255',
-            'parent_id'   => 'nullable|integer|exists:reviews,id',
+            'media.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi|max:5120', // 5MB max
         ]);
 
-        // Xử lý upload file
-        $mediaPaths = [];
-        if ($request->hasFile('media')) {
-            foreach ($request->file('media') as $file) {
-                $path = $file->store('reviews', 'public'); // storage/app/public/reviews/
-                $mediaPaths[] = Storage::url($path);       // /storage/reviews/filename.ext
-            }
+        $data = $request->only(['product_id', 'rating', 'content', 'parent_id', 'author_name']);
+        
+        if (Auth::check()) {
+            $data['user_id'] = Auth::id();
+            // Nếu đã đăng nhập thì không cần author_name từ request
+            $data['author_name'] = null;
         }
 
-        $userId = Auth::id();
-        $authorName = $userId ? Auth::user()->full_name : ($request->author_name ?? 'Khách ẩn danh');
+        // Xử lý upload media
+        if ($request->hasFile('media')) {
+            $mediaPaths = [];
+            foreach ($request->file('media') as $file) {
+                $path = $file->store('reviews', 'public');
+                $mediaPaths[] = asset('storage/' . $path);
+            }
+            $data['media'] = $mediaPaths;
+        }
 
-        $review = Review::create([
-            'product_id'  => $request->product_id,
-            'user_id'     => $userId,
-            'author_name' => $authorName,
-            'parent_id'   => $request->parent_id,
-            'rating'      => $request->rating ?? 5,
-            'content'     => $request->content,
-            'media'       => !empty($mediaPaths) ? $mediaPaths : null,
-        ]);
+        Review::create($data);
 
         return response()->json([
             'success' => true,
-            'review'  => $review,
-            'media'   => $mediaPaths,
+            'message' => 'Cảm ơn bạn đã gửi đánh giá!'
         ]);
     }
 
+    /**
+     * Remove the specified review from storage.
+     */
     public function destroy($id)
     {
-        // Chỉ Admin (role_id=1) và Quản lý (role_id=2) được xóa
-        $user = Auth::user();
-        if (!$user || !in_array($user->role_id, [1, 2])) {
-            return response()->json(['success' => false, 'message' => 'Không có quyền thực hiện hành động này.'], 403);
-        }
-
         $review = Review::findOrFail($id);
 
-        // Xóa file media khỏi storage nếu có
-        if ($review->media) {
-            foreach ($review->media as $url) {
-                $path = str_replace('/storage/', '', $url);
-                Storage::disk('public')->delete($path);
-            }
+        // Chỉ admin hoặc người sở hữu mới được xóa (tùy chính sách, ở đây cho admin/manager)
+        if (Auth::check() && in_array(Auth::user()->role_id, [1, 2])) {
+            $review->delete();
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xóa đánh giá.'
+            ]);
         }
 
-        $review->delete();
-
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Bạn không có quyền thực hiện thao tác này.'
+        ], 403);
     }
 }
