@@ -242,70 +242,40 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Sản phẩm liên quan</label>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Sản phẩm liên quan (Chọn nhiều)</label>
                             <div class="relative" id="productSearchDropdown">
-                                <button type="button" onclick="toggleProductDropdown()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 text-left flex justify-between items-center text-slate-700">
-                                    <span id="selectedProductText" class="truncate">-- Không chọn --</span>
-                                    <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
-                                </button>
-                                <input type="hidden" name="product_id" id="submitProductId" value="">
-
-                                <div id="productDropdownMenu" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-3">
-                                    <div class="relative">
-                                        <input type="text" id="productQueryInput" placeholder="Tìm sản phẩm bằng tên..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50/50">
-                                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                                    </div>
-
-                                    <div id="productSearchResults" class="max-h-48 overflow-y-auto custom-scrollbar space-y-1 divide-y divide-slate-50">
-                                        <div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectProduct('', '-- Không chọn --')">
-                                            -- Không chọn --
-                                        </div>
-                                        @foreach($products as $product)
-                                            <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" onclick="selectProduct('{{ $product->product_id }}', '#{{ $product->product_id }} - {{ addslashes($product->name) }}')">
-                                                <img src="{{ $product->thumbnail ?: 'https://via.placeholder.com/40' }}" class="w-8 h-8 object-cover rounded-lg border border-slate-100 shrink-0">
-                                                <div class="min-w-0 flex-1">
-                                                    <div class="text-xs font-bold text-slate-800 truncate">{{ $product->name }}</div>
-                                                    <div class="text-[10px] text-slate-400 mt-0.5">#{{ $product->product_id }} • {{ number_format($product->base_price) }}đ</div>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
+                                <div class="relative">
+                                    <input type="text" id="productQueryInput" placeholder="Tìm sản phẩm bằng tên..." class="w-full pl-10 pr-4 py-3 text-sm rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50/50">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
                                 </div>
+
+                                <!-- Product Search Results Dropdown -->
+                                <div id="productSearchResults" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 custom-scrollbar space-y-0.5" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- AJAX results -->
+                                </div>
+                            </div>
+                            <!-- Selected Products Container -->
+                            <div id="selectedProductsContainer" class="flex flex-wrap gap-2 mt-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 min-h-[50px] items-center">
+                                <span class="text-xs text-slate-400" id="noProductsSelectedText">Chưa có sản phẩm nào được chọn.</span>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Mã KM / flash sale</label>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Mã KM / flash sale (Chọn nhiều)</label>
                             <div class="relative" id="promoSearchDropdown">
-                                <button type="button" onclick="togglePromoDropdown()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 text-left flex justify-between items-center text-slate-700">
-                                    <span id="selectedPromoText" class="truncate">-- Không chọn --</span>
-                                    <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
-                                </button>
-                                <input type="hidden" name="promo_id" id="submitPromoId" value="">
-
-                                <div id="promoDropdownMenu" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-3">
-                                    <div class="relative">
-                                        <input type="text" id="promoQueryInput" placeholder="Tìm mã KM/flash sale..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50/50">
-                                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                                    </div>
-
-                                    <div id="promoSearchResults" class="max-h-48 overflow-y-auto custom-scrollbar space-y-1 divide-y divide-slate-50">
-                                        <div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectPromo('', '-- Không chọn --')">
-                                            -- Không chọn --
-                                        </div>
-                                        @foreach($promoItems as $promo)
-                                            <div class="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" onclick="selectPromo('{{ $promo->promo_id }}', '#{{ $promo->promo_id }} - {{ $promo->promo_type }} @if($promo->code)({{ $promo->code }})@endif')">
-                                                <div class="min-w-0 flex-1">
-                                                    <div class="text-xs font-bold text-slate-800">{{ $promo->promo_type }}</div>
-                                                    @if($promo->code)
-                                                        <div class="text-[10px] text-indigo-600 font-extrabold mt-0.5">Mã: {{ $promo->code }}</div>
-                                                    @endif
-                                                </div>
-                                                <div class="text-[10px] text-slate-400 shrink-0">#{{ $promo->promo_id }}</div>
-                                            </div>
-                                        @endforeach
-                                    </div>
+                                <div class="relative">
+                                    <input type="text" id="promoQueryInput" placeholder="Tìm mã KM/flash sale..." class="w-full pl-10 pr-4 py-3 text-sm rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50/50">
+                                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
                                 </div>
+
+                                <!-- Promo Search Results Dropdown -->
+                                <div id="promoSearchResults" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 custom-scrollbar space-y-0.5" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- AJAX results -->
+                                </div>
+                            </div>
+                            <!-- Selected Promos Container -->
+                            <div id="selectedPromosContainer" class="flex flex-wrap gap-2 mt-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 min-h-[50px] items-center">
+                                <span class="text-xs text-slate-400" id="noPromosSelectedText">Chưa có khuyến mãi nào được chọn.</span>
                             </div>
                         </div>
                     </div>
@@ -541,38 +511,44 @@ function updateUserTagsUI() {
 let productDebounceTimer;
 let promoDebounceTimer;
 
-function toggleProductDropdown() {
-    const menu = document.getElementById('productDropdownMenu');
-    if (menu) {
-        menu.classList.toggle('hidden');
-        if (!menu.classList.contains('hidden')) {
-            document.getElementById('productQueryInput').focus();
+const selectedProducts = {};
+const selectedPromos = {};
+
+function toggleProductSearchResults(show) {
+    const results = document.getElementById('productSearchResults');
+    if (results) {
+        if (show) {
+            results.classList.remove('hidden');
+        } else {
+            setTimeout(() => results.classList.add('hidden'), 200);
         }
     }
 }
 
-function togglePromoDropdown() {
-    const menu = document.getElementById('promoDropdownMenu');
-    if (menu) {
-        menu.classList.toggle('hidden');
-        if (!menu.classList.contains('hidden')) {
-            document.getElementById('promoQueryInput').focus();
+function togglePromoSearchResults(show) {
+    const results = document.getElementById('promoSearchResults');
+    if (results) {
+        if (show) {
+            results.classList.remove('hidden');
+        } else {
+            setTimeout(() => results.classList.add('hidden'), 200);
         }
     }
 }
+
+document.getElementById('productQueryInput')?.addEventListener('focus', () => toggleProductSearchResults(true));
+document.getElementById('promoQueryInput')?.addEventListener('focus', () => togglePromoSearchResults(true));
 
 // Close Dropdowns on Click Outside
 document.addEventListener('click', function(event) {
     const productDropdown = document.getElementById('productSearchDropdown');
-    const productMenu = document.getElementById('productDropdownMenu');
-    if (productDropdown && !productDropdown.contains(event.target) && productMenu) {
-        productMenu.classList.add('hidden');
+    if (productDropdown && !productDropdown.contains(event.target)) {
+        toggleProductSearchResults(false);
     }
 
     const promoDropdown = document.getElementById('promoSearchDropdown');
-    const promoMenu = document.getElementById('promoDropdownMenu');
-    if (promoDropdown && !promoDropdown.contains(event.target) && promoMenu) {
-        promoMenu.classList.add('hidden');
+    if (promoDropdown && !promoDropdown.contains(event.target)) {
+        togglePromoSearchResults(false);
     }
     
     const userDropdown = document.getElementById('userSearchDropdown');
@@ -581,16 +557,100 @@ document.addEventListener('click', function(event) {
     }
 });
 
-function selectProduct(id, displayName) {
-    document.getElementById('submitProductId').value = id;
-    document.getElementById('selectedProductText').textContent = displayName;
-    document.getElementById('productDropdownMenu').classList.add('hidden');
+function addProductTag(id, name, thumbnail, price) {
+    if (selectedProducts[id]) return;
+    selectedProducts[id] = { name, thumbnail, price };
+    updateProductTagsUI();
+    const input = document.getElementById('productQueryInput');
+    if (input) input.value = '';
+    triggerProductSearch();
 }
 
-function selectPromo(id, displayName) {
-    document.getElementById('submitPromoId').value = id;
-    document.getElementById('selectedPromoText').textContent = displayName;
-    document.getElementById('promoDropdownMenu').classList.add('hidden');
+function removeProductTag(id) {
+    delete selectedProducts[id];
+    updateProductTagsUI();
+    triggerProductSearch();
+}
+
+function updateProductTagsUI() {
+    const container = document.getElementById('selectedProductsContainer');
+    if (!container) return;
+    let html = '';
+    const keys = Object.keys(selectedProducts);
+    
+    if (keys.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-400" id="noProductsSelectedText">Chưa có sản phẩm nào được chọn.</span>';
+        return;
+    }
+    
+    keys.forEach(id => {
+        const p = selectedProducts[id];
+        html += `
+            <span class="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                <img src="${p.thumbnail}" class="w-4 h-4 rounded-full object-cover shrink-0">
+                <span class="max-w-[120px] truncate">${p.name}</span>
+                <input type="hidden" name="product_ids[]" value="${id}">
+                <button type="button" onclick="removeProductTag(${id})" class="w-4 h-4 rounded-full bg-emerald-200/50 hover:bg-emerald-200 text-emerald-800 text-[10px] flex items-center justify-center transition">&times;</button>
+            </span>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function triggerProductSearch() {
+    const input = document.getElementById('productQueryInput');
+    if (input) {
+        const event = new Event('input', { bubbles: true });
+        input.dispatchEvent(event);
+    }
+}
+
+function addPromoTag(id, type, code) {
+    if (selectedPromos[id]) return;
+    selectedPromos[id] = { type, code };
+    updatePromoTagsUI();
+    const input = document.getElementById('promoQueryInput');
+    if (input) input.value = '';
+    triggerPromoSearch();
+}
+
+function removePromoTag(id) {
+    delete selectedPromos[id];
+    updatePromoTagsUI();
+    triggerPromoSearch();
+}
+
+function updatePromoTagsUI() {
+    const container = document.getElementById('selectedPromosContainer');
+    if (!container) return;
+    let html = '';
+    const keys = Object.keys(selectedPromos);
+    
+    if (keys.length === 0) {
+        container.innerHTML = '<span class="text-xs text-slate-400" id="noPromosSelectedText">Chưa có khuyến mãi nào được chọn.</span>';
+        return;
+    }
+    
+    keys.forEach(id => {
+        const pr = selectedPromos[id];
+        const codeDisplay = pr.code ? ` (${pr.code})` : '';
+        html += `
+            <span class="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
+                <span class="max-w-[150px] truncate">${pr.type}${codeDisplay}</span>
+                <input type="hidden" name="promo_ids[]" value="${id}">
+                <button type="button" onclick="removePromoTag(${id})" class="w-4 h-4 rounded-full bg-amber-200/50 hover:bg-amber-200 text-amber-800 text-[10px] flex items-center justify-center transition">&times;</button>
+            </span>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function triggerPromoSearch() {
+    const input = document.getElementById('promoQueryInput');
+    if (input) {
+        const event = new Event('input', { bubbles: true });
+        input.dispatchEvent(event);
+    }
 }
 
 // Search Autocomplete Handlers
@@ -600,32 +660,37 @@ document.getElementById('productQueryInput')?.addEventListener('input', function
 
     productDebounceTimer = setTimeout(() => {
         const resultsContainer = document.getElementById('productSearchResults');
+        if (!resultsContainer) return;
         resultsContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400"><i class="fa-solid fa-spinner animate-spin mr-2"></i>Đang tìm kiếm...</div>';
 
         fetch(`{{ route('admin.api.products.search') }}?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {
-                let html = `<div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectProduct('', '-- Không chọn --')">-- Không chọn --</div>`;
+                let html = '';
 
                 if (data.length === 0) {
                     html += `<div class="p-4 text-center text-xs text-slate-400">Không tìm thấy sản phẩm phù hợp</div>`;
                 } else {
                     data.forEach(prod => {
+                        if (selectedProducts[prod.product_id]) return;
+
                         const price = new Intl.NumberFormat('vi-VN').format(prod.base_price) + 'đ';
                         const thumbnail = prod.thumbnail || 'https://via.placeholder.com/40';
                         const cleanName = prod.name.replace(/'/g, "\\'").replace(/"/g, '\\"');
                         html += `
-                            <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" onclick="selectProduct('${prod.product_id}', '#${prod.product_id} - ${cleanName}')">
+                            <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" 
+                                 onmousedown="addProductTag('${prod.product_id}', '${cleanName}', '${thumbnail}', '${price}')">
                                 <img src="${thumbnail}" class="w-8 h-8 object-cover rounded-lg border border-slate-100 shrink-0">
                                 <div class="min-w-0 flex-1">
                                     <div class="text-xs font-bold text-slate-800 truncate">${prod.name}</div>
                                     <div class="text-[10px] text-slate-400 mt-0.5">#${prod.product_id} • ${price}</div>
                                 </div>
+                                <div class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded shrink-0">Chọn</div>
                             </div>
                         `;
                     });
                 }
-                resultsContainer.innerHTML = html;
+                resultsContainer.innerHTML = html || '<div class="p-4 text-center text-xs text-slate-400">Các sản phẩm phù hợp đã được chọn hết</div>';
             })
             .catch(err => {
                 console.error(err);
@@ -640,30 +705,40 @@ document.getElementById('promoQueryInput')?.addEventListener('input', function()
 
     promoDebounceTimer = setTimeout(() => {
         const resultsContainer = document.getElementById('promoSearchResults');
+        if (!resultsContainer) return;
         resultsContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400"><i class="fa-solid fa-spinner animate-spin mr-2"></i>Đang tìm kiếm...</div>';
 
         fetch(`{{ route('admin.notifications.search-promo') }}?q=${encodeURIComponent(query)}`)
             .then(response => response.json())
             .then(data => {
-                let html = `<div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectPromo('', '-- Không chọn --')">-- Không chọn --</div>`;
+                let html = '';
 
                 if (data.length === 0) {
                     html += `<div class="p-4 text-center text-xs text-slate-400">Không tìm thấy mã khuyến mãi phù hợp</div>`;
                 } else {
                     data.forEach(promo => {
+                        if (selectedPromos[promo.promo_id]) return;
+
                         const codeText = promo.code ? ` (Mã: ${promo.code})` : '';
+                        const cleanType = promo.promo_type.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                        const cleanCode = (promo.code || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                        
                         html += `
-                            <div class="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" onclick="selectPromo('${promo.promo_id}', '#${promo.promo_id} - ${promo.promo_type}${codeText}')">
+                            <div class="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" 
+                                 onmousedown="addPromoTag('${promo.promo_id}', '${cleanType}', '${cleanCode}')">
                                 <div class="min-w-0 flex-1">
                                     <div class="text-xs font-bold text-slate-800">${promo.promo_type}</div>
                                     ${promo.code ? `<div class="text-[10px] text-indigo-600 font-extrabold mt-0.5">Mã: ${promo.code}</div>` : ''}
                                 </div>
-                                <div class="text-[10px] text-slate-400 shrink-0">#${promo.promo_id}</div>
+                                <div class="flex items-center gap-2">
+                                    <div class="text-[10px] text-slate-400">#${promo.promo_id}</div>
+                                    <div class="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded">Chọn</div>
+                                </div>
                             </div>
                         `;
                     });
                 }
-                resultsContainer.innerHTML = html;
+                resultsContainer.innerHTML = html || '<div class="p-4 text-center text-xs text-slate-400">Các khuyến mãi phù hợp đã được chọn hết</div>';
             })
             .catch(err => {
                 console.error(err);

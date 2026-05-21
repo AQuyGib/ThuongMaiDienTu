@@ -217,8 +217,10 @@ class NotificationCampaignController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string', 'max:1000'],
             'action_url' => ['nullable', 'string', 'max:255'],
-            'product_id' => ['nullable', 'integer', 'exists:products,product_id'],
-            'promo_id' => ['nullable', 'integer', 'exists:coupons_flash_sales,promo_id'],
+            'product_ids' => ['nullable', 'array'],
+            'product_ids.*' => ['integer', 'exists:products,product_id'],
+            'promo_ids' => ['nullable', 'array'],
+            'promo_ids.*' => ['integer', 'exists:coupons_flash_sales,promo_id'],
         ]);
 
         if ($data['target'] === 'specific') {
@@ -238,8 +240,8 @@ class NotificationCampaignController extends Controller
                 'content' => $data['content'],
                 'action_url' => $data['action_url'] ?? url('/'),
                 'data' => [
-                    'product_id' => $data['product_id'] ?? null,
-                    'promo_id' => $data['promo_id'] ?? null,
+                    'product_ids' => $data['product_ids'] ?? [],
+                    'promo_ids' => $data['promo_ids'] ?? [],
                     'target' => $data['target'],
                 ],
             ]);
