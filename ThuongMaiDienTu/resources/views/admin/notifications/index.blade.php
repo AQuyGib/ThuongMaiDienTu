@@ -169,9 +169,10 @@
     <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeCreateModal()"></div>
 
     <!-- Modal panel -->
-    <div class="relative bg-white rounded-[2rem] text-left overflow-visible shadow-2xl transform transition-all border border-slate-100 w-full md:w-3/4 max-w-4xl z-10 my-auto">
+    <form method="POST" action="{{ route('admin.notifications.store') }}" class="relative bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all border border-slate-100 w-full md:w-3/4 max-w-4xl z-10 my-auto flex flex-col max-h-[90vh]">
+            @csrf
             <!-- Header -->
-            <div class="px-8 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-[2rem]">
+            <div class="px-8 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-[2rem] shrink-0">
                 <div>
                     <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
                         <i class="fa-solid fa-paper-plane text-indigo-600 text-base animate-pulse"></i>
@@ -184,9 +185,8 @@
                 </button>
             </div>
 
-            <!-- Form -->
-            <form method="POST" action="{{ route('admin.notifications.store') }}" class="p-8 space-y-6">
-                @csrf
+            <!-- Form Body (Scrollable) -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-8 pb-32 space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <!-- Left Column: Target & Messages -->
                     <div class="space-y-5">
@@ -251,7 +251,18 @@
 
                                 <!-- Product Search Results Dropdown -->
                                 <div id="productSearchResults" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 custom-scrollbar space-y-0.5" style="max-height: 200px; overflow-y: auto;">
-                                    <!-- AJAX results -->
+                                    @foreach($products as $product)
+                                        <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition product-search-item" 
+                                             data-id="{{ $product->product_id }}"
+                                             onmousedown="addProductTag('{{ $product->product_id }}', '{{ addslashes($product->name) }}', '{{ $product->thumbnail ?: 'https://via.placeholder.com/40' }}', '{{ number_format($product->base_price) }}đ')">
+                                            <img src="{{ $product->thumbnail ?: 'https://via.placeholder.com/40' }}" class="w-8 h-8 object-cover rounded-lg border border-slate-100 shrink-0">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="text-xs font-bold text-slate-800 truncate">{{ $product->name }}</div>
+                                                <div class="text-[10px] text-slate-400 mt-0.5">#{{ $product->product_id }} • {{ number_format($product->base_price) }}đ</div>
+                                            </div>
+                                            <div class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded shrink-0">Chọn</div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
                             <!-- Selected Products Container -->
@@ -270,7 +281,22 @@
 
                                 <!-- Promo Search Results Dropdown -->
                                 <div id="promoSearchResults" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-2 custom-scrollbar space-y-0.5" style="max-height: 200px; overflow-y: auto;">
-                                    <!-- AJAX results -->
+                                    @foreach($promoItems as $promo)
+                                        <div class="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition promo-search-item" 
+                                             data-id="{{ $promo->promo_id }}"
+                                             onmousedown="addPromoTag('{{ $promo->promo_id }}', '{{ addslashes($promo->promo_type) }}', '{{ addslashes($promo->code || '') }}')">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="text-xs font-bold text-slate-800">{{ $promo->promo_type }}</div>
+                                                @if($promo->code)
+                                                    <div class="text-[10px] text-indigo-600 font-extrabold mt-0.5">Mã: {{ $promo->code }}</div>
+                                                @endif
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <div class="text-[10px] text-slate-400">#{{ $promo->promo_id }}</div>
+                                                <div class="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded">Chọn</div>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
                             <!-- Selected Promos Container -->
@@ -280,19 +306,18 @@
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Footer Actions -->
-                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50 -mx-8 -mb-8 p-6 px-8 rounded-b-[2rem] overflow-hidden">
-                    <button type="button" onclick="closeCreateModal()" class="px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-100 transition">
-                        Hủy
-                    </button>
-                    <button type="submit" class="px-5 py-3 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 hover:shadow-indigo-200">
-                        Gửi thông báo
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+            <!-- Footer Actions -->
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50 p-6 px-8 rounded-b-[2rem] shrink-0">
+                <button type="button" onclick="closeCreateModal()" class="px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-100 transition">
+                    Hủy
+                </button>
+                <button type="submit" class="px-5 py-3 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 hover:shadow-indigo-200">
+                    Gửi thông báo
+                </button>
+            </div>
+    </form>
 </div>
 @endsection
 
@@ -511,14 +536,75 @@ function updateUserTagsUI() {
 let productDebounceTimer;
 let promoDebounceTimer;
 
+let defaultProductsHTML = '';
+let defaultPromosHTML = '';
+
 const selectedProducts = {};
 const selectedPromos = {};
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Cache default lists
+    const productResults = document.getElementById('productSearchResults');
+    if (productResults) {
+        defaultProductsHTML = productResults.innerHTML;
+    }
+    const promoResults = document.getElementById('promoSearchResults');
+    if (promoResults) {
+        defaultPromosHTML = promoResults.innerHTML;
+    }
+    
+    // Run initial filter
+    filterSelectedItems('productSearchResults', selectedProducts, defaultProductsHTML);
+    filterSelectedItems('promoSearchResults', selectedPromos, defaultPromosHTML);
+});
+
+function filterSelectedItems(containerId, selectedMap, defaultHTML) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    // Reset to default list if query is empty and items are missing
+    if (container.querySelectorAll('[data-id]').length === 0 && defaultHTML) {
+        container.innerHTML = defaultHTML;
+    }
+    
+    const items = container.querySelectorAll('[data-id]');
+    let visibleCount = 0;
+    items.forEach(item => {
+        const id = item.getAttribute('data-id');
+        if (selectedMap[id]) {
+            item.style.display = 'none';
+        } else {
+            item.style.display = '';
+            visibleCount++;
+        }
+    });
+    
+    const emptyMsgId = containerId + '-empty-msg';
+    let emptyMsg = document.getElementById(emptyMsgId);
+    if (visibleCount === 0) {
+        if (!emptyMsg) {
+            emptyMsg = document.createElement('div');
+            emptyMsg.id = emptyMsgId;
+            emptyMsg.className = 'p-4 text-center text-xs text-slate-400';
+            emptyMsg.textContent = 'Các mục phù hợp đã được chọn hết';
+            container.appendChild(emptyMsg);
+        }
+    } else if (emptyMsg) {
+        emptyMsg.remove();
+    }
+}
 
 function toggleProductSearchResults(show) {
     const results = document.getElementById('productSearchResults');
     if (results) {
         if (show) {
             results.classList.remove('hidden');
+            // Refresh results filter when opening
+            const input = document.getElementById('productQueryInput');
+            if (input && input.value.trim() === '') {
+                results.innerHTML = defaultProductsHTML;
+            }
+            filterSelectedItems('productSearchResults', selectedProducts, defaultProductsHTML);
         } else {
             setTimeout(() => results.classList.add('hidden'), 200);
         }
@@ -530,6 +616,12 @@ function togglePromoSearchResults(show) {
     if (results) {
         if (show) {
             results.classList.remove('hidden');
+            // Refresh results filter when opening
+            const input = document.getElementById('promoQueryInput');
+            if (input && input.value.trim() === '') {
+                results.innerHTML = defaultPromosHTML;
+            }
+            filterSelectedItems('promoSearchResults', selectedPromos, defaultPromosHTML);
         } else {
             setTimeout(() => results.classList.add('hidden'), 200);
         }
@@ -563,13 +655,24 @@ function addProductTag(id, name, thumbnail, price) {
     updateProductTagsUI();
     const input = document.getElementById('productQueryInput');
     if (input) input.value = '';
-    triggerProductSearch();
+    
+    const resultsContainer = document.getElementById('productSearchResults');
+    if (resultsContainer) {
+        resultsContainer.innerHTML = defaultProductsHTML;
+    }
+    filterSelectedItems('productSearchResults', selectedProducts, defaultProductsHTML);
 }
 
 function removeProductTag(id) {
     delete selectedProducts[id];
     updateProductTagsUI();
-    triggerProductSearch();
+    
+    const input = document.getElementById('productQueryInput');
+    const resultsContainer = document.getElementById('productSearchResults');
+    if (resultsContainer && input && input.value.trim() === '') {
+        resultsContainer.innerHTML = defaultProductsHTML;
+    }
+    filterSelectedItems('productSearchResults', selectedProducts, defaultProductsHTML);
 }
 
 function updateProductTagsUI() {
@@ -586,7 +689,7 @@ function updateProductTagsUI() {
     keys.forEach(id => {
         const p = selectedProducts[id];
         html += `
-            <span class="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+            <span class="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 m-0.5">
                 <img src="${p.thumbnail}" class="w-4 h-4 rounded-full object-cover shrink-0">
                 <span class="max-w-[120px] truncate">${p.name}</span>
                 <input type="hidden" name="product_ids[]" value="${id}">
@@ -597,27 +700,30 @@ function updateProductTagsUI() {
     container.innerHTML = html;
 }
 
-function triggerProductSearch() {
-    const input = document.getElementById('productQueryInput');
-    if (input) {
-        const event = new Event('input', { bubbles: true });
-        input.dispatchEvent(event);
-    }
-}
-
 function addPromoTag(id, type, code) {
     if (selectedPromos[id]) return;
     selectedPromos[id] = { type, code };
     updatePromoTagsUI();
     const input = document.getElementById('promoQueryInput');
     if (input) input.value = '';
-    triggerPromoSearch();
+    
+    const resultsContainer = document.getElementById('promoSearchResults');
+    if (resultsContainer) {
+        resultsContainer.innerHTML = defaultPromosHTML;
+    }
+    filterSelectedItems('promoSearchResults', selectedPromos, defaultPromosHTML);
 }
 
 function removePromoTag(id) {
     delete selectedPromos[id];
     updatePromoTagsUI();
-    triggerPromoSearch();
+    
+    const input = document.getElementById('promoQueryInput');
+    const resultsContainer = document.getElementById('promoSearchResults');
+    if (resultsContainer && input && input.value.trim() === '') {
+        resultsContainer.innerHTML = defaultPromosHTML;
+    }
+    filterSelectedItems('promoSearchResults', selectedPromos, defaultPromosHTML);
 }
 
 function updatePromoTagsUI() {
@@ -635,7 +741,7 @@ function updatePromoTagsUI() {
         const pr = selectedPromos[id];
         const codeDisplay = pr.code ? ` (${pr.code})` : '';
         html += `
-            <span class="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
+            <span class="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100 m-0.5">
                 <span class="max-w-[150px] truncate">${pr.type}${codeDisplay}</span>
                 <input type="hidden" name="promo_ids[]" value="${id}">
                 <button type="button" onclick="removePromoTag(${id})" class="w-4 h-4 rounded-full bg-amber-200/50 hover:bg-amber-200 text-amber-800 text-[10px] flex items-center justify-center transition">&times;</button>
@@ -645,18 +751,19 @@ function updatePromoTagsUI() {
     container.innerHTML = html;
 }
 
-function triggerPromoSearch() {
-    const input = document.getElementById('promoQueryInput');
-    if (input) {
-        const event = new Event('input', { bubbles: true });
-        input.dispatchEvent(event);
-    }
-}
-
 // Search Autocomplete Handlers
 document.getElementById('productQueryInput')?.addEventListener('input', function() {
     const query = this.value.trim();
     clearTimeout(productDebounceTimer);
+
+    if (query === '') {
+        const resultsContainer = document.getElementById('productSearchResults');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = defaultProductsHTML;
+            filterSelectedItems('productSearchResults', selectedProducts, defaultProductsHTML);
+        }
+        return;
+    }
 
     productDebounceTimer = setTimeout(() => {
         const resultsContainer = document.getElementById('productSearchResults');
@@ -672,13 +779,12 @@ document.getElementById('productQueryInput')?.addEventListener('input', function
                     html += `<div class="p-4 text-center text-xs text-slate-400">Không tìm thấy sản phẩm phù hợp</div>`;
                 } else {
                     data.forEach(prod => {
-                        if (selectedProducts[prod.product_id]) return;
-
                         const price = new Intl.NumberFormat('vi-VN').format(prod.base_price) + 'đ';
                         const thumbnail = prod.thumbnail || 'https://via.placeholder.com/40';
                         const cleanName = prod.name.replace(/'/g, "\\'").replace(/"/g, '\\"');
                         html += `
-                            <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" 
+                            <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition product-search-item" 
+                                 data-id="${prod.product_id}"
                                  onmousedown="addProductTag('${prod.product_id}', '${cleanName}', '${thumbnail}', '${price}')">
                                 <img src="${thumbnail}" class="w-8 h-8 object-cover rounded-lg border border-slate-100 shrink-0">
                                 <div class="min-w-0 flex-1">
@@ -690,7 +796,8 @@ document.getElementById('productQueryInput')?.addEventListener('input', function
                         `;
                     });
                 }
-                resultsContainer.innerHTML = html || '<div class="p-4 text-center text-xs text-slate-400">Các sản phẩm phù hợp đã được chọn hết</div>';
+                resultsContainer.innerHTML = html;
+                filterSelectedItems('productSearchResults', selectedProducts);
             })
             .catch(err => {
                 console.error(err);
@@ -702,6 +809,15 @@ document.getElementById('productQueryInput')?.addEventListener('input', function
 document.getElementById('promoQueryInput')?.addEventListener('input', function() {
     const query = this.value.trim();
     clearTimeout(promoDebounceTimer);
+
+    if (query === '') {
+        const resultsContainer = document.getElementById('promoSearchResults');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = defaultPromosHTML;
+            filterSelectedItems('promoSearchResults', selectedPromos, defaultPromosHTML);
+        }
+        return;
+    }
 
     promoDebounceTimer = setTimeout(() => {
         const resultsContainer = document.getElementById('promoSearchResults');
@@ -717,14 +833,13 @@ document.getElementById('promoQueryInput')?.addEventListener('input', function()
                     html += `<div class="p-4 text-center text-xs text-slate-400">Không tìm thấy mã khuyến mãi phù hợp</div>`;
                 } else {
                     data.forEach(promo => {
-                        if (selectedPromos[promo.promo_id]) return;
-
                         const codeText = promo.code ? ` (Mã: ${promo.code})` : '';
                         const cleanType = promo.promo_type.replace(/'/g, "\\'").replace(/"/g, '\\"');
                         const cleanCode = (promo.code || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
                         
                         html += `
-                            <div class="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" 
+                            <div class="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition promo-search-item" 
+                                 data-id="${promo.promo_id}"
                                  onmousedown="addPromoTag('${promo.promo_id}', '${cleanType}', '${cleanCode}')">
                                 <div class="min-w-0 flex-1">
                                     <div class="text-xs font-bold text-slate-800">${promo.promo_type}</div>
@@ -738,7 +853,8 @@ document.getElementById('promoQueryInput')?.addEventListener('input', function()
                         `;
                     });
                 }
-                resultsContainer.innerHTML = html || '<div class="p-4 text-center text-xs text-slate-400">Các khuyến mãi phù hợp đã được chọn hết</div>';
+                resultsContainer.innerHTML = html;
+                filterSelectedItems('promoSearchResults', selectedPromos);
             })
             .catch(err => {
                 console.error(err);
