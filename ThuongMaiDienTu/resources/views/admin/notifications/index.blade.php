@@ -11,9 +11,9 @@
             <p class="text-slate-500 mt-1">Theo dõi toàn bộ thông báo hệ thống, khuyến mãi và gửi tay.</p>
         </div>
         <div class="flex gap-3 flex-wrap">
-            <a href="{{ route('admin.notifications.create') }}" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">
+            <button type="button" onclick="openCreateModal()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">
                 <i class="fa-solid fa-paper-plane mr-2"></i> Tạo thông báo
-            </a>
+            </button>
             <a href="{{ route('notifications.index') }}" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 transition">
                 <i class="fa-regular fa-bell mr-2"></i> Xem trang người dùng
             </a>
@@ -138,6 +138,84 @@
         </div>
     </form>
 </div>
+
+<!-- Create Notification Modal -->
+<div id="createNotificationModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeCreateModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-middle bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
+            <div class="px-8 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-black text-slate-900" id="modal-title">Tạo thông báo mới</h3>
+                    <p class="text-xs text-slate-500 mt-1">Gửi thông báo tới khách hàng, admin hoặc toàn bộ hệ thống.</p>
+                </div>
+                <button type="button" onclick="closeCreateModal()" class="text-slate-400 hover:text-slate-600 transition p-2 rounded-xl hover:bg-slate-50">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form method="POST" action="{{ route('admin.notifications.store') }}" class="p-8 space-y-5">
+                @csrf
+                <div class="grid grid-cols-1 gap-5">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Đối tượng nhận</label>
+                        <select name="target" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50">
+                            <option value="all">Tất cả người dùng</option>
+                            <option value="users">Khách hàng</option>
+                            <option value="admins">Admin / nhân sự nội bộ</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Tiêu đề</label>
+                        <input name="title" type="text" required placeholder="Ví dụ: Flash Sale 50% hôm nay" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nội dung</label>
+                        <textarea name="content" rows="4" required placeholder="Mô tả nội dung thông báo..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Đường dẫn hành động</label>
+                        <input name="action_url" type="text" placeholder="/products hoặc URL đầy đủ" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Sản phẩm liên quan</label>
+                            <select name="product_id" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50">
+                                <option value="">-- Không chọn --</option>
+                                @foreach($products as $product)
+                                    <option value="{{ $product->product_id }}">#{{ $product->product_id }} - {{ $product->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Mã KM / flash sale</label>
+                            <select name="promo_id" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50">
+                                <option value="">-- Không chọn --</option>
+                                @foreach($promoItems as $promo)
+                                    <option value="{{ $promo->promo_id }}">#{{ $promo->promo_id }} - {{ $promo->promo_type }} @if($promo->code) ({{ $promo->code }}) @endif</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3">
+                    <button type="button" onclick="closeCreateModal()" class="px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 transition">
+                        Hủy
+                    </button>
+                    <button type="submit" class="px-5 py-3 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition">
+                        Gửi thông báo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -223,5 +301,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+function openCreateModal() {
+    const modal = document.getElementById('createNotificationModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeCreateModal() {
+    const modal = document.getElementById('createNotificationModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
 </script>
 @endpush

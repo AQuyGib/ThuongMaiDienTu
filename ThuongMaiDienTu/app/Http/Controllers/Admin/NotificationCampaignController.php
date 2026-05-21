@@ -115,6 +115,8 @@ class NotificationCampaignController extends Controller
                 'labels' => $monthlyLabels,
                 'values' => $monthlyValues,
             ],
+            'promoItems' => CouponFlashSale::query()->orderByDesc('promo_id')->limit(20)->get(),
+            'products' => Product::query()->orderByDesc('product_id')->limit(20)->get(),
         ]);
     }
 
