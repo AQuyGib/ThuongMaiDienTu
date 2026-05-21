@@ -30,16 +30,20 @@
   - `ThuongMaiDienTu/resources/views/layouts/app.blade.php`
   - `ThuongMaiDienTu/resources/views/partials/compare-bar.blade.php`
   - `ThuongMaiDienTu/routes/web.php`
-- **Repair Tickets CRUD & Invoicing Link:**
+- **Repair Tickets & Customer Profile:**
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/RepairTicketInvoiceController.php`
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/ServiceInvoiceController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ProfileController.php`
+  - `ThuongMaiDienTu/app/Models/User.php`
   - `ThuongMaiDienTu/routes/admin.php`
+  - `ThuongMaiDienTu/routes/web.php`
   - `ThuongMaiDienTu/resources/views/admin/repair-tickets/index.blade.php`
   - `ThuongMaiDienTu/resources/views/admin/repair-tickets/create.blade.php`
   - `ThuongMaiDienTu/resources/views/admin/repair-tickets/edit.blade.php`
   - `ThuongMaiDienTu/resources/views/admin/service-invoices/create.blade.php`
   - `ThuongMaiDienTu/resources/views/admin/service-invoices/edit.blade.php`
   - `ThuongMaiDienTu/resources/views/admin/service-invoices/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/frontend/profile.blade.php`
 
 ## Important Logic & Behavior Changes
 - **Repair Tickets CRUD & Invoicing Link:**
@@ -61,21 +65,21 @@
   - Thêm trường VAT (%) vào form tạo/sửa hóa đơn dịch vụ (`create.blade.php`, `edit.blade.php`) với tính tổng preview real-time bằng JS. Hiển thị dòng VAT trong `show.blade.php` và `print.blade.php`. Cập nhật `ServiceInvoiceController` và `RepairTicketInvoiceController` để validate `vat_rate` và tính `tax_amount = subtotal * vatRate / 100`.
   - Added migration to add `imei_serial` column to `service_invoices` table. Updated model, controllers, and views (`create`, `edit`, `show`, `print`) to include `imei_serial`.
   - Display pre-generated `invoice_no` on the `service-invoices/create.blade.php` and `edit.blade.php` forms so users can see the invoice code before saving.
-  - Added strict validation to `RepairTicketInvoiceController` for creating/updating repair tickets: `imei_serial`, `customer_email`, and `customer_phone` are now strictly unique. `schedule_date` is enforced to be `after_or_equal:today`.
+  - Updated validation in `RepairTicketInvoiceController`: `imei_serial` remains unique, but `customer_phone` and `customer_email` are no longer enforced to be unique (enabling customers to have multiple tickets). `schedule_date` is enforced to be `after_or_equal:today`.
+  - Added a new repair status `Under_Repair` (Đang sửa chữa) to the status list validation, admin creation/editing forms, list badges, customer profile view, and tracking visual stepper.
+  - Standardized repair ticket code prefixes to `#RT-` globally (synchronized between customer profile table/modal and admin dashboard).
+  - Dynamically updated the date labels in the customer profile: displays "Ngày hẹn mang tới" (Hẹn mang máy) if the ticket status is `Received`, and automatically shifts to "Ngày hẹn trả máy" (Hẹn trả máy) once the ticket moves to `Under_Repair`, `Waiting_Parts`, or `Done` to reflect the updated schedule date updated by the Admin.
+  - Fixed a critical bug in `RepairTicketInvoiceController` where updating or storing a repair ticket from the admin panel would reset `user_id` to `null` (since the selection dropdown was removed from admin views). The controller now automatically queries and links the user account by `customer_phone`, fallbacks/preserves existing `user_id` if not matched.
   - Removed the "Tạo hóa đơn mới" button from the service invoices list page and added an "invoice_no" (Mã hóa đơn) search input control to filter results by code.
-- **Articles:**
-  - `ArticleFrontendController@index()` now accepts `tag` filtering and keeps pagination query strings.
-  - Added `applyTagFilter()` for lifestyle tag behavior.
-  - Admin article index now applies `status` and `q` filters in a grouped query so both filters work together.
-  - Lifestyle page now shows a tag filter row for `standard`, `lifestyle`, and `dienmay-pro`.
-- **Storefront (Compare & Filter):**
-  - Compare items are stored in `localStorage` under `compare_products` and merged with server data for authenticated users.
-  - Frontend filter JS now hydrates from URL, supports quick filters, and syncs active tags with AJAX updates.
-  - Product listing cards now show compare loading, animation, and `Đã so sánh` state after AJAX rerenders.
-  - `product-filter.js` dispatches `product-grid:updated` after AJAX replacement so compare UI can rebind.
-  - `/compare` renders a responsive compare page with diff highlighting and mobile-friendly cards.
-  - `/compare/sync` persists the compare list to `WishlistRecentlyViewed` when a user is logged in.
-  - `filter_rules` schema is being standardized around `group_key`, `rule_key`, `label`, `conditions`, `sort_order`, `is_active`.
+- **Online Repair Bookings (Customer Portal):**
+  - Fully integrated "Lịch sử & Đặt lịch sửa chữa" tab (`repair-tab`) into the customer profile sidebar and tab menu.
+  - Reverted profile page layout width, header, and footer back to their exact original visual dimensions (280px sidebar, 20px gap, standard container width) for visual coherence.
+  - Removed "Dịch vụ / Hóa đơn", "Kỹ thuật viên", and "Ngày hẹn" from the outer repair list table, retaining them exclusively inside the detail tracking popup.
+  - Standardized ticket IDs with `#RT-` prefix globally.
+  - Labeled technician in tracking modal as "Kỹ thuật viên phụ trách" and ensured every ticket always has an assigned technician (required validation in admin store/update routes, automatically assigns default technician on customer self-registration).
+  - Implemented the multi-section grid layout for the online repair registration form (`customer_name`, `customer_phone`, `customer_email`, `customer_address`, `imei_serial`, `schedule_date`, `issue_desc`).
+  - Added visual, state-driven vertical progress Stepper tracking modal populating steps (`Received` -> `Checking` -> `Under_Repair` / `Waiting_Parts` -> `Done`), displaying estimated cost, assigned technicians, real service fees, and invoices dynamically.
+  - Implemented automatic redirection / modal re-opening when Laravel validation errors occur during repair ticket submission.
 
 ## TODOs & Follow-up Work
 - **Articles:**

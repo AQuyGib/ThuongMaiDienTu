@@ -57,6 +57,14 @@
                                 <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 border border-blue-200 shadow-sm">
                                     <i class="fa-solid fa-circle-check text-blue-500"></i> Hoàn thành
                                 </span>
+                            @elseif ($repairTicket->status === 'Checking')
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700 border border-sky-200 shadow-sm">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span> Kiểm tra & Báo giá
+                                </span>
+                            @elseif ($repairTicket->status === 'Under_Repair')
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 border border-indigo-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Đang sửa chữa
+                                </span>
                             @elseif ($repairTicket->status === 'Waiting_Parts')
                                 <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Chờ linh kiện

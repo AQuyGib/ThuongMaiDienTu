@@ -47,8 +47,8 @@
                 </div>
 
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-gray-700">Kỹ thuật viên phụ trách</label>
-                    <select name="technician_id" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Kỹ thuật viên phụ trách <span class="text-red-500">*</span></label>
+                    <select name="technician_id" class="w-full rounded-lg border {{ $errors->has('technician_id') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                         <option value="">-- Chọn kỹ thuật viên --</option>
                         @foreach($technicians as $tech)
                             <option value="{{ $tech->user_id }}" {{ old('technician_id', $repairTicket->technician_id) == $tech->user_id ? 'selected' : '' }}>
@@ -56,6 +56,7 @@
                             </option>
                         @endforeach
                     </select>
+                    @error('technician_id') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -127,7 +128,8 @@
 
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Tên dịch vụ thực hiện</label>
-                    <input type="text" name="service_name" value="{{ old('service_name', $repairTicket->service_name) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Ví dụ: Thay màn hình OLED">
+                    <input type="text" name="service_name" value="{{ old('service_name', $repairTicket->service_name) }}" class="w-full rounded-lg border {{ $errors->has('service_name') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Ví dụ: Thay màn hình OLED">
+                    @error('service_name') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -138,11 +140,14 @@
 
             <div class="max-w-xs">
                 <label class="mb-1 block text-sm font-medium text-gray-700">Trạng thái sửa chữa <span class="text-red-500">*</span></label>
-                <select name="status" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                <select name="status" class="w-full rounded-lg border {{ $errors->has('status') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                     <option value="Received" {{ old('status', $repairTicket->status) == 'Received' ? 'selected' : '' }}>Đã tiếp nhận (Received)</option>
+                    <option value="Checking" {{ old('status', $repairTicket->status) == 'Checking' ? 'selected' : '' }}>Kiểm tra & Báo giá (Checking)</option>
+                    <option value="Under_Repair" {{ old('status', $repairTicket->status) == 'Under_Repair' ? 'selected' : '' }}>Đang sửa chữa (Under_Repair)</option>
                     <option value="Waiting_Parts" {{ old('status', $repairTicket->status) == 'Waiting_Parts' ? 'selected' : '' }}>Đang chờ linh kiện (Waiting_Parts)</option>
                     <option value="Done" {{ old('status', $repairTicket->status) == 'Done' ? 'selected' : '' }}>Hoàn thành (Done)</option>
                 </select>
+                @error('status') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
             </div>
         </div>
 

@@ -86,6 +86,10 @@ class User extends Authenticatable {
         return $this->hasMany(RepairTicket::class, 'technician_id', 'user_id');
     }
 
+    public function customerRepairTickets() {
+        return $this->hasMany(RepairTicket::class, 'user_id', 'user_id');
+    }
+
     /**
      * Kiểm tra người dùng có đang online không (trong vòng 5 phút qua)
      */
