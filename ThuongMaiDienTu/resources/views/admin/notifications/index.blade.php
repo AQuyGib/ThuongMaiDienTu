@@ -4,6 +4,22 @@
 @section('page-title', 'Quản lý thông báo')
 
 @section('content')
+<style>
+    /* Custom scrollbar cho các dropdown kết quả tìm kiếm */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+</style>
 <div class="space-y-6">
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -145,9 +161,9 @@
     <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeCreateModal()"></div>
 
     <!-- Modal panel -->
-    <div class="relative bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all border border-slate-100 w-full md:w-3/4 max-w-4xl z-10 my-auto">
+    <div class="relative bg-white rounded-[2rem] text-left overflow-visible shadow-2xl transform transition-all border border-slate-100 w-full md:w-3/4 max-w-4xl z-10 my-auto">
             <!-- Header -->
-            <div class="px-8 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div class="px-8 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-[2rem]">
                 <div>
                     <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
                         <i class="fa-solid fa-paper-plane text-indigo-600 text-base animate-pulse"></i>
@@ -232,7 +248,7 @@
                                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
                                     </div>
 
-                                    <div id="productSearchResults" class="max-h-48 overflow-y-auto space-y-1 divide-y divide-slate-50">
+                                    <div id="productSearchResults" class="max-h-48 overflow-y-auto custom-scrollbar space-y-1 divide-y divide-slate-50">
                                         <div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectProduct('', '-- Không chọn --')">
                                             -- Không chọn --
                                         </div>
@@ -265,7 +281,7 @@
                                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
                                     </div>
 
-                                    <div id="promoSearchResults" class="max-h-48 overflow-y-auto space-y-1 divide-y divide-slate-50">
+                                    <div id="promoSearchResults" class="max-h-48 overflow-y-auto custom-scrollbar space-y-1 divide-y divide-slate-50">
                                         <div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectPromo('', '-- Không chọn --')">
                                             -- Không chọn --
                                         </div>
@@ -288,7 +304,7 @@
                 </div>
 
                 <!-- Footer Actions -->
-                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50 -mx-8 -mb-8 p-6 px-8 rounded-b-[2rem]">
+                <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50/50 -mx-8 -mb-8 p-6 px-8 rounded-b-[2rem] overflow-hidden">
                     <button type="button" onclick="closeCreateModal()" class="px-5 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-100 transition">
                         Hủy
                     </button>
