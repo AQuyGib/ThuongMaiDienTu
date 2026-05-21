@@ -208,39 +208,39 @@
     }
 
     /* Pagination CSS Fallback matching User Management style */
-    .table-card nav {
-        padding: 24px;
-        border-top: 1px solid #eef2f7;
-        background-color: #ffffff;
-    }
-    
-    /* Hide the mobile-only pagination wrapper in Laravel's markup */
-    .table-card nav > div:first-child {
-        display: none !important;
-    }
-    
-    /* Desktop pagination wrapper */
-    .table-card nav > div:last-child {
+    /* Custom pagination wrapper to force horizontal layout */
+    .custom-pagination-nav {
         display: flex !important;
         flex-direction: row !important;
         justify-content: space-between !important;
         align-items: center !important;
         width: 100% !important;
+        padding: 16px 24px !important;
+        border-top: 1px solid #eef2f7 !important;
+        background-color: #ffffff !important;
+        flex-wrap: wrap !important;
+        gap: 16px !important;
     }
     
     /* Left side: Results info */
-    .table-card nav p.text-sm {
+    .custom-pagination-nav p {
         margin: 0 !important;
-        font-size: 0.85rem !important;
-        font-weight: 700 !important;
-        color: #64748b !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-        background: #ffffff;
-        padding: 10px 18px;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        color: #475569 !important; /* Màu xám đậm Slate-600 */
+        background: #f8fafc !important; /* Nền xám nhạt Slate-50 */
+        padding: 8px 16px !important;
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
+    
+    .custom-pagination-nav p span {
+        color: #0f172a !important; /* Màu đen Slate-900 để làm nổi bật các con số */
+        font-weight: 800 !important;
     }
     
     /* Right side: Page selection numbers */
@@ -304,7 +304,6 @@
 
 @section('content')
 <div class="container-fluid py-4">
-    @include('admin.partials.inventory-nav')
 
     <div class="hero-card mb-4 animate-in">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -402,8 +401,49 @@
                 </tbody>
             </table>
         </div>
-        @if(method_exists($transfers, 'links'))
-            <div class="d-flex justify-content-center py-3">{{ $transfers->links('pagination::bootstrap-5') }}</div>
+        @if(method_exists($transfers, 'links') && $transfers->lastPage() > 1)
+            <nav class="custom-pagination-nav">
+                <p class="text-sm">
+                    Kết quả: <span>{{ $transfers->total() }}</span> 
+                    <span class="mx-2" style="opacity: 0.3;">|</span> 
+                    Trang <span>{{ $transfers->currentPage() }}</span> / {{ $transfers->lastPage() }}
+                </p>
+                
+                <ul class="pagination">
+                    {{-- Previous Page Link --}}
+                    @if ($transfers->onFirstPage())
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                    @else
+                        <li class="page-item"><a class="page-link" href="{{ $transfers->previousPageUrl() }}" rel="prev">&laquo;</a></li>
+                    @endif
+
+                    {{-- Pagination Elements --}}
+                    @foreach ($transfers->getUrlRange(1, $transfers->lastPage()) as $page => $url)
+                        @if ($page == $transfers->currentPage())
+                            <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                        @elseif ($page === 1 || $page === $transfers->lastPage() || abs($page - $transfers->currentPage()) <= 1)
+                            <li class="page-item"><a class="page-link" href="{{ $url }}">{{ $page }}</a></li>
+                        @elseif (($page === 2 && $transfers->currentPage() > 3) || ($page === $transfers->lastPage() - 1 && $transfers->currentPage() < $transfers->lastPage() - 2))
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        @endif
+                    @endforeach
+
+                    {{-- Next Page Link --}}
+                    @if ($transfers->hasMorePages())
+                        <li class="page-item"><a class="page-link" href="{{ $transfers->nextPageUrl() }}" rel="next">&raquo;</a></li>
+                    @else
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                    @endif
+                </ul>
+            </nav>
+        @elseif(method_exists($transfers, 'links'))
+            <nav class="custom-pagination-nav">
+                <p class="text-sm">
+                    Kết quả: <span>{{ $transfers->total() }}</span> 
+                    <span class="mx-2" style="opacity: 0.3;">|</span> 
+                    Trang <span>1</span> / 1
+                </p>
+            </nav>
         @endif
     </div>
 </div>
