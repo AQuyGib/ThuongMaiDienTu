@@ -149,7 +149,7 @@
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
         <!-- Modal panel -->
-        <div class="inline-block align-middle bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-slate-100">
+        <div class="inline-block align-middle bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle w-full sm:max-w-4xl border border-slate-100">
             <!-- Header -->
             <div class="px-8 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div>
@@ -167,9 +167,10 @@
             <!-- Form -->
             <form method="POST" action="{{ route('admin.notifications.store') }}" class="p-8 space-y-6">
                 @csrf
-                <div class="space-y-5">
-                    <!-- Target Section -->
-                    <div class="grid grid-cols-1 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Left Column: Target & Messages -->
+                    <div class="space-y-5">
+                        <!-- Target Section -->
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Đối tượng nhận</label>
                             <select name="target" id="notificationTarget" onchange="handleTargetChange()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 font-bold text-slate-700">
@@ -200,10 +201,7 @@
                                 <span class="text-xs text-slate-400" id="noUsersSelectedText">Chưa có tài khoản nào được chọn.</span>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Content Section -->
-                    <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Tiêu đề</label>
                             <input name="title" type="text" required placeholder="Ví dụ: Flash Sale 50% hôm nay" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50">
@@ -211,86 +209,81 @@
 
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nội dung thông báo</label>
-                            <textarea name="content" rows="4" required placeholder="Mô tả nội dung thông báo chi tiết..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50"></textarea>
+                            <textarea name="content" rows="5" required placeholder="Mô tả nội dung thông báo chi tiết..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50"></textarea>
                         </div>
                     </div>
 
-                    <!-- Actions & Links -->
-                    <div class="space-y-4">
+                    <!-- Right Column: Actions & Related items -->
+                    <div class="space-y-5">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Đường dẫn hành động (Action URL)</label>
                             <input name="action_url" type="text" placeholder="/products hoặc URL đầy đủ" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50">
                             <span class="text-[10px] text-slate-400 mt-1 block">Khách hàng sẽ chuyển hướng đến link này khi click vào thông báo.</span>
                         </div>
 
-                        <!-- Related Items (Products & Promos side-by-side) -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Product select -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Sản phẩm liên quan</label>
-                                <div class="relative" id="productSearchDropdown">
-                                    <button type="button" onclick="toggleProductDropdown()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 text-left flex justify-between items-center text-slate-700">
-                                        <span id="selectedProductText" class="truncate">-- Không chọn --</span>
-                                        <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
-                                    </button>
-                                    <input type="hidden" name="product_id" id="submitProductId" value="">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Sản phẩm liên quan</label>
+                            <div class="relative" id="productSearchDropdown">
+                                <button type="button" onclick="toggleProductDropdown()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 text-left flex justify-between items-center text-slate-700">
+                                    <span id="selectedProductText" class="truncate">-- Không chọn --</span>
+                                    <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                                </button>
+                                <input type="hidden" name="product_id" id="submitProductId" value="">
 
-                                    <div id="productDropdownMenu" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-3">
-                                        <div class="relative">
-                                            <input type="text" id="productQueryInput" placeholder="Tìm sản phẩm bằng tên..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50/50">
-                                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                <div id="productDropdownMenu" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-3">
+                                    <div class="relative">
+                                        <input type="text" id="productQueryInput" placeholder="Tìm sản phẩm bằng tên..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50/50">
+                                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                    </div>
+
+                                    <div id="productSearchResults" class="max-h-48 overflow-y-auto space-y-1 divide-y divide-slate-50">
+                                        <div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectProduct('', '-- Không chọn --')">
+                                            -- Không chọn --
                                         </div>
-
-                                        <div id="productSearchResults" class="max-h-40 overflow-y-auto space-y-1 divide-y divide-slate-50">
-                                            <div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectProduct('', '-- Không chọn --')">
-                                                -- Không chọn --
-                                            </div>
-                                            @foreach($products as $product)
-                                                <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" onclick="selectProduct('{{ $product->product_id }}', '#{{ $product->product_id }} - {{ addslashes($product->name) }}')">
-                                                    <img src="{{ $product->thumbnail ?: 'https://via.placeholder.com/40' }}" class="w-8 h-8 object-cover rounded-lg border border-slate-100 shrink-0">
-                                                    <div class="min-w-0 flex-1">
-                                                        <div class="text-xs font-bold text-slate-800 truncate">{{ $product->name }}</div>
-                                                        <div class="text-[10px] text-slate-400 mt-0.5">#{{ $product->product_id }} • {{ number_format($product->base_price) }}đ</div>
-                                                    </div>
+                                        @foreach($products as $product)
+                                            <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" onclick="selectProduct('{{ $product->product_id }}', '#{{ $product->product_id }} - {{ addslashes($product->name) }}')">
+                                                <img src="{{ $product->thumbnail ?: 'https://via.placeholder.com/40' }}" class="w-8 h-8 object-cover rounded-lg border border-slate-100 shrink-0">
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-xs font-bold text-slate-800 truncate">{{ $product->name }}</div>
+                                                    <div class="text-[10px] text-slate-400 mt-0.5">#{{ $product->product_id }} • {{ number_format($product->base_price) }}đ</div>
                                                 </div>
-                                            @endforeach
-                                        </div>
+                                            </div>
+                                        @endforeach
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Promo select -->
-                            <div>
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Mã KM / flash sale</label>
-                                <div class="relative" id="promoSearchDropdown">
-                                    <button type="button" onclick="togglePromoDropdown()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 text-left flex justify-between items-center text-slate-700">
-                                        <span id="selectedPromoText" class="truncate">-- Không chọn --</span>
-                                        <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
-                                    </button>
-                                    <input type="hidden" name="promo_id" id="submitPromoId" value="">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Mã KM / flash sale</label>
+                            <div class="relative" id="promoSearchDropdown">
+                                <button type="button" onclick="togglePromoDropdown()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 text-left flex justify-between items-center text-slate-700">
+                                    <span id="selectedPromoText" class="truncate">-- Không chọn --</span>
+                                    <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                                </button>
+                                <input type="hidden" name="promo_id" id="submitPromoId" value="">
 
-                                    <div id="promoDropdownMenu" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-3">
-                                        <div class="relative">
-                                            <input type="text" id="promoQueryInput" placeholder="Tìm mã KM/flash sale..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50/50">
-                                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                <div id="promoDropdownMenu" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-3">
+                                    <div class="relative">
+                                        <input type="text" id="promoQueryInput" placeholder="Tìm mã KM/flash sale..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50/50">
+                                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                    </div>
+
+                                    <div id="promoSearchResults" class="max-h-48 overflow-y-auto space-y-1 divide-y divide-slate-50">
+                                        <div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectPromo('', '-- Không chọn --')">
+                                            -- Không chọn --
                                         </div>
-
-                                        <div id="promoSearchResults" class="max-h-40 overflow-y-auto space-y-1 divide-y divide-slate-50">
-                                            <div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectPromo('', '-- Không chọn --')">
-                                                -- Không chọn --
-                                            </div>
-                                            @foreach($promoItems as $promo)
-                                                <div class="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" onclick="selectPromo('{{ $promo->promo_id }}', '#{{ $promo->promo_id }} - {{ $promo->promo_type }} @if($promo->code)({{ $promo->code }})@endif')">
-                                                    <div class="min-w-0 flex-1">
-                                                        <div class="text-xs font-bold text-slate-800">{{ $promo->promo_type }}</div>
-                                                        @if($promo->code)
-                                                            <div class="text-[10px] text-indigo-600 font-extrabold mt-0.5">Mã: {{ $promo->code }}</div>
-                                                        @endif
-                                                    </div>
-                                                    <div class="text-[10px] text-slate-400 shrink-0">#{{ $promo->promo_id }}</div>
+                                        @foreach($promoItems as $promo)
+                                            <div class="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" onclick="selectPromo('{{ $promo->promo_id }}', '#{{ $promo->promo_id }} - {{ $promo->promo_type }} @if($promo->code)({{ $promo->code }})@endif')">
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-xs font-bold text-slate-800">{{ $promo->promo_type }}</div>
+                                                    @if($promo->code)
+                                                        <div class="text-[10px] text-indigo-600 font-extrabold mt-0.5">Mã: {{ $promo->code }}</div>
+                                                    @endif
                                                 </div>
-                                            @endforeach
-                                        </div>
+                                                <div class="text-[10px] text-slate-400 shrink-0">#{{ $promo->promo_id }}</div>
+                                            </div>
+                                        @endforeach
                                     </div>
                                 </div>
                             </div>
