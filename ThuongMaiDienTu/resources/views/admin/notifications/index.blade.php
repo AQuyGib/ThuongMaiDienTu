@@ -185,12 +185,42 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Sản phẩm liên quan</label>
-                            <select name="product_id" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50">
-                                <option value="">-- Không chọn --</option>
-                                @foreach($products as $product)
-                                    <option value="{{ $product->product_id }}">#{{ $product->product_id }} - {{ $product->name }}</option>
-                                @endforeach
-                            </select>
+                            <div class="relative" id="productSearchDropdown">
+                                <!-- Trigger Button -->
+                                <button type="button" onclick="toggleProductDropdown()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 text-left flex justify-between items-center text-slate-700">
+                                    <span id="selectedProductText">-- Không chọn --</span>
+                                    <i class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+                                </button>
+                                
+                                <!-- Hidden input for form submission -->
+                                <input type="hidden" name="product_id" id="submitProductId" value="">
+
+                                <!-- Dropdown Container -->
+                                <div id="productDropdownMenu" class="hidden absolute left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-3">
+                                    <!-- Search Input -->
+                                    <div class="relative">
+                                        <input type="text" id="productQueryInput" placeholder="Tìm sản phẩm bằng tên..." class="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition bg-slate-50/50">
+                                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                                    </div>
+
+                                    <!-- Product List -->
+                                    <div id="productSearchResults" class="max-h-60 overflow-y-auto space-y-1 divide-y divide-slate-50">
+                                        <!-- Default / Loading / No result placeholder -->
+                                        <div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectProduct('', '-- Không chọn --')">
+                                            -- Không chọn --
+                                        </div>
+                                        @foreach($products as $product)
+                                            <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" onclick="selectProduct('{{ $product->product_id }}', '#{{ $product->product_id }} - {{ addslashes($product->name) }}')">
+                                                <img src="{{ $product->thumbnail ?: 'https://via.placeholder.com/40' }}" class="w-8 h-8 object-cover rounded-lg border border-slate-100 shrink-0">
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-xs font-bold text-slate-800 truncate">{{ $product->name }}</div>
+                                                    <div class="text-[10px] text-slate-400 mt-0.5">#{{ $product->product_id }} • {{ number_format($product->base_price) }}đ</div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Mã KM / flash sale</label>
@@ -317,5 +347,74 @@ function closeCreateModal() {
         document.body.style.overflow = '';
     }
 }
+
+// Custom Product Dropdown Search Logic
+let debounceTimer;
+
+function toggleProductDropdown() {
+    const menu = document.getElementById('productDropdownMenu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+        if (!menu.classList.contains('hidden')) {
+            document.getElementById('productQueryInput').focus();
+        }
+    }
+}
+
+// Đóng dropdown khi click ra ngoài
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('productSearchDropdown');
+    const menu = document.getElementById('productDropdownMenu');
+    if (dropdown && !dropdown.contains(event.target) && menu) {
+        menu.classList.add('hidden');
+    }
+});
+
+function selectProduct(id, displayName) {
+    document.getElementById('submitProductId').value = id;
+    document.getElementById('selectedProductText').textContent = displayName;
+    document.getElementById('productDropdownMenu').classList.add('hidden');
+}
+
+// Bắt sự kiện gõ tìm kiếm sản phẩm
+document.getElementById('productQueryInput')?.addEventListener('input', function() {
+    const query = this.value.trim();
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(() => {
+        const resultsContainer = document.getElementById('productSearchResults');
+        resultsContainer.innerHTML = '<div class="p-4 text-center text-xs text-slate-400"><i class="fa-solid fa-spinner animate-spin mr-2"></i>Đang tìm kiếm...</div>';
+
+        fetch(`{{ route('admin.api.products.search') }}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                let html = `<div class="p-3 text-center text-xs text-slate-400 cursor-pointer hover:bg-slate-50 rounded-lg font-medium" onclick="selectProduct('', '-- Không chọn --')">-- Không chọn --</div>`;
+
+                if (data.length === 0) {
+                    html += `<div class="p-4 text-center text-xs text-slate-400">Không tìm thấy sản phẩm phù hợp</div>`;
+                } else {
+                    data.forEach(prod => {
+                        const price = new Intl.NumberFormat('vi-VN').format(prod.base_price) + 'đ';
+                        const thumbnail = prod.thumbnail || 'https://via.placeholder.com/40';
+                        const cleanName = prod.name.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                        html += `
+                            <div class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition" onclick="selectProduct('${prod.product_id}', '#${prod.product_id} - ${cleanName}')">
+                                <img src="${thumbnail}" class="w-8 h-8 object-cover rounded-lg border border-slate-100 shrink-0">
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-xs font-bold text-slate-800 truncate">${prod.name}</div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">#${prod.product_id} • ${price}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                resultsContainer.innerHTML = html;
+            })
+            .catch(err => {
+                console.error(err);
+                resultsContainer.innerHTML = '<div class="p-4 text-center text-xs text-rose-500">Đã xảy ra lỗi khi tìm kiếm.</div>';
+            });
+    }, 300);
+});
 </script>
 @endpush
