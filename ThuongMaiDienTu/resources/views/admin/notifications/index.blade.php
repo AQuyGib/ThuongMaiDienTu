@@ -6,15 +6,23 @@
 @section('content')
 <style>
     /* Custom scrollbar cho các dropdown kết quả tìm kiếm */
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f1f5f9;
+        overscroll-behavior: contain;
+    }
     .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
+        width: 8px;
+        height: 8px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
+        background: #f1f5f9;
+        border-radius: 9999px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
         background: #cbd5e1;
         border-radius: 9999px;
+        border: 2px solid #f1f5f9;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
