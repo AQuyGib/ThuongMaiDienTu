@@ -152,6 +152,13 @@ class NotificationCampaignController extends Controller
         ]);
     }
 
+    public function unreadCount(Request $request)
+    {
+        return response()->json([
+            'unread_count' => Notification::unread()->count(),
+        ]);
+    }
+
     public function show(Notification $notification): View
     {
         if (is_null($notification->read_at)) {
