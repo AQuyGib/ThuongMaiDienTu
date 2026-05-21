@@ -18,6 +18,10 @@ class ServiceInvoiceController extends Controller
     {
         $query = ServiceInvoice::query();
 
+        if ($request->filled('invoice_no')) {
+            $query->where('invoice_no', 'like', '%' . $request->string('invoice_no') . '%');
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->string('status'));
         }
@@ -37,33 +41,41 @@ class ServiceInvoiceController extends Controller
 
     public function create(): View
     {
-        return view('admin.service-invoices.create');
+        return view('admin.service-invoices.create', [
+            'prefill' => [
+                'invoice_no' => 'INV-' . now()->format('Ymd') . '-' . Str::upper(Str::random(6)),
+            ]
+        ]);
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
+            'invoice_no' => ['required', 'string', 'max:50', 'unique:service_invoices,invoice_no'],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
             'customer_email' => ['nullable', 'email', 'max:255'],
+            'imei_serial' => ['nullable', 'string', 'max:255'],
             'service_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'subtotal' => ['required', 'numeric', 'min:0'],
-            'tax_amount' => ['nullable', 'numeric', 'min:0'],
+            'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'status' => ['required', 'in:draft,issued,paid,cancelled'],
         ]);
 
-        $taxAmount = (float) ($data['tax_amount'] ?? 0);
-        $discountAmount = (float) ($data['discount_amount'] ?? 0);
         $subtotal = (float) $data['subtotal'];
+        $vatRate = (float) ($data['vat_rate'] ?? 0);
+        $taxAmount = round(($subtotal * $vatRate) / 100, 2);
+        $discountAmount = (float) ($data['discount_amount'] ?? 0);
         $totalAmount = max(0, $subtotal + $taxAmount - $discountAmount);
 
         ServiceInvoice::create([
-            'invoice_no' => 'INV-' . now()->format('Ymd') . '-' . Str::upper(Str::random(6)),
+            'invoice_no' => $data['invoice_no'],
             'customer_name' => $data['customer_name'],
             'customer_phone' => $data['customer_phone'] ?? null,
             'customer_email' => $data['customer_email'] ?? null,
+            'imei_serial' => $data['imei_serial'] ?? null,
             'service_name' => $data['service_name'],
             'description' => $data['description'] ?? null,
             'subtotal' => $subtotal,
@@ -130,5 +142,68 @@ class ServiceInvoiceController extends Controller
         }
 
         return response()->download(storage_path('app/public/' . $path), $serviceInvoice->invoice_no . '.pdf');
+    }
+
+    public function edit(ServiceInvoice $serviceInvoice): View
+    {
+        return view('admin.service-invoices.edit', compact('serviceInvoice'));
+    }
+
+    public function update(Request $request, ServiceInvoice $serviceInvoice): \Illuminate\Http\RedirectResponse
+    {
+        $data = $request->validate([
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_phone' => ['nullable', 'string', 'max:50'],
+            'customer_email' => ['nullable', 'email', 'max:255'],
+            'imei_serial' => ['nullable', 'string', 'max:255'],
+            'service_name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'subtotal' => ['required', 'numeric', 'min:0'],
+            'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'status' => ['required', 'in:draft,issued,paid,cancelled'],
+        ]);
+
+        $subtotal = (float) $data['subtotal'];
+        $vatRate = (float) ($data['vat_rate'] ?? 0);
+        $taxAmount = round(($subtotal * $vatRate) / 100, 2);
+        $discountAmount = (float) ($data['discount_amount'] ?? 0);
+        $totalAmount = max(0, $subtotal + $taxAmount - $discountAmount);
+
+        $updateData = [
+            'customer_name' => $data['customer_name'],
+            'customer_phone' => $data['customer_phone'] ?? null,
+            'customer_email' => $data['customer_email'] ?? null,
+            'imei_serial' => $data['imei_serial'] ?? null,
+            'service_name' => $data['service_name'],
+            'description' => $data['description'] ?? null,
+            'subtotal' => $subtotal,
+            'tax_amount' => $taxAmount,
+            'discount_amount' => $discountAmount,
+            'total_amount' => $totalAmount,
+            'status' => $data['status'],
+        ];
+
+        if ($data['status'] !== 'draft' && !$serviceInvoice->issued_date) {
+            $updateData['issued_date'] = now()->toDateString();
+        }
+
+        $serviceInvoice->update($updateData);
+
+        return redirect()->route('admin.service-invoices.index')->with('success', 'Cập nhật hóa đơn dịch vụ thành công.');
+    }
+
+    public function destroy(ServiceInvoice $serviceInvoice)
+    {
+        // Giải phóng liên kết ở các phiếu sửa chữa liên quan (nếu có)
+        \App\Models\RepairTicket::where('invoice_no', $serviceInvoice->invoice_no)
+            ->update([
+                'invoice_no' => null,
+                'invoiced_at' => null,
+            ]);
+
+        $serviceInvoice->delete();
+
+        return redirect()->route('admin.service-invoices.index')->with('success', 'Xóa hóa đơn dịch vụ thành công.');
     }
 }

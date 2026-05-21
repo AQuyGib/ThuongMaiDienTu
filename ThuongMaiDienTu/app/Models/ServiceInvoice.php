@@ -15,6 +15,7 @@ class ServiceInvoice extends Model
         'customer_name',
         'customer_phone',
         'customer_email',
+        'imei_serial',
         'service_name',
         'description',
         'subtotal',

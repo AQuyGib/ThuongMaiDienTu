@@ -86,6 +86,10 @@
                     <p class="mt-1 font-medium text-gray-900">{{ $serviceInvoice->customer_email ?? '-' }}</p>
                 </div>
                 <div>
+                    <p class="text-gray-500">IMEI / Serial</p>
+                    <p class="mt-1 font-mono font-medium text-gray-900">{{ $serviceInvoice->imei_serial ?? '-' }}</p>
+                </div>
+                <div>
                     <p class="text-gray-500">Dịch vụ</p>
                     <p class="mt-1 font-medium text-gray-900">{{ $serviceInvoice->service_name }}</p>
                 </div>
@@ -97,16 +101,19 @@
         <div class="mb-4 flex items-center justify-between">
             <div>
                 <h2 class="text-lg font-semibold text-gray-900">Chi tiết tiền</h2>
-                <p class="text-sm text-gray-500">Tạm tính, thuế và giảm giá.</p>
+                <p class="text-sm text-gray-500">Tạm tính, VAT và giảm giá.</p>
             </div>
         </div>
+        @php
+            $vatRate = $serviceInvoice->subtotal > 0 ? round(($serviceInvoice->tax_amount * 100) / $serviceInvoice->subtotal, 2) : 0;
+        @endphp
         <div class="grid gap-3 md:grid-cols-4">
             <div class="rounded-lg bg-slate-50 p-4">
                 <p class="text-sm text-slate-500">Tạm tính</p>
                 <p class="mt-1 text-base font-semibold text-slate-900">{{ number_format($serviceInvoice->subtotal, 0, ',', '.') }} đ</p>
             </div>
             <div class="rounded-lg bg-slate-50 p-4">
-                <p class="text-sm text-slate-500">Thuế</p>
+                <p class="text-sm text-slate-500">VAT ({{ $vatRate }}%)</p>
                 <p class="mt-1 text-base font-semibold text-slate-900">{{ number_format($serviceInvoice->tax_amount, 0, ',', '.') }} đ</p>
             </div>
             <div class="rounded-lg bg-slate-50 p-4">

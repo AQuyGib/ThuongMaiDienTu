@@ -10,19 +10,16 @@
             <h1 class="text-2xl font-bold text-gray-900">Hóa đơn dịch vụ</h1>
             <p class="text-sm text-gray-500">Quản lý, lọc và xuất hóa đơn dịch vụ.</p>
         </div>
-        <x-ui.button
-            variant="primary"
-            :href="route('admin.service-invoices.create')"
-            title="Tạo hóa đơn dịch vụ mới"
-        >
-            <i class="fa-solid fa-plus"></i> Tạo hóa đơn mới
-        </x-ui.button>
     </div>
 
-    <form method="GET" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-4">
+    <form method="GET" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-5">
+        <div>
+            <label class="mb-1 block text-sm font-medium text-gray-700">Mã hóa đơn</label>
+            <input type="text" name="invoice_no" value="{{ request('invoice_no') }}" placeholder="Ví dụ: INV-..." class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        </div>
         <div>
             <label class="mb-1 block text-sm font-medium text-gray-700">Trạng thái</label>
-            <select name="status" class="w-full rounded-lg border-gray-300 text-sm">
+            <select name="status" class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="">Tất cả</option>
                 <option value="draft" @selected(request('status') === 'draft')>Nháp</option>
                 <option value="issued" @selected(request('status') === 'issued')>Đã phát hành</option>
@@ -32,11 +29,11 @@
         </div>
         <div>
             <label class="mb-1 block text-sm font-medium text-gray-700">Từ ngày</label>
-            <input type="date" name="from_date" value="{{ request('from_date') }}" class="w-full rounded-lg border-gray-300 text-sm">
+            <input type="date" name="from_date" value="{{ request('from_date') }}" class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         </div>
         <div>
             <label class="mb-1 block text-sm font-medium text-gray-700">Đến ngày</label>
-            <input type="date" name="to_date" value="{{ request('to_date') }}" class="w-full rounded-lg border-gray-300 text-sm">
+            <input type="date" name="to_date" value="{{ request('to_date') }}" class="w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         </div>
         <div class="flex items-end gap-2">
             <x-ui.button variant="secondary" type="submit" title="Áp dụng bộ lọc">
@@ -74,19 +71,66 @@
                         <td class="px-4 py-4"><x-ui.status-badge :status="$invoice->status" /></td>
                         <td class="px-4 py-4 text-gray-600">{{ optional($invoice->issued_date)->format('d/m/Y') ?? '-' }}</td>
                         <td class="px-4 py-4 text-right">
-                            <div class="inline-flex flex-wrap justify-end gap-2">
-                                <x-ui.button variant="secondary" :href="route('admin.service-invoices.show', $invoice)" title="Xem chi tiết hóa đơn">
-                                    <i class="fa-solid fa-eye"></i> Xem
+                            <div class="inline-flex items-center justify-end gap-1.5">
+                                <x-ui.button 
+                                    variant="primary" 
+                                    class="!px-2.5 !py-1.5 !text-xs" 
+                                    :href="route('admin.service-invoices.show', $invoice)" 
+                                    title="Xem chi tiết"
+                                >
+                                    <i class="fa-solid fa-eye"></i>
                                 </x-ui.button>
-                                <x-ui.button variant="secondary" :href="route('admin.service-invoices.print', $invoice)" target="_blank" title="Mở bản in để in nhanh">
-                                    <i class="fa-solid fa-print"></i> In
+                                
+                                <x-ui.button 
+                                    variant="warning" 
+                                    class="!px-2.5 !py-1.5 !text-xs" 
+                                    :href="route('admin.service-invoices.edit', $invoice)" 
+                                    title="Chỉnh sửa"
+                                >
+                                    <i class="fa-solid fa-pen"></i>
                                 </x-ui.button>
-                                <x-ui.button variant="info" :href="route('admin.service-invoices.pdf.open', $invoice)" target="_blank" title="Xem file PDF trực tiếp">
-                                    <i class="fa-solid fa-folder-open"></i> Mở PDF
+                                
+                                <x-ui.button 
+                                    variant="secondary" 
+                                    class="!px-2.5 !py-1.5 !text-xs" 
+                                    :href="route('admin.service-invoices.print', $invoice)" 
+                                    target="_blank" 
+                                    title="In hóa đơn"
+                                >
+                                    <i class="fa-solid fa-print"></i>
                                 </x-ui.button>
-                                <x-ui.button variant="success" :href="route('admin.service-invoices.pdf.download', $invoice)" title="Tải file PDF về máy">
-                                    <i class="fa-solid fa-download"></i> Tải PDF
+                                
+                                <x-ui.button 
+                                    variant="info" 
+                                    class="!px-2.5 !py-1.5 !text-xs" 
+                                    :href="route('admin.service-invoices.pdf.open', $invoice)" 
+                                    target="_blank" 
+                                    title="Xem PDF"
+                                >
+                                    <i class="fa-solid fa-file-pdf"></i>
                                 </x-ui.button>
+                                
+                                <x-ui.button 
+                                    variant="success" 
+                                    class="!px-2.5 !py-1.5 !text-xs" 
+                                    :href="route('admin.service-invoices.pdf.download', $invoice)" 
+                                    title="Tải PDF"
+                                >
+                                    <i class="fa-solid fa-download"></i>
+                                </x-ui.button>
+                                
+                                <form action="{{ route('admin.service-invoices.destroy', $invoice) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa hóa đơn dịch vụ này?')" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <x-ui.button 
+                                        variant="danger" 
+                                        class="!px-2.5 !py-1.5 !text-xs" 
+                                        type="submit" 
+                                        title="Xóa hóa đơn"
+                                    >
+                                        <i class="fa-solid fa-trash"></i>
+                                    </x-ui.button>
+                                </form>
                             </div>
                         </td>
                     </tr>

@@ -14,10 +14,17 @@ class RepairTicket extends Model
     
     protected $fillable = [
         'user_id',
+        'technician_id',
         'imei_serial',
         'issue_desc',
+        'schedule_date',
+        'estimated_cost',
+        'status',
         'customer_name',
         'customer_phone',
+        'customer_address',
+        'customer_email',
+        'customer_source',
         'service_name',
         'service_fee',
         'invoice_no',

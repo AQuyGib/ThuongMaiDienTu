@@ -77,6 +77,7 @@
                         <p><strong>Tên:</strong> {{ $serviceInvoice->customer_name }}</p>
                         <p><strong>Điện thoại:</strong> {{ $serviceInvoice->customer_phone ?? '-' }}</p>
                         <p><strong>Email:</strong> {{ $serviceInvoice->customer_email ?? '-' }}</p>
+                        <p><strong>IMEI / Serial:</strong> {{ $serviceInvoice->imei_serial ?? '-' }}</p>
                     </div>
                 </td>
                 <td>
@@ -102,10 +103,13 @@
                     <td>Tạm tính</td>
                     <td class="amount">{{ number_format($serviceInvoice->subtotal, 0, ',', '.') }} đ</td>
                 </tr>
+                @if($serviceInvoice->tax_amount > 0)
+                @php $vatRate = $serviceInvoice->subtotal > 0 ? round(($serviceInvoice->tax_amount * 100) / $serviceInvoice->subtotal, 2) : 0; @endphp
                 <tr>
-                    <td>Thuế</td>
+                    <td>VAT ({{ $vatRate }}%)</td>
                     <td class="amount">{{ number_format($serviceInvoice->tax_amount, 0, ',', '.') }} đ</td>
                 </tr>
+                @endif
                 <tr>
                     <td>Giảm giá</td>
                     <td class="amount">-{{ number_format($serviceInvoice->discount_amount, 0, ',', '.') }} đ</td>

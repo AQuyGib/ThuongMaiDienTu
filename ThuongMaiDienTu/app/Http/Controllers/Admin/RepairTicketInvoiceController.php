@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\RepairTicket;
 use App\Models\ServiceInvoice;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -18,13 +19,133 @@ class RepairTicketInvoiceController extends Controller
         return view('admin.repair-tickets.index', compact('repairTickets'));
     }
 
-    public function create(RepairTicket $repairTicket): View
+    public function createTicket(): View
     {
+        $customers = User::where('role_id', 3)->orderBy('full_name')->get();
+        $technicians = User::whereIn('role_id', [1, 2, 4])->orderBy('full_name')->get();
+        
+        return view('admin.repair-tickets.create', compact('customers', 'technicians'));
+    }
+
+    public function storeTicket(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'user_id' => ['nullable', 'exists:users,user_id'],
+            'technician_id' => ['nullable', 'exists:users,user_id'],
+            'imei_serial' => ['required', 'string', 'max:100', 'unique:repair_tickets,imei_serial'],
+            'issue_desc' => ['required', 'string'],
+            'schedule_date' => ['nullable', 'date', 'after_or_equal:today'],
+            'estimated_cost' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:Received,Waiting_Parts,Done'],
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_phone' => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:repair_tickets,customer_phone'],
+            'customer_address' => ['nullable', 'string', 'max:500'],
+            'customer_email' => ['nullable', 'email', 'max:255', 'unique:repair_tickets,customer_email'],
+            'customer_source' => ['nullable', 'string', 'max:100'],
+            'service_name' => ['nullable', 'string', 'max:255'],
+            'service_fee' => ['nullable', 'numeric', 'min:0'],
+        ], [
+            'imei_serial.unique' => 'Mã IMEI / Serial này đã tồn tại trong hệ thống.',
+            'customer_phone.unique' => 'Số điện thoại này đã được sử dụng cho phiếu sửa chữa khác.',
+            'customer_email.unique' => 'Email này đã được sử dụng cho phiếu sửa chữa khác.',
+            'schedule_date.after_or_equal' => 'Ngày hẹn trả phải từ hôm nay trở đi.',
+            'imei_serial.required' => 'Vui lòng nhập mã IMEI / Serial.',
+            'issue_desc.required' => 'Vui lòng nhập mô tả lỗi.',
+            'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
+            'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
+            'customer_phone.regex' => 'Số điện thoại phải đúng 10 chữ số.',
+            'estimated_cost.required' => 'Vui lòng nhập chi phí dự kiến.',
+            'customer_email.email' => 'Email không đúng định dạng.',
+        ]);
+
+        $data['user_id'] = $data['user_id'] ?? null;
+        $data['technician_id'] = $data['technician_id'] ?? null;
+        $data['schedule_date'] = $data['schedule_date'] ?? null;
+        $data['customer_address'] = $data['customer_address'] ?? null;
+        $data['customer_email'] = $data['customer_email'] ?? null;
+        $data['customer_source'] = $data['customer_source'] ?? null;
+        $data['service_name'] = $data['service_name'] ?? null;
+        $data['service_fee'] = isset($data['service_fee']) && $data['service_fee'] !== '' ? $data['service_fee'] : 0;
+
+        RepairTicket::create($data);
+
+        return redirect()->route('admin.repair-tickets.index')->with('success', 'Đã tạo phiếu sửa chữa thành công.');
+    }
+
+    public function editTicket(RepairTicket $repairTicket): View
+    {
+        $customers = User::where('role_id', 3)->orderBy('full_name')->get();
+        $technicians = User::whereIn('role_id', [1, 2, 4])->orderBy('full_name')->get();
+
+        return view('admin.repair-tickets.edit', compact('repairTicket', 'customers', 'technicians'));
+    }
+
+    public function updateTicket(Request $request, RepairTicket $repairTicket): RedirectResponse
+    {
+        $data = $request->validate([
+            'user_id' => ['nullable', 'exists:users,user_id'],
+            'technician_id' => ['nullable', 'exists:users,user_id'],
+            'imei_serial' => ['required', 'string', 'max:100', 'unique:repair_tickets,imei_serial,' . $repairTicket->ticket_id . ',ticket_id'],
+            'issue_desc' => ['required', 'string'],
+            'schedule_date' => ['nullable', 'date', 'after_or_equal:today'],
+            'estimated_cost' => ['required', 'integer', 'min:0'],
+            'status' => ['required', 'in:Received,Waiting_Parts,Done'],
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_phone' => ['required', 'string', 'regex:/^[0-9]{10}$/', 'unique:repair_tickets,customer_phone,' . $repairTicket->ticket_id . ',ticket_id'],
+            'customer_address' => ['nullable', 'string', 'max:500'],
+            'customer_email' => ['nullable', 'email', 'max:255', 'unique:repair_tickets,customer_email,' . $repairTicket->ticket_id . ',ticket_id'],
+            'customer_source' => ['nullable', 'string', 'max:100'],
+            'service_name' => ['nullable', 'string', 'max:255'],
+            'service_fee' => ['nullable', 'numeric', 'min:0'],
+        ], [
+            'imei_serial.unique' => 'Mã IMEI / Serial này đã tồn tại trong hệ thống.',
+            'customer_phone.unique' => 'Số điện thoại này đã được sử dụng cho phiếu sửa chữa khác.',
+            'customer_email.unique' => 'Email này đã được sử dụng cho phiếu sửa chữa khác.',
+            'schedule_date.after_or_equal' => 'Ngày hẹn trả phải từ hôm nay trở đi.',
+            'imei_serial.required' => 'Vui lòng nhập mã IMEI / Serial.',
+            'issue_desc.required' => 'Vui lòng nhập mô tả lỗi.',
+            'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
+            'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
+            'customer_phone.regex' => 'Số điện thoại phải đúng 10 chữ số.',
+            'estimated_cost.required' => 'Vui lòng nhập chi phí dự kiến.',
+            'customer_email.email' => 'Email không đúng định dạng.',
+        ]);
+
+        $data['user_id'] = $data['user_id'] ?? null;
+        $data['technician_id'] = $data['technician_id'] ?? null;
+        $data['schedule_date'] = $data['schedule_date'] ?? null;
+        $data['customer_address'] = $data['customer_address'] ?? null;
+        $data['customer_email'] = $data['customer_email'] ?? null;
+        $data['customer_source'] = $data['customer_source'] ?? null;
+        $data['service_name'] = $data['service_name'] ?? null;
+        $data['service_fee'] = isset($data['service_fee']) && $data['service_fee'] !== '' ? $data['service_fee'] : 0;
+
+        $repairTicket->update($data);
+
+        return redirect()->route('admin.repair-tickets.index')->with('success', 'Đã cập nhật phiếu sửa chữa thành công.');
+    }
+
+    public function destroyTicket(RepairTicket $repairTicket): RedirectResponse
+    {
+        $repairTicket->delete();
+        return redirect()->route('admin.repair-tickets.index')->with('success', 'Đã xóa phiếu sửa chữa thành công.');
+    }
+
+    public function create(RepairTicket $repairTicket): View|RedirectResponse
+    {
+        if ($repairTicket->status !== 'Done') {
+            return redirect()->route('admin.repair-tickets.index')
+                ->with('error', 'Phiếu sửa chữa chưa hoàn thành. Chỉ xuất hóa đơn khi trạng thái là Đã hoàn thành (Done).');
+        }
+
         return view('admin.service-invoices.create', [
             'repairTicket' => $repairTicket,
             'prefill' => [
+                'invoice_no' => 'INV-' . now()->format('Ymd') . '-' . Str::upper(Str::random(6)),
                 'customer_name' => $repairTicket->customer_name,
                 'customer_phone' => $repairTicket->customer_phone,
+                'customer_email' => $repairTicket->customer_email,
+                'imei_serial' => $repairTicket->imei_serial,
                 'service_name' => $repairTicket->service_name,
                 'subtotal' => (float) $repairTicket->service_fee,
             ],
@@ -34,27 +155,31 @@ class RepairTicketInvoiceController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
+            'invoice_no' => ['required', 'string', 'max:50', 'unique:service_invoices,invoice_no'],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
             'customer_email' => ['nullable', 'email', 'max:255'],
+            'imei_serial' => ['nullable', 'string', 'max:255'],
             'service_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'subtotal' => ['required', 'numeric', 'min:0'],
-            'tax_amount' => ['nullable', 'numeric', 'min:0'],
+            'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'status' => ['required', 'in:draft,issued,paid,cancelled'],
         ]);
 
         $subtotal = (float) $data['subtotal'];
-        $taxAmount = (float) ($data['tax_amount'] ?? 0);
+        $vatRate = (float) ($data['vat_rate'] ?? 0);
+        $taxAmount = round(($subtotal * $vatRate) / 100, 2);
         $discountAmount = (float) ($data['discount_amount'] ?? 0);
         $totalAmount = max(0, $subtotal + $taxAmount - $discountAmount);
 
         $invoice = ServiceInvoice::create([
-            'invoice_no' => 'INV-' . now()->format('YmdHis') . '-' . Str::upper(Str::random(4)),
+            'invoice_no' => $data['invoice_no'],
             'customer_name' => $data['customer_name'],
             'customer_phone' => $data['customer_phone'] ?? null,
             'customer_email' => $data['customer_email'] ?? null,
+            'imei_serial' => $data['imei_serial'] ?? null,
             'service_name' => $data['service_name'],
             'description' => $data['description'] ?? null,
             'subtotal' => $subtotal,
@@ -76,6 +201,40 @@ class RepairTicketInvoiceController extends Controller
             }
         }
 
-        return redirect()->route('admin.service-invoices.show', $invoice)->with('success', 'Đã tạo hóa đơn dịch vụ.');
+        return redirect()->route('admin.service-invoices.show', $invoice)->with('success', 'Đã xuất hóa đơn dịch vụ thành công.');
+    }
+
+    public function searchByPhone(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $phone = $request->query('phone');
+        if (!$phone) {
+            return response()->json(null);
+        }
+
+        $ticket = RepairTicket::where('customer_phone', $phone)
+            ->whereNotNull('customer_name')
+            ->latest('ticket_id')
+            ->first();
+
+        if ($ticket) {
+            return response()->json([
+                'customer_name' => $ticket->customer_name,
+                'customer_address' => $ticket->customer_address,
+                'customer_email' => $ticket->customer_email,
+                'customer_source' => $ticket->customer_source,
+            ]);
+        }
+
+        $user = User::where('phone', $phone)->first();
+        if ($user) {
+            return response()->json([
+                'customer_name' => $user->full_name,
+                'customer_address' => $user->address,
+                'customer_email' => $user->email,
+                'customer_source' => null,
+            ]);
+        }
+
+        return response()->json(null);
     }
 }
