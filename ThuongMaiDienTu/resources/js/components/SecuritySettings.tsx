@@ -6,12 +6,15 @@ import {
     ShieldAlert,
     Smartphone,
     Monitor,
+    Tablet,
+    Laptop,
+    Terminal,
     KeyRound,
     Mail,
     LogOut,
-    CheckCircle2,
-    XCircle,
-    AlertTriangle,
+    CircleCheck,
+    CircleX,
+    TriangleAlert,
     ArrowLeft,
     Loader2
 } from 'lucide-react';
@@ -47,6 +50,29 @@ interface SecurityProps {
     tierColor: string;
 }
 
+const getDeviceIcon = (device: string, platform: string) => {
+    const p = (platform || '').toLowerCase();
+    const d = (device || '').toLowerCase();
+    
+    if (d.includes('ipad') || d.includes('tablet')) return <Tablet className="w-5 h-5" />;
+    if (d.includes('iphone') || p.includes('ios') || d.includes('phone') || p.includes('android') || d.includes('android')) return <Smartphone className="w-5 h-5" />;
+    if (d.includes('mac') || p.includes('mac') || p.includes('os x')) return <Laptop className="w-5 h-5" />;
+    if (p.includes('linux') || p.includes('ubuntu')) return <Terminal className="w-5 h-5" />;
+    return <Monitor className="w-5 h-5" />;
+};
+
+const getDeviceDisplayName = (session: Session) => {
+    let name = session.platform;
+    const p = (session.platform || '').toLowerCase();
+    const d = (session.device || '').toLowerCase();
+    
+    if (p.includes('win')) name = 'Windows PC';
+    else if (d.includes('mac') || p.includes('mac') || p.includes('os x')) name = 'MacBook / iMac';
+    else if (session.device && session.device !== 'WebKit' && session.device !== 'Unknown' && session.device !== '') name = session.device;
+    
+    return `${name} (${session.browser})`;
+};
+
 const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSessions, score, details, securityTier, tierColor }) => {
     const [is2faEnabled, setIs2faEnabled] = useState(user.is_2fa_enabled);
     const [isLoading2fa, setIsLoading2fa] = useState(false);
@@ -58,9 +84,12 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
     const [resendCooldown, setResendCooldown] = useState(0);
     const [expireCountdown, setExpireCountdown] = useState(0);
 
+    const [sessionToLogout, setSessionToLogout] = useState<string | null>(null);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
     useEffect(() => {
-        let resendTimer: NodeJS.Timeout;
-        let expireTimer: NodeJS.Timeout;
+        let resendTimer: ReturnType<typeof setInterval>;
+        let expireTimer: ReturnType<typeof setInterval>;
 
         if (showOtpModal) {
             if (resendCooldown > 0) {
@@ -134,22 +163,25 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
         }
     };
 
-    const handleLogoutSession = async (sessionId: string) => {
-        if (!confirm('Bạn có chắc chắn muốn đăng xuất khỏi thiết bị này?')) return;
-        
+    const handleLogoutSession = async (sessionId: string, isCurrentDevice: boolean) => {
+        setIsLoggingOut(true);
         try {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const res = await axios.post(`/security/session/${sessionId}`, {
-                _method: 'DELETE'
+                _method: 'DELETE',
+                is_current_device: isCurrentDevice
             }, {
                 headers: { 'X-CSRF-TOKEN': csrfToken }
             });
-            
+
             showToast('Đã đăng xuất thiết bị thành công.', 'success');
+            setSessionToLogout(null);
             setTimeout(() => window.location.reload(), 1000);
         } catch (error) {
             console.error("Lỗi đăng xuất:", error);
             showToast('Có lỗi xảy ra, vui lòng thử lại.', 'error');
+        } finally {
+            setIsLoggingOut(false);
         }
     };
 
@@ -169,7 +201,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
             {/* Toast Notification */}
             {toastMsg && (
                 <div className={`fixed top-6 right-6 z-[200] flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border bg-white dark:bg-slate-900 animate-in slide-in-from-right duration-300 ${toastMsg.type === 'success' ? 'border-green-100 dark:border-green-900/30' : 'border-rose-100 dark:border-rose-900/30'}`}>
-                    {toastMsg.type === 'success' ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <XCircle className="w-5 h-5 text-rose-500" />}
+                    {toastMsg.type === 'success' ? <CircleCheck className="w-5 h-5 text-green-500" /> : <CircleX className="w-5 h-5 text-rose-500" />}
                     <span className="font-bold text-sm text-slate-800 dark:text-white">{toastMsg.message}</span>
                 </div>
             )}
@@ -185,7 +217,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                         <p className="text-sm text-center text-slate-500 dark:text-slate-400 mb-8 px-4">
                             Vui lòng nhập mã OTP gồm 6 chữ số vừa được gửi đến email <strong>{user.email}</strong> để {is2faEnabled ? 'tắt' : 'bật'} 2FA.
                         </p>
-                        
+
                         <div className="mb-6">
                             <input
                                 type="text"
@@ -206,7 +238,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                             ) : (
                                 <p className="text-xs font-bold text-rose-500">Mã OTP đã hết hạn</p>
                             )}
-                            
+
                             <button
                                 onClick={() => handleToggleRequest(true)}
                                 disabled={resendCooldown > 0}
@@ -217,20 +249,56 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                         </div>
 
                         <div className="flex gap-3">
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 className="flex-1 h-12 rounded-xl font-bold border-slate-200"
                                 onClick={() => setShowOtpModal(false)}
                                 disabled={isConfirming}
                             >
                                 Hủy
                             </Button>
-                            <Button 
+                            <Button
                                 className="flex-1 h-12 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white"
                                 onClick={handleToggleConfirm}
                                 disabled={isConfirming || otp.length !== 6}
                             >
                                 {isConfirming ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Xác nhận'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Logout Confirmation Modal */}
+            {sessionToLogout && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-300">
+                        <div className="w-16 h-16 bg-rose-50 dark:bg-rose-900/30 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <LogOut className="w-8 h-8" />
+                        </div>
+                        <h2 className="text-xl font-black text-center text-slate-900 dark:text-white mb-2">Xác nhận đăng xuất</h2>
+                        <p className="text-sm text-center text-slate-500 dark:text-slate-400 mb-8 px-2">
+                            Bạn có chắc chắn muốn đăng xuất phiên hoạt động khỏi thiết bị này không?
+                        </p>
+                        
+                        <div className="flex gap-3">
+                            <Button 
+                                variant="outline" 
+                                className="flex-1 h-12 rounded-xl font-bold border-slate-200"
+                                onClick={() => setSessionToLogout(null)}
+                                disabled={isLoggingOut}
+                            >
+                                Hủy
+                            </Button>
+                            <Button 
+                                className="flex-1 h-12 rounded-xl font-bold bg-rose-600 hover:bg-rose-700 text-white"
+                                onClick={() => {
+                                    const currentSession = initialSessions.find(s => s.id === sessionToLogout);
+                                    handleLogoutSession(sessionToLogout, currentSession?.is_current_device || false);
+                                }}
+                                disabled={isLoggingOut}
+                            >
+                                {isLoggingOut ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Đăng xuất'}
                             </Button>
                         </div>
                     </div>
@@ -255,7 +323,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                         {/* Security Score Card */}
                         <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/10 rounded-full blur-[40px] -mr-10 -mt-10" />
-                            
+
                             <div className="flex items-center justify-between mb-8 relative z-10">
                                 <h3 className="text-base font-black text-slate-800 dark:text-white uppercase tracking-wider">Điểm bảo mật</h3>
                                 {score >= 90 ? <ShieldCheck className="w-8 h-8 text-green-500" /> : <ShieldAlert className="w-8 h-8 text-amber-500" />}
@@ -269,11 +337,11 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
 
                             <div className="space-y-4 relative z-10 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-3xl border border-slate-100 dark:border-slate-700">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Danh mục kiểm tra:</p>
-                                {Object.entries(details).map(([key, detail]) => (
+                                {(Object.entries(details) as [string, Detail][]).map(([key, detail]) => (
                                     <div key={key} className="flex items-start gap-3">
-                                        {detail.status === 'pass' && <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />}
-                                        {detail.status === 'fail' && <XCircle className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />}
-                                        {detail.status === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />}
+                                        {detail.status === 'pass' && <CircleCheck className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />}
+                                        {detail.status === 'fail' && <CircleX className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />}
+                                        {detail.status === 'warning' && <TriangleAlert className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />}
                                         <span className={`text-xs font-bold leading-tight ${detail.status === 'pass' ? 'text-slate-600 dark:text-slate-300' : 'text-slate-800 dark:text-white'}`}>
                                             {detail.label}
                                         </span>
@@ -285,7 +353,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                         {/* Quick Info Card */}
                         <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-indigo-500/30">
                             <h3 className="text-xs font-black uppercase tracking-widest opacity-80 mb-6">Thông tin liên kết</h3>
-                            
+
                             <div className="space-y-6">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
@@ -327,7 +395,7 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                                 </div>
 
                                 <div className="shrink-0 flex flex-col items-center gap-2">
-                                    <button 
+                                    <button
                                         onClick={() => handleToggleRequest(false)}
                                         disabled={isLoading2fa}
                                         className={`relative inline-flex h-10 w-20 items-center rounded-full transition-colors duration-300 focus:outline-none ${is2faEnabled ? 'bg-green-500 shadow-lg shadow-green-500/30' : 'bg-slate-300 dark:bg-slate-700'}`}
@@ -357,12 +425,12 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                                 {initialSessions.map((session) => (
                                     <div key={session.id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-[1.5rem] border transition-all ${session.is_current_device ? 'bg-indigo-50/50 border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-900/30' : 'bg-white border-slate-100 dark:bg-slate-800/30 dark:border-slate-800'}`}>
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                                                {session.device === 'iPhone' || session.device === 'Điện thoại Android' ? <Smartphone className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
+                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${session.is_current_device ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                                                {getDeviceIcon(session.device, session.platform)}
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <h4 className="text-sm font-black text-slate-800 dark:text-white">{session.platform} ({session.browser})</h4>
+                                                    <h4 className="text-sm font-black text-slate-800 dark:text-white">{getDeviceDisplayName(session)}</h4>
                                                     {session.is_current_device && (
                                                         <span className="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-[9px] font-black uppercase tracking-wider">Thiết bị này</span>
                                                     )}
@@ -370,16 +438,14 @@ const SecuritySettings: React.FC<SecurityProps> = ({ user, sessions: initialSess
                                                 <p className="text-[11px] font-bold text-slate-400">IP: {session.ip_address} • {session.last_active}</p>
                                             </div>
                                         </div>
-                                        
-                                        {!session.is_current_device && (
-                                            <Button 
-                                                variant="outline"
-                                                onClick={() => handleLogoutSession(session.id)}
-                                                className="rounded-xl h-10 px-4 text-rose-500 border-rose-100 hover:bg-rose-50 hover:border-rose-200 dark:border-rose-900/30 dark:hover:bg-rose-900/20 font-bold text-xs"
-                                            >
-                                                <LogOut className="w-3.5 h-3.5 mr-2" /> Đăng xuất
-                                            </Button>
-                                        )}
+
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setSessionToLogout(session.id)}
+                                            className="rounded-xl h-10 px-4 text-rose-500 border-rose-100 hover:bg-rose-50 hover:border-rose-200 dark:border-rose-900/30 dark:hover:bg-rose-900/20 font-bold text-xs"
+                                        >
+                                            <LogOut className="w-3.5 h-3.5 mr-2" /> Đăng xuất
+                                        </Button>
                                     </div>
                                 ))}
                             </div>
