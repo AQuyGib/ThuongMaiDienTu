@@ -140,16 +140,12 @@
 </div>
 
 <!-- Create Notification Modal -->
-<div id="createNotificationModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <!-- Backdrop -->
-        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeCreateModal()"></div>
+<div id="createNotificationModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeCreateModal()"></div>
 
-        <!-- Trick browser to center content -->
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-        <!-- Modal panel -->
-        <div class="inline-block align-middle bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle w-full sm:max-w-4xl border border-slate-100">
+    <!-- Modal panel -->
+    <div class="relative bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all border border-slate-100 w-full md:w-3/4 max-w-4xl z-10 my-auto">
             <!-- Header -->
             <div class="px-8 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div>
@@ -394,6 +390,7 @@ function openCreateModal() {
     const modal = document.getElementById('createNotificationModal');
     if (modal) {
         modal.classList.remove('hidden');
+        modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
     }
 }
@@ -402,6 +399,7 @@ function closeCreateModal() {
     const modal = document.getElementById('createNotificationModal');
     if (modal) {
         modal.classList.add('hidden');
+        modal.classList.remove('flex');
         document.body.style.overflow = '';
     }
 }
