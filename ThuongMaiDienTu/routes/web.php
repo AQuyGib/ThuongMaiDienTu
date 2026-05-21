@@ -120,6 +120,12 @@ Route::get('/search', [SearchController::class, 'index'])->name('search.index');
 Route::get('/api/search/suggestions', [SearchController::class, 'suggestions'])->name('api.search.suggestions');
 Route::get('/api/category-products/{id}', [SearchController::class, 'getProductsByCategory'])->name('api.category.products');
 
+// Warranty Lookup (Tra cứu bảo hành)
+use App\Http\Controllers\Frontend\WarrantyController;
+Route::get('/warranty', [WarrantyController::class, 'index'])->name('warranty.index');
+Route::post('/warranty/lookup', [WarrantyController::class, 'lookup'])->name('warranty.lookup');
+Route::get('/return-policy', [WarrantyController::class, 'returnPolicy'])->name('warranty.return');
+
 // Product Compare (So sánh sản phẩm)
 use App\Http\Controllers\CompareController;
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');

@@ -737,6 +737,9 @@
                 <div class="profile-nav-item" onclick="switchTab('login-history-tab', this)">
                     <i class="fa-solid fa-shield-halved"></i> Lịch sử đăng nhập
                 </div>
+                <a href="{{ route('warranty.index') }}" class="profile-nav-item" style="text-decoration:none;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Tra cứu bảo hành
+                </a>
                 <div class="nav-divider"></div>
                 <form action="{{ route('logout') ?? '/logout' }}" method="POST">
                     @csrf
