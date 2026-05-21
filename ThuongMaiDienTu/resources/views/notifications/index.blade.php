@@ -8,10 +8,10 @@
         <div>
             <p class="notification-hero-kicker">Trung tâm thông báo</p>
             <h1 class="notification-hero-title">Thông báo của tôi</h1>
-            <p class="notification-hero-subtitle">Bạn có {{ $unreadCount }} thông báo chưa đọc. Xem nhanh, lọc nhanh và không bỏ lỡ ưu đãi quan trọng.</p>
+            <p class="notification-hero-subtitle">Bạn có <span id="unreadCountText">{{ $unreadCount }}</span> thông báo chưa đọc. Xem nhanh, lọc nhanh và không bỏ lỡ ưu đãi quan trọng.</p>
         </div>
         <div class="notification-hero-actions">
-            <form method="POST" action="{{ route('notifications.read-all') }}">
+            <form method="POST" action="{{ route('notifications.read-all') }}" id="formReadAllNotifications">
                 @csrf
                 <button type="submit" class="btn-primary-soft">
                     <i class="fa-solid fa-check-double"></i>
@@ -85,7 +85,7 @@
                             <a href="{{ $notification->action_url }}" class="btn-outline-soft">Xem chi tiết</a>
                         @endif
                         @unless($notification->read_at)
-                            <form method="POST" action="{{ route('notifications.read', $notification->notification_id) }}">
+                            <form method="POST" action="{{ route('notifications.read', $notification->notification_id) }}" class="form-mark-read-ajax">
                                 @csrf
                                 @method('PATCH')
                                 <button type="submit" class="btn-success-soft">Đã đọc</button>
@@ -211,4 +211,120 @@
 }
 </style>
 @endpush
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Xử lý nút "Đã đọc" của từng thông báo riêng lẻ
+    const markReadForms = document.querySelectorAll('.form-mark-read-ajax');
+    markReadForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const actionUrl = this.getAttribute('action');
+            const card = this.closest('.notification-card');
+            
+            fetch(actionUrl, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok.');
+            })
+            .then(data => {
+                if (card) {
+                    card.classList.remove('is-unread');
+                    const badge = card.querySelector('.notification-badge');
+                    if (badge) {
+                        badge.remove();
+                    }
+                }
+                this.remove();
+                
+                const unreadCountText = document.getElementById('unreadCountText');
+                if (unreadCountText) {
+                    let currentCount = parseInt(unreadCountText.textContent) || 0;
+                    if (currentCount > 0) {
+                        currentCount--;
+                        unreadCountText.textContent = currentCount;
+                    }
+                }
+                
+                const headerBadge = document.getElementById('notificationBadge');
+                if (headerBadge) {
+                    let headerCount = parseInt(headerBadge.textContent) || 0;
+                    if (headerCount > 0) {
+                        headerCount--;
+                        headerBadge.textContent = headerCount;
+                        if (headerCount === 0) {
+                            headerBadge.style.display = 'none';
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi khi đánh dấu đã đọc:', error);
+            });
+        });
+    });
+
+    // 2. Xử lý nút "Đánh dấu tất cả đã đọc"
+    const readAllForm = document.getElementById('formReadAllNotifications');
+    if (readAllForm) {
+        readAllForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const actionUrl = this.getAttribute('action');
+
+            fetch(actionUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                throw new Error('Network response was not ok.');
+            })
+            .then(data => {
+                const unreadCards = document.querySelectorAll('.notification-card.is-unread');
+                unreadCards.forEach(card => {
+                    card.classList.remove('is-unread');
+                    const badge = card.querySelector('.notification-badge');
+                    if (badge) {
+                        badge.remove();
+                    }
+                });
+
+                const individualForms = document.querySelectorAll('.form-mark-read-ajax');
+                individualForms.forEach(form => form.remove());
+
+                const unreadCountText = document.getElementById('unreadCountText');
+                if (unreadCountText) {
+                    unreadCountText.textContent = '0';
+                }
+
+                const headerBadge = document.getElementById('notificationBadge');
+                if (headerBadge) {
+                    headerBadge.textContent = '0';
+                    headerBadge.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi khi đánh dấu tất cả đã đọc:', error);
+            });
+        });
+    }
+});
+</script>
 @endsection

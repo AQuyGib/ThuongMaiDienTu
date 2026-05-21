@@ -195,7 +195,7 @@
                         </div>
                         <div class="notification-dropdown-body">
                             @forelse($headerNotifications as $notification)
-                                <a href="{{ $notification->action_url ?: route('notifications.index') }}" class="notification-dropdown-item {{ $notification->read_at ? '' : 'unread' }}">
+                                <a href="javascript:void(0)" data-id="{{ $notification->notification_id }}" data-read-url="{{ route('notifications.read', $notification->notification_id) }}" data-action-url="{{ $notification->action_url ?: route('notifications.index') }}" class="notification-dropdown-item {{ $notification->read_at ? '' : 'unread' }}">
                                     <div class="notification-dot"></div>
                                     <div class="notification-content">
                                         <div class="notification-title">{{ $notification->title }}</div>
@@ -250,6 +250,41 @@
 
                         refreshNotifications();
                         setInterval(refreshNotifications, 30000); // every 30 seconds
+
+                        // Handle click on notification dropdown items via AJAX
+                        const dropdownContainer = document.querySelector('.notification-dropdown-body');
+                        if (dropdownContainer) {
+                            dropdownContainer.addEventListener('click', function(e) {
+                                const item = e.target.closest('.notification-dropdown-item');
+                                if (!item) return;
+
+                                e.preventDefault();
+                                const actionUrl = item.getAttribute('data-action-url');
+                                const readUrl = item.getAttribute('data-read-url');
+                                const isUnread = item.classList.contains('unread');
+
+                                if (isUnread && readUrl) {
+                                    fetch(readUrl, {
+                                        method: 'PATCH',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Accept': 'application/json',
+                                            'X-Requested-With': 'XMLHttpRequest',
+                                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                        }
+                                    })
+                                    .then(() => {
+                                        window.location.href = actionUrl;
+                                    })
+                                    .catch((err) => {
+                                        console.error('Error marking notification as read:', err);
+                                        window.location.href = actionUrl;
+                                    });
+                                } else {
+                                    window.location.href = actionUrl;
+                                }
+                            });
+                        }
                     }
                 });
             </script>

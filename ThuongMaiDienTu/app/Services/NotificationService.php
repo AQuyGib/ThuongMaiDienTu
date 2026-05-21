@@ -41,13 +41,32 @@ class NotificationService
     public function createForUsers(iterable $users, array $payload): int
     {
         $count = 0;
-
-        foreach ($users as $user) {
-            if ($user instanceof User) {
-                $this->createForUser($user, $payload);
-                $count++;
+        $now = Carbon::now();
+        
+        $usersCollection = collect($users);
+        
+        $usersCollection->chunk(1000)->each(function ($chunk) use ($payload, $now, &$count) {
+            $insertData = [];
+            foreach ($chunk as $user) {
+                if ($user instanceof User) {
+                    $insertData[] = [
+                        'user_id' => $user->user_id,
+                        'type' => $payload['type'],
+                        'title' => $payload['title'],
+                        'content' => $payload['content'],
+                        'data' => isset($payload['data']) ? json_encode($payload['data']) : null,
+                        'action_url' => $payload['action_url'] ?? null,
+                        'read_at' => $payload['read_at'] ?? null,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                    $count++;
+                }
             }
-        }
+            if (!empty($insertData)) {
+                Notification::insert($insertData);
+            }
+        });
 
         return $count;
     }

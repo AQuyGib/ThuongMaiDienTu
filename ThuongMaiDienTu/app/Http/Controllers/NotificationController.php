@@ -31,18 +31,26 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function markAsRead(Notification $notification, Request $request): RedirectResponse
+    public function markAsRead(Notification $notification, Request $request)
     {
-        abort_unless($notification->user_id === $request->user()->user_id, 403);
+        abort_unless((int)$notification->user_id === (int)$request->user()->user_id, 403);
 
         $this->notificationService->markAsRead($notification);
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Đã đánh dấu thông báo là đã đọc.']);
+        }
 
         return back()->with('success', 'Đã đánh dấu thông báo là đã đọc.');
     }
 
-    public function markAllAsRead(Request $request): RedirectResponse
+    public function markAllAsRead(Request $request)
     {
         $this->notificationService->markAllAsRead($request->user());
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Đã đánh dấu tất cả thông báo là đã đọc.']);
+        }
 
         return back()->with('success', 'Đã đánh dấu tất cả thông báo là đã đọc.');
     }

@@ -11,6 +11,7 @@ use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class NotificationCampaignController extends Controller
@@ -54,45 +55,61 @@ class NotificationCampaignController extends Controller
             $query->whereDate('created_at', '<=', $to);
         }
 
-        $chartStart = Carbon::now()->subDays(29)->startOfDay();
-        $dailyStats = Notification::query()
-            ->selectRaw('DATE(created_at) as date, COUNT(*) as total')
-            ->where('created_at', '>=', $chartStart)
-            ->groupBy('date')
-            ->orderBy('date')
-            ->pluck('total', 'date');
+        $cacheData = Cache::remember('admin_notifications_index_stats_and_charts', 3600, function () {
+            $chartStart = Carbon::now()->subDays(29)->startOfDay();
+            $dailyStats = Notification::query()
+                ->selectRaw('DATE(created_at) as date, COUNT(*) as total')
+                ->where('created_at', '>=', $chartStart)
+                ->groupBy('date')
+                ->orderBy('date')
+                ->pluck('total', 'date');
 
-        $dailyLabels = [];
-        $dailyValues = [];
-        for ($i = 29; $i >= 0; $i--) {
-            $date = now()->subDays($i)->format('Y-m-d');
-            $dailyLabels[] = now()->subDays($i)->format('d/m');
-            $dailyValues[] = (int) ($dailyStats[$date] ?? 0);
-        }
+            $dailyLabels = [];
+            $dailyValues = [];
+            for ($i = 29; $i >= 0; $i--) {
+                $date = now()->subDays($i)->format('Y-m-d');
+                $dailyLabels[] = now()->subDays($i)->format('d/m');
+                $dailyValues[] = (int) ($dailyStats[$date] ?? 0);
+            }
 
-        $monthlyStats = Notification::query()
-            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as total")
-            ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
-            ->groupBy('month')
-            ->orderBy('month')
-            ->pluck('total', 'month');
+            $monthlyStats = Notification::query()
+                ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as total")
+                ->where('created_at', '>=', now()->subMonths(11)->startOfMonth())
+                ->groupBy('month')
+                ->orderBy('month')
+                ->pluck('total', 'month');
 
-        $monthlyLabels = [];
-        $monthlyValues = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $month = now()->subMonths($i)->format('Y-m');
-            $monthlyLabels[] = now()->subMonths($i)->format('m/Y');
-            $monthlyValues[] = (int) ($monthlyStats[$month] ?? 0);
-        }
+            $monthlyLabels = [];
+            $monthlyValues = [];
+            for ($i = 11; $i >= 0; $i--) {
+                $month = now()->subMonths($i)->format('Y-m');
+                $monthlyLabels[] = now()->subMonths($i)->format('m/Y');
+                $monthlyValues[] = (int) ($monthlyStats[$month] ?? 0);
+            }
 
-        return view('admin.notifications.index', [
-            'notifications' => $query->paginate(20)->withQueryString(),
-            'stats' => [
+            $stats = [
                 'total' => Notification::count(),
                 'unread' => Notification::unread()->count(),
                 'promo' => Notification::whereIn('type', ['promotion.auto', 'promotion.auto_updated', 'promotion.product_discount'])->count(),
                 'manual' => Notification::where('type', 'admin.manual_campaign')->count(),
-            ],
+            ];
+
+            return [
+                'dailyChart' => [
+                    'labels' => $dailyLabels,
+                    'values' => $dailyValues,
+                ],
+                'monthlyChart' => [
+                    'labels' => $monthlyLabels,
+                    'values' => $monthlyValues,
+                ],
+                'stats' => $stats,
+            ];
+        });
+
+        return view('admin.notifications.index', [
+            'notifications' => $query->paginate(20)->withQueryString(),
+            'stats' => $cacheData['stats'],
             'selectedType' => $type,
             'selectedRead' => $read,
             'typeOptions' => [
@@ -107,14 +124,8 @@ class NotificationCampaignController extends Controller
                 'review.created' => 'Review mới',
                 'inventory.low_stock' => 'Tồn kho thấp',
             ],
-            'dailyChart' => [
-                'labels' => $dailyLabels,
-                'values' => $dailyValues,
-            ],
-            'monthlyChart' => [
-                'labels' => $monthlyLabels,
-                'values' => $monthlyValues,
-            ],
+            'dailyChart' => $cacheData['dailyChart'],
+            'monthlyChart' => $cacheData['monthlyChart'],
             'promoItems' => CouponFlashSale::query()->orderByDesc('promo_id')->limit(20)->get(),
             'products' => Product::query()->orderByDesc('product_id')->limit(20)->get(),
         ]);
@@ -122,11 +133,14 @@ class NotificationCampaignController extends Controller
 
     public function dashboard(): View
     {
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
         $stats = [
             'total' => Notification::count(),
             'unread' => Notification::unread()->count(),
             'today' => Notification::whereDate('created_at', now()->toDateString())->count(),
-            'month' => Notification::whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count(),
+            'month' => Notification::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count(),
         ];
 
         $topTypes = Notification::query()
@@ -282,30 +296,52 @@ class NotificationCampaignController extends Controller
     {
         $threshold = 10;
         $variants = \App\Models\ProductVariant::query()
-            ->with(['product', 'inventoryItems'])
-            ->get()
-            ->filter(function ($variant) use ($threshold) {
-                $stock = $variant->inventoryItems->count();
-                return $stock > 0 && $stock <= $threshold;
-            });
+            ->with(['product'])
+            ->withCount('inventoryItems')
+            ->having('inventory_items_count', '>', 0)
+            ->having('inventory_items_count', '<=', $threshold)
+            ->get();
 
+        $admins = User::query()->whereIn('role_id', [1, 2, 4])->get();
+        $insertData = [];
+        $now = Carbon::now();
         $count = 0;
+
         foreach ($variants as $variant) {
+            $stock = (int) $variant->inventory_items_count;
             $adminPayload = [
                 'type' => 'inventory.low_stock',
                 'title' => 'Tồn kho thấp: ' . ($variant->product->name ?? 'Sản phẩm'),
-                'content' => 'Biến thể ' . $variant->label . ' hiện chỉ còn ' . $variant->inventoryItems->count() . ' sản phẩm trong kho.',
+                'content' => 'Biến thể ' . $variant->label . ' hiện chỉ còn ' . $stock . ' sản phẩm trong kho.',
                 'action_url' => url('/admin/products/' . ($variant->product->product_id ?? 0)),
-                'data' => [
+                'data' => json_encode([
                     'product_id' => $variant->product_id,
                     'variant_id' => $variant->variant_id,
-                    'stock' => $variant->inventoryItems->count(),
+                    'stock' => $stock,
                     'threshold' => $threshold,
-                ],
+                ]),
             ];
 
-            $this->notificationService->notifyAdmins($adminPayload);
+            foreach ($admins as $admin) {
+                $insertData[] = [
+                    'user_id' => $admin->user_id,
+                    'type' => $adminPayload['type'],
+                    'title' => $adminPayload['title'],
+                    'content' => $adminPayload['content'],
+                    'action_url' => $adminPayload['action_url'],
+                    'data' => $adminPayload['data'],
+                    'read_at' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
             $count++;
+        }
+
+        if (!empty($insertData)) {
+            collect($insertData)->chunk(1000)->each(function ($chunk) {
+                Notification::insert($chunk->toArray());
+            });
         }
 
         return back()->with('success', 'Đã kiểm tra tồn kho thấp cho ' . $count . ' biến thể.');
