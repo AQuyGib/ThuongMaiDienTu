@@ -205,19 +205,97 @@
         margin-bottom:14px;
         opacity:.35;
     }
-    .pagination .page-link{
-        background:#fff;
-        border:1px solid #dbe3ee;
-        color:#475569;
-        border-radius:10px!important;
-        margin:0 3px;
-        font-size:.85rem;
-        padding:7px 13px;
+    /* Pagination CSS Fallback matching User Management style */
+    .table-card nav {
+        padding: 24px;
+        border-top: 1px solid #eef2f7;
+        background-color: #ffffff;
     }
-    .pagination .page-link:hover,.pagination .page-item.active .page-link{
-        background:#2563eb;
-        border-color:#2563eb;
-        color:#fff;
+    
+    /* Hide the mobile-only pagination wrapper in Laravel's markup */
+    .table-card nav > div:first-child {
+        display: none !important;
+    }
+    
+    /* Desktop pagination wrapper */
+    .table-card nav > div:last-child {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+    
+    /* Left side: Results info */
+    .table-card nav p.text-sm {
+        margin: 0 !important;
+        font-size: 0.85rem !important;
+        font-weight: 700 !important;
+        color: #64748b !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        background: #ffffff;
+        padding: 10px 18px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    
+    /* Right side: Page selection numbers */
+    .pagination {
+        display: flex !important;
+        list-style: none !important;
+        padding-left: 0 !important;
+        margin: 0 !important;
+        gap: 6px !important;
+        align-items: center !important;
+    }
+    
+    .page-item {
+        display: inline-block !important;
+    }
+    
+    .page-link, .page-item span {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 8px 14px !important;
+        font-size: 0.875rem !important;
+        font-weight: 700 !important;
+        color: #475569 !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        text-decoration: none !important;
+        transition: all 0.2s !important;
+        min-width: 40px !important;
+        height: 40px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    
+    .page-link:hover {
+        background: #f8fafc !important;
+        color: #2563eb !important;
+        border-color: #cbd5e1 !important;
+        transform: translateY(-1px);
+    }
+    
+    /* Active page item */
+    .page-item.active .page-link, .page-item.active span {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.25) !important;
+    }
+    
+    /* Disabled pagination buttons */
+    .page-item.disabled .page-link, .page-item.disabled span {
+        color: #94a3b8 !important;
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        pointer-events: none !important;
+        cursor: not-allowed !important;
+        box-shadow: none !important;
     }
     .form-select-sm{
         background:#fff;
@@ -386,11 +464,25 @@
                 </thead>
                 <tbody>
                     @forelse($productStats as $index => $product)
-                        <tr>
+                        @php
+                            $isLowStock = $product->in_stock_count <= ($product->safe_stock ?? 5);
+                        @endphp
+                        <tr style="{{ $isLowStock ? 'background-color: rgba(239, 68, 68, 0.08);' : '' }}">
                             <td><span class="id-badge">{{ $index + 1 }}</span></td>
-                            <td><strong>{{ $product->name }}</strong></td>
+                            <td>
+                                <strong>{{ $product->name }}</strong>
+                                @if($isLowStock)
+                                    <span class="badge bg-danger ms-2"><i class="bi bi-exclamation-triangle-fill"></i> Cần thu mua (Tối thiểu: {{ $product->safe_stock ?? 5 }})</span>
+                                @endif
+                            </td>
                             <td class="text-center">{{ $product->variant_count }}</td>
-                            <td class="text-center">{{ $product->in_stock_count }}</td>
+                            <td class="text-center font-weight-bold">
+                                @if($isLowStock)
+                                    <span class="text-danger font-weight-bold" style="font-weight: 800;">{{ $product->in_stock_count }}</span>
+                                @else
+                                    {{ $product->in_stock_count }}
+                                @endif
+                            </td>
                             <td class="text-center">{{ $product->sold_count }}</td>
                             <td class="text-center">{{ $product->defective_count }}</td>
                             <td class="text-center"><span class="id-badge">{{ $product->total_items }}</span></td>

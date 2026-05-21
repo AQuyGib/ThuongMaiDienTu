@@ -193,6 +193,7 @@
                             @endif
                             <th>Giá +</th>
                             <th>Tổng Giá</th>
+                            <th>Tồn An Toàn</th>
                             <th>Ảnh</th>
                             <th style="width:100px;text-align:center;">Thao Tác</th>
                         </tr>
@@ -222,6 +223,7 @@
                                 @endif
                                 <td><span class="extra-price">+{{ number_format($variant->extra_price, 0, ',', '.') }}₫</span></td>
                                 <td><span class="total-price">{{ number_format($product->base_price + $variant->extra_price, 0, ',', '.') }}₫</span></td>
+                                <td><span class="badge bg-secondary">{{ $variant->safe_stock ?? 5 }}</span></td>
                                 <td>
                                     @if($variant->image_url)
                                         <img src="{{ $variant->image_url }}" class="variant-img" alt="variant" onerror="this.style.display='none'">
@@ -231,7 +233,7 @@
                                 <td class="text-center">
                                     <div class="d-flex gap-1 justify-content-center">
                                         <button class="btn-action edit" title="Sửa"
-                                            onclick="openEditVariant({{ $variant->variant_id }}, '{{ addslashes($variant->color ?? '') }}', '{{ addslashes($variant->ram ?? '') }}', '{{ addslashes($variant->rom_capacity ?? '') }}', '{{ addslashes($variant->cpu_chip ?? '') }}', '{{ addslashes($variant->gpu_chip ?? '') }}', {{ $variant->extra_price }}, '{{ addslashes($variant->image_url ?? '') }}')">
+                                            onclick="openEditVariant({{ $variant->variant_id }}, '{{ addslashes($variant->color ?? '') }}', '{{ addslashes($variant->ram ?? '') }}', '{{ addslashes($variant->rom_capacity ?? '') }}', '{{ addslashes($variant->cpu_chip ?? '') }}', '{{ addslashes($variant->gpu_chip ?? '') }}', {{ $variant->extra_price }}, '{{ addslashes($variant->image_url ?? '') }}', {{ $variant->safe_stock ?? 5 }})">
                                             <i class="bi bi-pencil-fill"></i>
                                         </button>
                                         <button class="btn-action delete" title="Xóa"
@@ -293,9 +295,13 @@
                                 <input type="text" name="gpu_chip" class="form-control" placeholder="VD: RTX 4060, Apple GPU 10-core..." maxlength="100">
                             </div>
                             @endif
-                            <div class="{{ $hasRamRom || $hasCpuGpu ? 'col-md-6' : 'col-md-12' }}">
+                            <div class="col-md-6">
                                 <label class="form-label">Giá Cộng Thêm (₫) <span style="color:var(--danger);">*</span></label>
                                 <input type="number" name="extra_price" class="form-control" placeholder="0" required min="0" value="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tồn Kho An Toàn <span style="color:var(--danger);">*</span></label>
+                                <input type="number" name="safe_stock" class="form-control" placeholder="5" required min="0" value="5">
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Ảnh Biến Thể</label>
@@ -371,9 +377,13 @@
                                 <input type="text" name="gpu_chip" id="evGpu" class="form-control" maxlength="100">
                             </div>
                             @endif
-                            <div class="{{ $hasRamRom || $hasCpuGpu ? 'col-md-6' : 'col-md-12' }}">
+                            <div class="col-md-6">
                                 <label class="form-label">Giá Cộng Thêm (₫) <span style="color:var(--danger);">*</span></label>
                                 <input type="number" name="extra_price" id="evPrice" class="form-control" required min="0">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tồn Kho An Toàn <span style="color:var(--danger);">*</span></label>
+                                <input type="number" name="safe_stock" id="evSafeStock" class="form-control" required min="0">
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Ảnh Biến Thể</label>
@@ -484,7 +494,7 @@
         });
 
         // ===== Edit Variant Modal =====
-        function openEditVariant(id, color, ram, rom, cpu, gpu, price, imageUrl) {
+        function openEditVariant(id, color, ram, rom, cpu, gpu, price, imageUrl, safeStock) {
             document.getElementById('evColor').value = color;
             const evRam = document.getElementById('evRam');
             const evRom = document.getElementById('evRom');
@@ -495,6 +505,7 @@
             if (evCpu) evCpu.value = cpu;
             if (evGpu) evGpu.value = gpu;
             document.getElementById('evPrice').value = price;
+            document.getElementById('evSafeStock').value = safeStock !== undefined ? safeStock : 5;
             document.getElementById('evImage').value = '';
 
             // Show current image

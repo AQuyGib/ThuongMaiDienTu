@@ -225,7 +225,7 @@
                                             <i class="bi bi-eye-fill"></i>
                                         </a>
                                         <button class="btn-action edit" title="Sửa"
-                                            onclick="openEditModal({{ $product->product_id }}, '{{ addslashes($product->name) }}', {{ $product->category_id }}, {{ $product->base_price }}, '{{ addslashes($product->seo_description ?? '') }}')">
+                                            onclick="openEditModal({{ $product->product_id }}, '{{ addslashes($product->name) }}', {{ $product->category_id }}, {{ $product->base_price }}, '{{ addslashes($product->seo_description ?? '') }}', {{ $product->safe_stock ?? 5 }})">
                                             <i class="bi bi-pencil-fill"></i>
                                         </button>
                                         <button class="btn-action delete" title="Xóa"
@@ -291,6 +291,10 @@
                                 <label class="form-label">Thương Hiệu <span style="color:var(--text-secondary);font-weight:400;">(Tùy chọn)</span></label>
                                 <input type="text" name="brand" class="form-control" placeholder="VD: Apple, Samsung..." maxlength="100">
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tồn Kho An Toàn <span style="color:var(--danger);">*</span></label>
+                                <input type="number" name="safe_stock" class="form-control" placeholder="VD: 5" required min="0" value="5">
+                            </div>
                             <div class="col-12">
                                 <label class="form-label">Mô Tả SEO <span style="color:var(--text-secondary);font-weight:400;">(Tùy chọn)</span></label>
                                 <textarea name="seo_description" class="form-control" rows="2" placeholder="Nhập mô tả ngắn cho SEO..." maxlength="255"></textarea>
@@ -354,6 +358,10 @@
                                 <label class="form-label">Thương Hiệu <span style="color:var(--text-secondary);font-weight:400;">(Tùy chọn)</span></label>
                                 <input type="text" name="brand" id="editBrand" class="form-control" placeholder="VD: Apple, Samsung..." maxlength="100">
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tồn Kho An Toàn <span style="color:var(--danger);">*</span></label>
+                                <input type="number" name="safe_stock" id="editSafeStock" class="form-control" placeholder="VD: 5" required min="0">
+                            </div>
                             <div class="col-12">
                                 <label class="form-label">Mô Tả SEO <span style="color:var(--text-secondary);font-weight:400;">(Tùy chọn)</span></label>
                                 <textarea name="seo_description" id="editSeoDesc" class="form-control" rows="2" placeholder="Nhập mô tả ngắn cho SEO..." maxlength="255"></textarea>
@@ -394,12 +402,13 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // ===== Mở modal Sửa =====
-        function openEditModal(id, name, categoryId, price, seoDesc) {
+        function openEditModal(id, name, categoryId, price, seoDesc, safeStock) {
             document.getElementById('editName').value = name;
             document.getElementById('editCategoryId').value = categoryId;
             document.getElementById('editPrice').value = price;
             document.getElementById('editSeoDesc').value = seoDesc || '';
             document.getElementById('editBrand').value = '';
+            document.getElementById('editSafeStock').value = safeStock !== undefined ? safeStock : 5;
 
             const form = document.getElementById('editForm');
             form.action = "{{ url('admin/products') }}/" + id;
