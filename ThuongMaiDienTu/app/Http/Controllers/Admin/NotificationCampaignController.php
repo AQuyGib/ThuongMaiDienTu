@@ -161,6 +161,34 @@ class NotificationCampaignController extends Controller
         ]);
     }
 
+    public function searchPromo(Request $request)
+    {
+        $query = $request->get('q');
+        $promos = CouponFlashSale::query()
+            ->where('code', 'LIKE', "%{$query}%")
+            ->orWhere('promo_type', 'LIKE', "%{$query}%")
+            ->orWhere('promo_id', 'LIKE', "%{$query}%")
+            ->limit(10)
+            ->get();
+
+        return response()->json($promos);
+    }
+
+    public function searchUsers(Request $request)
+    {
+        $query = $request->get('q');
+        $users = User::query()
+            ->where(function($q) use ($query) {
+                $q->where('full_name', 'LIKE', "%{$query}%")
+                  ->orWhere('email', 'LIKE', "%{$query}%")
+                  ->orWhere('user_id', 'LIKE', "%{$query}%");
+            })
+            ->limit(10)
+            ->get(['user_id', 'full_name', 'email']);
+
+        return response()->json($users);
+    }
+
     public function show(Notification $notification): View
     {
         if (is_null($notification->read_at)) {
@@ -183,7 +211,9 @@ class NotificationCampaignController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'target' => ['required', 'in:admins,users,all'],
+            'target' => ['required', 'in:admins,users,all,specific'],
+            'user_ids' => ['required_if:target,specific', 'array'],
+            'user_ids.*' => ['integer', 'exists:users,user_id'],
             'title' => ['required', 'string', 'max:255'],
             'content' => ['required', 'string', 'max:1000'],
             'action_url' => ['nullable', 'string', 'max:255'],
@@ -191,11 +221,15 @@ class NotificationCampaignController extends Controller
             'promo_id' => ['nullable', 'integer', 'exists:coupons_flash_sales,promo_id'],
         ]);
 
-        $users = match ($data['target']) {
-            'admins' => User::query()->whereIn('role_id', [1, 2, 4])->get(),
-            'users' => User::query()->whereNotIn('role_id', [1, 2, 4])->get(),
-            default => User::query()->get(),
-        };
+        if ($data['target'] === 'specific') {
+            $users = User::query()->whereIn('user_id', $data['user_ids'])->get();
+        } else {
+            $users = match ($data['target']) {
+                'admins' => User::query()->whereIn('role_id', [1, 2, 4])->get(),
+                'users' => User::query()->whereNotIn('role_id', [1, 2, 4])->get(),
+                default => User::query()->get(),
+            };
+        }
 
         foreach ($users as $user) {
             $this->notificationService->createForUser($user, [
