@@ -119,18 +119,14 @@
                                     <i class="fa-solid fa-download"></i>
                                 </x-ui.button>
                                 
-                                <form action="{{ route('admin.service-invoices.destroy', $invoice) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa hóa đơn dịch vụ này?')" class="inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <x-ui.button 
-                                        variant="danger" 
-                                        class="!px-2.5 !py-1.5 !text-xs" 
-                                        type="submit" 
-                                        title="Xóa hóa đơn"
-                                    >
-                                        <i class="fa-solid fa-trash"></i>
-                                    </x-ui.button>
-                                </form>
+                                <button 
+                                    type="button"
+                                    class="inline-flex items-center gap-1 rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-red-700 transition"
+                                    title="Xóa hóa đơn"
+                                    onclick="openDeleteModal('{{ route('admin.service-invoices.destroy', $invoice) }}', '{{ $invoice->invoice_no }}')"
+                                >
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -146,5 +142,47 @@
     <div>
         {{ $invoices->links() }}
     </div>
+
+    {{-- Delete confirmation modal --}}
+    <div id="deleteModal" class="fixed inset-0 z-50 hidden items-center justify-center">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+        <div class="relative mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div class="flex flex-col items-center text-center">
+                <div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 mb-4">
+                    <i class="fa-solid fa-triangle-exclamation text-2xl text-red-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900">Xác nhận xóa</h3>
+                <p class="mt-2 text-sm text-gray-500">
+                    Bạn có chắc chắn muốn xóa hóa đơn <span id="deleteInvoiceCode" class="font-semibold text-gray-700"></span>?
+                    <br>Hành động này không thể hoàn tác.
+                </p>
+            </div>
+            <form id="deleteForm" method="POST" class="mt-6 flex gap-3">
+                @csrf
+                @method('DELETE')
+                <button type="button" onclick="closeDeleteModal()" class="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+                    Hủy bỏ
+                </button>
+                <button type="submit" class="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition">
+                    <i class="fa-solid fa-trash mr-1"></i> Xóa hóa đơn
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
+
+<script>
+function openDeleteModal(actionUrl, invoiceCode) {
+    document.getElementById('deleteForm').action = actionUrl;
+    document.getElementById('deleteInvoiceCode').textContent = invoiceCode;
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+</script>
 @endsection
