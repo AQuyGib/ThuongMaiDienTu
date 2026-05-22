@@ -11,19 +11,38 @@ class CategoryController extends Controller
     /**
      * Hiển thị danh sách danh mục (Trang Quản lý Danh mục)
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Lấy danh sách danh mục có phân trang, đếm products
-        $categories = Category::withCount('products')
-            ->orderBy('category_id', 'desc')
-            ->paginate(10);
+        $search = trim((string) $request->query('search', ''));
+
+        $categoriesQuery = Category::with(['parent'])
+            ->withCount('products')
+            ->orderBy('category_id', 'desc');
+
+        if ($search !== '') {
+            $categoriesQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhereHas('parent', function ($parentQuery) use ($search) {
+                        $parentQuery->where('name', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+
+        $categories = $categoriesQuery->paginate(10)->withQueryString();
 
         // Thống kê
         $totalCategories = Category::count();
+        $rootCategories = Category::whereNull('parent_id')->count();
+        $childCategories = Category::whereNotNull('parent_id')->count();
+        $allCategories = Category::orderBy('name')->get(['category_id', 'name', 'parent_id']);
 
         return view('admin.categories.Category', compact(
             'categories',
-            'totalCategories'
+            'allCategories',
+            'totalCategories',
+            'rootCategories',
+            'childCategories',
+            'search'
         ));
     }
 
@@ -34,15 +53,16 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:50',
-            'icon' => 'nullable|string|max:50',
+            'parent_id' => 'nullable|integer|exists:categories,category_id',
         ], [
             'name.required' => 'Vui lòng nhập tên danh mục.',
             'name.max' => 'Tên danh mục không được vượt quá 50 ký tự.',
+            'parent_id.exists' => 'Danh mục cha không tồn tại.',
         ]);
 
         Category::create([
             'name' => $request->name,
-            'icon' => $request->icon ?: null,
+            'parent_id' => $request->parent_id ?: null,
         ]);
 
         return redirect()->route('admin.categories.index')
@@ -56,17 +76,18 @@ class CategoryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:50',
-            'icon' => 'nullable|string|max:50',
+            'parent_id' => 'nullable|integer|exists:categories,category_id',
         ], [
             'name.required' => 'Vui lòng nhập tên danh mục.',
             'name.max' => 'Tên danh mục không được vượt quá 50 ký tự.',
+            'parent_id.exists' => 'Danh mục cha không tồn tại.',
         ]);
 
         $category = Category::findOrFail($id);
 
         $category->update([
             'name' => $request->name,
-            'icon' => $request->icon ?: null,
+            'parent_id' => $request->parent_id ?: null,
         ]);
 
         return redirect()->route('admin.categories.index')
@@ -81,10 +102,9 @@ class CategoryController extends Controller
         $category = Category::findOrFail($id);
         $name = $category->name;
 
-        // Kiểm tra xem danh mục có sản phẩm không
-        if ($category->products()->count() > 0) {
+        if ($category->products()->count() > 0 || $category->children()->count() > 0) {
             return redirect()->route('admin.categories.index')
-                ->with('error', 'Không thể xóa danh mục "' . $name . '" vì đang chứa sản phẩm!');
+                ->with('error', 'Không thể xóa danh mục "' . $name . '" vì đang chứa sản phẩm hoặc danh mục con!');
         }
 
         $category->delete();
