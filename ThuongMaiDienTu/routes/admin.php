@@ -40,8 +40,8 @@ Route::post('/settings/theme', [ThemeSettingController::class, 'update'])->name(
 Route::post('/settings/theme/reset', [ThemeSettingController::class, 'reset'])->name('settings.theme.reset');
 
 // ===== Quản lý Đơn hàng =====
-// Route::resource('orders', OrderController::class);
-// Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+Route::resource('orders', OrderController::class);
+Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 
 // CRUD Quyền hạn & Tài khoản (Permissions)
 Route::resource('permissions', UserController::class)->names([
