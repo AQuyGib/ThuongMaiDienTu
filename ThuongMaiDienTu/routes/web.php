@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\NotificationCampaignController;
 use App\Http\Controllers\CashbookController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\CartController;
@@ -11,8 +12,8 @@ use App\Http\Controllers\ProductFilterController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\WishlistController;
-
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
@@ -81,6 +82,21 @@ Route::middleware('auth')->group(function() {
 Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController::class, 'show'])->name('articles.show');
 
 
+Route::middleware(['auth', \App\Http\Middleware\IsAdmin::class])->prefix('admin')->group(function () {
+    Route::get('/notifications/dashboard', [NotificationCampaignController::class, 'dashboard'])->name('admin.notifications.dashboard');
+    Route::get('/notifications', [NotificationCampaignController::class, 'index'])->name('admin.notifications.index');
+    Route::get('/notifications/create', [NotificationCampaignController::class, 'create'])->name('admin.notifications.create');
+    Route::get('/notifications/unread-count', [NotificationCampaignController::class, 'unreadCount'])->name('admin.notifications.unread-count');
+    Route::get('/notifications/search-promo', [NotificationCampaignController::class, 'searchPromo'])->name('admin.notifications.search-promo');
+    Route::get('/notifications/search-users', [NotificationCampaignController::class, 'searchUsers'])->name('admin.notifications.search-users');
+    Route::post('/notifications', [NotificationCampaignController::class, 'store'])->name('admin.notifications.store');
+    Route::get('/notifications/{notification}', [NotificationCampaignController::class, 'show'])->name('admin.notifications.show');
+    Route::patch('/notifications/{notification}/read', [NotificationCampaignController::class, 'markAsRead'])->name('admin.notifications.read');
+    Route::delete('/notifications/{notification}', [NotificationCampaignController::class, 'destroy'])->name('admin.notifications.destroy');
+    Route::post('/notifications/bulk-delete', [NotificationCampaignController::class, 'bulkDestroy'])->name('admin.notifications.bulk-destroy');
+    Route::post('/notifications/low-stock-check', [NotificationCampaignController::class, 'lowStockCheck'])->name('admin.notifications.low-stock-check');
+});
+
 // Product Filtering
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
 Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
@@ -122,6 +138,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/wishlist/clear', [WishlistController::class, 'clearWishlist'])->name('wishlist.clear');
     Route::delete('/wishlist/{id}', [WishlistController::class, 'removeFromWishlist'])->name('wishlist.destroy');
     Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 });
 
 // Search & Suggestions

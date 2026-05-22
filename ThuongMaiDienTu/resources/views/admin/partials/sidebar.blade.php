@@ -92,6 +92,13 @@
             'section' => 'Thiết lập'
         ],
         [
+            'label' => 'Thông báo',
+            'route' => route('admin.notifications.index'),
+            'icon' => 'fa-regular fa-bell',
+            'active' => request()->is('admin/notifications*'),
+            'section' => 'Thiết lập'
+        ],
+        [
             'label' => 'Quản lý Trang chủ',
             'route' => route('admin.home-sections.index'),
             'icon' => 'fa-solid fa-house-laptop',
