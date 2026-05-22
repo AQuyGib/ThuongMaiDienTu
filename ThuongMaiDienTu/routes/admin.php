@@ -80,6 +80,10 @@ Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('
 
 // ===== Quản lý Sản Phẩm & Danh Mục =====
 Route::resource('products', ProductController::class);
+Route::get('/products/export', [ProductController::class, 'exportExcel'])->name('products.export');
+Route::get('/products/template', [ProductController::class, 'downloadTemplate'])->name('products.template');
+Route::get('/products/import', [ProductController::class, 'importForm'])->name('products.import.form');
+Route::post('/products/import', [ProductController::class, 'importExcel'])->name('products.import');
 Route::resource('categories', CategoryController::class);
 
 // ===== Flash Sale =====
