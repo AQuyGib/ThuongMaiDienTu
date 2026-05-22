@@ -67,11 +67,106 @@
 
         <!-- Thanh tìm kiếm -->
         <div class="search-bar">
-            <form action="/search" method="GET">
-                <input type="text" name="q" placeholder="Bạn muốn mua gì hôm nay?">
+            <form action="{{ route('search.index') }}" method="GET" id="globalSearchForm">
+                <input type="text" name="q" id="globalSearchInput" placeholder="Bạn muốn mua gì hôm nay?" autocomplete="off">
                 <button type="submit"><i class="fa-solid fa-search"></i></button>
             </form>
+            
+            <!-- Hộp gợi ý thông minh -->
+            <div id="searchSuggestions" class="search-suggestions">
+                {{-- Dữ liệu đổ từ JS --}}
+            </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const searchInput = document.getElementById('globalSearchInput');
+                const suggestionsBox = document.getElementById('searchSuggestions');
+                let debounceTimer;
+
+                if (searchInput && suggestionsBox) {
+                    searchInput.addEventListener('input', function() {
+                        const query = this.value.trim();
+                        
+                        clearTimeout(debounceTimer);
+                        
+                        if (query.length < 2) {
+                            suggestionsBox.classList.remove('show');
+                            return;
+                        }
+
+                        debounceTimer = setTimeout(() => {
+                            fetch(`{{ route('api.search.suggestions') }}?q=${encodeURIComponent(query)}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    renderSuggestions(data, query);
+                                })
+                                .catch(err => console.error('Search error:', err));
+                        }, 300);
+                    });
+
+                    // Đóng khi click ngoài
+                    document.addEventListener('click', function(e) {
+                        if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                            suggestionsBox.classList.remove('show');
+                        }
+                    });
+
+                    // Hiện lại khi focus nếu đã có chữ
+                    searchInput.addEventListener('focus', function() {
+                        if (this.value.trim().length >= 2) {
+                            suggestionsBox.classList.add('show');
+                        }
+                    });
+                }
+
+                function renderSuggestions(data, query) {
+                    let html = '';
+
+                    if (data.categories.length === 0 && data.products.length === 0) {
+                        html = '<div class="no-results">Không tìm thấy kết quả cho "' + query + '"</div>';
+                    } else {
+                        // Nhóm danh mục
+                        if (data.categories.length > 0) {
+                            html += '<div class="suggestion-group">';
+                            html += '   <div class="suggestion-header">Danh mục gợi ý</div>';
+                            data.categories.forEach(cat => {
+                                html += `<a href="/products/${cat.slug}" class="suggestion-cat">
+                                            <i class="fa-solid fa-magnifying-glass"></i>
+                                            <span>${cat.name}</span>
+                                         </a>`;
+                            });
+                            html += '</div>';
+                        }
+
+                        // Nhóm sản phẩm
+                        if (data.products.length > 0) {
+                            html += '<div class="suggestion-group">';
+                            html += '   <div class="suggestion-header">Sản phẩm tìm thấy</div>';
+                            data.products.forEach(prod => {
+                                const price = new Intl.NumberFormat('vi-VN').format(prod.base_price) + 'đ';
+                                const thumbnail = prod.thumbnail || 'https://via.placeholder.com/50';
+                                html += `<a href="/san-pham/${prod.product_id}" class="suggestion-item">
+                                            <img src="${thumbnail}" alt="${prod.name}">
+                                            <div class="suggestion-info">
+                                                <div class="suggestion-name">${prod.name}</div>
+                                                <div class="suggestion-price">${price}</div>
+                                            </div>
+                                         </a>`;
+                            });
+                            html += '</div>';
+                        }
+                        
+                        html += `<a href="{{ route('search.index') }}?q=${encodeURIComponent(query)}" class="suggestion-cat" style="justify-content: center; background: #f0f7ff; border-top: 1px solid #e5e7eb;">
+                                    <strong>Xem tất cả kết quả cho "${query}"</strong>
+                                 </a>`;
+                    }
+
+                    suggestionsBox.innerHTML = html;
+                    suggestionsBox.classList.add('show');
+                }
+            });
+        </script>
 
         <!-- Hành động -->
         <div class="header-actions">

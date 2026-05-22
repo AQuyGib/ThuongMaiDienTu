@@ -51,7 +51,6 @@ Route::get('/', function () {
     return redirect()->route('home');
 });
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
-Route::get('/san-pham/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
 
@@ -86,7 +85,10 @@ Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
 Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
 Route::get('/products/{categorySlug}', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.category');
-Route::get('/product/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
+Route::get('/san-pham/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
+Route::get('/product/{id}', function ($id) {
+    return redirect()->route('product.show', $id);
+})->name('product.legacy');
 Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'getCategoryFilters'])->name('api.categories.filters');
 
 // Admin Customer Management
@@ -97,6 +99,14 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::get('customers/export', [\App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('admin.customers.export');
     Route::post('customers/bulk-action', [\App\Http\Controllers\Admin\CustomerController::class, 'bulkAction'])->name('admin.customers.bulk-action');
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class, ['as' => 'admin']);
+
+    Route::get('products/import', [\App\Http\Controllers\Admin\ProductController::class, 'importForm'])->name('admin.products.import.form');
+    Route::post('products/import', [\App\Http\Controllers\Admin\ProductController::class, 'importExcel'])->name('admin.products.import');
+    Route::get('products/export', [\App\Http\Controllers\Admin\ProductController::class, 'exportExcel'])->name('admin.products.export');
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class, ['as' => 'admin']);
+    Route::post('products/{product}/variants', [\App\Http\Controllers\Admin\ProductController::class, 'storeVariant'])->name('admin.products.variants.store');
+    Route::put('products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductController::class, 'updateVariant'])->name('admin.products.variants.update');
+    Route::delete('products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductController::class, 'destroyVariant'])->name('admin.products.variants.destroy');
 });
 
 Route::middleware('auth')->group(function () {
@@ -113,6 +123,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/wishlist/{id}', [WishlistController::class, 'removeFromWishlist'])->name('wishlist.destroy');
     Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 });
+
+// Search & Suggestions
+use App\Http\Controllers\Frontend\SearchController;
+Route::get('/search', [SearchController::class, 'index'])->name('search.index');
+Route::get('/api/search/suggestions', [SearchController::class, 'suggestions'])->name('api.search.suggestions');
+Route::get('/api/category-products/{id}', [SearchController::class, 'getProductsByCategory'])->name('api.category.products');
 
 // Product Compare (So sánh sản phẩm)
 use App\Http\Controllers\CompareController;

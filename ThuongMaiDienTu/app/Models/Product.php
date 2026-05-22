@@ -96,4 +96,26 @@ class Product extends Model
                 return $query->orderBy('product_id', 'desc');
         }
     }
+
+    /**
+     * Lấy tổng số lượng tồn kho thực tế (In_Stock) của tất cả biến thể
+     */
+    public function getInStockCountAttribute() {
+        return $this->variants->sum(fn($v) => $v->in_stock_count);
+    }
+
+    /**
+     * Kiểm tra xem sản phẩm có bị rơi vào tình trạng sắp hết hàng hay không
+     */
+    public function getIsLowStockAttribute() {
+        if ($this->variants->isEmpty()) {
+            return $this->in_stock_count <= ($this->safe_stock ?? 5);
+        }
+        
+        if ($this->in_stock_count <= ($this->safe_stock ?? 5)) {
+            return true;
+        }
+
+        return $this->variants->contains(fn($v) => $v->is_low_stock);
+    }
 }

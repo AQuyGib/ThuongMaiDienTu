@@ -2,29 +2,42 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ProductExport;
 use App\Http\Controllers\Controller;
+use App\Imports\ProductImport;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
     /**
      * Hiển thị danh sách sản phẩm (Trang Quản lý Sản phẩm)
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Lấy danh sách sản phẩm có phân trang, kèm relation category + đếm variants
+        $search = trim((string) $request->get('search', ''));
+
+
         $products = Product::with('category')
             ->withCount('variants')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('seo_description', 'like', '%' . $search . '%')
+                        ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                            $categoryQuery->where('name', 'like', '%' . $search . '%');
+                        });
+                });
+            })
             ->orderBy('product_id', 'desc')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
-        // Lấy tất cả danh mục (dùng cho dropdown chọn danh mục)
         $allCategories = Category::orderBy('name')->get();
 
-        // Thống kê
         $totalProducts = Product::count();
         $totalCategories = Category::count();
         $totalVariants = ProductVariant::count();
@@ -34,13 +47,42 @@ class ProductController extends Controller
             'allCategories',
             'totalProducts',
             'totalCategories',
-            'totalVariants'
+            'totalVariants',
+            'search'
         ));
     }
 
-    /**
-     * Hiển thị chi tiết sản phẩm + danh sách biến thể
-     */
+    public function exportExcel(Request $request)
+    {
+        $filters = $request->only(['category_id', 'keyword', 'status']);
+
+        return Excel::download(new ProductExport($filters), 'products-export-' . now()->format('Ymd-His') . '.xlsx');
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new ProductExport(), 'products-template.xlsx');
+    }
+
+    public function importForm()
+    {
+        $allCategories = Category::orderBy('name')->get();
+
+        return view('admin.products.import', compact('allCategories'));
+    }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+        ]);
+
+        Excel::import(new ProductImport, $request->file('file'));
+
+        return redirect()->route('admin.products.index')
+            ->with('success', 'Import sản phẩm thành công.');
+    }
+
     public function show($id)
     {
         $product = Product::with(['category', 'variants'])->findOrFail($id);
@@ -48,9 +90,6 @@ class ProductController extends Controller
         return view('admin.products.ProductDetail', compact('product'));
     }
 
-    /**
-     * Thêm sản phẩm mới
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -58,13 +97,6 @@ class ProductController extends Controller
             'category_id' => 'required|integer|exists:categories,category_id',
             'base_price' => 'required|numeric|min:0',
             'seo_description' => 'nullable|string|max:255',
-        ], [
-            'name.required' => 'Vui lòng nhập tên sản phẩm.',
-            'name.max' => 'Tên sản phẩm không được vượt quá 150 ký tự.',
-            'category_id.required' => 'Vui lòng chọn danh mục.',
-            'category_id.exists' => 'Danh mục không tồn tại.',
-            'base_price.required' => 'Vui lòng nhập giá bán.',
-            'base_price.min' => 'Giá bán phải lớn hơn hoặc bằng 0.',
         ]);
 
         Product::create([
@@ -72,15 +104,13 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'base_price' => $request->base_price,
             'seo_description' => $request->seo_description ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Thêm sản phẩm "' . $request->name . '" thành công!');
     }
 
-    /**
-     * Cập nhật sản phẩm
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -88,13 +118,6 @@ class ProductController extends Controller
             'category_id' => 'required|integer|exists:categories,category_id',
             'base_price' => 'required|numeric|min:0',
             'seo_description' => 'nullable|string|max:255',
-        ], [
-            'name.required' => 'Vui lòng nhập tên sản phẩm.',
-            'name.max' => 'Tên sản phẩm không được vượt quá 150 ký tự.',
-            'category_id.required' => 'Vui lòng chọn danh mục.',
-            'category_id.exists' => 'Danh mục không tồn tại.',
-            'base_price.required' => 'Vui lòng nhập giá bán.',
-            'base_price.min' => 'Giá bán phải lớn hơn hoặc bằng 0.',
         ]);
 
         $product = Product::findOrFail($id);
@@ -104,15 +127,13 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'base_price' => $request->base_price,
             'seo_description' => $request->seo_description ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Cập nhật sản phẩm "' . $request->name . '" thành công!');
     }
 
-    /**
-     * Xóa sản phẩm (soft delete)
-     */
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
@@ -124,13 +145,6 @@ class ProductController extends Controller
             ->with('success', 'Xóa sản phẩm "' . $name . '" thành công!');
     }
 
-    // ================================================================
-    //  VARIANT MANAGEMENT — CRUD biến thể sản phẩm
-    // ================================================================
-
-    /**
-     * Thêm biến thể mới cho sản phẩm
-     */
     public function storeVariant(Request $request, $productId)
     {
         $product = Product::findOrFail($productId);
@@ -143,9 +157,6 @@ class ProductController extends Controller
             'gpu_chip' => 'nullable|string|max:100',
             'extra_price' => 'required|numeric|min:0',
             'image_url' => 'nullable|string|max:500',
-        ], [
-            'extra_price.required' => 'Vui lòng nhập giá cộng thêm.',
-            'extra_price.min' => 'Giá cộng thêm phải ≥ 0.',
         ]);
 
         ProductVariant::create([
@@ -157,15 +168,13 @@ class ProductController extends Controller
             'gpu_chip' => $request->gpu_chip ?: null,
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.show', $productId)
             ->with('success', 'Thêm biến thể thành công!');
     }
 
-    /**
-     * Cập nhật biến thể
-     */
     public function updateVariant(Request $request, $productId, $variantId)
     {
         Product::findOrFail($productId);
@@ -178,9 +187,6 @@ class ProductController extends Controller
             'gpu_chip' => 'nullable|string|max:100',
             'extra_price' => 'required|numeric|min:0',
             'image_url' => 'nullable|string|max:500',
-        ], [
-            'extra_price.required' => 'Vui lòng nhập giá cộng thêm.',
-            'extra_price.min' => 'Giá cộng thêm phải ≥ 0.',
         ]);
 
         $variant = ProductVariant::where('variant_id', $variantId)
@@ -195,15 +201,13 @@ class ProductController extends Controller
             'gpu_chip' => $request->gpu_chip ?: null,
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.show', $productId)
             ->with('success', 'Cập nhật biến thể thành công!');
     }
 
-    /**
-     * Xóa biến thể
-     */
     public function destroyVariant($productId, $variantId)
     {
         Product::findOrFail($productId);
