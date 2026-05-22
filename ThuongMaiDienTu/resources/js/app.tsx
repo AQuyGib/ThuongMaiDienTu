@@ -119,7 +119,22 @@ const softNavigate = async (url: string) => {
         // 1. Update Title
         document.title = doc.title;
 
-        // 2. Update Content
+        // 2. Sync page-specific styles into the current document head
+        const currentHead = document.head;
+        const currentStyleTags = Array.from(currentHead.querySelectorAll('style[data-spa-page-style], link[data-spa-page-style]'));
+        currentStyleTags.forEach(tag => tag.remove());
+
+        const newPageStyles = Array.from(doc.head.querySelectorAll('style, link[rel="stylesheet"]'));
+        newPageStyles.forEach((node, index) => {
+            const clone = node.cloneNode(true) as HTMLElement;
+            if (clone instanceof HTMLStyleElement || clone instanceof HTMLLinkElement) {
+                clone.setAttribute('data-spa-page-style', 'true');
+                clone.setAttribute('data-spa-page-style-index', String(index));
+                currentHead.appendChild(clone);
+            }
+        });
+
+        // 3. Update Content
         const newContent = doc.getElementById('joly-main-container');
         const currentContainer = document.getElementById('joly-main-container');
         if (newContent && currentContainer) {
@@ -133,7 +148,7 @@ const softNavigate = async (url: string) => {
             }, 600);
         }
 
-        // 3. Update Sidebar & Topbar Props (Update attributes so init() can read them)
+        // 4. Update Sidebar & Topbar Props (Update attributes so init() can read them)
         const newSidebar = doc.getElementById('joly-admin-sidebar');
         const currentSidebar = document.getElementById('joly-admin-sidebar');
         if (newSidebar && currentSidebar) {
@@ -146,10 +161,10 @@ const softNavigate = async (url: string) => {
             currentTopbar.setAttribute('data-props', newTopbar.getAttribute('data-props') || '{}');
         }
 
-        // 4. Re-initialize components (renderComponent will handle unmounting/re-mounting)
+        // 5. Re-initialize components (renderComponent will handle unmounting/re-mounting)
         init();
 
-        // 5. Execute Scripts in the new content
+        // 6. Execute Scripts in the new content
         const scripts = currentContainer.querySelectorAll('script');
         scripts.forEach(oldScript => {
             const newScript = document.createElement('script');
@@ -158,7 +173,7 @@ const softNavigate = async (url: string) => {
             oldScript.parentNode?.replaceChild(newScript, oldScript);
         });
 
-        // 6. Finalize
+        // 7. Finalize
         updateProgressBar('100%');
         const scrollContainer = document.getElementById('joly-main-content');
         if (scrollContainer) scrollContainer.scrollTop = 0;
@@ -185,6 +200,16 @@ document.addEventListener('click', (e) => {
         if (anchor.target === '_blank') return;
         // Skip logout or special routes
         if (anchor.href.includes('logout')) return;
+
+        // These sections use page-specific layouts/styles or heavy tables; force full reload to avoid broken UI state
+        if (
+            anchor.href.includes('/admin/inventory') ||
+            anchor.href.includes('/admin/purchase-orders') ||
+            anchor.href.includes('/admin/products')
+        ) {
+            window.location.href = anchor.href;
+            return;
+        }
         
         // If we are NOT in admin area, let the browser do a full reload to enter it
         if (!isInAdminArea) return;
@@ -193,7 +218,6 @@ document.addEventListener('click', (e) => {
         softNavigate(anchor.href);
     }
 });
-
 window.addEventListener('popstate', () => {
     const isInAdminArea = document.getElementById('joly-admin-sidebar') !== null;
     if (isInAdminArea && window.location.pathname.startsWith('/admin')) {
