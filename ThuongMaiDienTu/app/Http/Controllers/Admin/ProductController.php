@@ -95,8 +95,10 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required|string|max:150',
             'category_id' => 'required|integer|exists:categories,category_id',
-            'base_price' => 'required|numeric|min:0',
+            'base_price' => 'required|numeric|min:0|max:999999999',
             'seo_description' => 'nullable|string|max:255',
+        ], [
+            'base_price.max' => 'Giá bán không được vượt quá 999.999.999 đ.',
         ]);
 
         Product::create([
@@ -116,11 +118,21 @@ class ProductController extends Controller
         $request->validate([
             'name' => 'required|string|max:150',
             'category_id' => 'required|integer|exists:categories,category_id',
-            'base_price' => 'required|numeric|min:0',
+            'base_price' => 'required|numeric|min:0|max:999999999',
             'seo_description' => 'nullable|string|max:255',
+            'version' => 'required|integer',
+        ], [
+            'base_price.max' => 'Giá bán không được vượt quá 999.999.999 đ.',
+            'version.required' => 'Thiếu thông tin phiên bản sản phẩm.',
+            'version.integer' => 'Phiên bản sản phẩm không hợp lệ.',
         ]);
 
         $product = Product::findOrFail($id);
+
+        if ((int)$product->version !== (int)$request->version) {
+            return redirect()->route('admin.products.index')
+                ->with('error', 'Sản phẩm "' . $product->name . '" đã bị cập nhật bởi một người quản trị khác. Vui lòng tải lại trang.');
+        }
 
         $product->update([
             'name' => $request->name,
@@ -128,6 +140,7 @@ class ProductController extends Controller
             'base_price' => $request->base_price,
             'seo_description' => $request->seo_description ?: null,
             'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
+            'version' => $product->version + 1,
         ]);
 
         return redirect()->route('admin.products.index')
@@ -155,8 +168,10 @@ class ProductController extends Controller
             'rom_capacity' => 'nullable|string|max:20',
             'cpu_chip' => 'nullable|string|max:100',
             'gpu_chip' => 'nullable|string|max:100',
-            'extra_price' => 'required|numeric|min:0',
+            'extra_price' => 'required|numeric|min:0|max:999999999',
             'image_url' => 'nullable|string|max:500',
+        ], [
+            'extra_price.max' => 'Giá cộng thêm không được vượt quá 999.999.999 đ.',
         ]);
 
         ProductVariant::create([
@@ -185,13 +200,23 @@ class ProductController extends Controller
             'rom_capacity' => 'nullable|string|max:20',
             'cpu_chip' => 'nullable|string|max:100',
             'gpu_chip' => 'nullable|string|max:100',
-            'extra_price' => 'required|numeric|min:0',
+            'extra_price' => 'required|numeric|min:0|max:999999999',
             'image_url' => 'nullable|string|max:500',
+            'version' => 'required|integer',
+        ], [
+            'extra_price.max' => 'Giá cộng thêm không được vượt quá 999.999.999 đ.',
+            'version.required' => 'Thiếu thông tin phiên bản biến thể.',
+            'version.integer' => 'Phiên bản biến thể không hợp lệ.',
         ]);
 
         $variant = ProductVariant::where('variant_id', $variantId)
             ->where('product_id', $productId)
             ->firstOrFail();
+
+        if ((int)$variant->version !== (int)$request->version) {
+            return redirect()->route('admin.products.show', $productId)
+                ->with('error', 'Biến thể sản phẩm đã bị cập nhật bởi một người quản trị khác. Vui lòng tải lại trang.');
+        }
 
         $variant->update([
             'color' => $request->color ?: null,
@@ -202,6 +227,7 @@ class ProductController extends Controller
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
             'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
+            'version' => $variant->version + 1,
         ]);
 
         return redirect()->route('admin.products.show', $productId)

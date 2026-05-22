@@ -200,16 +200,6 @@ document.addEventListener('click', (e) => {
         if (anchor.target === '_blank') return;
         // Skip logout or special routes
         if (anchor.href.includes('logout')) return;
-
-        // These sections use page-specific layouts/styles or heavy tables; force full reload to avoid broken UI state
-        if (
-            anchor.href.includes('/admin/inventory') ||
-            anchor.href.includes('/admin/purchase-orders') ||
-            anchor.href.includes('/admin/products')
-        ) {
-            window.location.href = anchor.href;
-            return;
-        }
         
         // If we are NOT in admin area, let the browser do a full reload to enter it
         if (!isInAdminArea) return;

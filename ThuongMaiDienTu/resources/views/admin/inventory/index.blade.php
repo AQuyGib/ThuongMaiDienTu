@@ -418,6 +418,7 @@
                                 <form method="POST" action="{{ route('admin.inventory.updateStatus', $item->item_id) }}" class="d-inline">
                                     @csrf
                                     @method('PUT')
+                                    <input type="hidden" name="version" value="{{ $item->version }}">
                                     <select name="status" class="form-select-sm" onchange="this.form.submit()">
                                         <option value="In_Stock" {{ $item->status == 'In_Stock' ? 'selected' : '' }}>Còn hàng</option>
                                         <option value="Sold" {{ $item->status == 'Sold' ? 'selected' : '' }}>Đã bán</option>
@@ -508,7 +509,7 @@
                             $isLowStock = $product->in_stock_count <= ($product->safe_stock ?? 5);
                         @endphp
                         <tr style="{{ $isLowStock ? 'background-color: rgba(239, 68, 68, 0.08);' : '' }}">
-                            <td><span class="id-badge">{{ $index + 1 }}</span></td>
+                            <td><span class="id-badge">{{ $productStats->firstItem() + $index }}</span></td>
                             <td>
                                 <strong>{{ $product->name }}</strong>
                                 @if($isLowStock)
@@ -540,6 +541,50 @@
                 </tbody>
             </table>
         </div>
+        @if(method_exists($productStats, 'links') && $productStats->lastPage() > 1)
+            <nav class="custom-pagination-nav">
+                <p class="text-sm">
+                    Kết quả: <span>{{ $productStats->total() }}</span> 
+                    <span class="mx-2" style="opacity: 0.3;">|</span> 
+                    Trang <span>{{ $productStats->currentPage() }}</span> / {{ $productStats->lastPage() }}
+                </p>
+                
+                <ul class="pagination">
+                    {{-- Previous Page Link --}}
+                    @if ($productStats->onFirstPage())
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                    @else
+                        <li class="page-item"><a class="page-link" href="{{ $productStats->previousPageUrl() }}" rel="prev">&laquo;</a></li>
+                    @endif
+
+                    {{-- Pagination Elements --}}
+                    @foreach ($productStats->getUrlRange(1, $productStats->lastPage()) as $page => $url)
+                        @if ($page == $productStats->currentPage())
+                            <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                        @elseif ($page === 1 || $page === $productStats->lastPage() || abs($page - $productStats->currentPage()) <= 1)
+                            <li class="page-item"><a class="page-link" href="{{ $url }}">{{ $page }}</a></li>
+                        @elseif (($page === 2 && $productStats->currentPage() > 3) || ($page === $productStats->lastPage() - 1 && $productStats->currentPage() < $productStats->lastPage() - 2))
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        @endif
+                    @endforeach
+
+                    {{-- Next Page Link --}}
+                    @if ($productStats->hasMorePages())
+                        <li class="page-item"><a class="page-link" href="{{ $productStats->nextPageUrl() }}" rel="next">&raquo;</a></li>
+                    @else
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                    @endif
+                </ul>
+            </nav>
+        @elseif(method_exists($productStats, 'links'))
+            <nav class="custom-pagination-nav">
+                <p class="text-sm">
+                    Kết quả: <span>{{ $productStats->total() }}</span> 
+                    <span class="mx-2" style="opacity: 0.3;">|</span> 
+                    Trang <span>1</span> / 1
+                </p>
+            </nav>
+        @endif
     </div>
 </div>
 @endsection

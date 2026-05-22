@@ -117,7 +117,7 @@
                 </p>
             </div>
 
-            <button type="button" class="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700" onclick="openModal('addCategoryModal')">
+            <button type="button" class="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700" onclick="openCategoryModal('addCategoryModal')">
                 <i class="fa-solid fa-plus"></i>
                 Thêm danh mục
             </button>
@@ -251,6 +251,7 @@
                                             data-id="{{ $category->category_id }}"
                                             data-name="{{ e($category->name) }}"
                                             data-parent-id="{{ $category->parent_id ?? '' }}"
+                                            data-version="{{ $category->version }}"
                                             title="Sửa">
                                         <i class="fa-regular fa-pen-to-square"></i>
                                     </button>
@@ -305,7 +306,7 @@
 </div>
 
 <div id="addCategoryModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
-    <div class="absolute inset-0 modal-backdrop-custom" onclick="closeModal('addCategoryModal')"></div>
+    <div class="absolute inset-0 modal-backdrop-custom" onclick="closeCategoryModal('addCategoryModal')"></div>
     <div class="relative w-full max-w-2xl rounded-3xl bg-white shadow-2xl modal-panel">
         <form action="{{ route('admin.categories.store') }}" method="POST" class="p-6 sm:p-8">
             @csrf
@@ -319,7 +320,7 @@
                         <p class="mt-1 text-sm text-slate-500">Nhập thông tin danh mục cần tạo.</p>
                     </div>
                 </div>
-                <button type="button" class="icon-btn" onclick="closeModal('addCategoryModal')"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" class="icon-btn" onclick="closeCategoryModal('addCategoryModal')"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <div class="mt-6 grid gap-5 rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
@@ -346,7 +347,7 @@
             </div>
 
             <div class="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
-                <button type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" onclick="closeModal('addCategoryModal')">Hủy</button>
+                <button type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" onclick="closeCategoryModal('addCategoryModal')">Hủy</button>
                 <button type="submit" class="btn-primary-soft rounded-2xl px-5 py-3 text-sm font-semibold">Thêm danh mục</button>
             </div>
         </form>
@@ -354,11 +355,12 @@
 </div>
 
 <div id="editCategoryModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
-    <div class="absolute inset-0 modal-backdrop-custom" onclick="closeModal('editCategoryModal')"></div>
+    <div class="absolute inset-0 modal-backdrop-custom" onclick="closeCategoryModal('editCategoryModal')"></div>
     <div class="relative w-full max-w-2xl rounded-3xl bg-white shadow-2xl modal-panel">
         <form id="editForm" method="POST" class="p-6 sm:p-8">
             @csrf
             @method('PUT')
+            <input type="hidden" name="version" id="editVersion">
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
                 <div class="flex items-start gap-4">
                     <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
@@ -369,7 +371,7 @@
                         <p class="mt-1 text-sm text-slate-500">Cập nhật thông tin danh mục.</p>
                     </div>
                 </div>
-                <button type="button" class="icon-btn" onclick="closeModal('editCategoryModal')"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" class="icon-btn" onclick="closeCategoryModal('editCategoryModal')"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <div class="mt-6 grid gap-5 rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
@@ -396,7 +398,7 @@
             </div>
 
             <div class="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
-                <button type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" onclick="closeModal('editCategoryModal')">Hủy</button>
+                <button type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" onclick="closeCategoryModal('editCategoryModal')">Hủy</button>
                 <button type="submit" class="btn-primary-soft rounded-2xl px-5 py-3 text-sm font-semibold">Lưu thay đổi</button>
             </div>
         </form>
@@ -407,19 +409,20 @@
     @csrf
     @method('DELETE')
 </form>
-@endsection
 
-@push('scripts')
 <script>
-    function openModal(id) {
+    function openCategoryModal(id) {
         const el = document.getElementById(id);
         if (el) {
+            if (el.parentNode !== document.body) {
+                document.body.appendChild(el);
+            }
             el.classList.remove('hidden');
             el.classList.add('flex');
         }
     }
 
-    function closeModal(id) {
+    function closeCategoryModal(id) {
         const el = document.getElementById(id);
         if (el) {
             el.classList.add('hidden');
@@ -427,32 +430,37 @@
         }
     }
 
-    function openEditModal(id, name, icon, parentId) {
+    function openEditCategoryModal(id, name, icon, parentId, version) {
         document.getElementById('editName').value = name || '';
         document.getElementById('editParentId').value = parentId || '';
+        document.getElementById('editVersion').value = version || '1';
         document.getElementById('editForm').action = "{{ url('admin/categories') }}/" + id;
-        openModal('editCategoryModal');
+        openCategoryModal('editCategoryModal');
     }
 
-    document.addEventListener('click', (event) => {
-        const editButton = event.target.closest('.js-edit-category');
-        if (editButton) {
-            openEditModal(
-                editButton.dataset.id,
-                editButton.dataset.name,
-                '',
-                editButton.dataset.parentId || ''
-            );
-            return;
-        }
+    var categoryTable = document.getElementById('categoryTable');
+    if (categoryTable) {
+        categoryTable.addEventListener('click', (event) => {
+            const editButton = event.target.closest('.js-edit-category');
+            if (editButton) {
+                openEditCategoryModal(
+                    editButton.dataset.id,
+                    editButton.dataset.name,
+                    '',
+                    editButton.dataset.parentId || '',
+                    editButton.dataset.version || '1'
+                );
+                return;
+            }
 
-        const deleteButton = event.target.closest('.js-delete-category');
-        if (deleteButton) {
-            confirmDelete(deleteButton.dataset.id, deleteButton.dataset.name);
-        }
-    });
+            const deleteButton = event.target.closest('.js-delete-category');
+            if (deleteButton) {
+                confirmDeleteCategory(deleteButton.dataset.id, deleteButton.dataset.name);
+            }
+        });
+    }
 
-    function confirmDelete(id, name) {
+    function confirmDeleteCategory(id, name) {
         Swal.fire({
             title: 'Xác nhận xóa?',
             html: `Bạn có chắc muốn xóa danh mục <strong>${name}</strong>?`,
@@ -469,4 +477,4 @@
         });
     }
 </script>
-@endpush
+@endsection

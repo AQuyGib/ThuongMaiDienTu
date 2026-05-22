@@ -44,8 +44,9 @@ class InventoryController extends Controller
             ->selectRaw("COUNT(CASE WHEN inventory_items.status = 'Defective' THEN 1 END) as defective_count")
             ->selectRaw('COUNT(inventory_items.item_id) as total_items')
             ->groupBy('products.product_id', 'products.name', 'products.safe_stock')
-            ->orderByDesc('total_items')
-            ->get();
+            ->paginate(10, ['*'], 'product_page')
+            ->onEachSide(1)
+            ->appends($request->query());
 
         return view('admin.inventory.index', compact(
             'items',
@@ -104,10 +105,23 @@ class InventoryController extends Controller
     {
         $request->validate([
             'status' => 'required|in:In_Stock,Sold,Defective',
+            'version' => 'required|integer',
+        ], [
+            'version.required' => 'Thiếu thông tin phiên bản kho.',
+            'version.integer' => 'Phiên bản kho không hợp lệ.',
         ]);
 
         $item = InventoryItem::findOrFail($id);
-        $item->update(['status' => $request->status]);
+
+        if ((int)$item->version !== (int)$request->version) {
+            return redirect()->route('admin.inventory.index')
+                ->with('error', 'Trạng thái của IMEI "' . $item->imei_serial . '" đã bị thay đổi bởi người quản trị khác. Vui lòng tải lại trang.');
+        }
+
+        $item->update([
+            'status' => $request->status,
+            'version' => $item->version + 1,
+        ]);
 
         return redirect()->route('admin.inventory.index')
             ->with('success', 'Cập nhật trạng thái IMEI "' . $item->imei_serial . '" thành ' . $request->status . ' thành công!');

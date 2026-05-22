@@ -114,12 +114,10 @@
         </div>
     </form>
 </div>
-@endsection
 
-@push('scripts')
 <script>
-const products = @json($products);
-let rowIndex = 0;
+var products = @json($products);
+var rowIndex = 0;
 
 function addItemRow() {
     const container = document.getElementById('itemsContainer');
@@ -199,4 +197,4 @@ function calcTotal() {
 
 addItemRow();
 </script>
-@endpush
+@endsection

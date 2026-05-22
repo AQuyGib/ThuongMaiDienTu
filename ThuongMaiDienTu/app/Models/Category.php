@@ -30,6 +30,23 @@ class Category extends Model {
         return $this->hasMany(Product::class, 'category_id');
     }
 
+    /**
+     * Kiểm tra xem một danh mục con (childId) có phải là con cháu của danh mục cha (parentId) hay không
+     */
+    public static function isDescendant($childId, $parentId) {
+        if (empty($childId) || empty($parentId)) {
+            return false;
+        }
+        $current = self::find($childId);
+        while ($current) {
+            if ((int)$current->parent_id === (int)$parentId) {
+                return true;
+            }
+            $current = $current->parent;
+        }
+        return false;
+    }
+
     public function getRootCategoryId() {
         $rootId = $this->category_id;
         $current = $this;

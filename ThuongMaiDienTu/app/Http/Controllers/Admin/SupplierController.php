@@ -64,19 +64,28 @@ class SupplierController extends Controller
             'phone'   => 'nullable|string|max:20',
             'email'   => 'nullable|email|max:100',
             'address' => 'nullable|string|max:255',
+            'version' => 'required|integer',
         ], [
             'name.required' => 'Vui lòng nhập tên nhà cung cấp.',
             'name.max'      => 'Tên nhà cung cấp không được vượt quá 100 ký tự.',
             'email.email'   => 'Email không đúng định dạng.',
+            'version.required' => 'Thiếu thông tin phiên bản nhà cung cấp.',
+            'version.integer' => 'Phiên bản nhà cung cấp không hợp lệ.',
         ]);
 
         $supplier = Supplier::findOrFail($id);
+
+        if ((int)$supplier->version !== (int)$request->version) {
+            return redirect()->route('admin.suppliers.index')
+                ->with('error', 'Nhà cung cấp "' . $supplier->name . '" đã bị cập nhật bởi một người quản trị khác. Vui lòng tải lại trang.');
+        }
 
         $supplier->update([
             'name'    => $request->name,
             'phone'   => $request->phone ?: null,
             'email'   => $request->email ?: null,
             'address' => $request->address ?: null,
+            'version' => $supplier->version + 1,
         ]);
 
         return redirect()->route('admin.suppliers.index')

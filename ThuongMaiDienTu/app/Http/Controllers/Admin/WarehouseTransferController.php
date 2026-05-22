@@ -100,8 +100,14 @@ class WarehouseTransferController extends Controller
 
         DB::beginTransaction();
         try {
+            // Khóa bi quan các inventory items trước
+            $lockedItems = InventoryItem::whereIn('item_id', $request->item_ids)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('item_id');
+
             // Tạo mã phiếu duy nhất
-            $lastTransfer = WarehouseTransfer::orderBy('transfer_id', 'desc')->first();
+            $lastTransfer = WarehouseTransfer::orderBy('transfer_id', 'desc')->lockForUpdate()->first();
             $nextId = $lastTransfer ? $lastTransfer->transfer_id + 1 : 1;
             $transferCode = 'TF-' . str_pad($nextId, 5, '0', STR_PAD_LEFT);
 
@@ -117,14 +123,12 @@ class WarehouseTransferController extends Controller
 
             // Thêm các mặt hàng vào phiếu
             foreach ($request->item_ids as $itemId) {
-                // Kiểm tra xem item có đang ở kho nguồn và trạng thái In_Stock hay không
-                $item = InventoryItem::where('item_id', $itemId)
-                    ->where('warehouse_loc', $request->from_warehouse)
-                    ->where('status', 'In_Stock')
-                    ->first();
+                // Lấy từ danh sách lockedItems đã khóa
+                $item = $lockedItems->get($itemId);
 
-                if (!$item) {
-                    throw new \Exception("Mã IMEI #{$itemId} không khả dụng tại kho {$request->from_warehouse}.");
+                if (!$item || $item->warehouse_loc !== $request->from_warehouse || $item->status !== 'In_Stock') {
+                    $imeiStr = $item ? $item->imei_serial : "#{$itemId}";
+                    throw new \Exception("Mã IMEI {$imeiStr} không khả dụng hoặc đã thay đổi trạng thái tại kho nguồn.");
                 }
 
                 WarehouseTransferItem::create([
@@ -168,16 +172,22 @@ class WarehouseTransferController extends Controller
      */
     public function complete($id)
     {
-        $transfer = WarehouseTransfer::findOrFail($id);
-
-        if ($transfer->status !== 'Pending') {
-            return back()->withErrors(['error' => 'Phiếu này đã hoàn thành hoặc đã bị hủy.']);
-        }
-
         DB::beginTransaction();
         try {
+            // Khóa bi quan phiếu điều chuyển trước
+            $transfer = WarehouseTransfer::where('transfer_id', $id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($transfer->status !== 'Pending') {
+                throw new \Exception('Phiếu này đã hoàn thành hoặc đã bị hủy.');
+            }
+
+            // Khóa bi quan tất cả các items liên kết với phiếu chuyển kho này
+            $items = $transfer->items()->lockForUpdate()->get();
+
             // Cập nhật vị trí kho của tất cả IMEI trong phiếu sang kho đích
-            foreach ($transfer->items as $item) {
+            foreach ($items as $item) {
                 // Kiểm tra xem item có còn trạng thái In_Stock không
                 if ($item->status !== 'In_Stock') {
                     throw new \Exception("Mã IMEI {$item->imei_serial} đã được bán hoặc gặp sự cố, không thể thực hiện điều chuyển.");
@@ -205,15 +215,25 @@ class WarehouseTransferController extends Controller
      */
     public function cancel($id)
     {
-        $transfer = WarehouseTransfer::findOrFail($id);
+        DB::beginTransaction();
+        try {
+            // Khóa bi quan phiếu điều chuyển trước
+            $transfer = WarehouseTransfer::where('transfer_id', $id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($transfer->status !== 'Pending') {
-            return back()->withErrors(['error' => 'Chỉ có thể hủy phiếu đang ở trạng thái Chờ xử lý.']);
+            if ($transfer->status !== 'Pending') {
+                throw new \Exception('Chỉ có thể hủy phiếu đang ở trạng thái Chờ xử lý.');
+            }
+
+            $transfer->update(['status' => 'Cancelled']);
+
+            DB::commit();
+            return redirect()->route('admin.warehouse-transfers.show', $id)
+                ->with('success', 'Hủy phiếu điều chuyển thành công!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => $e->getMessage()]);
         }
-
-        $transfer->update(['status' => 'Cancelled']);
-
-        return redirect()->route('admin.warehouse-transfers.show', $id)
-            ->with('success', 'Hủy phiếu điều chuyển thành công!');
     }
 }

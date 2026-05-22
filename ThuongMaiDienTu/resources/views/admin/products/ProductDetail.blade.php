@@ -286,7 +286,7 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <div class="flex items-center justify-center gap-2">
-                                        <button type="button" class="icon-btn" onclick="openEditVariant({{ $variant->variant_id }}, @js($variant->color ?? ''), @js($variant->ram ?? ''), @js($variant->rom_capacity ?? ''), @js($variant->cpu_chip ?? ''), @js($variant->gpu_chip ?? ''), {{ $variant->extra_price }}, @js($variant->image_url ?? ''))">
+                                        <button type="button" class="icon-btn" onclick="openEditVariant({{ $variant->variant_id }}, @js($variant->color ?? ''), @js($variant->ram ?? ''), @js($variant->rom_capacity ?? ''), @js($variant->cpu_chip ?? ''), @js($variant->gpu_chip ?? ''), {{ $variant->extra_price }}, @js($variant->image_url ?? ''), {{ $variant->version }})">
                                             <i class="fa-regular fa-pen-to-square"></i>
                                         </button>
                                         <button type="button" class="icon-btn danger" onclick="confirmDeleteVariant({{ $variant->variant_id }})">
@@ -330,7 +330,7 @@
                 </div>
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-700">Giá cộng thêm (₫)</label>
-                    <input type="number" name="extra_price" required min="0" value="0" class="rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 w-full">
+                    <input type="number" name="extra_price" required min="0" max="999999999" value="0" oninput="if(this.value < 0) this.value = 0; if(this.value > 999999999) this.value = 999999999;" class="rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 w-full">
                 </div>
                 @if($hasRamRom)
                     <div>
@@ -371,6 +371,7 @@
         <form id="editVariantForm" method="POST" enctype="multipart/form-data" class="p-6 sm:p-8">
             @csrf
             @method('PUT')
+            <input type="hidden" name="version" id="editVariantVersion">
             <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
                 <div>
                     <h3 class="text-xl font-bold text-slate-900">Sửa biến thể</h3>
@@ -385,7 +386,7 @@
                 </div>
                 <div>
                     <label class="mb-2 block text-sm font-medium text-slate-700">Giá cộng thêm (₫)</label>
-                    <input type="number" id="evPrice" name="extra_price" required min="0" class="rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 w-full">
+                    <input type="number" id="evPrice" name="extra_price" required min="0" max="999999999" oninput="if(this.value < 0) this.value = 0; if(this.value > 999999999) this.value = 999999999;" class="rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 w-full">
                 </div>
                 @if($hasRamRom)
                     <div>
@@ -424,16 +425,20 @@
     @csrf
     @method('DELETE')
 </form>
-@endsection
 
-@push('scripts')
 <script>
-    const productId = {{ $product->product_id }};
-    const baseUrl = "{{ url('admin/products') }}";
+    var productId = {{ $product->product_id }};
+    var baseUrl = "{{ url('admin/products') }}";
 
     function openModal(id) {
         const el = document.getElementById(id);
-        if (el) { el.classList.remove('hidden'); el.classList.add('flex'); }
+        if (el) {
+            if (el.parentNode !== document.body) {
+                document.body.appendChild(el);
+            }
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+        }
     }
 
     function closeModal(id) {
@@ -441,7 +446,7 @@
         if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
     }
 
-    function openEditVariant(id, color, ram, rom, cpu, gpu, price, imageUrl) {
+    function openEditVariant(id, color, ram, rom, cpu, gpu, price, imageUrl, version) {
         document.getElementById('evColor').value = color || '';
         const evRam = document.getElementById('evRam');
         const evRom = document.getElementById('evRom');
@@ -453,6 +458,7 @@
         if (evGpu) evGpu.value = gpu || '';
         document.getElementById('evPrice').value = price || 0;
         document.getElementById('evImage').value = imageUrl || '';
+        document.getElementById('editVariantVersion').value = version || 1;
         document.getElementById('editVariantForm').action = baseUrl + '/' + productId + '/variants/' + id;
         openModal('editVariantModal');
     }
@@ -474,4 +480,4 @@
         });
     }
 </script>
-@endpush
+@endsection

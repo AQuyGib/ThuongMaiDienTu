@@ -279,16 +279,16 @@
 </div>
 
 <script>
-    const fromWhSelect = document.getElementById('from_warehouse');
-    const checkAllCheckbox = document.getElementById('check_all_imei');
-    const searchInput = document.getElementById('search_imei');
-    const imeiContainer = document.getElementById('imei_list_container');
-    const selectedCountLabel = document.getElementById('selected_count');
-    const form = document.getElementById('transferForm');
-    const actionTypeInput = document.getElementById('action_type');
+    var fromWhSelect = document.getElementById('from_warehouse');
+    var checkAllCheckbox = document.getElementById('check_all_imei');
+    var searchInput = document.getElementById('search_imei');
+    var imeiContainer = document.getElementById('imei_list_container');
+    var selectedCountLabel = document.getElementById('selected_count');
+    var form = document.getElementById('transferForm');
+    var actionTypeInput = document.getElementById('action_type');
 
-    let allItems = []; // Lưu trữ tất cả IMEI tải về từ server
-    let selectedIds = new Set(); // Lưu các ID đã tích chọn
+    var allItems = []; // Lưu trữ tất cả IMEI tải về từ server
+    var selectedIds = new Set(); // Lưu các ID đã tích chọn
 
     // Theo dõi sự kiện thay đổi kho đi
     fromWhSelect.addEventListener('change', function() {

@@ -76,9 +76,97 @@
     .alert-danger-custom{border-left:4px solid var(--danger);color:var(--danger)}
     .empty-state{text-align:center;padding:60px 20px;color:var(--text-secondary)}
     .empty-state i{font-size:3rem;margin-bottom:16px;opacity:.35;color:var(--text-secondary)}
-    .pagination .page-link{background:#fff;border:1px solid var(--border);color:var(--text-secondary);border-radius:10px!important;margin:0 3px;font-size:.85rem;padding:7px 13px;transition:all .2s}
-    .pagination .page-link:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
-    .pagination .page-item.active .page-link{background:var(--accent);border-color:var(--accent);color:#fff}
+    /* Custom pagination wrapper to force horizontal layout */
+    .custom-pagination-nav {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 16px 24px !important;
+        border-top: 1px solid var(--border) !important;
+        background-color: #ffffff !important;
+        flex-wrap: wrap !important;
+        gap: 16px !important;
+    }
+    
+    /* Left side: Results info */
+    .custom-pagination-nav p {
+        margin: 0 !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        color: #475569 !important; /* Màu xám đậm Slate-600 */
+        background: #f8fafc !important; /* Nền xám nhạt Slate-50 */
+        padding: 8px 16px !important;
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
+    
+    .custom-pagination-nav p span {
+        color: #0f172a !important; /* Màu đen Slate-900 để làm nổi bật các con số */
+        font-weight: 800 !important;
+    }
+    
+    /* Right side: Page selection numbers */
+    .pagination {
+        display: flex !important;
+        list-style: none !important;
+        padding-left: 0 !important;
+        margin: 0 !important;
+        gap: 6px !important;
+        align-items: center !important;
+    }
+    
+    .page-item {
+        display: inline-block !important;
+    }
+    
+    .page-link, .page-item span {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 8px 14px !important;
+        font-size: 0.875rem !important;
+        font-weight: 700 !important;
+        color: #475569 !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        text-decoration: none !important;
+        transition: all 0.2s !important;
+        min-width: 40px !important;
+        height: 40px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    
+    .page-link:hover {
+        background: #f8fafc !important;
+        color: #2563eb !important;
+        border-color: #cbd5e1 !important;
+        transform: translateY(-1px);
+    }
+    
+    /* Active page item */
+    .page-item.active .page-link, .page-item.active span {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.25) !important;
+    }
+    
+    /* Disabled pagination buttons */
+    .page-item.disabled .page-link, .page-item.disabled span {
+        color: #94a3b8 !important;
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        pointer-events: none !important;
+        cursor: not-allowed !important;
+        box-shadow: none !important;
+    }
     @keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
     .animate-in{animation:fadeInUp .4s ease forwards}
     .id-badge{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:.8rem;font-weight:700;color:var(--text-secondary)}
@@ -137,7 +225,8 @@
                                             data-name="{{ e($supplier->name) }}"
                                             data-phone="{{ e($supplier->phone ?? '') }}"
                                             data-email="{{ e($supplier->email ?? '') }}"
-                                            data-address="{{ e($supplier->address ?? '') }}">
+                                            data-address="{{ e($supplier->address ?? '') }}"
+                                            data-version="{{ $supplier->version }}">
                                         <i class="bi bi-pencil-fill"></i>
                                     </button>
                                     <button class="btn-action delete js-delete-supplier" type="button" title="Xóa"
@@ -154,7 +243,50 @@
                 </tbody>
             </table>
         </div>
-        @if(method_exists($suppliers, 'links'))<div class="d-flex justify-content-center py-3">{{ $suppliers->links('pagination::bootstrap-5') }}</div>@endif
+        @if(method_exists($suppliers, 'links') && $suppliers->lastPage() > 1)
+            <nav class="custom-pagination-nav">
+                <p class="text-sm">
+                    Kết quả: <span>{{ $suppliers->total() }}</span> 
+                    <span class="mx-2" style="opacity: 0.3;">|</span> 
+                    Trang <span>{{ $suppliers->currentPage() }}</span> / {{ $suppliers->lastPage() }}
+                </p>
+                
+                <ul class="pagination">
+                    {{-- Previous Page Link --}}
+                    @if ($suppliers->onFirstPage())
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                    @else
+                        <li class="page-item"><a class="page-link" href="{{ $suppliers->previousPageUrl() }}" rel="prev">&laquo;</a></li>
+                    @endif
+
+                    {{-- Pagination Elements --}}
+                    @foreach ($suppliers->getUrlRange(1, $suppliers->lastPage()) as $page => $url)
+                        @if ($page == $suppliers->currentPage())
+                            <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                        @elseif ($page === 1 || $page === $suppliers->lastPage() || abs($page - $suppliers->currentPage()) <= 1)
+                            <li class="page-item"><a class="page-link" href="{{ $url }}">{{ $page }}</a></li>
+                        @elseif (($page === 2 && $suppliers->currentPage() > 3) || ($page === $suppliers->lastPage() - 1 && $suppliers->currentPage() < $suppliers->lastPage() - 2))
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        @endif
+                    @endforeach
+
+                    {{-- Next Page Link --}}
+                    @if ($suppliers->hasMorePages())
+                        <li class="page-item"><a class="page-link" href="{{ $suppliers->nextPageUrl() }}" rel="next">&raquo;</a></li>
+                    @else
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                    @endif
+                </ul>
+            </nav>
+        @elseif(method_exists($suppliers, 'links'))
+            <nav class="custom-pagination-nav">
+                <p class="text-sm">
+                    Kết quả: <span>{{ $suppliers->total() }}</span> 
+                    <span class="mx-2" style="opacity: 0.3;">|</span> 
+                    Trang <span>1</span> / 1
+                </p>
+            </nav>
+        @endif
     </div>
 </div>
 
@@ -199,6 +331,7 @@
         <form id="editForm" method="POST">
             @csrf
             @method('PUT')
+            <input type="hidden" name="version" id="editSupplierVersion">
             <div class="app-modal-header">
                 <h5 class="app-modal-title"><i class="bi bi-pencil-square me-2" style="color:var(--accent);"></i>Sửa Nhà Cung Cấp</h5>
                 <button type="button" class="app-modal-close" onclick="closeAppModal('editModal')">&times;</button>
@@ -254,17 +387,53 @@
 
 <form id="deleteForm" method="POST" style="display:none;">@csrf @method('DELETE')</form>
 <script>
-    let deleteTargetId = null;
+    var deleteTargetId = null;
     function openAppModal(id){const modal=document.getElementById(id);if(modal) modal.classList.add('is-open');}
     function closeAppModal(id){const modal=document.getElementById(id);if(modal) modal.classList.remove('is-open');if(id==='deleteModal') deleteTargetId=null;}
-    document.querySelectorAll('.js-edit-supplier').forEach(btn=>{btn.addEventListener('click',function(){openEditModal(this.dataset.id,this.dataset.name,this.dataset.phone,this.dataset.email,this.dataset.address);});});
-    document.querySelectorAll('.js-delete-supplier').forEach(btn=>{btn.addEventListener('click',function(){openDeleteModal(this.dataset.id,this.dataset.name);});});
-    function openEditModal(id,name,phone,email,address){document.getElementById('editName').value=name||'';document.getElementById('editPhone').value=phone||'';document.getElementById('editEmail').value=email||'';document.getElementById('editAddress').value=address||'';document.getElementById('editForm').action="{{ url('admin/suppliers') }}/"+id;openAppModal('editModal');}
+    
+    var supplierTable = document.getElementById('supplierTable');
+    if (supplierTable) {
+        supplierTable.addEventListener('click', function(e) {
+            var editBtn = e.target.closest('.js-edit-supplier');
+            if (editBtn) {
+                openEditModal(
+                    editBtn.dataset.id,
+                    editBtn.dataset.name,
+                    editBtn.dataset.phone,
+                    editBtn.dataset.email,
+                    editBtn.dataset.address,
+                    editBtn.dataset.version
+                );
+                return;
+            }
+            var deleteBtn = e.target.closest('.js-delete-supplier');
+            if (deleteBtn) {
+                openDeleteModal(
+                    deleteBtn.dataset.id,
+                    deleteBtn.dataset.name
+                );
+                return;
+            }
+        });
+    }
+
+    function openEditModal(id,name,phone,email,address,version){document.getElementById('editName').value=name||'';document.getElementById('editPhone').value=phone||'';document.getElementById('editEmail').value=email||'';document.getElementById('editAddress').value=address||'';document.getElementById('editSupplierVersion').value=version||1;document.getElementById('editForm').action="{{ url('admin/suppliers') }}/"+id;openAppModal('editModal');}
     function openDeleteModal(id,name){deleteTargetId=id;document.getElementById('deleteSupplierName').textContent=name||'';openAppModal('deleteModal');}
     function submitDelete(){if(!deleteTargetId)return;const form=document.getElementById('deleteConfirmForm');form.action="{{ url('admin/suppliers') }}/"+deleteTargetId;form.submit();}
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAppModal('addModal');closeAppModal('editModal');closeAppModal('deleteModal');}});
+    
+    if (!window.hasSupplierKeydownRegistered) {
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                closeAppModal('addModal');
+                closeAppModal('editModal');
+                closeAppModal('deleteModal');
+            }
+        });
+        window.hasSupplierKeydownRegistered = true;
+    }
+
     function filterTable(){const input=document.getElementById('searchInput').value.toLowerCase().trim();document.querySelectorAll('#supplierTable tbody tr').forEach(row=>{row.style.display=row.textContent.toLowerCase().includes(input)?'':'';});}
     function clearSearch(){const input=document.getElementById('searchInput');input.value='';filterTable();input.focus();}
-    const flashAlert=document.getElementById('flash-alert');if(flashAlert){setTimeout(()=>{flashAlert.style.transition='opacity .5s ease';flashAlert.style.opacity='0';setTimeout(()=>flashAlert.remove(),500);},4000);}
+    var flashAlert=document.getElementById('flash-alert');if(flashAlert){setTimeout(()=>{flashAlert.style.transition='opacity .5s ease';flashAlert.style.opacity='0';setTimeout(()=>flashAlert.remove(),500);},4000);}
 </script>
 @endsection

@@ -77,18 +77,42 @@ class CategoryController extends Controller
         $request->validate([
             'name' => 'required|string|max:50',
             'parent_id' => 'nullable|integer|exists:categories,category_id',
+            'version' => 'required|integer',
         ], [
             'name.required' => 'Vui lòng nhập tên danh mục.',
             'name.max' => 'Tên danh mục không được vượt quá 50 ký tự.',
             'parent_id.exists' => 'Danh mục cha không tồn tại.',
+            'version.required' => 'Thiếu thông tin phiên bản danh mục.',
+            'version.integer' => 'Phiên bản danh mục không hợp lệ.',
         ]);
 
         $category = Category::findOrFail($id);
 
-        $category->update([
-            'name' => $request->name,
-            'parent_id' => $request->parent_id ?: null,
-        ]);
+        // 1. Kiểm tra Optimistic Locking (Khóa lạc quan)
+        if ((int)$category->version !== (int)$request->version) {
+            return redirect()->route('admin.categories.index')
+                ->with('error', 'Danh mục "' . $category->name . '" đã bị cập nhật bởi một người quản trị khác. Vui lòng tải lại trang và thử lại.');
+        }
+
+        $newParentId = $request->parent_id ?: null;
+
+        // 2. Chống lặp vòng cha-con
+        if ($newParentId !== null) {
+            if ((int)$newParentId === (int)$id) {
+                return redirect()->route('admin.categories.index')
+                    ->with('error', 'Không thể chọn chính danh mục này làm danh mục cha.');
+            }
+
+            if (Category::isDescendant($newParentId, $id)) {
+                return redirect()->route('admin.categories.index')
+                    ->with('error', 'Không thể chọn danh mục con làm danh mục cha (tránh tạo vòng lặp vô hạn).');
+            }
+        }
+
+        $category->name = $request->name;
+        $category->parent_id = $newParentId;
+        $category->version = $category->version + 1; // Tăng phiên bản
+        $category->save();
 
         return redirect()->route('admin.categories.index')
             ->with('success', 'Cập nhật danh mục "' . $request->name . '" thành công!');
