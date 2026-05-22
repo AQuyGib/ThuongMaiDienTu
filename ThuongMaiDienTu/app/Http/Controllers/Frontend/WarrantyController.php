@@ -15,7 +15,7 @@ class WarrantyController extends Controller
      */
     public function index()
     {
-        return view('frontend.policy.warranty');
+        return view('policy.warranty');
     }
 
     /**
@@ -23,7 +23,7 @@ class WarrantyController extends Controller
      */
     public function returnPolicy()
     {
-        return view('frontend.policy.return_policy');
+        return view('policy.return_policy');
     }
 
     /**

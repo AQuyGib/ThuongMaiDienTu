@@ -23,8 +23,8 @@
             <h4>Chính sách chung</h4>
             <ul>
                 <li><a href="#">Tích điểm Quà tặng VIP</a></li>
-                <li><a href="{{ route('warranty.index') }}">Chính sách bảo hành</a></li>
-                <li><a href="{{ route('warranty.return') }}">Chính sách đổi trả</a></li>
+                <li><a href="{{ route('policy.warranty') }}">Chính sách bảo hành</a></li>
+                <li><a href="{{ route('policy.return') }}">Chính sách đổi trả</a></li>
                 <li><a href="#">Bảo mật thông tin</a></li>
             </ul>
         </div>

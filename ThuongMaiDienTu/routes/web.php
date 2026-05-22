@@ -130,11 +130,18 @@ Route::get('/search', [SearchController::class, 'index'])->name('search.index');
 Route::get('/api/search/suggestions', [SearchController::class, 'suggestions'])->name('api.search.suggestions');
 Route::get('/api/category-products/{id}', [SearchController::class, 'getProductsByCategory'])->name('api.category.products');
 
-// Warranty Lookup (Tra cứu bảo hành)
+// Policy & Warranty Routes
 use App\Http\Controllers\Frontend\WarrantyController;
+use App\Http\Controllers\PolicyController;
+
+// Policy Pages
+Route::get('/chinh-sach-bao-hanh', [PolicyController::class, 'warranty'])->name('policy.warranty');
+Route::get('/chinh-sach-doi-tra', [PolicyController::class, 'returnPolicy'])->name('policy.return');
+
+// Warranty Lookup
 Route::get('/warranty', [WarrantyController::class, 'index'])->name('warranty.index');
 Route::post('/warranty/lookup', [WarrantyController::class, 'lookup'])->name('warranty.lookup');
-Route::get('/return-policy', [WarrantyController::class, 'returnPolicy'])->name('warranty.return');
+Route::get('/return-policy', [WarrantyController::class, 'returnPolicy'])->name('warranty.return'); // Legacy route, keep for now if needed, or remove. Let's remove and update links later if needed.
 
 // Product Compare (So sánh sản phẩm)
 use App\Http\Controllers\CompareController;
