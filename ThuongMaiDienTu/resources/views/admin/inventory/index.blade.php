@@ -205,19 +205,96 @@
         margin-bottom:14px;
         opacity:.35;
     }
-    .pagination .page-link{
-        background:#fff;
-        border:1px solid #dbe3ee;
-        color:#475569;
-        border-radius:10px!important;
-        margin:0 3px;
-        font-size:.85rem;
-        padding:7px 13px;
+    /* Custom pagination wrapper to force horizontal layout */
+    .custom-pagination-nav {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 16px 24px !important;
+        border-top: 1px solid #eef2f7 !important;
+        background-color: #ffffff !important;
+        flex-wrap: wrap !important;
+        gap: 16px !important;
     }
-    .pagination .page-link:hover,.pagination .page-item.active .page-link{
-        background:#2563eb;
-        border-color:#2563eb;
-        color:#fff;
+    
+    /* Left side: Results info */
+    .custom-pagination-nav p {
+        margin: 0 !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        color: #475569 !important; /* Màu xám đậm Slate-600 */
+        background: #f8fafc !important; /* Nền xám nhạt Slate-50 */
+        padding: 8px 16px !important;
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
+    
+    .custom-pagination-nav p span {
+        color: #0f172a !important; /* Màu đen Slate-900 để làm nổi bật các con số */
+        font-weight: 800 !important;
+    }
+    
+    /* Right side: Page selection numbers */
+    .pagination {
+        display: flex !important;
+        list-style: none !important;
+        padding-left: 0 !important;
+        margin: 0 !important;
+        gap: 6px !important;
+        align-items: center !important;
+    }
+    
+    .page-item {
+        display: inline-block !important;
+    }
+    
+    .page-link, .page-item span {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 8px 14px !important;
+        font-size: 0.875rem !important;
+        font-weight: 700 !important;
+        color: #475569 !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        text-decoration: none !important;
+        transition: all 0.2s !important;
+        min-width: 40px !important;
+        height: 40px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    
+    .page-link:hover {
+        background: #f8fafc !important;
+        color: #2563eb !important;
+        border-color: #cbd5e1 !important;
+        transform: translateY(-1px);
+    }
+    
+    /* Active page item */
+    .page-item.active .page-link, .page-item.active span {
+        background: #2563eb !important;
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.25) !important;
+    }
+    
+    /* Disabled pagination buttons */
+    .page-item.disabled .page-link, .page-item.disabled span {
+        color: #94a3b8 !important;
+        background: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        pointer-events: none !important;
+        cursor: not-allowed !important;
+        box-shadow: none !important;
     }
     .form-select-sm{
         background:#fff;
@@ -362,8 +439,49 @@
                 </tbody>
             </table>
         </div>
-        @if(method_exists($items, 'links'))
-            <div class="d-flex justify-content-center py-3">{{ $items->links('pagination::bootstrap-5') }}</div>
+        @if(method_exists($items, 'links') && $items->lastPage() > 1)
+            <nav class="custom-pagination-nav">
+                <p class="text-sm">
+                    Kết quả: <span>{{ $items->total() }}</span> 
+                    <span class="mx-2" style="opacity: 0.3;">|</span> 
+                    Trang <span>{{ $items->currentPage() }}</span> / {{ $items->lastPage() }}
+                </p>
+                
+                <ul class="pagination">
+                    {{-- Previous Page Link --}}
+                    @if ($items->onFirstPage())
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                    @else
+                        <li class="page-item"><a class="page-link" href="{{ $items->previousPageUrl() }}" rel="prev">&laquo;</a></li>
+                    @endif
+
+                    {{-- Pagination Elements --}}
+                    @foreach ($items->getUrlRange(1, $items->lastPage()) as $page => $url)
+                        @if ($page == $items->currentPage())
+                            <li class="page-item active"><span class="page-link">{{ $page }}</span></li>
+                        @elseif ($page === 1 || $page === $items->lastPage() || abs($page - $items->currentPage()) <= 1)
+                            <li class="page-item"><a class="page-link" href="{{ $url }}">{{ $page }}</a></li>
+                        @elseif (($page === 2 && $items->currentPage() > 3) || ($page === $items->lastPage() - 1 && $items->currentPage() < $items->lastPage() - 2))
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        @endif
+                    @endforeach
+
+                    {{-- Next Page Link --}}
+                    @if ($items->hasMorePages())
+                        <li class="page-item"><a class="page-link" href="{{ $items->nextPageUrl() }}" rel="next">&raquo;</a></li>
+                    @else
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                    @endif
+                </ul>
+            </nav>
+        @elseif(method_exists($items, 'links'))
+            <nav class="custom-pagination-nav">
+                <p class="text-sm">
+                    Kết quả: <span>{{ $items->total() }}</span> 
+                    <span class="mx-2" style="opacity: 0.3;">|</span> 
+                    Trang <span>1</span> / 1
+                </p>
+            </nav>
         @endif
     </div>
 
@@ -386,11 +504,25 @@
                 </thead>
                 <tbody>
                     @forelse($productStats as $index => $product)
-                        <tr>
+                        @php
+                            $isLowStock = $product->in_stock_count <= ($product->safe_stock ?? 5);
+                        @endphp
+                        <tr style="{{ $isLowStock ? 'background-color: rgba(239, 68, 68, 0.08);' : '' }}">
                             <td><span class="id-badge">{{ $index + 1 }}</span></td>
-                            <td><strong>{{ $product->name }}</strong></td>
+                            <td>
+                                <strong>{{ $product->name }}</strong>
+                                @if($isLowStock)
+                                    <span class="badge bg-danger ms-2"><i class="bi bi-exclamation-triangle-fill"></i> Cần thu mua (Tối thiểu: {{ $product->safe_stock ?? 5 }})</span>
+                                @endif
+                            </td>
                             <td class="text-center">{{ $product->variant_count }}</td>
-                            <td class="text-center">{{ $product->in_stock_count }}</td>
+                            <td class="text-center font-weight-bold">
+                                @if($isLowStock)
+                                    <span class="text-danger font-weight-bold" style="font-weight: 800;">{{ $product->in_stock_count }}</span>
+                                @else
+                                    {{ $product->in_stock_count }}
+                                @endif
+                            </td>
                             <td class="text-center">{{ $product->sold_count }}</td>
                             <td class="text-center">{{ $product->defective_count }}</td>
                             <td class="text-center"><span class="id-badge">{{ $product->total_items }}</span></td>

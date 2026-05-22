@@ -82,6 +82,7 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'base_price' => $request->base_price,
             'seo_description' => $request->seo_description ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.index')
@@ -114,6 +115,7 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'base_price' => $request->base_price,
             'seo_description' => $request->seo_description ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.index')
@@ -167,6 +169,7 @@ class ProductController extends Controller
             'gpu_chip' => $request->gpu_chip ?: null,
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.show', $productId)
@@ -205,6 +208,7 @@ class ProductController extends Controller
             'gpu_chip' => $request->gpu_chip ?: null,
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.show', $productId)

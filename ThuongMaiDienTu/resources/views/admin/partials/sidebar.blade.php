@@ -60,7 +60,14 @@
             'label' => 'Quản lý Kho',
             'route' => route('admin.inventory.index'),
             'icon' => 'fa-solid fa-warehouse',
-            'active' => request()->is('admin/inventory*'),
+            'active' => request()->is('admin/inventory*') || request()->is('admin/purchase-orders*'),
+            'section' => 'Sản phẩm & Kho'
+        ],
+        [
+            'label' => 'Điều chuyển kho',
+            'route' => route('admin.warehouse-transfers.index'),
+            'icon' => 'fa-solid fa-truck-ramp-box',
+            'active' => request()->is('admin/warehouse-transfers*'),
             'section' => 'Sản phẩm & Kho'
         ],
         [
