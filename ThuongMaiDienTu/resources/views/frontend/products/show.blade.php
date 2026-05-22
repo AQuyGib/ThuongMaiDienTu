@@ -608,6 +608,14 @@
 
 @push('scripts')
 <script>
+// --- Chatbot AI: Cung cấp ngữ cảnh sản phẩm đang xem ---
+window.chatbotProductName = {!! json_encode($product->name) !!};
+window.chatbotProductContext = {!! json_encode(
+    $product->name . ' - Giá: ' . number_format($product->base_price, 0, ',', '.') . 'đ' .
+    ($product->old_price ? ' (Giá gốc: ' . number_format($product->old_price, 0, ',', '.') . 'đ)' : '') .
+    ($product->category ? ' - Danh mục: ' . $product->category->name : '')
+) !!};
+
 // --- Tự cuộn lên đầu khi F5 ---
 if (history.scrollRestoration) {
     history.scrollRestoration = 'manual';

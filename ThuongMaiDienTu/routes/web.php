@@ -136,3 +136,7 @@ Route::get('/compare', [CompareController::class, 'index'])->name('compare.index
 Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');
 Route::post('/compare/sync', [CompareController::class, 'sync'])->name('compare.sync');
 Route::get('/api/products/search-compare', [CompareController::class, 'searchCompare'])->name('api.products.search-compare');
+
+// AI Chatbot
+use App\Http\Controllers\ChatbotController;
+Route::post('/chatbot', [ChatbotController::class, 'chat'])->name('chatbot.chat');
