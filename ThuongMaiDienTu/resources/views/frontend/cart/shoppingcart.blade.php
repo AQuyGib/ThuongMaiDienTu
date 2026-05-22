@@ -280,6 +280,12 @@
                     item.quantity = newQty;
                     window.renderCart();
                     showToast("Đã cập nhật số lượng");
+                    
+                    const badge = document.getElementById('headerCartBadge');
+                    if (badge && res.cart_count !== undefined) {
+                        badge.innerText = res.cart_count;
+                        badge.style.display = res.cart_count > 0 ? 'block' : 'none';
+                    }
                 } else if(res.message) {
                     showToast(res.message, 'warning');
                 }
@@ -322,9 +328,9 @@
                     
                     // Cập nhật số badge trên Header nếu có
                     const badge = document.getElementById('headerCartBadge');
-                    if (badge) {
+                    if (badge && res.cart_count !== undefined) {
                         badge.innerText = res.cart_count;
-                        if (res.cart_count === 0) badge.style.display = 'none';
+                        badge.style.display = res.cart_count > 0 ? 'block' : 'none';
                     }
                 }
             })

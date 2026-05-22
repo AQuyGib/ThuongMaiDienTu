@@ -851,9 +851,9 @@ function addToCart(redirect = false) {
             } else {
                 showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
                 const headerBadge = document.getElementById('headerCartBadge');
-                if (headerBadge) {
+                if (headerBadge && res.cart_count !== undefined) {
                     headerBadge.innerText = res.cart_count;
-                    headerBadge.style.display = 'block';
+                    headerBadge.style.display = res.cart_count > 0 ? 'block' : 'none';
                 }
             }
         } else if(res.error) {

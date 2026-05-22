@@ -94,7 +94,7 @@ class CartController extends Controller
             return redirect()->route('cart.index')->with('success', 'Đã thêm vào giỏ hàng!');
         }
 
-        return response()->json(['status' => 'success', 'cart_count' => count($cart)]);
+        return response()->json(['status' => 'success', 'cart_count' => $this->getCartTotalQuantity($cart)]);
     }
 
     /**
@@ -161,7 +161,7 @@ class CartController extends Controller
 
             return response()->json([
                 'status' => 'success',
-                'cart_count' => count($cart),
+                'cart_count' => $this->getCartTotalQuantity($cart),
                 'message' => 'Cập nhật số lượng thành công.'
             ]);
         }
@@ -182,7 +182,7 @@ class CartController extends Controller
             session()->put('cart', $cart);
             return response()->json([
                 'status' => 'success',
-                'cart_count' => count($cart),
+                'cart_count' => $this->getCartTotalQuantity($cart),
                 'message' => 'Đã xóa sản phẩm khỏi giỏ hàng.'
             ]);
         }
@@ -410,6 +410,15 @@ class CartController extends Controller
     public function getCartCount()
     {
         $cart = session()->get('cart', []);
-        return response()->json(['cart_count' => count($cart)]);
+        return response()->json(['cart_count' => $this->getCartTotalQuantity($cart)]);
+    }
+
+    private function getCartTotalQuantity($cart)
+    {
+        $total = 0;
+        foreach ($cart as $item) {
+            $total += (int)($item['quantity'] ?? 0);
+        }
+        return $total;
     }
 }

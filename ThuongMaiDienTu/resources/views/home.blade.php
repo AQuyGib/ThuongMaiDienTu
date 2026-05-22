@@ -1326,9 +1326,10 @@
                     toast: true,
                     position: 'top-end'
                 });
-                const cartCountElement = document.querySelector('.cart-count');
+                const cartCountElement = document.getElementById('headerCartBadge');
                 if (cartCountElement && data.cart_count !== undefined) {
                     cartCountElement.innerText = data.cart_count;
+                    cartCountElement.style.display = data.cart_count > 0 ? 'block' : 'none';
                 }
             } else {
                 Swal.fire('Thất bại', data.message || 'Lỗi khi thêm vào giỏ', 'error');
