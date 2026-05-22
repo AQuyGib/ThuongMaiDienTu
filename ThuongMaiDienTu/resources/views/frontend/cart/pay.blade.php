@@ -247,16 +247,11 @@ const fmt = n => new Intl.NumberFormat('vi-VN').format(n || 0) + 'đ';
 // ---- LOAD CART FROM SESSIONSTORAGE ----
 function loadCart() {
   try {
-    const raw = sessionStorage.getItem('checkoutItems');
-    if (raw) cartItems = JSON.parse(raw);
-  } catch(e) {}
-
-  // Fallback nếu không có sessionStorage
-  if (!cartItems.length) {
-    cartItems = [
-      { name: 'Android Tivi Sony 4K 65 inch', price: 16990000, quantity: 2 },
-      { name: 'Tủ lạnh Aqua Inverter 189 lít', price: 4990000, quantity: 1 },
-    ];
+    const raw = '{!! json_encode($cartItems) !!}';
+    cartItems = JSON.parse(raw);
+  } catch(e) {
+    console.error("Lỗi nạp giỏ hàng từ server:", e);
+    cartItems = [];
   }
 
   renderItems();
@@ -394,23 +389,63 @@ function submitOrder() {
   const name = document.getElementById('inp-name').value.trim();
   const phone = document.getElementById('inp-phone').value.trim();
   const addr = document.getElementById('inp-address').value.trim();
+  const note = document.getElementById('inp-note').value.trim();
+  const discountInp = document.getElementById('discount-code');
+  const discountCode = discountInp && discountInp.readOnly ? discountInp.value.trim().toUpperCase() : '';
+
   if (!name || !phone || !addr) return;
 
   const btn = document.getElementById('btn-order');
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang xử lý...';
   btn.disabled = true;
 
-  setTimeout(() => {
-    if (currentMethod === 'qr') {
-      const total = subtotalVal - discountVal;
-      sessionStorage.setItem('paymentTotal', total);
-      window.location.href = "{{ route('cart.qr') }}";
+  const data = {
+    name: name,
+    phone: phone,
+    address: addr,
+    note: note,
+    payment_method: currentMethod,
+    discount_code: discountCode
+  };
+
+  fetch('{{ route("cart.confirm") }}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(res => {
+    if (res.status === 'success') {
+      const badge = document.getElementById('headerCartBadge');
+      if (badge) {
+        fetch('{{ route("cart.count") }}')
+          .then(r => r.json())
+          .then(d => {
+             badge.innerText = d.cart_count;
+             if (d.cart_count === 0) badge.style.display = 'none';
+          });
+      }
+
+      if (currentMethod === 'qr') {
+        window.location.href = "{{ route('cart.qr') }}?order_id=" + res.order_id;
+      } else {
+        document.getElementById('success-overlay').classList.remove('hidden');
+      }
     } else {
-      sessionStorage.removeItem('checkoutItems');
-      sessionStorage.removeItem('paymentTotal');
-      document.getElementById('success-overlay').classList.remove('hidden');
+      alert(res.message || 'Đã xảy ra lỗi khi đặt hàng!');
+      btn.innerHTML = '<i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG';
+      btn.disabled = false;
     }
-  }, 1500);
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Đã xảy ra lỗi hệ thống!');
+    btn.innerHTML = '<i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG';
+    btn.disabled = false;
+  });
 }
 
 // ---- INIT ----
