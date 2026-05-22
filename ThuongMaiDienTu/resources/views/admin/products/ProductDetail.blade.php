@@ -3,6 +3,7 @@
 @section('title', 'Chi tiết sản phẩm')
 
 @push('styles')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
     .page-hero {
         background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
@@ -168,35 +169,70 @@
     </div>
 
     <div class="grid gap-6 xl:grid-cols-[1fr_1.4fr]">
-        <div class="glass-card p-6">
-            <h2 class="mb-4 text-lg font-semibold text-slate-900">Thông tin sản phẩm</h2>
-            <div class="info-grid">
-                <div class="info-item">
-                    <span class="info-label">Tên sản phẩm</span>
-                    <span class="info-value">{{ $product->name }}</span>
+        <div class="space-y-6">
+            <div class="glass-card p-6">
+                <h2 class="mb-4 text-lg font-semibold text-slate-900">Thông tin sản phẩm</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Tên sản phẩm</span>
+                        <span class="info-value">{{ $product->name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Danh mục</span>
+                        <span class="info-value">
+                            @if($product->category)
+                                <span class="soft-badge">{{ $product->category->name }}</span>
+                            @else
+                                <span class="text-slate-400">—</span>
+                            @endif
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Giá bán</span>
+                        <span class="info-value text-emerald-600">{{ number_format($product->base_price, 0, ',', '.') }}₫</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Thương hiệu</span>
+                        <span class="info-value">{{ $product->brand ?? '—' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Mô tả SEO</span>
+                        <span class="info-value font-medium text-slate-500">{{ $product->seo_description ?? '—' }}</span>
+                    </div>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Danh mục</span>
-                    <span class="info-value">
-                        @if($product->category)
-                            <span class="soft-badge">{{ $product->category->name }}</span>
-                        @else
-                            <span class="text-slate-400">—</span>
-                        @endif
+            </div>
+
+            {{-- Sản phẩm bán kèm (Cross-sell) --}}
+            <div class="glass-card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-slate-900">
+                        <i class="fa-solid fa-cart-plus mr-2 text-indigo-600"></i>Sản Phẩm Bán Kèm (Cross-sell)
+                    </h2>
+                    <span class="inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                        {{ $product->crossSells->count() }} đã chọn
                     </span>
                 </div>
-                <div class="info-item">
-                    <span class="info-label">Giá bán</span>
-                    <span class="info-value text-emerald-600">{{ number_format($product->base_price, 0, ',', '.') }}₫</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Thương hiệu</span>
-                    <span class="info-value">{{ $product->brand ?? '—' }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Mô tả SEO</span>
-                    <span class="info-value font-medium text-slate-500">{{ $product->seo_description ?? '—' }}</span>
-                </div>
+                <p class="text-sm text-slate-500 mb-4">Chọn các sản phẩm thường được mua kèm với sản phẩm này để gợi ý mua kèm.</p>
+                
+                <form action="{{ route('admin.products.cross-sells.sync', $product->product_id) }}" method="POST">
+                    @csrf
+                    <div class="mb-4">
+                        <label class="mb-2 block text-sm font-medium text-slate-700">Chọn sản phẩm gợi ý</label>
+                        <select name="cross_sell_ids[]" class="select2-crosssell w-full" multiple="multiple">
+                            @foreach($allProducts as $p)
+                                <option value="{{ $p->product_id }}" 
+                                    {{ $product->crossSells->contains('product_id', $p->product_id) ? 'selected' : '' }}>
+                                    {{ $p->name }} - ({{ number_format($p->base_price, 0, ',', '.') }}₫)
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="text-right">
+                        <button type="submit" class="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700">
+                            <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -427,7 +463,17 @@
 @endsection
 
 @push('scripts')
+<!-- jQuery & Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+    $(document).ready(function() {
+        $('.select2-crosssell').select2({
+            placeholder: "Tìm kiếm và chọn sản phẩm...",
+            allowClear: true
+        });
+    });
+
     const productId = {{ $product->product_id }};
     const baseUrl = "{{ url('admin/products') }}";
 
