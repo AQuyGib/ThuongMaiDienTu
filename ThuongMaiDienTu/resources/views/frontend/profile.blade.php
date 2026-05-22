@@ -7,7 +7,6 @@
     body {
         background-color: #f4f6f8;
     }
-    /* Cấu hình layout grid: Sidebar rộng 280px và khoảng cách (gap) rộng 20px */
     .profile-container {
         display: grid;
         grid-template-columns: 280px 1fr;
@@ -1642,6 +1641,24 @@
 
 </div>
 
+<!-- Container thông báo Toast -->
+<div id="toast-container"></div>
+
+<!-- Modal xác nhận xóa custom -->
+<div id="confirmModal" class="confirm-modal-overlay">
+    <div class="confirm-modal">
+        <div class="confirm-icon">
+            <i class="fa-solid fa-trash-can"></i>
+        </div>
+        <h4 id="confirmTitle">Xác nhận xóa</h4>
+        <p id="confirmMessage">Bạn có chắc chắn muốn xóa địa chỉ này không? Thao tác này không thể hoàn tác.</p>
+        <div class="confirm-actions">
+            <button type="button" class="btn-cancel" onclick="closeConfirmModal()">Hủy bỏ</button>
+            <button type="button" id="btnDoConfirm" class="btn-confirm-delete">Xác nhận xóa</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Đăng Ký Lịch Sửa Chữa Trực Tuyến -->
 <div id="repairModal" class="student-modal-overlay">
     <div class="student-modal" style="max-width: 680px; width: 95%;">
@@ -1763,7 +1780,7 @@
                     </div>
                 </div>
 
-                <!-- Bước 2: Kiểm tra & báo giá -->
+                <!-- Bước 2: Kiểm tra & Báo giá -->
                 <div class="step-item" id="step-checking">
                     <div class="step-icon">
                         <i class="fa-solid fa-magnifying-glass"></i>
@@ -1795,35 +1812,13 @@
                         <i class="fa-solid fa-circle-check"></i>
                     </div>
                     <div class="step-content">
-                        <h4 class="step-title">Hoàn thành & Bàn giao</h4>
+                        <h4 class="step-title">Sửa chữa hoàn tất</h4>
                         <div class="step-desc" id="step-done-desc">
                             Đã sửa chữa hoàn chỉnh, kiểm tra chất lượng và hoàn trả thiết bị cho khách hàng.
                         </div>
                     </div>
                 </div>
             </div>
-
-            <div style="display: flex; justify-content: flex-end; margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px;">
-                <button type="button" class="btn-update" style="margin: 0; background: #0046ab; padding: 10px 25px;" onclick="closeTrackingModal()">Đóng</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Container thông báo Toast -->
-<div id="toast-container"></div>
-
-<!-- Modal xác nhận xóa custom -->
-<div id="confirmModal" class="confirm-modal-overlay">
-    <div class="confirm-modal">
-        <div class="confirm-icon">
-            <i class="fa-solid fa-trash-can"></i>
-        </div>
-        <h4 id="confirmTitle">Xác nhận xóa</h4>
-        <p id="confirmMessage">Bạn có chắc chắn muốn xóa địa chỉ này không? Thao tác này không thể hoàn tác.</p>
-        <div class="confirm-actions">
-            <button type="button" class="btn-cancel" onclick="closeConfirmModal()">Hủy bỏ</button>
-            <button type="button" id="btnDoConfirm" class="btn-confirm-delete">Xác nhận xóa</button>
         </div>
     </div>
 </div>
@@ -2049,18 +2044,6 @@
         }
     }
 
-    function closeAddressModal() {
-        document.getElementById('addressModal').classList.remove('active');
-        document.getElementById('addAddressForm').reset();
-        document.getElementById('addrId').value = '';
-        document.getElementById('addressModalTitle').innerText = 'Thêm địa chỉ mới';
-        document.getElementById('addressSubmitBtn').innerText = 'Lưu địa chỉ';
-        document.getElementById('addrDistrict').innerHTML = '<option value="">Chọn Quận/Huyện</option>';
-        document.getElementById('addrDistrict').disabled = true;
-        document.getElementById('addrWard').innerHTML = '<option value="">Chọn Phường/Xã</option>';
-        document.getElementById('addrWard').disabled = true;
-    }
-
     // Fetch API Data (Stable Version)
     function fetchProvincesData() {
         fetch('https://esgoo.net/api-tinhthanh/1/0.htm')
@@ -2213,7 +2196,6 @@
     }
 
     function editAddress(id, city, district, ward, street, name, type, isDefault) {
-        // ... (existing editAddress setup)
         document.getElementById('addressModalTitle').innerText = 'Cập nhật địa chỉ';
         document.getElementById('addressSubmitBtn').innerText = 'Cập nhật';
         document.getElementById('addrId').value = id;
@@ -2224,7 +2206,6 @@
 
         openAddressModal();
 
-        // ... (rest of dropdown population logic)
         setTimeout(() => {
             const citySelect = document.getElementById('addrCity');
             for(let i=0; i<citySelect.options.length; i++) {
