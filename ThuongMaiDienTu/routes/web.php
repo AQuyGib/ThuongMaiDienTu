@@ -13,6 +13,12 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\RewardsController;
+use App\Http\Controllers\RewardsHistoryController;
+use App\Http\Controllers\Admin\RewardsController as AdminRewardsController;
+use App\Http\Controllers\Admin\RewardImageController;
+use App\Http\Controllers\Auth\TwoFactorController;
+use App\Http\Controllers\CompareController;
 use App\Http\Controllers\WishlistController;
 
 // Authentication
@@ -36,7 +42,6 @@ Route::get('/auth/{provider}', [SocialController::class, 'redirectToProvider'])-
 Route::get('/auth/{provider}/callback', [SocialController::class, 'handleProviderCallback']);
 
 // Two-Factor Authentication (2FA)
-use App\Http\Controllers\Auth\TwoFactorController;
 Route::get('/2fa/verify',  [TwoFactorController::class, 'show'])->name('2fa.show');
 Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify');
 Route::post('/2fa/send',   [TwoFactorController::class, 'send'])->name('2fa.send');
@@ -62,6 +67,9 @@ Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index'
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
+Route::post('/pay/wallet-points', [CartController::class, 'applyWalletPoints'])->name('cart.pay.wallet-points');
+Route::post('/pay/place-order', [CartController::class, 'placeOrder'])->name('cart.place-order');
+Route::get('/order-confirmation/{orderId}', [CartController::class, 'confirmation'])->name('cart.confirmation');
 Route::post('/cart/confirm', [CartController::class, 'confirmOrder'])->name('cart.confirm');
 Route::post('/cart/cancel', [CartController::class, 'cancelOrder'])->name('cart.cancel');
 Route::post('/cart/timeout', [CartController::class, 'timeoutOrder'])->name('cart.timeout');
@@ -69,6 +77,12 @@ Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
 Route::get('/orders', [CartController::class, 'tracking'])->name('cart.tracking');
 Route::get('/print-bill', [CartController::class, 'print'])->name('cart.print');
 Route::get('/cart/count', [CartController::class, 'getCartCount'])->name('cart.count');
+
+Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');
+Route::get('/rewards/{reward}', [RewardsController::class, 'show'])->name('rewards.show');
+Route::get('/rewards/history', [RewardsHistoryController::class, 'index'])->name('rewards.history');
+Route::post('/rewards/redeem', [RewardsController::class, 'redeem'])->name('rewards.redeem');
+Route::post('/rewards/spin', [RewardsController::class, 'spin'])->name('rewards.spin');
 
 // Articles & Lifestyle
 Route::get('/lifestyle', [\App\Http\Controllers\ArticleFrontendController::class, 'index'])->name('articles.index');
@@ -115,7 +129,6 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::get('customers/export', [\App\Http\Controllers\Admin\CustomerController::class, 'export'])->name('admin.customers.export');
     Route::post('customers/bulk-action', [\App\Http\Controllers\Admin\CustomerController::class, 'bulkAction'])->name('admin.customers.bulk-action');
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class, ['as' => 'admin']);
-
     Route::get('products/import', [\App\Http\Controllers\Admin\ProductController::class, 'importForm'])->name('admin.products.import.form');
     Route::post('products/import', [\App\Http\Controllers\Admin\ProductController::class, 'importExcel'])->name('admin.products.import');
     Route::get('products/export', [\App\Http\Controllers\Admin\ProductController::class, 'exportExcel'])->name('admin.products.export');
@@ -123,6 +136,12 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::post('products/{product}/variants', [\App\Http\Controllers\Admin\ProductController::class, 'storeVariant'])->name('admin.products.variants.store');
     Route::put('products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductController::class, 'updateVariant'])->name('admin.products.variants.update');
     Route::delete('products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductController::class, 'destroyVariant'])->name('admin.products.variants.destroy');
+
+    Route::get('rewards', [AdminRewardsController::class, 'index'])->name('admin.rewards.index');
+    Route::post('rewards', [AdminRewardsController::class, 'store'])->name('admin.rewards.store');
+    Route::put('rewards/{reward}', [AdminRewardsController::class, 'update'])->name('admin.rewards.update');
+    Route::put('rewards/{reward}/image', [RewardImageController::class, 'update'])->name('admin.rewards.image.update');
+    Route::delete('rewards/{reward}', [AdminRewardsController::class, 'destroy'])->name('admin.rewards.destroy');
 });
 
 Route::middleware('auth')->group(function () {
@@ -152,7 +171,6 @@ Route::get('/api/search/suggestions', [SearchController::class, 'suggestions'])-
 Route::get('/api/category-products/{id}', [SearchController::class, 'getProductsByCategory'])->name('api.category.products');
 
 // Product Compare (So sánh sản phẩm)
-use App\Http\Controllers\CompareController;
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
 Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');
 Route::post('/compare/sync', [CompareController::class, 'sync'])->name('compare.sync');

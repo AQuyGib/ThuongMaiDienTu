@@ -85,6 +85,13 @@
             'section' => 'Sản phẩm & Kho'
         ],
         [
+            'label' => 'Đổi thưởng',
+            'route' => route('admin.rewards.index'),
+            'icon' => 'fa-solid fa-gift',
+            'active' => request()->routeIs('admin.rewards.index'),
+            'section' => 'Thiết lập'
+        ],
+        [
             'label' => 'Tùy biến Giao diện',
             'route' => route('admin.settings.theme'),
             'icon' => 'fa-solid fa-paint-brush',

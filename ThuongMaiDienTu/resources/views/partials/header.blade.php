@@ -333,6 +333,7 @@
             <a href="#" class="mega-cat-item"><i class="fa-solid fa-gamepad"></i><span>Thu cũ đổi mới</span></a>
             <a href="#" class="mega-cat-item"><i class="fa-solid fa-tags"></i><span>Hàng cũ</span></a>
             <a href="#" class="mega-cat-item"><i class="fa-solid fa-percent"></i><span>Khuyến mãi</span></a>
+            <a href="{{ route('rewards.index') }}" class="mega-cat-item"><i class="fa-solid fa-gift"></i><span>Trang đổi thưởng</span></a>
             <a href="{{ route('articles.index') }}" class="mega-cat-item"><i class="fa-solid fa-newspaper"></i><span>Tin công nghệ</span></a>
         </div>
         <div class="mega-col-right">
