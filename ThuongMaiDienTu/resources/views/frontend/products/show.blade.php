@@ -829,55 +829,45 @@ function showProductToast(msg) {
     }
 }
 
-function buyNow() {
-    const productId = '{{ $product->product_id }}';
-    fetch('{{ route("cart.add") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({ product_id: productId, quantity: 1, buy_now: true })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.status === 'success') {
-            window.location.href = "{{ route('cart.index') }}";
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
+function addToCart(redirect = false) {
+    const data = {
+        product_id: '{{ $product->product_id }}',
+        quantity: 1
+    };
 
-function addToCart() {
-    const productId = '{{ $product->product_id }}';
     fetch('{{ route("cart.add") }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
-        body: JSON.stringify({ product_id: productId, quantity: 1 })
+        body: JSON.stringify(data)
     })
     .then(response => response.json())
-    .then(data => {
-        if(data.status === 'success') {
-            showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
-            const headerBadge = document.getElementById('headerCartBadge');
-            if (headerBadge) {
-                headerBadge.innerText = data.cart_count;
-                headerBadge.style.display = 'block';
+    .then(res => {
+        if(res.status === 'success') {
+            if (redirect) {
+                window.location.href = "{{ route('cart.index') }}";
+            } else {
+                showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
+                const headerBadge = document.getElementById('headerCartBadge');
+                if (headerBadge) {
+                    headerBadge.innerText = res.cart_count;
+                    headerBadge.style.display = 'block';
+                }
             }
-            // Đồng bộ với localStorage để Header không bị nhảy số khi load trang khác
-            let userId = '{{ Auth::id() ?? "guest" }}';
-            localStorage.setItem('cartCount_' + userId, data.cart_count);
-        } else if (data.error) {
-            showToast(data.error, 'error');
+        } else if(res.error) {
+            showToast(res.error, 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Đã xảy ra lỗi!', 'error');
+        showToast('Đã xảy ra lỗi khi thêm vào giỏ hàng!', 'error');
     });
+}
+
+function buyNow() {
+    addToCart(true);
 }
 
 // Wishlist Toggle

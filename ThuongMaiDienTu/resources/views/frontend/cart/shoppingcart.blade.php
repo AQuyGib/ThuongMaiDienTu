@@ -111,17 +111,12 @@
     function initializeData() {
         try {
             // Lấy dữ liệu từ Laravel gửi qua
-            window.cartData = {!! json_encode($cartItems ?? []) !!};
-            console.log("Cart Data initialized:", window.cartData);
+            const raw = '{!! isset($cartItems) ? json_encode($cartItems) : "[]" !!}';
+            window.cartData = JSON.parse(raw);
             
-            // Fallback nếu empty (dành cho demo hoặc nếu controller chưa truyền data)
-            if (!window.cartData || window.cartData.length === 0) {
-                 console.log("Cart is empty, checking localStorage fallback...");
-                 // Có thể thử lấy từ sessionStorage nếu checkoutItems tồn tại (tùy logic ứng dụng)
-                 // window.cartData = JSON.parse(sessionStorage.getItem('checkoutItems') || '[]');
-            }
+            // Nếu Controller không truyền data thì raw là "[]", JSON.parse vẫn trả về mảng rỗng.
         } catch (e) {
-            console.error("Lỗi khởi tạo dữ liệu:", e);
+            console.warn("Lỗi parse dữ liệu giỏ hàng:", e);
             window.cartData = [];
         }
     }
@@ -159,13 +154,11 @@
                             ${item.selected ? 'checked' : ''} 
                             onchange="window.toggleItem(${item.id}, this.checked)">
                     </div>
-                    <a href="${item.url}" class="w-24 h-24 flex-shrink-0 bg-gray-50 rounded p-2 hover:opacity-80 transition-opacity">
+                    <div class="w-24 h-24 flex-shrink-0 bg-gray-50 rounded p-2">
                         <img src="${item.image}" class="w-full h-full object-contain" alt="${item.name}">
-                    </a>
+                    </div>
                     <div class="flex-1">
-                        <a href="${item.url}" class="hover:text-blue-600 transition-colors">
-                            <h3 class="font-semibold text-gray-800 line-clamp-2 leading-tight pr-6">${item.name}</h3>
-                        </a>
+                        <h3 class="font-semibold text-gray-800 line-clamp-2 leading-tight pr-6">${item.name}</h3>
                         <p class="text-red-600 font-bold text-lg mt-1">${formatMoney(item.price)}</p>
                         
                         <div class="flex items-center mt-3 border w-max rounded-lg bg-gray-50">
@@ -319,7 +312,7 @@
             try {
                 sessionStorage.setItem('checkoutItems', JSON.stringify(selectedItems));
             } catch(e) {}
-        window.location.href = `{{ url('/pay') }}`;
+            window.location.href = `{{ url('/pay') }}`;
         }
     };
 
