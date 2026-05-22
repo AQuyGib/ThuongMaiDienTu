@@ -13,6 +13,7 @@ const KPIDashboard = React.lazy(() => import('./components/KPIDashboard'));
 const ThemeSettings = React.lazy(() => import('./components/ThemeSettings'));
 const SecuritySettings = React.lazy(() => import('./components/SecuritySettings'));
 const VerifyOtp = React.lazy(() => import('./components/VerifyOtp'));
+const EmployeeManager = React.lazy(() => import('./components/EmployeeManager'));
 
 const mountedRoots = new Map<string, any>();
 
@@ -69,6 +70,7 @@ const init = () => {
     renderComponent('admin-theme-settings', ThemeSettings);
     renderComponent('security-settings-app', SecuritySettings);
     renderComponent('verify-otp-app', VerifyOtp);
+    renderComponent('admin-employee-management', EmployeeManager);
 
     // Legacy / Demo
     const demoContainer = document.getElementById('joly-demo');

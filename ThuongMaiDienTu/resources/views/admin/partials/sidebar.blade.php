@@ -109,6 +109,13 @@
             'section' => 'Thiết lập'
         ];
         $menu[] = [
+            'label' => 'Nhân viên',
+            'route' => route('admin.employees.index'),
+            'icon' => 'fa-solid fa-user-tie',
+            'active' => request()->is('admin/employees*'),
+            'section' => 'Thiết lập'
+        ];
+        $menu[] = [
             'label' => 'Cài đặt hệ thống',
             'route' => Route::has('admin.settings.index') ? route('admin.settings.index') : '#',
             'icon' => 'fa-solid fa-cog',

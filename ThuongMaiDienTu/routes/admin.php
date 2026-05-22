@@ -51,6 +51,14 @@ Route::resource('permissions', UserController::class)->names([
     'destroy' => 'users.destroy',
 ])->except(['create', 'show', 'edit']);
 
+// CRUD Quản lý Nhân viên (Employee Management)
+Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class)->names([
+    'index' => 'employees.index',
+    'store' => 'employees.store',
+    'update' => 'employees.update',
+    'destroy' => 'employees.destroy',
+])->except(['create', 'show', 'edit']);
+
 Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
 Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
 Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');

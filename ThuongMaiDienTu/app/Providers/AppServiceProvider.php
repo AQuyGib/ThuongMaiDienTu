@@ -26,6 +26,11 @@ class AppServiceProvider extends ServiceProvider
         }
         \Illuminate\Support\Facades\Schema::defaultStringLength(191);
 
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Models\User::class,
+            \App\Policies\EmployeePolicy::class
+        );
+
         \Illuminate\Support\Facades\Event::listen(
             \Illuminate\Auth\Events\Login::class,
             function ($event) {
