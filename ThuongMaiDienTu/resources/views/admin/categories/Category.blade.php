@@ -1,786 +1,472 @@
-<!DOCTYPE html>
-<html lang="vi">
+@extends('admin.layouts.master')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Quản Lý Danh Mục</title>
+@section('title', 'Quản lý danh mục')
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <!-- Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    <!-- SweetAlert2 -->
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-    <!-- Tailwind CSS (for Sidebar) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+@push('styles')
+<style>
+    .page-shell {
+        background: linear-gradient(180deg, rgba(17, 24, 39, 0.03) 0%, rgba(17, 24, 39, 0) 220px);
+    }
 
-    <style>
-        :root {
-            --bg-primary: #0f1117;
-            --bg-secondary: #1a1d27;
-            --bg-card: #1e2231;
-            --bg-hover: #262a3a;
-            --accent: #6c5ce7;
-            --accent-hover: #7f71ed;
-            --accent-glow: rgba(108, 92, 231, 0.25);
-            --text-primary: #e8e8ef;
-            --text-secondary: #9ca3b4;
-            --border: #2d3148;
-            --danger: #e74c5e;
-            --danger-hover: #d4364a;
-            --success: #2ed573;
-            --warning: #ffa502;
-        }
+    .page-hero {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e5e7eb;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+    }
 
-        * {
-            box-sizing: border-box;
-        }
+    .glass-card {
+        background: rgba(255, 255, 255, 0.86);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(229, 231, 235, 0.9);
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+    }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            min-height: 100vh;
-            margin: 0;
-        }
+    .soft-input {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        transition: all .2s ease;
+    }
 
-        /* ===== HEADER ===== */
-        .page-header {
-            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
-            border-bottom: 1px solid var(--border);
-            padding: 28px 0;
-        }
+    .soft-input:focus {
+        background: #fff;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+    }
 
-        .page-header h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+    .table-modern th {
+        font-size: .72rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: #64748b;
+        border-bottom: 1px solid #e5e7eb !important;
+    }
 
-        .page-header h1 i {
-            font-size: 1.5rem;
-            color: var(--accent);
-        }
+    .table-modern td {
+        border-bottom: 1px solid #eef2f7 !important;
+        vertical-align: middle;
+    }
 
-        .badge-count {
-            background: var(--accent);
-            color: #fff;
-            font-size: .75rem;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 20px;
-            margin-left: 8px;
-        }
+    .badge-category {
+        background: #ecfeff;
+        color: #0f766e;
+    }
 
-        /* ===== STATS CARDS ===== */
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 22px 24px;
-            transition: all .3s ease;
-        }
+    .btn-primary-soft {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+        box-shadow: 0 10px 20px rgba(99, 102, 241, .18);
+    }
 
-        .stat-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--accent);
-            box-shadow: 0 8px 30px var(--accent-glow);
-        }
+    .btn-primary-soft:hover {
+        color: white;
+        transform: translateY(-1px);
+    }
 
-        .stat-card .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-        }
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        color: #64748b;
+        transition: all .2s ease;
+    }
 
-        .stat-card .stat-value {
-            font-size: 1.6rem;
-            font-weight: 700;
-        }
+    .icon-btn:hover {
+        transform: translateY(-1px);
+        border-color: #c7d2fe;
+        color: #4338ca;
+        background: #eef2ff;
+    }
 
-        .stat-card .stat-label {
-            font-size: .82rem;
-            color: var(--text-secondary);
-        }
+    .icon-btn.danger:hover {
+        border-color: #fecaca;
+        color: #b91c1c;
+        background: #fef2f2;
+    }
 
-        /* ===== TABLE CARD ===== */
-        .table-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
-        }
+    .modal-backdrop-custom {
+        background: rgba(15, 23, 42, .55);
+    }
 
-        .table-card-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
+    .modal-panel {
+        max-height: calc(100vh - 2rem);
+        overflow: auto;
+    }
+</style>
+@endpush
 
-        .table-card-header h5 {
-            margin: 0;
-            font-weight: 600;
-            font-size: 1.05rem;
-        }
+@section('content')
+<div class="page-shell space-y-6">
+    <div class="page-hero p-6 sm:p-8">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <div class="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700">
+                    <i class="fa-solid fa-layer-group"></i>
+                    Danh mục sản phẩm
+                </div>
+                <h1 class="mt-4 text-2xl font-bold text-slate-900 sm:text-3xl">Quản lý danh mục</h1>
+                <p class="mt-2 max-w-2xl text-sm text-slate-500">
+                    Giao diện được đồng bộ với trang sản phẩm để thao tác nhất quán và dễ theo dõi hơn.
+                </p>
+            </div>
 
-        /* ===== SEARCH ===== */
-        .search-box {
-            position: relative;
-            max-width: 280px;
-        }
+            <button type="button" class="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700" onclick="openModal('addCategoryModal')">
+                <i class="fa-solid fa-plus"></i>
+                Thêm danh mục
+            </button>
+        </div>
+    </div>
 
-        .search-box input {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            border-radius: 10px;
-            padding: 9px 14px 9px 38px;
-            width: 100%;
-            font-size: .875rem;
-            transition: border-color .2s;
-        }
+    @if(session('success'))
+        <div class="glass-card border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-700">
+            <i class="fa-solid fa-circle-check mr-2"></i>{{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="glass-card border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">
+            <i class="fa-solid fa-circle-exclamation mr-2"></i>{{ session('error') }}
+        </div>
+    @endif
+    @if($errors->any())
+        <div class="glass-card border-rose-200 bg-rose-50 px-4 py-3 text-rose-700">
+            <div class="font-semibold mb-2"><i class="fa-solid fa-triangle-exclamation mr-2"></i>Vui lòng kiểm tra lại</div>
+            <div class="space-y-1 text-sm">
+                @foreach($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
-        .search-box input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-glow);
-        }
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="relative overflow-hidden rounded-[26px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(79,70,229,0.12)]">
+            <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-indigo-100/50 blur-3xl"></div>
+            <div class="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-violet-100/40 blur-3xl"></div>
+            <div class="relative">
+                <span class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-700">Tổng</span>
+                <p class="mt-4 text-sm font-medium text-slate-500">Tổng danh mục</p>
+                <div class="mt-2 flex items-end gap-2">
+                    <span class="text-4xl leading-none font-black tracking-tight text-slate-900">{{ $totalCategories ?? $categories->total() }}</span>
+                    <span class="pb-1 text-xs font-bold uppercase tracking-[0.22em] text-slate-400">mục</span>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-slate-500">Toàn bộ danh mục đang được quản lý trong hệ thống.</p>
+            </div>
+        </div>
 
-        .search-box i {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            font-size: .9rem;
-        }
+        <div class="relative overflow-hidden rounded-[26px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(14,165,233,0.12)]">
+            <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-100/50 blur-3xl"></div>
+            <div class="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-cyan-100/40 blur-3xl"></div>
+            <div class="relative">
+                <span class="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">Root</span>
+                <p class="mt-4 text-sm font-medium text-slate-500">Danh mục gốc</p>
+                <div class="mt-2 flex items-end gap-2">
+                    <span class="text-4xl leading-none font-black tracking-tight text-slate-900">{{ $rootCategories ?? 0 }}</span>
+                    <span class="pb-1 text-xs font-bold uppercase tracking-[0.22em] text-slate-400">mục</span>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-slate-500">Những nhóm cấp cao nhất trong cấu trúc danh mục.</p>
+            </div>
+        </div>
 
-        /* ===== TABLE ===== */
-        .table-custom {
-            margin: 0;
-            width: 100%;
-        }
+        <div class="relative overflow-hidden rounded-[26px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(245,158,11,0.12)]">
+            <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-100/50 blur-3xl"></div>
+            <div class="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-orange-100/40 blur-3xl"></div>
+            <div class="relative">
+                <span class="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">Sub</span>
+                <p class="mt-4 text-sm font-medium text-slate-500">Danh mục con</p>
+                <div class="mt-2 flex items-end gap-2">
+                    <span class="text-4xl leading-none font-black tracking-tight text-slate-900">{{ $childCategories ?? 0 }}</span>
+                    <span class="pb-1 text-xs font-bold uppercase tracking-[0.22em] text-slate-400">mục</span>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-slate-500">Các danh mục nằm bên trong danh mục cha.</p>
+            </div>
+        </div>
 
-        .table-custom thead th {
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            font-weight: 600;
-            font-size: .8rem;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-            padding: 14px 20px;
-            border: none;
-            white-space: nowrap;
-        }
-
-        .table-custom tbody td {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            vertical-align: middle;
-            font-size: .9rem;
-        }
-
-        .table-custom tbody tr {
-            transition: background .2s;
-        }
-
-        .table-custom tbody tr:hover {
-            background: var(--bg-hover);
-        }
-
-        .table-custom tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .img-upload-area{border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;transition:all .3s;cursor:pointer;position:relative}
-        .img-upload-area:hover{border-color:var(--accent);background:rgba(108,92,231,.05)}
-        .img-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-        .img-upload-area i{font-size:2rem;color:var(--text-secondary);margin-bottom:8px}
-        .img-upload-area p{margin:0;font-size:.82rem;color:var(--text-secondary)}
-        .img-preview{max-width:100%;max-height:150px;border-radius:10px;margin-top:10px;display:none;border:1px solid var(--border)}
-        .img-thumb{width:45px;height:45px;border-radius:8px;object-fit:cover;border:1px solid var(--border)}
-        .or-divider{display:flex;align-items:center;gap:10px;margin:12px 0;color:var(--text-secondary);font-size:.8rem}
-        .or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--border)}
-
-        /* ===== BUTTONS ===== */
-        .btn-accent {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 9px 20px;
-            font-weight: 600;
-            font-size: .875rem;
-            transition: all .25s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .btn-accent:hover {
-            background: var(--accent-hover);
-            color: #fff;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 18px var(--accent-glow);
-        }
-
-        .btn-action {
-            width: 36px;
-            height: 36px;
-            border-radius: 9px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border);
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            transition: all .2s;
-            font-size: .9rem;
-            cursor: pointer;
-        }
-
-        .btn-action.edit:hover {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-        }
-
-        .btn-action.delete:hover {
-            background: var(--danger);
-            color: #fff;
-            border-color: var(--danger);
-        }
-
-        /* ===== MODAL ===== */
-        .modal-content {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            color: var(--text-primary);
-        }
-
-        .modal-header {
-            border-bottom: 1px solid var(--border);
-            padding: 20px 24px;
-        }
-
-        .modal-header .modal-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .modal-header .btn-close {
-            filter: invert(1) grayscale(100%) brightness(200%);
-        }
-
-        .modal-body {
-            padding: 24px;
-        }
-
-        .modal-footer {
-            border-top: 1px solid var(--border);
-            padding: 16px 24px;
-        }
-
-        .form-label {
-            font-weight: 500;
-            font-size: .875rem;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-        }
-
-        .form-control,
-        .form-select {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-size: .9rem;
-            transition: border-color .2s, box-shadow .2s;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-glow);
-        }
-
-        .form-select option {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-        }
-
-        .btn-cancel {
-            background: var(--bg-secondary);
-            color: var(--text-secondary);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 9px 20px;
-            font-weight: 500;
-            transition: all .2s;
-        }
-
-        .btn-cancel:hover {
-            background: var(--bg-hover);
-            color: var(--text-primary);
-        }
-
-        /* ===== ALERTS ===== */
-        .alert-custom {
-            border-radius: 12px;
-            padding: 14px 20px;
-            font-size: .9rem;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .alert-success-custom {
-            background: rgba(46, 213, 115, .1);
-            color: var(--success);
-        }
-
-        .alert-danger-custom {
-            background: rgba(231, 76, 94, .1);
-            color: var(--danger);
-        }
-
-        /* ===== EMPTY STATE ===== */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-secondary);
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 16px;
-            opacity: .4;
-        }
-
-        /* ===== PAGINATION ===== */
-        .pagination .page-link {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            border-radius: 8px !important;
-            margin: 0 3px;
-            font-size: .85rem;
-            padding: 7px 13px;
-            transition: all .2s;
-        }
-
-        .pagination .page-link:hover {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-        }
-
-        .pagination .page-item.active .page-link {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-        }
-
-        /* ===== ANIMATION ===== */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(16px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate-in {
-            animation: fadeInUp .4s ease forwards;
-        }
-
-        .animate-in:nth-child(2) {
-            animation-delay: .05s;
-        }
-
-        .animate-in:nth-child(3) {
-            animation-delay: .1s;
-        }
-
-        /* Category ID badge */
-        .id-badge {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 4px 10px;
-            font-size: .8rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-    </style>
-</head>
-
-<body class="flex h-screen overflow-hidden">
-
-    {{-- ===== SIDEBAR ===== --}}
-    @include('admin.partials.sidebar')
-
-    {{-- ===== MAIN WRAPPER ===== --}}
-    <div class="flex-1 overflow-y-auto w-full">
-
-        {{-- ===== HEADER ===== --}}
-        <div class="page-header">
-        <div class="container">
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                <h1>
-                    <i class="bi bi-grid-3x3-gap-fill"></i>
-                    Quản Lý Danh Mục
-                    <span class="badge-count">{{ $totalCategories ?? ($categories->total() ?? $categories->count()) }} mục mục</span>
-                </h1>
-                <button class="btn btn-accent" data-bs-toggle="modal" data-bs-target="#addModal">
-                    <i class="bi bi-plus-lg"></i> Thêm Danh Mục
-                </button>
+        <div class="relative overflow-hidden rounded-[26px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(16,185,129,0.12)]">
+            <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-emerald-100/50 blur-3xl"></div>
+            <div class="absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-lime-100/40 blur-3xl"></div>
+            <div class="relative">
+                <span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Items</span>
+                <p class="mt-4 text-sm font-medium text-slate-500">Tổng sản phẩm</p>
+                <div class="mt-2 flex items-end gap-2">
+                    <span class="text-4xl leading-none font-black tracking-tight text-slate-900">{{ $categories->sum('products_count') ?? 0 }}</span>
+                    <span class="pb-1 text-xs font-bold uppercase tracking-[0.22em] text-slate-400">sp</span>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-slate-500">Số lượng sản phẩm được gán trong toàn bộ danh mục.</p>
             </div>
         </div>
     </div>
 
-    {{-- ===== MAIN CONTENT ===== --}}
-    <div class="container py-4">
+    <div class="glass-card overflow-hidden">
+        <div class="flex flex-col gap-4 border-b border-slate-200 p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900">Danh sách danh mục</h2>
+                <p class="text-sm text-slate-500">Quản lý danh mục cha, danh mục con và số lượng sản phẩm.</p>
+            </div>
+            <form method="GET" action="{{ route('admin.categories.index') }}" class="w-full lg:max-w-md">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input name="search" type="text" value="{{ $search ?? '' }}" placeholder="Tìm kiếm danh mục..." class="soft-input w-full rounded-2xl py-3 pl-11 pr-4 text-sm outline-none">
+                </div>
+            </form>
+        </div>
 
-        {{-- Flash Messages --}}
-        @if(session('success'))
-            <div class="alert alert-custom alert-success-custom animate-in" id="flash-alert">
-                <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-custom alert-danger-custom animate-in" id="flash-alert">
-                <i class="bi bi-exclamation-triangle-fill"></i> {{ session('error') }}
-            </div>
-        @endif
-        @if($errors->any())
-            <div class="alert alert-custom alert-danger-custom animate-in">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                <div>
-                    @foreach($errors->all() as $error)
-                        <div>{{ $error }}</div>
-                    @endforeach
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm table-modern" id="categoryTable">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th class="px-5 py-4">#</th>
+                        <th class="px-5 py-4">Tên danh mục</th>
+                        <th class="px-5 py-4">Danh mục cha</th>
+                        <th class="px-5 py-4">Số SP</th>
+                        <th class="px-5 py-4 text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white">
+                    @forelse($categories as $category)
+                        <tr class="hover:bg-slate-50/80">
+                            <td class="px-5 py-4">
+                                <span class="inline-flex rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">#{{ $category->category_id }}</span>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="font-semibold text-slate-900">{{ $category->name }}</div>
+                            </td>
+                            <td class="px-5 py-4">
+                                @if($category->parent)
+                                    <span class="badge-category inline-flex rounded-full px-3 py-1 text-xs font-semibold">{{ $category->parent->name }}</span>
+                                @else
+                                    <span class="text-slate-400">—</span>
+                                @endif
+                            </td>
+                            <td class="px-5 py-4 font-semibold text-emerald-600">{{ $category->products_count ?? 0 }}</td>
+                            <td class="px-5 py-4">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button type="button" class="icon-btn js-edit-category"
+                                            data-id="{{ $category->category_id }}"
+                                            data-name="{{ e($category->name) }}"
+                                            data-parent-id="{{ $category->parent_id ?? '' }}"
+                                            title="Sửa">
+                                        <i class="fa-regular fa-pen-to-square"></i>
+                                    </button>
+                                    <button type="button" class="icon-btn danger js-delete-category"
+                                            data-id="{{ $category->category_id }}"
+                                            data-name="{{ e($category->name) }}"
+                                            title="Xóa">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-5 py-16 text-center text-slate-500">
+                                <i class="fa-regular fa-folder-open mb-3 text-4xl text-slate-300"></i>
+                                <div class="font-medium">Chưa có danh mục nào.</div>
+                                <div class="text-sm">Hãy thêm danh mục đầu tiên để bắt đầu quản lý.</div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if(method_exists($categories, 'links'))
+            <div class="border-t border-slate-200 px-5 py-4">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-sm">
+                        <span class="font-semibold text-slate-900">Kết quả:</span>
+                        <span>{{ $categories->total() }} danh mục</span>
+                        <span class="h-5 w-px bg-slate-200"></span>
+                        <span class="font-semibold text-slate-900">Trang {{ $categories->currentPage() }} / {{ $categories->lastPage() }}</span>
+                    </div>
+                    <div class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                        @if($categories->onFirstPage())
+                            <span class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-4 text-sm font-semibold text-slate-400 cursor-not-allowed">Trước</span>
+                        @else
+                            <a href="{{ $categories->previousPageUrl() }}" class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">Trước</a>
+                        @endif
+
+                        @if($categories->hasMorePages())
+                            <a href="{{ $categories->nextPageUrl() }}" class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-600 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700">Tiếp</a>
+                        @else
+                            <span class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-4 text-sm font-semibold text-slate-400 cursor-not-allowed">Tiếp</span>
+                        @endif
+                    </div>
                 </div>
             </div>
         @endif
+    </div>
+</div>
 
-        {{-- Stats Row --}}
-        <div class="row g-3 mb-4">
-            <div class="col-md-12 animate-in">
-                <div class="stat-card d-flex align-items-center gap-3">
-                    <div class="stat-icon" style="background:rgba(108,92,231,.15);color:var(--accent);">
-                        <i class="bi bi-grid-3x3-gap-fill"></i>
+<div id="addCategoryModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 modal-backdrop-custom" onclick="closeModal('addCategoryModal')"></div>
+    <div class="relative w-full max-w-2xl rounded-3xl bg-white shadow-2xl modal-panel">
+        <form action="{{ route('admin.categories.store') }}" method="POST" class="p-6 sm:p-8">
+            @csrf
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                        <i class="fa-solid fa-folder-plus"></i>
                     </div>
                     <div>
-                        <div class="stat-value">{{ $totalCategories ?? 0 }}</div>
-                        <div class="stat-label">Tổng Danh Mục</div>
+                        <h3 class="text-xl font-bold text-slate-900">Thêm danh mục mới</h3>
+                        <p class="mt-1 text-sm text-slate-500">Nhập thông tin danh mục cần tạo.</p>
                     </div>
                 </div>
+                <button type="button" class="icon-btn" onclick="closeModal('addCategoryModal')"><i class="fa-solid fa-xmark"></i></button>
             </div>
-        </div>
 
-        {{-- Table Card --}}
-        <div class="table-card animate-in">
-            <div class="table-card-header">
-                <h5><i class="bi bi-list-ul me-2" style="color:var(--accent);"></i>Danh Sách Danh Mục</h5>
-                <div class="search-box">
-                    <i class="bi bi-search"></i>
-                    <input type="text" id="searchInput" placeholder="Tìm kiếm danh mục..." onkeyup="filterTable()">
+            <div class="mt-6 grid gap-5 rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <i class="fa-solid fa-tag text-indigo-500"></i>
+                        Tên danh mục
+                    </label>
+                    <input type="text" name="name" required maxlength="50" class="soft-input w-full rounded-2xl px-4 py-3.5 outline-none" placeholder="VD: Điện thoại">
+                </div>
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <i class="fa-solid fa-sitemap text-indigo-500"></i>
+                        Danh mục cha
+                    </label>
+                    <select name="parent_id" class="soft-input w-full rounded-2xl px-4 py-3.5 outline-none">
+                        <option value="">Không có</option>
+                        @foreach($allCategories as $parent)
+                            <option value="{{ $parent->category_id }}">{{ $parent->name }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-2 text-xs text-slate-400">Để trống nếu đây là danh mục gốc.</p>
                 </div>
             </div>
 
-            <div class="table-responsive">
-                <table class="table table-custom" id="categoryTable">
-                    <thead>
-                        <tr>
-                            <th style="width:80px;">#</th>
-                            <th>Tên Danh Mục</th>
-                            <th>Số SP</th>
-                            <th style="width:130px;text-align:center;">Thao Tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($categories as $index => $category)
-                            <tr>
-                                <td><span class="id-badge">{{ $category->category_id }}</span></td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        @if($category->icon)
-                                            <i class="fa-solid fa-{{ $category->icon }}" style="color:var(--accent);font-size:1.1rem;width:20px;text-align:center;"></i>
-                                        @else
-                                            <i class="bi bi-folder-fill" style="color:var(--accent);font-size:1.1rem;"></i>
-                                        @endif
-                                        <strong>{{ $category->name }}</strong>
-                                    </div>
-                                </td>
-
-                                <td>
-                                    <span
-                                        style="color:var(--text-secondary);">{{ $category->products_count ?? $category->products->count() }}</span>
-                                </td>
-                                <td class="text-center">
-                                    <div class="d-flex gap-2 justify-content-center">
-                                        <button class="btn-action edit" title="Sửa"
-                                            onclick="openEditModal({{ $category->category_id }}, '{{ addslashes($category->name) }}', '{{ addslashes($category->icon ?? '') }}')">
-                                            <i class="bi bi-pencil-fill"></i>
-                                        </button>
-                                        <button class="btn-action delete" title="Xóa"
-                                            onclick="confirmDelete({{ $category->category_id }}, '{{ addslashes($category->name) }}')">
-                                            <i class="bi bi-trash3-fill"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4">
-                                    <div class="empty-state">
-                                        <i class="bi bi-inbox d-block"></i>
-                                        <p class="mb-0">Chưa có danh mục nào. Hãy thêm danh mục đầu tiên!</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+                <button type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" onclick="closeModal('addCategoryModal')">Hủy</button>
+                <button type="submit" class="btn-primary-soft rounded-2xl px-5 py-3 text-sm font-semibold">Thêm danh mục</button>
             </div>
+        </form>
+    </div>
+</div>
 
-            {{-- Pagination --}}
-            @if(method_exists($categories, 'links'))
-                <div class="d-flex justify-content-center py-3">
-                    {{ $categories->links('pagination::bootstrap-5') }}
+<div id="editCategoryModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 modal-backdrop-custom" onclick="closeModal('editCategoryModal')"></div>
+    <div class="relative w-full max-w-2xl rounded-3xl bg-white shadow-2xl modal-panel">
+        <form id="editForm" method="POST" class="p-6 sm:p-8">
+            @csrf
+            @method('PUT')
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900">Sửa danh mục</h3>
+                        <p class="mt-1 text-sm text-slate-500">Cập nhật thông tin danh mục.</p>
+                    </div>
                 </div>
-            @endif
-        </div>
-    </div>
-
-    {{-- ===== MODAL: THÊM DANH MỤC ===== --}}
-    <div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <form action="{{ route('admin.categories.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="bi bi-plus-circle-fill me-2"
-                                style="color:var(--accent);"></i>Thêm Danh Mục Mới</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Tên Danh Mục <span style="color:var(--danger);">*</span></label>
-                                <input type="text" name="name" class="form-control" placeholder="VD: Lò vi sóng"
-                                    required maxlength="50">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Icon FontAwesome <span style="color:var(--text-secondary);font-weight:400;">(Tùy chọn)</span></label>
-                                <input type="text" name="icon" class="form-control" placeholder="fa-tv, fa-box..."
-                                    maxlength="50">
-                                <div class="form-text" style="color:var(--text-secondary);font-size:.8rem;margin-top:6px;">Xem icon tại <a href="https://fontawesome.com/icons" target="_blank" style="color:var(--accent);">fontawesome.com</a></div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Tải ảnh từ máy tính</label>
-                                <div class="img-upload-area" id="addUploadArea">
-                                    <input type="file" name="image_file" accept="image/*" onchange="previewFile(this, 'addFilePreview')">
-                                    <i class="bi bi-cloud-arrow-up-fill d-block"></i>
-                                    <p>Nhấn hoặc kéo thả ảnh vào đây</p>
-                                    <img id="addFilePreview" class="img-preview" alt="Preview">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Hoặc dùng URL Ảnh</label>
-                                <input type="text" name="image_url" class="form-control" placeholder="https://..." oninput="previewUrl(this, 'addUrlPreview')">
-                                <img id="addUrlPreview" class="img-preview" alt="Preview">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-accent"><i class="bi bi-check-lg"></i> Thêm</button>
-                    </div>
-                </form>
+                <button type="button" class="icon-btn" onclick="closeModal('editCategoryModal')"><i class="fa-solid fa-xmark"></i></button>
             </div>
-        </div>
-    </div>
 
-    {{-- ===== MODAL: SỬA DANH MỤC ===== --}}
-    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <form id="editForm" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT')
-                    <div class="modal-header">
-                        <h5 class="modal-title"><i class="bi bi-pencil-square me-2" style="color:var(--accent);"></i>Sửa
-                            Danh Mục</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Tên Danh Mục <span style="color:var(--danger);">*</span></label>
-                                <input type="text" name="name" id="editName" class="form-control"
-                                    placeholder="VD: Lò vi sóng" required maxlength="50">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Icon FontAwesome <span style="color:var(--text-secondary);font-weight:400;">(Tùy chọn)</span></label>
-                                <input type="text" name="icon" id="editIcon" class="form-control" placeholder="fa-tv, fa-box..."
-                                    maxlength="50">
-                                <div class="form-text" style="color:var(--text-secondary);font-size:.8rem;margin-top:6px;">Xem icon tại <a href="https://fontawesome.com/icons" target="_blank" style="color:var(--accent);">fontawesome.com</a></div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Tải ảnh từ máy tính</label>
-                                <div class="img-upload-area">
-                                    <input type="file" name="image_file" accept="image/*" onchange="previewFile(this, 'editFilePreview')">
-                                    <i class="bi bi-cloud-arrow-up-fill d-block"></i>
-                                    <p>Nhấn hoặc kéo thả ảnh vào đây</p>
-                                    <img id="editFilePreview" class="img-preview" alt="Preview">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Hoặc dùng URL Ảnh</label>
-                                <input type="text" name="image_url" id="editImageUrl" class="form-control" placeholder="https://..." oninput="previewUrl(this, 'editUrlPreview')">
-                                <img id="editUrlPreview" class="img-preview" alt="Preview">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Hủy</button>
-                        <button type="submit" class="btn btn-accent"><i class="bi bi-check-lg"></i> Cập Nhật</button>
-                    </div>
-                </form>
+            <div class="mt-6 grid gap-5 rounded-3xl border border-slate-200 bg-slate-50/70 p-5">
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <i class="fa-solid fa-tag text-indigo-500"></i>
+                        Tên danh mục
+                    </label>
+                    <input type="text" name="name" id="editName" required maxlength="50" class="soft-input w-full rounded-2xl px-4 py-3.5 outline-none">
+                </div>
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <i class="fa-solid fa-sitemap text-indigo-500"></i>
+                        Danh mục cha
+                    </label>
+                    <select name="parent_id" id="editParentId" class="soft-input w-full rounded-2xl px-4 py-3.5 outline-none">
+                        <option value="">Không có</option>
+                        @foreach($allCategories as $parent)
+                            <option value="{{ $parent->category_id }}">{{ $parent->name }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-2 text-xs text-slate-400">Để trống nếu đây là danh mục gốc.</p>
+                </div>
             </div>
-        </div>
+
+            <div class="mt-8 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+                <button type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" onclick="closeModal('editCategoryModal')">Hủy</button>
+                <button type="submit" class="btn-primary-soft rounded-2xl px-5 py-3 text-sm font-semibold">Lưu thay đổi</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    {{-- ===== FORM ẨN: XÓA ===== --}}
-    <form id="deleteForm" method="POST" style="display:none;">
-        @csrf
-        @method('DELETE')
-    </form>
+<form id="deleteForm" method="POST" class="hidden">
+    @csrf
+    @method('DELETE')
+</form>
+@endsection
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        // ===== Mở modal Sửa =====
-        function openEditModal(id, name, icon) {
-            document.getElementById('editName').value = name;
-            document.getElementById('editIcon').value = icon || '';
+@push('scripts')
+<script>
+    function openModal(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.remove('hidden');
+            el.classList.add('flex');
+        }
+    }
 
-            // Cập nhật action URL
-            const form = document.getElementById('editForm');
-            form.action = "{{ url('admin/categories') }}/" + id;
+    function closeModal(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.classList.add('hidden');
+            el.classList.remove('flex');
+        }
+    }
 
-            new bootstrap.Modal(document.getElementById('editModal')).show();
+    function openEditModal(id, name, icon, parentId) {
+        document.getElementById('editName').value = name || '';
+        document.getElementById('editParentId').value = parentId || '';
+        document.getElementById('editForm').action = "{{ url('admin/categories') }}/" + id;
+        openModal('editCategoryModal');
+    }
+
+    document.addEventListener('click', (event) => {
+        const editButton = event.target.closest('.js-edit-category');
+        if (editButton) {
+            openEditModal(
+                editButton.dataset.id,
+                editButton.dataset.name,
+                '',
+                editButton.dataset.parentId || ''
+            );
+            return;
         }
 
-        // ===== Xác nhận Xóa =====
-        function confirmDelete(id, name) {
-            Swal.fire({
-                title: 'Xác nhận xóa?',
-                html: `Bạn có chắc muốn xóa danh mục <strong>"${name}"</strong>?<br><small style="color:#9ca3b4;">Hành động này không thể hoàn tác.</small>`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#e74c5e',
-                cancelButtonColor: '#2d3148',
-                confirmButtonText: '<i class="bi bi-trash3-fill"></i> Xóa',
-                cancelButtonText: 'Hủy',
-                background: '#1e2231',
-                color: '#e8e8ef',
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const form = document.getElementById('deleteForm');
-                    form.action = "{{ url('admin/categories') }}/" + id;
-                    form.submit();
-                }
-            });
+        const deleteButton = event.target.closest('.js-delete-category');
+        if (deleteButton) {
+            confirmDelete(deleteButton.dataset.id, deleteButton.dataset.name);
         }
+    });
 
-        // ===== Tìm kiếm bảng =====
-        function filterTable() {
-            const input = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.querySelectorAll('#categoryTable tbody tr');
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(input) ? '' : 'none';
-            });
-        }
-
-        // ===== Auto-hide flash alert =====
-        const flashAlert = document.getElementById('flash-alert');
-        if (flashAlert) {
-            setTimeout(() => {
-                flashAlert.style.transition = 'opacity .5s ease';
-                flashAlert.style.opacity = '0';
-                setTimeout(() => flashAlert.remove(), 500);
-            }, 4000);
-        }
-
-        // ===== Toggle Sidebar (Mobile) =====
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            if(sidebar) {
-                sidebar.classList.toggle('-translate-x-full');
+    function confirmDelete(id, name) {
+        Swal.fire({
+            title: 'Xác nhận xóa?',
+            html: `Bạn có chắc muốn xóa danh mục <strong>${name}</strong>?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('deleteForm');
+                form.action = "{{ url('admin/categories') }}/" + id;
+                form.submit();
             }
-        }
-
-        // ===== Preview ảnh từ file =====
-        function previewFile(input, previewId) {
-            const preview = document.getElementById(previewId);
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(input.files[0]);
-            } else {
-                preview.style.display = 'none';
-            }
-        }
-
-        // ===== Preview ảnh từ URL =====
-        function previewUrl(input, previewId) {
-            const preview = document.getElementById(previewId);
-            if (input.value.trim()) {
-                preview.src = input.value.trim();
-                preview.style.display = 'block';
-                preview.onerror = function() { preview.style.display = 'none'; };
-            } else {
-                preview.style.display = 'none';
-            }
-        }
-    </script>
-    </div>
-</body>
-
-</html>
+        });
+    }
+</script>
+@endpush

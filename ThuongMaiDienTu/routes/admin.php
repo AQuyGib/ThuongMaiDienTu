@@ -40,8 +40,8 @@ Route::post('/settings/theme', [ThemeSettingController::class, 'update'])->name(
 Route::post('/settings/theme/reset', [ThemeSettingController::class, 'reset'])->name('settings.theme.reset');
 
 // ===== Quản lý Đơn hàng =====
-// Route::resource('orders', OrderController::class);
-// Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+Route::resource('orders', OrderController::class);
+Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 
 // CRUD Quyền hạn & Tài khoản (Permissions)
 Route::resource('permissions', UserController::class)->names([
@@ -80,6 +80,10 @@ Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('
 
 // ===== Quản lý Sản Phẩm & Danh Mục =====
 Route::resource('products', ProductController::class);
+Route::get('/products/export', [ProductController::class, 'exportExcel'])->name('products.export');
+Route::get('/products/template', [ProductController::class, 'downloadTemplate'])->name('products.template');
+Route::get('/products/import', [ProductController::class, 'importForm'])->name('products.import.form');
+Route::post('/products/import', [ProductController::class, 'importExcel'])->name('products.import');
 Route::resource('categories', CategoryController::class);
 
 // ===== Flash Sale =====
@@ -98,9 +102,17 @@ Route::get('/purchase-orders/create', [PurchaseOrderController::class, 'create']
 Route::post('/purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
 Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
 
-// ===== Quản lý IMEI =====
+// ===== Quản lý IMEI & Cảnh báo tồn kho =====
+Route::get('/inventory/warnings', [InventoryController::class, 'warningList'])->name('inventory.warnings');
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 Route::put('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.updateStatus');
+
+// ===== API & Điều chuyển nội bộ =====
+Route::get('/api/inventory-by-warehouse', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'getInventoryByWarehouse'])->name('api.inventory-by-warehouse');
+Route::post('/warehouse-transfers/{id}/complete', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'complete'])->name('warehouse-transfers.complete');
+Route::post('/warehouse-transfers/{id}/cancel', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'cancel'])->name('warehouse-transfers.cancel');
+Route::resource('warehouse-transfers', \App\Http\Controllers\Admin\WarehouseTransferController::class);
+
 
 // ===== Quản lý Sổ Quỹ (Cashbook) =====
 Route::post('cashbooks/bulk-destroy', [CashbookController::class, 'bulkDestroy'])->name('cashbooks.bulkDestroy');

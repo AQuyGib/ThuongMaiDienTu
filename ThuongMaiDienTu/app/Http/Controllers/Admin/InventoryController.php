@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InventoryItem;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
@@ -25,15 +26,74 @@ class InventoryController extends Controller
             $query->where('imei_serial', 'like', '%' . $request->search . '%');
         }
 
-        $items = $query->orderBy('item_id', 'desc')->paginate(15)->appends($request->query());
+        $items = $query->orderBy('item_id', 'desc')->paginate(15)->onEachSide(1)->appends($request->query());
 
         // Thống kê
-        $totalInStock  = InventoryItem::where('status', 'In_Stock')->count();
-        $totalSold     = InventoryItem::where('status', 'Sold')->count();
+        $totalInStock = InventoryItem::where('status', 'In_Stock')->count();
+        $totalSold = InventoryItem::where('status', 'Sold')->count();
         $totalDefective = InventoryItem::where('status', 'Defective')->count();
+        $totalProducts = Product::count();
+
+        $productStats = Product::query()
+            ->leftJoin('product_variants', 'products.product_id', '=', 'product_variants.product_id')
+            ->leftJoin('inventory_items', 'product_variants.variant_id', '=', 'inventory_items.variant_id')
+            ->select('products.product_id', 'products.name', 'products.safe_stock')
+            ->selectRaw('COUNT(DISTINCT product_variants.variant_id) as variant_count')
+            ->selectRaw("COUNT(CASE WHEN inventory_items.status = 'In_Stock' THEN 1 END) as in_stock_count")
+            ->selectRaw("COUNT(CASE WHEN inventory_items.status = 'Sold' THEN 1 END) as sold_count")
+            ->selectRaw("COUNT(CASE WHEN inventory_items.status = 'Defective' THEN 1 END) as defective_count")
+            ->selectRaw('COUNT(inventory_items.item_id) as total_items')
+            ->groupBy('products.product_id', 'products.name', 'products.safe_stock')
+            ->orderByDesc('total_items')
+            ->get();
 
         return view('admin.inventory.index', compact(
-            'items', 'totalInStock', 'totalSold', 'totalDefective'
+            'items',
+            'totalInStock',
+            'totalSold',
+            'totalDefective',
+            'totalProducts',
+            'productStats'
+        ));
+    }
+
+    /**
+     * Cảnh báo tồn kho an toàn
+     */
+    public function warningList(Request $request)
+    {
+        // Lấy tất cả biến thể có số lượng tồn kho thực tế nhỏ hơn hoặc bằng tồn an toàn
+        $lowStockVariants = \App\Models\ProductVariant::with(['product.category'])
+            ->withCount(['inventoryItems as in_stock_count' => function ($q) {
+                $q->where('status', 'In_Stock');
+            }])
+            ->get()
+            ->filter(function ($variant) {
+                return $variant->in_stock_count <= ($variant->safe_stock ?? 5);
+            });
+
+        // Lấy sản phẩm không có biến thể và có tồn kho <= safe_stock
+        $lowStockProductsWithoutVariants = Product::with('category')
+            ->withCount(['variants'])
+            ->whereRaw('(select count(*) from product_variants where product_variants.product_id = products.product_id) = 0')
+            ->get()
+            ->filter(function ($product) {
+                return 0 <= ($product->safe_stock ?? 5);
+            });
+
+        // Thống kê
+        $totalInStock = InventoryItem::where('status', 'In_Stock')->count();
+        $totalSold = InventoryItem::where('status', 'Sold')->count();
+        $totalDefective = InventoryItem::where('status', 'Defective')->count();
+        $totalProducts = Product::count();
+
+        return view('admin.inventory.warning', compact(
+            'lowStockVariants',
+            'lowStockProductsWithoutVariants',
+            'totalInStock',
+            'totalSold',
+            'totalDefective',
+            'totalProducts'
         ));
     }
 
