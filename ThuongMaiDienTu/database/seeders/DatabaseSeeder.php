@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             UserSeeder::class,
+            SupplierSeeder::class,
             CategorySeeder::class,
             ProductSeeder::class,
             ProductDetailSeeder::class,
