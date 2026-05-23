@@ -36,7 +36,7 @@ class RepairTicketInvoiceController extends Controller
         $validator = Validator::make($request->all(), [
             'user_id' => ['nullable', 'exists:users,user_id'],
             'technician_id' => ['required', 'exists:users,user_id'],
-            'imei_serial' => ['required', 'string', 'max:100', 'unique:repair_tickets,imei_serial'],
+            'imei_serial' => ['required', 'string', 'max:100'],
             'issue_desc' => ['required', 'string'],
             'schedule_date' => ['nullable', 'date', 'after_or_equal:today'],
             'estimated_cost' => ['required', 'integer', 'min:0'],
@@ -50,7 +50,6 @@ class RepairTicketInvoiceController extends Controller
             'service_fee' => ['nullable', 'numeric', 'min:0'],
         ], [
             'technician_id.required' => 'Vui lòng chọn kỹ thuật viên phụ trách.',
-            'imei_serial.unique' => 'Mã IMEI / Serial này đã tồn tại trong hệ thống.',
             'schedule_date.after_or_equal' => 'Ngày hẹn trả phải từ hôm nay trở đi.',
             'imei_serial.required' => 'Vui lòng nhập mã IMEI / Serial.',
             'issue_desc.required' => 'Vui lòng nhập mô tả lỗi.',
@@ -122,7 +121,7 @@ class RepairTicketInvoiceController extends Controller
         $validator = Validator::make($request->all(), [
             'user_id' => ['nullable', 'exists:users,user_id'],
             'technician_id' => ['required', 'exists:users,user_id'],
-            'imei_serial' => ['required', 'string', 'max:100', 'unique:repair_tickets,imei_serial,'.$repairTicket->ticket_id.',ticket_id'],
+            'imei_serial' => ['required', 'string', 'max:100'],
             'issue_desc' => ['required', 'string'],
             'schedule_date' => ['nullable', 'date', 'after_or_equal:today'],
             'estimated_cost' => ['required', 'integer', 'min:0'],
@@ -136,7 +135,6 @@ class RepairTicketInvoiceController extends Controller
             'service_fee' => ['nullable', 'numeric', 'min:0'],
         ], [
             'technician_id.required' => 'Vui lòng chọn kỹ thuật viên phụ trách.',
-            'imei_serial.unique' => 'Mã IMEI / Serial này đã tồn tại trong hệ thống.',
             'schedule_date.after_or_equal' => 'Ngày hẹn trả phải từ hôm nay trở đi.',
             'imei_serial.required' => 'Vui lòng nhập mã IMEI / Serial.',
             'issue_desc.required' => 'Vui lòng nhập mô tả lỗi.',
