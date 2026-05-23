@@ -10,6 +10,13 @@
             <h1 class="text-2xl font-bold text-gray-900">Hóa đơn dịch vụ</h1>
             <p class="text-sm text-gray-500">Quản lý, lọc và xuất hóa đơn dịch vụ.</p>
         </div>
+        <x-ui.button
+            variant="primary"
+            :href="route('admin.service-invoices.create')"
+            title="Tạo hóa đơn dịch vụ mới"
+        >
+            <i class="fa-solid fa-plus"></i> Tạo hóa đơn mới
+        </x-ui.button>
     </div>
 
     <form method="GET" class="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-5">
