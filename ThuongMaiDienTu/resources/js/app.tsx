@@ -198,14 +198,16 @@ document.addEventListener('click', (e) => {
     if (anchor && anchor.href && anchor.href.startsWith(window.location.origin + '/admin')) {
         // Skip if target is _blank
         if (anchor.target === '_blank') return;
-        // Skip logout, export or download routes
-        if (anchor.href.includes('logout') || anchor.href.includes('export') || anchor.hasAttribute('download')) return;
+        // Skip logout, export, pdf or download routes
+        if (anchor.href.includes('logout') || anchor.href.includes('export') || anchor.href.includes('/pdf') || anchor.hasAttribute('download')) return;
 
         // These sections use page-specific layouts/styles or heavy tables; force full reload to avoid broken UI state
         if (
             anchor.href.includes('/admin/inventory') ||
             anchor.href.includes('/admin/purchase-orders') ||
-            anchor.href.includes('/admin/products')
+            anchor.href.includes('/admin/products') ||
+            anchor.href.includes('/admin/service-invoices') ||
+            anchor.href.includes('/admin/repair-tickets')
         ) {
             window.location.href = anchor.href;
             return;

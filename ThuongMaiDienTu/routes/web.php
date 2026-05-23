@@ -148,6 +148,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::post('/profile/repair-tickets', [ProfileController::class, 'storeRepairTicket'])->name('profile.repair-tickets.store');
     
     // Address management
     Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name('profile.address.store');
