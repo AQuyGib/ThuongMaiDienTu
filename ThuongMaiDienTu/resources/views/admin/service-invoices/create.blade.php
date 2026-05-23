@@ -54,8 +54,9 @@
                     <input type="email" name="customer_email" value="{{ old('customer_email', $prefill['customer_email'] ?? '') }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-gray-700">IMEI / Serial</label>
-                    <input type="text" name="imei_serial" value="{{ old('imei_serial', $prefill['imei_serial'] ?? '') }}" placeholder="Nhập IMEI hoặc Serial thiết bị..." class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <label class="mb-1 block text-sm font-medium text-gray-700">IMEI / Serial <span class="text-red-500">*</span></label>
+                    <input type="text" name="imei_serial" value="{{ old('imei_serial', $prefill['imei_serial'] ?? '') }}" placeholder="Nhập IMEI hoặc Serial thiết bị..." class="w-full rounded-lg border {{ $errors->has('imei_serial') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                    @error('imei_serial') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
                 </div>
                 <div class="md:col-span-2">
                     <label class="mb-1 block text-sm font-medium text-gray-700">Tên dịch vụ <span class="text-red-500">*</span></label>
@@ -76,16 +77,16 @@
             <div class="grid gap-4 md:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Tạm tính (đ) <span class="text-red-500">*</span></label>
-                    <input type="number" step="0.01" name="subtotal" id="subtotal" value="{{ old('subtotal', $prefill['subtotal'] ?? 0) }}" class="w-full rounded-lg border {{ $errors->has('subtotal') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required min="0">
+                    <input type="number" step="1" name="subtotal" id="subtotal" value="{{ old('subtotal', isset($prefill['subtotal']) ? (int) $prefill['subtotal'] : 0) }}" class="w-full rounded-lg border {{ $errors->has('subtotal') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required min="0">
                     @error('subtotal') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">VAT (%)</label>
-                    <input type="number" step="0.01" name="vat_rate" id="vat_rate" value="{{ old('vat_rate', 0) }}" min="0" max="100" placeholder="Ví dụ: 10" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <input type="number" step="1" name="vat_rate" id="vat_rate" value="{{ old('vat_rate', 0) }}" min="0" max="100" placeholder="Ví dụ: 10" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Giảm giá (đ)</label>
-                    <input type="number" step="0.01" name="discount_amount" id="discount_amount" value="{{ old('discount_amount', 0) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <input type="number" step="1" name="discount_amount" id="discount_amount" value="{{ old('discount_amount', 0) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
             </div>
             <div class="rounded-lg bg-indigo-50 px-4 py-3 flex items-center justify-between">
@@ -139,11 +140,11 @@
 
     function updatePreview() {
         if (!previewEl) return;
-        const subtotal = parseFloat(subtotalEl?.value) || 0;
+        const subtotal = parseInt(subtotalEl?.value) || 0;
         const vat = parseFloat(vatEl?.value) || 0;
-        const discount = parseFloat(discountEl?.value) || 0;
-        const vatAmount = (subtotal * vat) / 100;
-        const total = Math.max(0, subtotal + vatAmount - discount);
+        const discount = parseInt(discountEl?.value) || 0;
+        const vatAmount = Math.round((subtotal * vat) / 100);
+        const total = Math.round(Math.max(0, subtotal + vatAmount - discount));
         previewEl.textContent = total.toLocaleString('vi-VN') + ' đ';
     }
 

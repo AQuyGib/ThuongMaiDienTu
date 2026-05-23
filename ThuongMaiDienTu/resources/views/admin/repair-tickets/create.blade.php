@@ -134,7 +134,7 @@
 
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Phí dịch vụ thực tế (đ)</label>
-                    <input type="number" step="0.01" name="service_fee" value="{{ old('service_fee', 0) }}" class="w-full rounded-lg border {{ $errors->has('service_fee') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0">
+                    <input type="number" step="1" name="service_fee" value="{{ old('service_fee', 0) }}" class="w-full rounded-lg border {{ $errors->has('service_fee') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" min="0">
                     @error('service_fee') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
                 </div>
             </div>

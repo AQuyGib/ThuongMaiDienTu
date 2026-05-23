@@ -229,17 +229,19 @@ class RepairTicketInvoiceController extends Controller
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
             'customer_email' => ['nullable', 'email', 'max:255'],
-            'imei_serial' => ['nullable', 'string', 'max:255'],
+            'imei_serial' => ['required', 'string', 'max:255'],
             'service_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'subtotal' => ['required', 'numeric', 'min:0'],
-            'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'discount_amount' => ['nullable', 'numeric', 'min:0'],
+            'subtotal' => ['required', 'integer', 'min:0'],
+            'vat_rate' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'discount_amount' => ['nullable', 'integer', 'min:0'],
             'status' => ['required', 'in:draft,issued,paid,cancelled'],
         ], [
             'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
             'service_name.required' => 'Vui lòng nhập tên dịch vụ.',
             'subtotal.required' => 'Vui lòng nhập số tiền tạm tính.',
+            'subtotal.integer' => 'Số tiền tạm tính phải là số nguyên.',
+            'imei_serial.required' => 'Vui lòng nhập mã IMEI / Serial.',
         ]);
 
         $validator->after(function ($validator) use ($request) {
@@ -253,11 +255,11 @@ class RepairTicketInvoiceController extends Controller
 
         $data = $validator->validate();
 
-        $subtotal = (float) $data['subtotal'];
-        $vatRate = (float) ($data['vat_rate'] ?? 0);
-        $taxAmount = round(($subtotal * $vatRate) / 100, 2);
-        $discountAmount = (float) ($data['discount_amount'] ?? 0);
-        $totalAmount = max(0, $subtotal + $taxAmount - $discountAmount);
+        $subtotal = (int) $data['subtotal'];
+        $vatRate = (int) ($data['vat_rate'] ?? 0);
+        $taxAmount = (int) round(($subtotal * $vatRate) / 100);
+        $discountAmount = (int) ($data['discount_amount'] ?? 0);
+        $totalAmount = (int) max(0, $subtotal + $taxAmount - $discountAmount);
 
         $invoice = ServiceInvoice::create([
             'invoice_no' => $data['invoice_no'],

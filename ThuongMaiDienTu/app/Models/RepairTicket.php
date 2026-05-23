@@ -32,7 +32,7 @@ class RepairTicket extends Model
     ];
 
     protected $casts = [
-        'service_fee' => 'decimal:2',
+        'service_fee' => 'integer',
         'invoiced_at' => 'datetime',
     ];
 

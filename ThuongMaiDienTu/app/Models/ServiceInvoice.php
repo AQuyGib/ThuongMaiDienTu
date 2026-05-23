@@ -28,10 +28,10 @@ class ServiceInvoice extends Model
     ];
 
     protected $casts = [
-        'subtotal' => 'decimal:2',
-        'tax_amount' => 'decimal:2',
-        'discount_amount' => 'decimal:2',
-        'total_amount' => 'decimal:2',
+        'subtotal' => 'integer',
+        'tax_amount' => 'integer',
+        'discount_amount' => 'integer',
+        'total_amount' => 'integer',
         'issued_date' => 'date',
     ];
 
