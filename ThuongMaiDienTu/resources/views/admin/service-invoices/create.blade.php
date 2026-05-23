@@ -41,8 +41,9 @@
                     <p class="mt-1 text-xs text-gray-500">Mã hóa đơn được tạo tự động.</p>
                 </div>
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-gray-700">Khách hàng</label>
-                    <input type="text" name="customer_name" value="{{ old('customer_name', $prefill['customer_name'] ?? '') }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Khách hàng <span class="text-red-500">*</span></label>
+                    <input type="text" name="customer_name" value="{{ old('customer_name', $prefill['customer_name'] ?? '') }}" class="w-full rounded-lg border {{ $errors->has('customer_name') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                    @error('customer_name') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Số điện thoại</label>
@@ -57,8 +58,9 @@
                     <input type="text" name="imei_serial" value="{{ old('imei_serial', $prefill['imei_serial'] ?? '') }}" placeholder="Nhập IMEI hoặc Serial thiết bị..." class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="mb-1 block text-sm font-medium text-gray-700">Tên dịch vụ</label>
-                    <input type="text" name="service_name" value="{{ old('service_name', $prefill['service_name'] ?? '') }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Tên dịch vụ <span class="text-red-500">*</span></label>
+                    <input type="text" name="service_name" value="{{ old('service_name', $prefill['service_name'] ?? '') }}" class="w-full rounded-lg border {{ $errors->has('service_name') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                    @error('service_name') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
                 </div>
             </div>
         </div>
@@ -73,8 +75,9 @@
             </div>
             <div class="grid gap-4 md:grid-cols-3">
                 <div>
-                    <label class="mb-1 block text-sm font-medium text-gray-700">Tạm tính (đ)</label>
-                    <input type="number" step="0.01" name="subtotal" id="subtotal" value="{{ old('subtotal', $prefill['subtotal'] ?? 0) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Tạm tính (đ) <span class="text-red-500">*</span></label>
+                    <input type="number" step="0.01" name="subtotal" id="subtotal" value="{{ old('subtotal', $prefill['subtotal'] ?? 0) }}" class="w-full rounded-lg border {{ $errors->has('subtotal') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required min="0">
+                    @error('subtotal') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">VAT (%)</label>

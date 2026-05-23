@@ -224,7 +224,7 @@ class RepairTicketInvoiceController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
+        $validator = Validator::make($request->all(), [
             'invoice_no' => ['required', 'string', 'max:50', 'unique:service_invoices,invoice_no'],
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
@@ -236,7 +236,22 @@ class RepairTicketInvoiceController extends Controller
             'vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'status' => ['required', 'in:draft,issued,paid,cancelled'],
+        ], [
+            'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
+            'service_name.required' => 'Vui lòng nhập tên dịch vụ.',
+            'subtotal.required' => 'Vui lòng nhập số tiền tạm tính.',
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $status = $request->input('status');
+            $subtotal = (float) $request->input('subtotal', 0);
+
+            if (in_array($status, ['issued', 'paid']) && $subtotal <= 0) {
+                $validator->errors()->add('subtotal', 'Số tiền tạm tính phải lớn hơn 0 khi phát hành hoặc thanh toán hóa đơn.');
+            }
+        });
+
+        $data = $validator->validate();
 
         $subtotal = (float) $data['subtotal'];
         $vatRate = (float) ($data['vat_rate'] ?? 0);
