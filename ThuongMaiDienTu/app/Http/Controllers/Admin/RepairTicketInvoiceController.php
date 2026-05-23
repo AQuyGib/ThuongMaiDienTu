@@ -76,6 +76,11 @@ class RepairTicketInvoiceController extends Controller
             if ($estimatedCost > 0 && $status === 'Received') {
                 $validator->errors()->add('status', 'Khi có chi phí dự kiến, vui lòng chuyển trạng thái sửa chữa sang "Kiểm tra & Báo giá" trở lên.');
             }
+
+            // RÀNG BUỘC 3: Khi ở trạng thái 'Checking' (Kiểm tra & Báo giá), chi phí dự kiến không được để trống hoặc bằng 0.
+            if ($status === 'Checking' && $estimatedCost <= 0) {
+                $validator->errors()->add('estimated_cost', 'Vui lòng nhập chi phí dự kiến lớn hơn 0 khi ở trạng thái "Kiểm tra & Báo giá".');
+            }
         });
 
         // Thực hiện xác thực và ném lỗi ValidationException nếu không thỏa mãn điều kiện
@@ -150,6 +155,11 @@ class RepairTicketInvoiceController extends Controller
             // RÀNG BUỘC 2: Khi đã có chi phí dự kiến lớn hơn 0, trạng thái sửa chữa không được giữ ở 'Received' (Đã tiếp nhận) mà phải là 'Checking' (Kiểm tra & Báo giá) trở lên.
             if ($estimatedCost > 0 && $status === 'Received') {
                 $validator->errors()->add('status', 'Khi có chi phí dự kiến, vui lòng chuyển trạng thái sửa chữa sang "Kiểm tra & Báo giá" trở lên.');
+            }
+
+            // RÀNG BUỘC 3: Khi ở trạng thái 'Checking' (Kiểm tra & Báo giá), chi phí dự kiến không được để trống hoặc bằng 0.
+            if ($status === 'Checking' && $estimatedCost <= 0) {
+                $validator->errors()->add('estimated_cost', 'Vui lòng nhập chi phí dự kiến lớn hơn 0 khi ở trạng thái "Kiểm tra & Báo giá".');
             }
         });
 

@@ -123,7 +123,8 @@
             <div class="grid gap-4 md:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Chi phí dự kiến (đ)</label>
-                    <input type="number" name="estimated_cost" value="{{ old('estimated_cost', $repairTicket->estimated_cost) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required min="0">
+                    <input type="number" name="estimated_cost" value="{{ old('estimated_cost', $repairTicket->estimated_cost) }}" class="w-full rounded-lg border {{ $errors->has('estimated_cost') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required min="0">
+                    @error('estimated_cost') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
                 </div>
 
                 <div>
