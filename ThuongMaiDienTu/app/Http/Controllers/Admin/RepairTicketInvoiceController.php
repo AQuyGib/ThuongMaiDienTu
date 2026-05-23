@@ -81,6 +81,12 @@ class RepairTicketInvoiceController extends Controller
             if ($status === 'Checking' && $estimatedCost <= 0) {
                 $validator->errors()->add('estimated_cost', 'Vui lòng nhập chi phí dự kiến lớn hơn 0 khi ở trạng thái "Kiểm tra & Báo giá".');
             }
+
+            // RÀNG BUỘC 4: Khi ở trạng thái 'Done' (Hoàn thành), phí dịch vụ thực tế không được để trống hoặc bằng 0.
+            $serviceFee = (float) $request->input('service_fee', 0);
+            if ($status === 'Done' && $serviceFee <= 0) {
+                $validator->errors()->add('service_fee', 'Vui lòng nhập phí dịch vụ thực tế lớn hơn 0 khi ở trạng thái "Hoàn thành".');
+            }
         });
 
         // Thực hiện xác thực và ném lỗi ValidationException nếu không thỏa mãn điều kiện
@@ -160,6 +166,12 @@ class RepairTicketInvoiceController extends Controller
             // RÀNG BUỘC 3: Khi ở trạng thái 'Checking' (Kiểm tra & Báo giá), chi phí dự kiến không được để trống hoặc bằng 0.
             if ($status === 'Checking' && $estimatedCost <= 0) {
                 $validator->errors()->add('estimated_cost', 'Vui lòng nhập chi phí dự kiến lớn hơn 0 khi ở trạng thái "Kiểm tra & Báo giá".');
+            }
+
+            // RÀNG BUỘC 4: Khi ở trạng thái 'Done' (Hoàn thành), phí dịch vụ thực tế không được để trống hoặc bằng 0.
+            $serviceFee = (float) $request->input('service_fee', 0);
+            if ($status === 'Done' && $serviceFee <= 0) {
+                $validator->errors()->add('service_fee', 'Vui lòng nhập phí dịch vụ thực tế lớn hơn 0 khi ở trạng thái "Hoàn thành".');
             }
         });
 
