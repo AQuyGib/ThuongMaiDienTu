@@ -40,4 +40,7 @@ class InventoryItem extends Model {
     public function purchaseOrder() {
         return $this->belongsTo(PurchaseOrder::class, 'po_id');
     }
+    public function warranties() {
+        return $this->hasMany(Warranty::class, 'item_id');
+    }
 }

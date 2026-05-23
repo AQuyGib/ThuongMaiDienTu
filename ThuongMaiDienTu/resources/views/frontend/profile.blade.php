@@ -868,10 +868,13 @@
                     <i class="fa-solid fa-shield-halved"></i> Lịch sử đăng nhập
                 </div>
                 <div class="profile-nav-item">
-                    <a href="{{ route('rewards.history') }}" class="w-full flex items-center gap-4 text-inherit">
+                    <a href="{{ route('rewards.history') }}" class="w-full flex items-center gap-4 text-inherit" style="text-decoration: none; color: inherit;">
                         <i class="fa-solid fa-gift"></i> Lịch sử đổi thưởng
                     </a>
                 </div>
+                <a href="{{ route('warranty.index') }}" class="profile-nav-item" style="text-decoration:none;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Tra cứu bảo hành
+                </a>
                 <div class="nav-divider"></div>
                 <form action="{{ route('logout') ?? '/logout' }}" method="POST">
                     @csrf
