@@ -52,7 +52,7 @@ class ServiceInvoiceController extends Controller
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'invoice_no' => ['required', 'string', 'max:50', 'unique:service_invoices,invoice_no'],
             'customer_name' => ['required', 'string', 'max:255'],
-            'customer_phone' => ['nullable', 'string', 'max:50'],
+            'customer_phone' => ['nullable', 'string', 'regex:/^[0-9]{10}$/'],
             'customer_email' => ['nullable', 'email', 'max:255'],
             'imei_serial' => ['required', 'string', 'max:255'],
             'service_name' => ['required', 'string', 'max:255'],
@@ -67,6 +67,7 @@ class ServiceInvoiceController extends Controller
             'subtotal.required' => 'Vui lòng nhập số tiền tạm tính.',
             'subtotal.integer' => 'Số tiền tạm tính phải là số nguyên.',
             'imei_serial.required' => 'Vui lòng nhập mã IMEI / Serial.',
+            'customer_phone.regex' => 'Số điện thoại phải đúng 10 chữ số.',
         ]);
 
         $validator->after(function ($validator) use ($request) {
@@ -169,7 +170,7 @@ class ServiceInvoiceController extends Controller
     {
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'customer_name' => ['required', 'string', 'max:255'],
-            'customer_phone' => ['nullable', 'string', 'max:50'],
+            'customer_phone' => ['nullable', 'string', 'regex:/^[0-9]{10}$/'],
             'customer_email' => ['nullable', 'email', 'max:255'],
             'imei_serial' => ['required', 'string', 'max:255'],
             'service_name' => ['required', 'string', 'max:255'],
@@ -184,6 +185,7 @@ class ServiceInvoiceController extends Controller
             'subtotal.required' => 'Vui lòng nhập số tiền tạm tính.',
             'subtotal.integer' => 'Số tiền tạm tính phải là số nguyên.',
             'imei_serial.required' => 'Vui lòng nhập mã IMEI / Serial.',
+            'customer_phone.regex' => 'Số điện thoại phải đúng 10 chữ số.',
         ]);
 
         $validator->after(function ($validator) use ($request) {

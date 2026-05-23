@@ -43,7 +43,8 @@
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Số điện thoại</label>
-                    <input type="text" name="customer_phone" value="{{ old('customer_phone', $serviceInvoice->customer_phone) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <input type="text" name="customer_phone" value="{{ old('customer_phone', $serviceInvoice->customer_phone) }}" class="w-full rounded-lg border {{ $errors->has('customer_phone') ? 'border-red-400 ring-1 ring-red-400' : 'border-gray-300' }} bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    @error('customer_phone') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Email</label>
