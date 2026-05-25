@@ -68,17 +68,30 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{sectionName}</p>
                                 </div>
                             )}
-                            {items.map((item, idx) => (
+                            {items.map((item, idx) => {
+                                const isVideoItem = item.route.includes('/admin/videos');
+                                return (
                                 <a
                                     key={idx}
                                     href={item.route}
                                     title={collapsed ? item.label : ''}
-                                    className={`flex items-center rounded-xl transition-all duration-300 ${collapsed ? 'justify-center py-4 px-0' : 'gap-4 px-4 py-3'} ${item.active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                                    className={`group flex items-center rounded-xl transition-all duration-300 ${collapsed ? 'justify-center py-4 px-0' : 'gap-4 px-4 py-3'} ${item.active ? (isVideoItem ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg shadow-indigo-600/25 ring-1 ring-white/10' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20') : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                                 >
-                                    <i className={`${item.icon} ${collapsed ? 'text-lg' : 'w-5 text-center'}`}></i>
-                                    {!collapsed && <span className="font-bold text-sm truncate">{item.label}</span>}
+                                    <i className={`${item.icon} ${collapsed ? 'text-lg' : 'w-5 text-center'} ${item.active && isVideoItem ? 'text-yellow-300 drop-shadow' : ''}`}></i>
+                                    {!collapsed && (
+                                        <span className="flex items-center gap-2 min-w-0">
+                                            <span className="font-bold text-sm truncate">{item.label}</span>
+                                            {isVideoItem && item.active && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.18em] bg-white/15 text-white border border-white/20">
+                                                    <i className="fa-solid fa-circle text-[7px]"></i>
+                                                    Active
+                                                </span>
+                                            )}
+                                        </span>
+                                    )}
                                 </a>
-                            ))}
+                                );
+                            })}
                             {collapsed && <div className="h-px bg-slate-800/50 my-4 mx-2" />}
                         </div>
                     ));

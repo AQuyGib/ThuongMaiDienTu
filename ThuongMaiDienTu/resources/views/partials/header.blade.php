@@ -210,6 +210,10 @@
                     </div>
                 </div>
             @endauth
+            <a href="{{ route('videos.index') }}" class="action-item">
+                <i class="fa-solid fa-video"></i>
+                <span>Góc video</span>
+            </a>
             <a href="{{ route('cart.index') }}" class="action-item" style="position: relative;">
                 <i class="fa-solid fa-cart-shopping"></i>
                 <span id="headerCartBadge" style="position: absolute; top: 0px; right: 8px; background: #d70018; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 10px; display: none;">0</span>
@@ -299,7 +303,6 @@
                             <a href="{{ route('admin.dashboard') }}" style="color: #d70018; font-weight: bold;">
                                 <i class="fa-solid fa-user-shield"></i> Trang quản trị
                             </a>
-                            <hr style="border: 0; border-top: 1px solid #eee; margin: 4px 0;">
                         @endif
                         <a href="/profile">Trang cá nhân</a>
                         <form action="{{ route('logout') ?? '/logout' }}" method="POST">

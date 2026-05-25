@@ -78,6 +78,13 @@
             'section' => 'Sản phẩm & Kho'
         ],
         [
+            'label' => 'Góc video',
+            'route' => route('admin.videos.index'),
+            'icon' => 'fa-solid fa-video',
+            'active' => request()->is('admin/videos*'),
+            'section' => 'Sản phẩm & Kho'
+        ],
+        [
             'label' => 'Điều chuyển kho',
             'route' => route('admin.warehouse-transfers.index'),
             'icon' => 'fa-solid fa-truck-ramp-box',

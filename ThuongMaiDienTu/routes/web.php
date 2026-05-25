@@ -20,10 +20,10 @@ use App\Http\Controllers\Admin\RewardImageController;
 use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\VideoController;
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
-// Alias 'login' bắt buộc cho middleware auth của Laravel
 Route::get('/login', [AuthController::class, 'index'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
@@ -50,7 +50,6 @@ Route::post('/2fa/toggle-request', [TwoFactorController::class, 'toggleRequest']
 Route::post('/2fa/toggle-confirm', [TwoFactorController::class, 'toggleConfirm'])->name('2fa.toggle.confirm')->middleware('auth');
 Route::get('/security',    [TwoFactorController::class, 'securityPage'])->name('security')->middleware('auth');
 Route::delete('/security/session/{id}', [TwoFactorController::class, 'logoutSession'])->name('security.session.destroy')->middleware('auth');
-
 
 // Frontend
 Route::get('/', function () {
@@ -84,6 +83,10 @@ Route::get('/rewards/history', [RewardsHistoryController::class, 'index'])->name
 Route::post('/rewards/redeem', [RewardsController::class, 'redeem'])->name('rewards.redeem');
 Route::post('/rewards/spin', [RewardsController::class, 'spin'])->name('rewards.spin');
 
+Route::middleware('auth')->group(function () {
+    Route::get('/videos', [VideoController::class, 'index'])->name('videos.index');
+});
+
 // Articles & Lifestyle
 Route::get('/lifestyle', [\App\Http\Controllers\ArticleFrontendController::class, 'index'])->name('articles.index');
 Route::middleware('auth')->group(function() {
@@ -94,7 +97,6 @@ Route::middleware('auth')->group(function() {
     Route::delete('/lifestyle/{id}', [\App\Http\Controllers\ArticleFrontendController::class, 'destroy'])->name('articles.destroy');
 });
 Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController::class, 'show'])->name('articles.show');
-
 
 Route::middleware(['auth', \App\Http\Middleware\IsAdmin::class])->prefix('admin')->group(function () {
     Route::get('/notifications/dashboard', [NotificationCampaignController::class, 'dashboard'])->name('admin.notifications.dashboard');
@@ -149,16 +151,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::post('/profile/repair-tickets', [ProfileController::class, 'storeRepairTicket'])->name('profile.repair-tickets.store');
-    
-    // Address management
     Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name('profile.address.store');
     Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
     Route::delete('/profile/address/{id}', [ProfileController::class, 'deleteAddress'])->name('profile.address.destroy');
-    
     Route::delete('/wishlist/clear', [WishlistController::class, 'clearWishlist'])->name('wishlist.clear');
     Route::delete('/wishlist/{id}', [WishlistController::class, 'removeFromWishlist'])->name('wishlist.destroy');
     Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
-
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
@@ -175,16 +173,13 @@ Route::get('/api/category-products/{id}', [SearchController::class, 'getProducts
 use App\Http\Controllers\Frontend\WarrantyController;
 use App\Http\Controllers\PolicyController;
 
-// Policy Pages
 Route::get('/chinh-sach-bao-hanh', [PolicyController::class, 'warranty'])->name('policy.warranty');
 Route::get('/chinh-sach-doi-tra', [PolicyController::class, 'returnPolicy'])->name('policy.return');
-
-// Warranty Lookup
 Route::get('/warranty', [WarrantyController::class, 'index'])->name('warranty.index');
 Route::post('/warranty/lookup', [WarrantyController::class, 'lookup'])->name('warranty.lookup');
-Route::get('/return-policy', [WarrantyController::class, 'returnPolicy'])->name('warranty.return'); // Legacy route, keep for now if needed, or remove. Let's remove and update links later if needed.
+Route::get('/return-policy', [WarrantyController::class, 'returnPolicy'])->name('warranty.return');
 
-// Product Compare (So sánh sản phẩm)
+// Product Compare
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
 Route::get('/compare/data', [CompareController::class, 'data'])->name('compare.data');
 Route::post('/compare/sync', [CompareController::class, 'sync'])->name('compare.sync');

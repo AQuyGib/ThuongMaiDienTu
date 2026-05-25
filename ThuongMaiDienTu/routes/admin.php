@@ -18,18 +18,12 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\RepairTicketInvoiceController;
 use App\Http\Controllers\Admin\ServiceInvoiceController;
+use App\Http\Controllers\Admin\VideoManagementController;
 
 /*
 |--------------------------------------------------------------------------
 | Admin Routes
 |--------------------------------------------------------------------------
-|
-| Chứa toàn bộ các route liên quan đến trang quản trị (CMS/ERP).
-| Các route này có tiền tố /admin và sử dụng name prefix admin.
-|
-| Lưu ý: Hiện tại chưa thêm middleware auth vì hệ thống đăng nhập
-| sẽ được xây dựng sau. Khi hoàn tất Auth, thêm ->middleware('auth')
-|
 */
 
 // Dashboard
@@ -40,6 +34,15 @@ Route::get('/kpi', [App\Http\Controllers\Admin\KPIController::class, 'index'])->
 Route::get('/settings/theme', [ThemeSettingController::class, 'index'])->name('settings.theme');
 Route::post('/settings/theme', [ThemeSettingController::class, 'update'])->name('settings.theme.update');
 Route::post('/settings/theme/reset', [ThemeSettingController::class, 'reset'])->name('settings.theme.reset');
+
+// ===== Video Management =====
+Route::get('/videos', [VideoManagementController::class, 'index'])->name('videos.index');
+Route::get('/videos/create', [VideoManagementController::class, 'create'])->name('videos.create');
+Route::post('/videos', [VideoManagementController::class, 'store'])->name('videos.store');
+Route::get('/videos/{video}', [VideoManagementController::class, 'show'])->name('videos.show');
+Route::patch('/videos/{video}/approve', [VideoManagementController::class, 'approve'])->name('videos.approve');
+Route::patch('/videos/{video}/hide', [VideoManagementController::class, 'hide'])->name('videos.hide');
+Route::delete('/videos/{video}', [VideoManagementController::class, 'destroy'])->name('videos.destroy');
 
 // ===== Quản lý Đơn hàng =====
 Route::resource('orders', OrderController::class);
@@ -115,7 +118,6 @@ Route::get('/api/inventory-by-warehouse', [\App\Http\Controllers\Admin\Warehouse
 Route::post('/warehouse-transfers/{id}/complete', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'complete'])->name('warehouse-transfers.complete');
 Route::post('/warehouse-transfers/{id}/cancel', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'cancel'])->name('warehouse-transfers.cancel');
 Route::resource('warehouse-transfers', \App\Http\Controllers\Admin\WarehouseTransferController::class);
-
 
 // ===== Quản lý Sổ Quỹ (Cashbook) =====
 Route::post('cashbooks/bulk-destroy', [CashbookController::class, 'bulkDestroy'])->name('cashbooks.bulkDestroy');
