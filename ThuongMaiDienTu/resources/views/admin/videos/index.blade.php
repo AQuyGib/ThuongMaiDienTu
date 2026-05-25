@@ -212,6 +212,16 @@
                                     </span>
                                 @endif
                                 <span class="badge rounded-pill text-bg-light text-slate-600 border">ID #{{ $video->id }}</span>
+                                @if($video->category)
+                                    <span class="badge rounded-pill text-bg-info text-white">
+                                        <i class="fa-solid fa-folder me-1"></i> {{ $video->category }}
+                                    </span>
+                                @endif
+                                @if($video->product)
+                                    <span class="badge rounded-pill text-bg-secondary">
+                                        <i class="fa-solid fa-box me-1"></i> {{ $video->product->name }}
+                                    </span>
+                                @endif
                             </div>
                             <div class="text-slate-500 small text-truncate" style="max-width: 360px;">
                                 {{ $video->description ?? 'Không có mô tả' }}

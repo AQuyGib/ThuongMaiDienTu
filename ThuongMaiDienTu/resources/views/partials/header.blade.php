@@ -54,7 +54,49 @@
 <!-- Header -->
 <header class="header-main">
     <div class="container header-content">
-        <a href="/" class="logo">
+        @php
+            $isHomepage = request()->is('/') || request()->is('Home') || request()->is('home') || request()->routeIs('home');
+        @endphp
+        
+        @if($isHomepage)
+        <style>
+            @keyframes rgb-text-animation {
+                0% { color: #ff0000; text-shadow: 0 0 10px rgba(255, 0, 0, 0.4); }
+                10% { color: #ff7700; text-shadow: 0 0 10px rgba(255, 119, 0, 0.4); }
+                20% { color: #ffdd00; text-shadow: 0 0 10px rgba(255, 221, 0, 0.4); }
+                35% { color: #00ff00; text-shadow: 0 0 10px rgba(0, 255, 0, 0.4); }
+                50% { color: #00ffff; text-shadow: 0 0 10px rgba(0, 255, 255, 0.4); }
+                65% { color: #0088ff; text-shadow: 0 0 10px rgba(0, 136, 255, 0.4); }
+                78% { color: #7700ff; text-shadow: 0 0 10px rgba(119, 0, 255, 0.4); }
+                88% { color: #ff00ff; text-shadow: 0 0 10px rgba(255, 0, 255, 0.4); } /* Magenta/Pink */
+                94% { color: #ff33aa; text-shadow: 0 0 10px rgba(255, 51, 170, 0.4); } /* Candy Hot Pink */
+                100% { color: #ff0000; text-shadow: 0 0 10px rgba(255, 0, 0, 0.4); }
+            }
+            @keyframes rgb-span-animation {
+                0% { color: #00ff00; }
+                10% { color: #00ffff; }
+                20% { color: #0088ff; }
+                35% { color: #7700ff; }
+                50% { color: #ff00ff; } /* Magenta/Pink */
+                65% { color: #ff33aa; } /* Candy Hot Pink */
+                78% { color: #ff0000; }
+                88% { color: #ff7700; }
+                94% { color: #ffdd00; }
+                100% { color: #00ff00; }
+            }
+            .logo.logo-rgb {
+                animation: rgb-text-animation 6s infinite linear !important;
+            }
+            .logo.logo-rgb i {
+                animation: rgb-text-animation 6s infinite linear !important;
+            }
+            .logo.logo-rgb span {
+                animation: rgb-span-animation 6s infinite linear !important;
+            }
+        </style>
+        @endif
+
+        <a href="/" class="logo {{ $isHomepage ? 'logo-rgb' : '' }}">
             <i class="fa-solid fa-bolt"></i>
             DIENMAY<span>PRO</span>
         </a>
@@ -174,13 +216,13 @@
         <!-- Hành động -->
         <div class="header-actions">
             <a href="/orders" class="action-item">
-                <i class="fa-solid fa-truck-fast"></i>
+                <i class="fa-solid fa-truck-fast {{ request()->is('orders*') ? 'text-orange-400 animate-pulse' : '' }}"></i>
                 <span>Tra cứu đơn</span>
             </a>
             @auth
                 <div class="action-item group" style="position: relative;">
                     <a href="{{ route('notifications.index') }}" class="action-item" id="notificationBell" style="position: relative;">
-                        <i class="fa-regular fa-bell"></i>
+                        <i class="fa-regular fa-bell {{ request()->is('notifications*') ? 'text-yellow-300 animate-pulse' : '' }}"></i>
                         @if($unreadNotificationCount > 0)
                             <span id="notificationBadge" style="position: absolute; top: 0px; right: 8px; background: #d70018; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 10px;">{{ $unreadNotificationCount }}</span>
                         @else
@@ -211,11 +253,11 @@
                 </div>
             @endauth
             <a href="{{ route('videos.index') }}" class="action-item">
-                <i class="fa-solid fa-video"></i>
+                <i class="fa-solid fa-video text-secondary {{ request()->is('videos*') ? 'animate-pulse' : '' }}"></i>
                 <span>Góc video</span>
             </a>
             <a href="{{ route('cart.index') }}" class="action-item" style="position: relative;">
-                <i class="fa-solid fa-cart-shopping"></i>
+                <i class="fa-solid fa-cart-shopping {{ request()->is('shoppingcart*') ? 'text-pink-400 animate-pulse' : '' }}"></i>
                 <span id="headerCartBadge" style="position: absolute; top: 0px; right: 8px; background: #d70018; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 10px; display: none;">0</span>
                 <span>Giỏ hàng</span>
             </a>
@@ -295,7 +337,7 @@
             @auth
                 <div class="action-item relative group" style="position: relative;">
                     <a href="/profile" style="display:flex; flex-direction:column; align-items:center;">
-                        <i class="fa-regular fa-circle-user"></i>
+                        <i class="fa-regular fa-circle-user {{ request()->is('profile*') ? 'text-fuchsia-400 animate-pulse' : '' }}"></i>
                         <span style="max-width: 70px; overflow: hidden; text-overflow: ellipsis;">{{ explode(' ', Auth::user()->full_name)[0] }}</span>
                     </a>
                     <div class="user-dropdown">
@@ -313,7 +355,7 @@
                 </div>
             @else
                 <a href="{{ route('login_register') }}" class="action-item">
-                    <i class="fa-regular fa-circle-user"></i>
+                    <i class="fa-regular fa-circle-user {{ request()->is('login*') || request()->is('login-register*') ? 'text-fuchsia-400 animate-pulse' : '' }}"></i>
                     <span>Đăng nhập</span>
                 </a>
             @endauth

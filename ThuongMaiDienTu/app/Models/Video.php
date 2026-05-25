@@ -23,6 +23,13 @@ class Video extends Model
         'status',
         'admin_note',
         'published_at',
+        'youtube_url',
+        'category',
+        'category_id',
+        'product_id',
+        'duration',
+        'views',
+        'likes',
     ];
 
     protected $casts = [
@@ -34,4 +41,15 @@ class Video extends Model
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
+
+    public function categoryRel()
+    {
+        return $this->belongsTo(Category::class, 'category_id', 'category_id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id', 'product_id');
+    }
 }
+

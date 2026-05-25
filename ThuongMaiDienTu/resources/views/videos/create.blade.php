@@ -1,198 +1,296 @@
 @extends('layouts.app')
 
-@section('title', 'Upload Video')
+@section('title', 'Tải Lên Video')
 
 @push('styles')
 <style>
-    .video-upload-page {
-        padding: 48px 0 64px;
+    /* Styling tokens */
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.85);
+        --glass-border: rgba(226, 232, 240, 0.8);
+        --shadow-premium: 0 15px 35px -10px rgba(0, 70, 171, 0.1);
+        --primary-gradient: linear-gradient(135deg, #0046ab 0%, #0061f2 100%);
     }
 
-    .video-upload-card {
-        max-width: 860px;
+    .video-upload-page {
+        padding: 50px 0 90px;
+        background: radial-gradient(at 0% 0%, rgba(0, 70, 171, 0.03) 0px, transparent 50%),
+                    radial-gradient(at 100% 100%, rgba(215, 0, 24, 0.01) 0px, transparent 50%);
+        min-height: 100vh;
+    }
+
+    .upload-card {
+        max-width: 900px;
         margin: 0 auto;
-        background: #fff;
-        border: 1px solid var(--border-color);
-        border-radius: 20px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
         box-shadow: var(--shadow-premium);
         overflow: hidden;
+        transition: transform 0.3s ease;
     }
 
-    .video-upload-header {
-        padding: 24px 28px;
-        background: linear-gradient(135deg, #0046ab 0%, #0061f2 100%);
+    .upload-header {
+        padding: 30px 35px;
+        background: var(--primary-gradient);
         color: #fff;
-    }
-
-    .video-upload-header h1 {
-        font-size: 24px;
-        font-weight: 800;
-        margin-bottom: 6px;
-    }
-
-    .video-upload-header p {
-        font-size: 14px;
-        opacity: 0.92;
-    }
-
-    .video-upload-body {
-        padding: 28px;
-    }
-
-    .video-upload-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         gap: 20px;
     }
 
-    .video-upload-field {
-        margin-bottom: 18px;
+    .upload-header::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: rgba(255,255,255,0.1);
     }
 
-    .video-upload-field label {
-        display: block;
-        margin-bottom: 8px;
+    .upload-header-text h1 {
+        font-size: 26px;
+        font-weight: 850;
+        margin-bottom: 6px;
+        letter-spacing: -0.02em;
+    }
+
+    .upload-header-text p {
         font-size: 14px;
+        opacity: 0.9;
+        margin-bottom: 0;
+    }
+
+    .btn-back {
+        padding: 10px 20px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #fff;
+        font-size: 13px;
         font-weight: 700;
-        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
     }
 
-    .video-upload-field input,
-    .video-upload-field textarea {
-        width: 100%;
-        border: 1px solid #dbe4f0;
-        border-radius: 14px;
-        padding: 13px 15px;
+    .btn-back:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateX(-3px);
+    }
+
+    .upload-body {
+        padding: 35px;
+    }
+
+    /* Grid Layout */
+    .upload-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 24px;
+    }
+
+    .form-group label {
+        display: block;
         font-size: 14px;
+        font-weight: 750;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+
+    .form-group input[type="text"],
+    .form-group textarea {
+        width: 100%;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 14px;
+        padding: 12px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #0f172a;
         outline: none;
         background: #fff;
-        transition: .2s ease;
+        transition: all 0.2s ease;
     }
 
-    .video-upload-field input:focus,
-    .video-upload-field textarea:focus {
-        border-color: var(--primary-color);
+    .form-group input[type="text"]:focus,
+    .form-group textarea:focus {
+        border-color: #0046ab;
         box-shadow: 0 0 0 4px rgba(0, 70, 171, 0.08);
     }
 
-    .field-error {
-        margin-top: 8px;
-        font-size: 12px;
-        color: #b91c1c;
-        font-weight: 600;
+    .form-group textarea {
+        min-height: 140px;
+        resize: vertical;
     }
 
-    .inline-error {
-        border-color: #ef4444 !important;
-        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.08) !important;
+    /* Drag Drop / File Box */
+    .drop-zone {
+        border: 2px dashed #cbd5e1;
+        background: #f8fafc;
+        border-radius: 18px;
+        padding: 24px;
+        text-align: center;
+        transition: all 0.25s ease;
+        position: relative;
+        cursor: pointer;
     }
 
-    .file-preview-card {
-        display: none;
-        margin-top: 14px;
-        border-radius: 16px;
-        overflow: hidden;
-        border: 1px solid #dbe4f0;
-        background: #fff;
+    .drop-zone:hover {
+        border-color: #0046ab;
+        background: rgba(0, 70, 171, 0.01);
     }
 
-    .file-preview-card.show { display: block; }
-
-    .file-preview-thumb {
-        width: 100%;
-        aspect-ratio: 16 / 9;
-        object-fit: cover;
-        background: linear-gradient(135deg, #eff6ff, #dbeafe);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #0f172a;
-        font-weight: 700;
-        font-size: 13px;
+    .drop-zone-icon {
+        font-size: 32px;
+        color: #64748b;
+        margin-bottom: 12px;
+        transition: color 0.2s ease;
     }
 
-    .file-preview-meta {
-        padding: 12px 14px;
-        font-size: 12px;
-        color: #475569;
-        display: grid;
-        gap: 4px;
+    .drop-zone:hover .drop-zone-icon {
+        color: #0046ab;
     }
 
-    .validation-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 700;
-        margin-top: 10px;
-        background: #eff6ff;
-        color: #1d4ed8;
-    }
-
-    .validation-badge.invalid {
-        background: #fef2f2;
-        color: #b91c1c;
-    }
-
-    .file-input-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
+    .file-input-hidden {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 5;
     }
 
     .file-chip {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 10px 12px;
+        padding: 8px 14px;
         border-radius: 12px;
-        background: #eff6ff;
-        color: #1d4ed8;
         font-size: 12px;
         font-weight: 700;
+        background: #eff6ff;
+        color: #0046ab;
+        margin-top: 10px;
+        box-shadow: 0 2px 8px rgba(0, 70, 171, 0.05);
     }
 
-    .video-upload-field textarea {
-        min-height: 130px;
-        resize: vertical;
-    }
-
-    .video-help {
-        margin-top: 8px;
+    .drop-zone-help {
         font-size: 12px;
-        color: var(--text-muted);
-        line-height: 1.6;
+        color: #64748b;
+        margin-top: 8px;
+        line-height: 1.5;
     }
 
-    .video-file-box {
-        border: 1.5px dashed #bcd0ea;
-        border-radius: 16px;
-        padding: 18px;
-        background: #f8fbff;
-    }
-
-    .progress-wrap {
+    /* Thumbnail Preview Widget */
+    .file-preview-card {
         display: none;
-        margin-top: 14px;
+        margin-top: 15px;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
     }
 
-    .progress-label {
+    .file-preview-card.show {
+        display: block;
+    }
+
+    .preview-image-wrapper {
+        aspect-ratio: 16 / 9;
+        width: 100%;
+        background: #f1f5f9;
+        overflow: hidden;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
+    }
+
+    .preview-image-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .preview-fallback {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        color: #94a3b8;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .preview-metadata {
+        padding: 14px;
+        font-size: 12px;
+        color: #475569;
+        border-top: 1px solid #f1f5f9;
+        background: #f8fafc;
+        display: grid;
+        gap: 6px;
+    }
+
+    .preview-metadata span {
+        font-weight: 750;
+        color: #1e293b;
+    }
+
+    /* Video validation badge */
+    .validation-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 12px;
         font-size: 12px;
         font-weight: 700;
-        color: #334155;
+        background: #f0fdf4;
+        color: #166534;
+        margin-top: 12px;
+        border: 1px solid #bbf7d0;
+        width: 100%;
+    }
+
+    .validation-badge.invalid {
+        background: #fef2f2;
+        color: #991b1b;
+        border-color: #fecaca;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+        display: none;
+        margin-top: 25px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        padding: 20px;
+        border-radius: 18px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 750;
+        color: #1e293b;
     }
 
     .progress-track {
-        width: 100%;
-        height: 12px;
+        height: 10px;
         background: #e2e8f0;
         border-radius: 999px;
         overflow: hidden;
@@ -201,54 +299,94 @@
     .progress-bar {
         width: 0%;
         height: 100%;
-        background: linear-gradient(135deg, #0046ab 0%, #0061f2 100%);
-        border-radius: inherit;
-        transition: width .15s ease;
+        background: var(--primary-gradient);
+        border-radius: 999px;
+        transition: width 0.2s ease;
     }
 
-    .upload-actions {
+    /* Actions */
+    .action-row {
         display: flex;
-        gap: 12px;
         justify-content: flex-end;
-        margin-top: 18px;
+        align-items: center;
+        gap: 16px;
+        margin-top: 30px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 25px;
     }
 
-    .btn-upload {
-        border: none;
-        border-radius: 12px;
-        padding: 12px 22px;
-        font-weight: 700;
+    .btn-action {
+        padding: 12px 28px;
+        border-radius: 14px;
+        font-size: 14px;
+        font-weight: 750;
         cursor: pointer;
-        transition: .2s ease;
+        transition: all 0.25s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
     }
 
-    .btn-primary-upload {
+    .btn-action-primary {
         background: var(--primary-gradient);
         color: #fff;
+        box-shadow: 0 8px 20px rgba(0, 70, 171, 0.15);
     }
 
-    .btn-primary-upload:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 10px 24px rgba(0, 70, 171, .18);
+    .btn-action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(0, 70, 171, 0.25);
     }
 
-    .btn-secondary-upload {
+    .btn-action-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-action-secondary {
         background: #e2e8f0;
         color: #334155;
     }
 
-    .preview-note {
-        margin-top: 10px;
-        font-size: 12px;
-        color: #64748b;
+    .btn-action-secondary:hover {
+        background: #cbd5e1;
     }
 
+    /* Media queries */
     @media (max-width: 768px) {
-        .video-upload-page { padding: 18px 0 34px; }
-        .video-upload-body, .video-upload-header { padding-left: 18px; padding-right: 18px; }
-        .video-upload-grid { grid-template-columns: 1fr; }
-        .upload-actions { flex-direction: column-reverse; }
-        .btn-upload { width: 100%; }
+        .upload-card {
+            border-radius: 20px;
+        }
+
+        .upload-header {
+            padding: 20px 24px;
+        }
+
+        .upload-header-text h1 {
+            font-size: 22px;
+        }
+
+        .upload-body {
+            padding: 24px;
+        }
+
+        .upload-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .action-row {
+            flex-direction: column-reverse;
+            gap: 10px;
+        }
+
+        .btn-action {
+            width: 100%;
+            justify-content: center;
+        }
     }
 </style>
 @endpush
@@ -256,25 +394,23 @@
 @section('content')
 <div class="video-upload-page">
     <div class="container">
-        <div class="video-upload-card">
-            <div class="video-upload-header d-flex justify-content-between align-items-center gap-3">
-                <div>
-                    <h1>Video của tôi</h1>
-                    <p>Danh sách video đã tải lên và trạng thái duyệt.</p>
+        <div class="upload-card">
+            <!-- Header -->
+            <div class="upload-header">
+                <div class="upload-header-text">
+                    <h1>Tải Lên Video Trải Nghiệm</h1>
+                    <p>Chia sẻ video đánh giá, unbox hoặc hướng dẫn sử dụng sản phẩm công nghệ của bạn.</p>
                 </div>
-                <a href="{{ route('admin.videos.create') }}" class="btn btn-light btn-sm fw-bold">
-                    <i class="fa-solid fa-circle-plus me-1"></i> Upload nội bộ
+                <a href="{{ route('videos.index') }}" class="btn-back">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại
                 </a>
             </div>
 
-            <div class="video-upload-body">
-                @if(session('success'))
-                    <div class="alert alert-success mb-4">{{ session('success') }}</div>
-                @endif
-
+            <!-- Body -->
+            <div class="upload-body">
                 @if ($errors->any())
-                    <div class="alert alert-danger mb-4">
-                        <ul class="mb-0 ps-3">
+                    <div class="alert alert-danger mb-4 border-0 shadow-sm" style="border-radius: 12px; background-color: #fef2f2; color: #991b1b;">
+                        <ul class="mb-0 ps-3 fw-semibold" style="font-size: 13px;">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
@@ -286,62 +422,74 @@
                     @csrf
                     <input type="hidden" name="redirect_to" id="redirectTo" value="{{ route('videos.index') }}">
 
-                    <div class="video-upload-grid">
+                    <div class="upload-grid">
+                        <!-- Left Column (Metadata & Thumbnail) -->
                         <div>
-                            <div class="video-upload-field">
+                            <div class="form-group">
                                 <label for="title">Tiêu đề video</label>
-                                <input type="text" name="title" id="title" value="{{ old('title') }}" placeholder="Nhập tiêu đề video" required>
+                                <input type="text" name="title" id="title" value="{{ old('title') }}" placeholder="Ví dụ: Đánh giá chi tiết iPhone 15 Pro Max sau 6 tháng" required>
                             </div>
 
-                            <div class="video-upload-field">
-                                <label for="thumbnail">Thumbnail</label>
-                                <div class="video-file-box">
-                                    <div class="file-input-row">
-                                        <input type="file" name="thumbnail" id="thumbnail" accept="image/*">
-                                        <span class="file-chip" id="thumbnailInfo"><i class="fa-regular fa-image"></i> Chưa chọn ảnh</span>
-                                    </div>
-                                    <div class="preview-note">Ảnh gợi ý: JPG, PNG, WEBP. Dung lượng tối đa 2MB.</div>
-                                    <div class="file-preview-card" id="thumbnailPreviewCard">
-                                        <img id="thumbnailPreviewImg" alt="Thumbnail preview" class="file-preview-thumb" style="display:none;">
-                                        <div id="thumbnailPreviewFallback" class="file-preview-thumb"><i class="fa-regular fa-image me-2"></i> Preview thumbnail</div>
-                                        <div class="file-preview-meta">
-                                            <div><strong>Tên:</strong> <span id="thumbnailName">-</span></div>
-                                            <div><strong>Kích thước:</strong> <span id="thumbnailSize">-</span></div>
-                                            <div><strong>Loại:</strong> <span id="thumbnailType">-</span></div>
+                            <div class="form-group">
+                                <label>Ảnh Thumbnail (Ảnh thu nhỏ)</label>
+                                <div class="drop-zone">
+                                    <i class="fa-regular fa-image drop-zone-icon"></i>
+                                    <div><strong>Nhấn để chọn ảnh</strong> hoặc kéo thả vào đây</div>
+                                    <div class="drop-zone-help">Hỗ trợ định dạng JPG, PNG, WEBP. Tối đa 2MB.</div>
+                                    <input type="file" name="thumbnail" id="thumbnail" class="file-input-hidden" accept="image/*">
+                                </div>
+                                <span class="file-chip" id="thumbnailInfo">
+                                    <i class="fa-regular fa-image"></i> Chưa chọn ảnh
+                                </span>
+
+                                <!-- Preview Widget -->
+                                <div class="file-preview-card" id="thumbnailPreviewCard">
+                                    <div class="preview-image-wrapper">
+                                        <img id="thumbnailPreviewImg" alt="Thumbnail preview" style="display:none;">
+                                        <div id="thumbnailPreviewFallback" class="preview-fallback">
+                                            <i class="fa-regular fa-image" style="font-size: 24px;"></i> Preview Thumbnail
                                         </div>
+                                    </div>
+                                    <div class="preview-metadata">
+                                        <div>Tên file: <span id="thumbnailName">-</span></div>
+                                        <div>Kích thước: <span id="thumbnailSize">-</span></div>
+                                        <div>Định dạng: <span id="thumbnailType">-</span></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Right Column (Description & Video File) -->
                         <div>
-                            <div class="video-upload-field">
-                                <label for="description">Mô tả</label>
-                                <textarea name="description" id="description" placeholder="Mô tả ngắn về nội dung video">{{ old('description') }}</textarea>
+                            <div class="form-group">
+                                <label for="description">Mô tả nội dung</label>
+                                <textarea name="description" id="description" placeholder="Mô tả ngắn gọn về nội dung video, các điểm chính được nhắc đến..." required>{{ old('description') }}</textarea>
                             </div>
 
-                            <div class="video-upload-field">
-                                <label for="video">Tệp video</label>
-                                <div class="video-file-box">
-                                    <div class="file-input-row">
-                                        <input type="file" name="video" id="video" accept=".mp4,.mkv,video/mp4,video/x-matroska" required>
-                                        <span class="file-chip" id="videoInfo"><i class="fa-solid fa-film"></i> Chưa chọn video</span>
-                                    </div>
-                                    <div class="video-help">
-                                        Hỗ trợ .mp4 / .mkv. Nếu file vượt quá 20MB, hệ thống sẽ báo lỗi trước khi tải lên.
-                                    </div>
-                                    <div class="validation-badge" id="videoValidationBadge">
-                                        <i class="fa-solid fa-circle-info"></i>
-                                        <span>Chờ chọn file video</span>
-                                    </div>
+                            <div class="form-group">
+                                <label>Tệp tin Video</label>
+                                <div class="drop-zone" style="background: rgba(0, 70, 171, 0.01); border-color: #bcd0ea;">
+                                    <i class="fa-solid fa-cloud-arrow-up drop-zone-icon" style="color: #0046ab;"></i>
+                                    <div><strong>Nhấn để chọn tệp video</strong> hoặc kéo thả vào đây</div>
+                                    <div class="drop-zone-help">Chấp nhận định dạng MP4 hoặc MKV. Dung lượng tối đa 20MB.</div>
+                                    <input type="file" name="video" id="video" class="file-input-hidden" accept=".mp4,.mkv,video/mp4,video/x-matroska" required>
+                                </div>
+                                <span class="file-chip" id="videoInfo">
+                                    <i class="fa-solid fa-film"></i> Chưa chọn video
+                                </span>
+
+                                <div class="validation-badge invalid" id="videoValidationBadge">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span>Chờ chọn tệp video...</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Progress bar wrapper -->
                     <div class="progress-wrap" id="uploadProgressWrap">
-                        <div class="progress-label">
-                            <span>Đang tải lên</span>
+                        <div class="progress-header">
+                            <span>Đang tải video lên máy chủ...</span>
                             <span id="uploadProgressText">0%</span>
                         </div>
                         <div class="progress-track">
@@ -349,10 +497,11 @@
                         </div>
                     </div>
 
-                    <div class="upload-actions">
-                        <a href="{{ url()->previous() }}" class="btn-upload btn-secondary-upload">Quay lại</a>
-                        <button type="submit" class="btn-upload btn-primary-upload" id="uploadSubmitBtn">
-                            <i class="fa-solid fa-cloud-arrow-up me-1"></i> Tải lên video
+                    <!-- Form Actions -->
+                    <div class="action-row">
+                        <a href="{{ route('videos.index') }}" class="btn-action btn-action-secondary">Hủy bỏ</a>
+                        <button type="submit" class="btn-action btn-action-primary" id="uploadSubmitBtn">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Tải Lên Video
                         </button>
                     </div>
                 </form>
@@ -410,7 +559,7 @@
         if (!videoValidationBadge) return;
 
         if (!file) {
-            videoValidationBadge.classList.remove('invalid');
+            videoValidationBadge.classList.add('invalid');
             videoValidationBadge.innerHTML = '<i class="fa-solid fa-circle-info"></i><span>Chờ chọn file video</span>';
             setFieldError(fileInput, false);
             return;
@@ -423,7 +572,7 @@
         videoValidationBadge.classList.toggle('invalid', !isValid);
         videoValidationBadge.innerHTML = isValid
             ? '<i class="fa-solid fa-circle-check"></i><span>Video hợp lệ: ' + file.name + ' • ' + formatBytes(file.size) + '</span>'
-            : '<i class="fa-solid fa-triangle-exclamation"></i><span>' + (!isTypeValid ? 'Sai định dạng video.' : 'Video vượt quá 20MB.') + '</span>';
+            : '<i class="fa-solid fa-triangle-exclamation"></i><span>' + (!isTypeValid ? 'Định dạng video không được hỗ trợ.' : 'Dung lượng file vượt quá giới hạn 20MB.') + '</span>';
 
         setFieldError(fileInput, !isValid);
     }
@@ -483,7 +632,7 @@
         const file = fileInput?.files?.[0];
         if (!file) {
             updateVideoValidation(null);
-            alert('Vui lòng chọn video.');
+            alert('Vui lòng chọn file video.');
             return;
         }
 
@@ -538,13 +687,13 @@
             }
 
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-1"></i> Tải lên video';
-            alert('Upload thất bại, vui lòng thử lại.');
+            submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-1"></i> Tải Lên Video';
+            alert('Tải lên thất bại, vui lòng thử lại.');
         };
 
         xhr.onerror = function () {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-1"></i> Tải lên video';
+            submitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up me-1"></i> Tải Lên Video';
             alert('Không thể kết nối đến máy chủ.');
         };
 

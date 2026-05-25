@@ -85,6 +85,10 @@ Route::post('/rewards/spin', [RewardsController::class, 'spin'])->name('rewards.
 
 Route::middleware('auth')->group(function () {
     Route::get('/videos', [VideoController::class, 'index'])->name('videos.index');
+    Route::get('/videos/create', [VideoController::class, 'create'])->name('videos.create');
+    Route::post('/videos', [VideoController::class, 'store'])->name('videos.store');
+    Route::post('/videos/{video}/like', [VideoController::class, 'like'])->name('videos.like');
+    Route::post('/videos/{video}/view', [VideoController::class, 'view'])->name('videos.view');
 });
 
 // Articles & Lifestyle

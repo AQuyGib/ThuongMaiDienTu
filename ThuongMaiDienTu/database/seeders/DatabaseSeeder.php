@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             RewardSeeder::class,
             RewardRuleSeeder::class,
             RewardHistorySeeder::class,
+            VideoSeeder::class,
         ]);
     }
 }

@@ -79,17 +79,46 @@
                     <input type="text" name="title" class="form-control form-control-lg" required>
                 </div>
                 <div class="col-lg-6">
-                    <label class="form-label fw-bold">Thumbnail</label>
+                    <label class="form-label fw-bold">Thumbnail (Ảnh đại diện video)</label>
                     <input type="file" name="thumbnail" id="thumbnail" class="form-control form-control-lg" accept="image/*">
                     <div class="file-chip mt-2" id="thumbnailInfo"><i class="fa-regular fa-image"></i> Chưa chọn ảnh</div>
                 </div>
+
+                <div class="col-lg-6">
+                    <label class="form-label fw-bold">Danh mục sản phẩm</label>
+                    <select name="category_id" class="form-select form-control-lg">
+                        <option value="">-- Chọn danh mục (Không bắt buộc) --</option>
+                        @foreach($categories as $category)
+                            <option value="{{ $category->category_id }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-6">
+                    <label class="form-label fw-bold">Sản phẩm liên quan</label>
+                    <select name="product_id" class="form-select form-control-lg">
+                        <option value="">-- Chọn sản phẩm liên quan (Không bắt buộc) --</option>
+                        @foreach($products as $product)
+                            <option value="{{ $product->product_id }}">{{ $product->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-lg-6">
+                    <label class="form-label fw-bold">Thời lượng video (Ví dụ: 03:45)</label>
+                    <input type="text" name="duration" class="form-control form-control-lg" placeholder="0:00">
+                </div>
+                <div class="col-lg-6">
+                    <label class="form-label fw-bold">Hoặc điền Liên kết YouTube (Xem từ xa)</label>
+                    <input type="text" name="youtube_url" id="youtube_url" class="form-control form-control-lg" placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+
                 <div class="col-12">
-                    <label class="form-label fw-bold">Mô tả</label>
+                    <label class="form-label fw-bold">Mô tả chi tiết</label>
                     <textarea name="description" class="form-control" rows="4"></textarea>
                 </div>
                 <div class="col-12">
-                    <label class="form-label fw-bold">Tệp video</label>
-                    <input type="file" name="video" id="video" class="form-control form-control-lg" accept=".mp4,.mkv,video/mp4,video/x-matroska" required>
+                    <label class="form-label fw-bold">Tệp video nội bộ (Nếu không dùng link YouTube)</label>
+                    <input type="file" name="video" id="video" class="form-control form-control-lg" accept=".mp4,.mkv,video/mp4,video/x-matroska">
                     <div class="file-chip mt-2" id="videoInfo"><i class="fa-solid fa-film"></i> Chưa chọn video</div>
                     <div class="validation-badge" id="videoValidationBadge"><i class="fa-solid fa-circle-info"></i><span>Chờ chọn video</span></div>
                 </div>
@@ -106,7 +135,7 @@
             <div class="d-flex justify-content-end gap-2 mt-4">
                 <a href="{{ route('admin.videos.index') }}" class="btn btn-light">Hủy</a>
                 <button type="submit" id="uploadSubmitBtn" class="btn btn-primary">
-                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Đăng video (tối đa 20MB)
+                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Đăng video
                 </button>
             </div>
         </form>
@@ -168,9 +197,16 @@
     form.addEventListener('submit', function (e) {
         e.preventDefault();
         const file = fileInput?.files?.[0];
-        if (!file) return alert('Vui lòng chọn video.');
-        if (file.size > MAX_SIZE) return alert('Video không được vượt quá 20MB.');
-        if (!ALLOWED_MIME.includes(file.type)) return alert('Chỉ chấp nhận .mp4 hoặc .mkv.');
+        const youtubeUrl = document.getElementById('youtube_url')?.value || '';
+
+        if (!file && youtubeUrl.trim() === '') {
+            return alert('Vui lòng chọn tải lên tệp video hoặc điền liên kết YouTube.');
+        }
+
+        if (file) {
+            if (file.size > MAX_SIZE) return alert('Video không được vượt quá 20MB.');
+            if (!ALLOWED_MIME.includes(file.type)) return alert('Chỉ chấp nhận .mp4 hoặc .mkv.');
+        }
 
         const xhr = new XMLHttpRequest();
         const data = new FormData(form);
