@@ -78,7 +78,7 @@
             'section' => 'Sản phẩm & Kho'
         ],
         [
-            'label' => 'Góc video',
+            'label' => 'Video',
             'route' => route('admin.videos.index'),
             'icon' => 'fa-solid fa-video',
             'active' => request()->is('admin/videos*'),

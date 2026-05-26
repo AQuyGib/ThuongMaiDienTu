@@ -40,9 +40,13 @@ Route::get('/videos', [VideoManagementController::class, 'index'])->name('videos
 Route::get('/videos/create', [VideoManagementController::class, 'create'])->name('videos.create');
 Route::post('/videos', [VideoManagementController::class, 'store'])->name('videos.store');
 Route::get('/videos/{video}', [VideoManagementController::class, 'show'])->name('videos.show');
+Route::get('/videos/{video}/edit', [VideoManagementController::class, 'edit'])->name('videos.edit');
+Route::put('/videos/{video}', [VideoManagementController::class, 'update'])->name('videos.update');
 Route::patch('/videos/{video}/approve', [VideoManagementController::class, 'approve'])->name('videos.approve');
 Route::patch('/videos/{video}/hide', [VideoManagementController::class, 'hide'])->name('videos.hide');
 Route::delete('/videos/{video}', [VideoManagementController::class, 'destroy'])->name('videos.destroy');
+Route::delete('/videos/comments/{comment}', [VideoManagementController::class, 'destroyComment'])->name('videos.comments.destroy');
+
 
 // ===== Quản lý Đơn hàng =====
 Route::resource('orders', OrderController::class);

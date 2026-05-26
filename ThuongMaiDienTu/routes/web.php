@@ -85,10 +85,12 @@ Route::post('/rewards/spin', [RewardsController::class, 'spin'])->name('rewards.
 
 Route::middleware('auth')->group(function () {
     Route::get('/videos', [VideoController::class, 'index'])->name('videos.index');
-    Route::get('/videos/create', [VideoController::class, 'create'])->name('videos.create');
-    Route::post('/videos', [VideoController::class, 'store'])->name('videos.store');
+    Route::get('/videos/{video}/stream', [VideoController::class, 'stream'])->name('videos.stream');
     Route::post('/videos/{video}/like', [VideoController::class, 'like'])->name('videos.like');
     Route::post('/videos/{video}/view', [VideoController::class, 'view'])->name('videos.view');
+    Route::get('/videos/{video}/comments', [VideoController::class, 'getComments'])->name('videos.comments.index');
+    Route::post('/videos/{video}/comments', [VideoController::class, 'storeComment'])->name('videos.comments.store');
+    Route::delete('/videos/comments/{comment}', [VideoController::class, 'destroyComment'])->name('videos.comments.destroy');
 });
 
 // Articles & Lifestyle

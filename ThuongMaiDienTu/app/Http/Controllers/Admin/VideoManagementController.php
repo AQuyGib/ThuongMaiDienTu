@@ -16,9 +16,8 @@ class VideoManagementController extends Controller
 
     public function create()
     {
-        $categories = \App\Models\Category::all();
-        $products = \App\Models\Product::orderBy('name')->get();
-        return view('admin.videos.create', compact('categories', 'products'));
+        $categories = \App\Models\Category::whereHas('products')->orderBy('name')->get();
+        return view('admin.videos.create', compact('categories'));
     }
 
     public function store(Request $request)
@@ -26,14 +25,14 @@ class VideoManagementController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'video' => ['nullable', 'file', 'mimes:mp4,mkv', 'max:20480'],
+            'video' => ['nullable', 'file', 'mimes:mp4,mkv', 'max:102400'],
             'youtube_url' => ['nullable', 'string'],
             'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'category_id' => ['nullable', 'exists:categories,category_id'],
             'product_id' => ['nullable', 'exists:products,product_id'],
             'duration' => ['nullable', 'string', 'max:50'],
         ], [
-            'video.max' => 'Video không được vượt quá 20MB.',
+            'video.max' => 'Video không được vượt quá 100MB.',
             'video.mimes' => 'Chỉ chấp nhận định dạng .mp4 hoặc .mkv.',
             'thumbnail.image' => 'Thumbnail phải là file ảnh hợp lệ.',
             'thumbnail.max' => 'Thumbnail không được vượt quá 2MB.',
@@ -126,6 +125,67 @@ class VideoManagementController extends Controller
         return $url;
     }
 
+    public function edit(Video $video)
+    {
+        $categories = \App\Models\Category::whereHas('products')->orderBy('name')->get();
+        return view('admin.videos.edit', compact('video', 'categories'));
+    }
+
+    public function update(Request $request, Video $video)
+    {
+        $validated = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'video' => ['nullable', 'file', 'mimes:mp4,mkv', 'max:102400'],
+            'youtube_url' => ['nullable', 'string'],
+            'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'category_id' => ['nullable', 'exists:categories,category_id'],
+            'duration' => ['nullable', 'string', 'max:50'],
+        ], [
+            'video.max' => 'Video không được vượt quá 100MB.',
+            'video.mimes' => 'Chỉ chấp nhận định dạng .mp4 hoặc .mkv.',
+            'thumbnail.image' => 'Thumbnail phải là file ảnh hợp lệ.',
+            'thumbnail.max' => 'Thumbnail không được vượt quá 2MB.',
+        ]);
+
+        if ($request->hasFile('video')) {
+            if ($video->video_path) {
+                Storage::disk('public')->delete($video->video_path);
+            }
+            $video->video_path = $request->file('video')->store('videos', 'public');
+            $video->file_size = $request->file('video')->getSize();
+            $video->mime_type = $request->file('video')->getMimeType();
+        }
+
+        if ($request->hasFile('thumbnail')) {
+            if ($video->thumbnail_path) {
+                Storage::disk('public')->delete($video->thumbnail_path);
+            }
+            $video->thumbnail_path = $request->file('thumbnail')->store('videos/thumbnails', 'public');
+        }
+
+        $youtubeUrl = $this->parseYoutubeEmbed($validated['youtube_url'] ?? null);
+
+        $categoryName = $video->category;
+        $catId = $validated['category_id'] ?? null;
+        if (!empty($catId)) {
+            $cat = \App\Models\Category::find($catId);
+            if ($cat) {
+                $categoryName = $cat->name;
+            }
+        }
+
+        $video->title = $validated['title'];
+        $video->description = $validated['description'] ?? $video->description;
+        $video->youtube_url = $youtubeUrl ?? $video->youtube_url;
+        $video->category = $categoryName;
+        $video->category_id = $catId;
+        $video->duration = $validated['duration'] ?? $video->duration;
+        $video->save();
+
+        return redirect()->route('admin.videos.index')->with('success', 'Cập nhật video thành công.');
+    }
+
     public function index(Request $request)
     {
         $query = Video::with('user')->latest();
@@ -173,7 +233,7 @@ class VideoManagementController extends Controller
             'published_at' => now(),
         ]);
 
-        return back()->with('success', 'Video đã được duyệt và công khai.');
+        return back()->with('success', 'Video đã được công khai.');
     }
 
     public function hide(Request $request, Video $video)
@@ -217,5 +277,11 @@ class VideoManagementController extends Controller
         $video->delete();
 
         return back()->with('success', 'Video đã được xóa.');
+    }
+
+    public function destroyComment(\App\Models\VideoComment $comment)
+    {
+        $comment->delete();
+        return back()->with('success', 'Bình luận đã được xóa.');
     }
 }

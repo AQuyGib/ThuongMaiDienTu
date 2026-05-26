@@ -37,6 +37,34 @@ class Video extends Model
         'published_at' => 'datetime',
     ];
 
+    protected $appends = [
+        'thumbnail_url',
+        'video_url',
+    ];
+
+    public function getThumbnailUrlAttribute()
+    {
+        if ($this->thumbnail_path) {
+            return asset('storage/' . $this->thumbnail_path);
+        }
+
+        if ($this->youtube_url) {
+            if (preg_match('%(?:youtube(?:-nocookie)?\.com/(?:[^/]+/.+/|(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\.be/|embed/)([^"&?/ ]{11})%i', $this->youtube_url, $match)) {
+                return 'https://img.youtube.com/vi/' . $match[1] . '/hqdefault.jpg';
+            }
+        }
+
+        return 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=800&q=80';
+    }
+
+    public function getVideoUrlAttribute()
+    {
+        if ($this->video_path) {
+            return route('videos.stream', $this->id);
+        }
+        return '';
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'user_id');
@@ -50,6 +78,11 @@ class Video extends Model
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(VideoComment::class, 'video_id', 'id')->latest();
     }
 }
 

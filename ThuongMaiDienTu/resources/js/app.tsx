@@ -206,6 +206,7 @@ document.addEventListener('click', (e) => {
             anchor.href.includes('/admin/inventory') ||
             anchor.href.includes('/admin/purchase-orders') ||
             anchor.href.includes('/admin/products') ||
+            anchor.href.includes('/admin/videos') ||
             anchor.href.includes('/admin/service-invoices') ||
             anchor.href.includes('/admin/repair-tickets')
         ) {

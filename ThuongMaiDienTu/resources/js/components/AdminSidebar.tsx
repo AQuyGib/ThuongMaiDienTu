@@ -33,7 +33,7 @@ const getActiveIconColor = (label: string): string => {
         case 'Sản phẩm': return 'text-indigo-300';
         case 'Bài viết & CMS': return 'text-fuchsia-300';
         case 'Quản lý Kho': return 'text-blue-300';
-        case 'Góc video': return 'text-yellow-300';
+        case 'Video': return 'text-yellow-300';
         case 'Điều chuyển kho': return 'text-violet-400';
         case 'Nhà cung cấp': return 'text-pink-400';
         case 'Danh mục': return 'text-lime-300';

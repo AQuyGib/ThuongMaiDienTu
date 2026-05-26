@@ -127,7 +127,7 @@
     <div class="p-5 border-bottom border-slate-200 d-flex flex-wrap justify-content-between align-items-center gap-3">
         <div>
             <h1 class="h3 fw-bold mb-1">Quản lý video</h1>
-            <div class="text-slate-500">Duyệt, ẩn hoặc xóa video do quản trị viên đăng lên hệ thống</div>
+            <div class="text-slate-500">Ẩn hoặc xóa video do quản trị viên đăng lên hệ thống</div>
         </div>
     </div>
 
@@ -139,7 +139,7 @@
                     <div class="text-slate-500 small">Chuyển trạng thái video bằng một chạm</div>
                 </div>
                 <a href="{{ route('admin.videos.create') }}" class="btn btn-primary rounded-pill px-3">
-                    <i class="fa-solid fa-circle-plus me-1"></i> Admin upload
+                    <i class="fa-solid fa-circle-plus me-1"></i> Đăng video
                 </a>
             </div>
 
@@ -148,20 +148,12 @@
                     <i class="fa-solid fa-layer-group"></i> Tất cả
                     <span class="chip-count">{{ $videos->total() }}</span>
                 </a>
-                <a href="{{ route('admin.videos.index', array_merge(request()->except('status'), ['status' => 'admin_upload'])) }}" class="filter-chip {{ request('status') === 'admin_upload' ? 'active' : '' }}" style="background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #fff; border-color: transparent; box-shadow: 0 14px 28px rgba(37,99,235,.24);">
-                    <i class="fa-solid fa-user-shield"></i> Admin upload
-                    <span class="chip-count" style="background: rgba(255,255,255,.22);">{{ $adminUploadCount ?? 0 }}</span>
-                </a>
-                <a href="{{ route('admin.videos.index', array_merge(request()->except('status'), ['status' => 'pending'])) }}" class="filter-chip {{ request('status') === 'pending' ? 'active' : '' }}">
-                    <i class="fa-solid fa-clock"></i> Pending
-                    <span class="chip-count">{{ $pendingCount ?? 0 }}</span>
-                </a>
                 <a href="{{ route('admin.videos.index', array_merge(request()->except('status'), ['status' => 'published'])) }}" class="filter-chip {{ request('status') === 'published' ? 'active' : '' }}">
-                    <i class="fa-solid fa-circle-check"></i> Published
+                    <i class="fa-solid fa-circle-check"></i> Đang hiển thị
                     <span class="chip-count">{{ $publishedCount ?? 0 }}</span>
                 </a>
                 <a href="{{ route('admin.videos.index', array_merge(request()->except('status'), ['status' => 'hidden'])) }}" class="filter-chip {{ request('status') === 'hidden' ? 'active' : '' }}">
-                    <i class="fa-solid fa-eye-slash"></i> Hidden
+                    <i class="fa-solid fa-eye-slash"></i> Đang ẩn
                     <span class="chip-count">{{ $hiddenCount ?? 0 }}</span>
                 </a>
             </div>
@@ -183,35 +175,27 @@
         <table class="table align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Video</th>
+                    <th style="width: 80px; padding-left: 20px;">ID</th>
+                    <th>Ảnh minh họa</th>
                     <th>Tiêu đề</th>
+                    <th>Mô tả chi tiết</th>
                     <th>Người đăng</th>
-                    <th>Trạng thái</th>
                     <th>Ngày tạo</th>
-                    <th class="text-end">Hành động</th>
+                    <th class="text-end" style="padding-right: 20px;">Hành động</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($videos as $video)
                     <tr class="{{ $video->uploaded_by_admin ? 'admin-upload-row' : '' }}">
+                        <td class="fw-bold text-slate-500" style="padding-left: 20px;">
+                            #{{ ($videos->currentPage() - 1) * $videos->perPage() + $loop->iteration }}
+                        </td>
                         <td>
-                            @if($video->thumbnail_path)
-                                <img src="{{ asset('storage/' . $video->thumbnail_path) }}" alt="thumbnail" class="video-thumb">
-                            @else
-                                <div class="video-thumb d-flex align-items-center justify-content-center text-slate-400">
-                                    <i class="fa-regular fa-image"></i>
-                                </div>
-                            @endif
+                            <img src="{{ $video->thumbnail_url }}" alt="thumbnail" class="video-thumb">
                         </td>
                         <td>
                             <div class="fw-bold text-slate-900 mb-1">{{ $video->title }}</div>
                             <div class="d-flex flex-wrap gap-2 align-items-center mb-1">
-                                @if($video->uploaded_by_admin)
-                                    <span class="badge rounded-pill text-bg-primary">
-                                        <i class="fa-solid fa-user-shield me-1"></i> Admin upload
-                                    </span>
-                                @endif
-                                <span class="badge rounded-pill text-bg-light text-slate-600 border">ID #{{ $video->id }}</span>
                                 @if($video->category)
                                     <span class="badge rounded-pill text-bg-info text-white">
                                         <i class="fa-solid fa-folder me-1"></i> {{ $video->category }}
@@ -223,52 +207,47 @@
                                     </span>
                                 @endif
                             </div>
-                            <div class="text-slate-500 small text-truncate" style="max-width: 360px;">
+                        </td>
+                        <td>
+                            <div class="text-slate-600 small" style="max-width: 250px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; line-height: 1.5;">
                                 {{ $video->description ?? 'Không có mô tả' }}
                             </div>
                         </td>
-                        <td>{{ $video->user->name ?? 'N/A' }}</td>
-                        <td>
-                            <span class="status-pill status-{{ $video->status }}">{{ $video->status }}</span>
-                            @if($video->uploaded_by_admin)
-                                <div class="mt-2">
-                                    <span class="badge rounded-pill text-bg-primary px-2 py-1">
-                                        <i class="fa-solid fa-shield-halved me-1"></i> Admin upload
-                                    </span>
-                                </div>
-                            @endif
-                        </td>
+                        <td>{{ $video->user->full_name ?? $video->user->name ?? 'N/A' }}</td>
+
                         <td>{{ optional($video->created_at)->format('d/m/Y H:i') }}</td>
                         <td class="text-end">
-                            <div class="btn-group">
-                                <a href="{{ route('admin.videos.show', $video) }}" class="btn btn-outline-secondary btn-sm">
+                            <div class="btn-group gap-2">
+                                <a href="{{ route('admin.videos.show', $video) }}" class="btn btn-outline-secondary btn-sm rounded-3" title="Xem chi tiết">
                                     <i class="fa-regular fa-eye"></i>
                                 </a>
+                                <a href="{{ route('admin.videos.edit', $video) }}" class="btn btn-outline-primary btn-sm rounded-3" title="Sửa video">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
 
-                                @if($video->status !== 'published')
-                                    <form action="{{ route('admin.videos.approve', $video) }}" method="POST" class="d-inline">
+                                @if($video->status === 'published')
+                                    <form action="{{ route('admin.videos.hide', $video) }}" method="POST" class="d-inline action-confirm-form" data-message="Bạn có chắc chắn muốn ẩn video này?">
                                         @csrf
                                         @method('PATCH')
-                                        <button type="submit" class="btn btn-success btn-sm">
-                                            <i class="fa-solid fa-check"></i>
+                                        <button type="button" class="btn btn-warning btn-sm rounded-3 btn-action-trigger" title="Ẩn video">
+                                            <i class="fa-solid fa-eye-slash"></i> Ẩn
+                                        </button>
+                                    </form>
+                                @else
+                                    <form action="{{ route('admin.videos.approve', $video) }}" method="POST" class="d-inline action-confirm-form" data-message="Bạn có chắc chắn muốn hiển thị lại video này?">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="button" class="btn btn-success btn-sm rounded-3 btn-action-trigger" title="Hiện video">
+                                            <i class="fa-solid fa-check"></i> Hiện
                                         </button>
                                     </form>
                                 @endif
 
-                                <form action="{{ route('admin.videos.hide', $video) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="admin_note" value="Vi phạm chính sách">
-                                    <button type="submit" class="btn btn-warning btn-sm">
-                                        <i class="fa-solid fa-eye-slash"></i>
-                                    </button>
-                                </form>
-
-                                <form action="{{ route('admin.videos.destroy', $video) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa video này?')">
+                                <form action="{{ route('admin.videos.destroy', $video) }}" method="POST" class="d-inline action-confirm-form" data-message="Bạn có chắc chắn muốn xóa vĩnh viễn video này?">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-danger btn-sm">
-                                        <i class="fa-solid fa-trash"></i>
+                                    <button type="button" class="btn btn-danger btn-sm rounded-3 btn-action-trigger" title="Xóa video">
+                                        <i class="fa-solid fa-trash"></i> Xóa
                                     </button>
                                 </form>
                             </div>
@@ -276,7 +255,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-slate-500">Chưa có video nào.</td>
+                        <td colspan="7" class="text-center py-5 text-slate-500">Chưa có video nào.</td>
                     </tr>
                 @endforelse
             </tbody>
@@ -288,3 +267,33 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-action-trigger').forEach(button => {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+            const form = this.closest('form');
+            const message = form.getAttribute('data-message') || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+            const isDelete = form.querySelector('input[name="_method"]')?.value === 'DELETE';
+
+            Swal.fire({
+                title: 'Xác nhận',
+                text: message,
+                icon: isDelete ? 'warning' : 'question',
+                showCancelButton: true,
+                confirmButtonColor: isDelete ? '#ef4444' : '#0046ab',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Đồng ý',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>
+@endpush
