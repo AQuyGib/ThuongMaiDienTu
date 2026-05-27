@@ -812,6 +812,17 @@
                             <strong style="color: #0046ab;">{{ number_format($totalSpent, 0, ',', '.') }}đ</strong>
                         </div>
                     </div>
+
+                    <div class="stat-row" style="margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px; margin-bottom: 15px;">
+                        <div class="stat-item">
+                            <span>Điểm tiêu dùng hiện có</span>
+                            <strong><i class="fa-solid fa-coins" style="color: #eab308;"></i> {{ number_format($walletPoints) }}</strong>
+                        </div>
+                        <div class="stat-item" style="text-align: right; align-items: flex-end;">
+                            <span>Điểm tích lũy hạng</span>
+                            <strong style="color: #8b5cf6;"><i class="fa-solid fa-star" style="color: #8b5cf6;"></i> {{ number_format($rankPoints) }}</strong>
+                        </div>
+                    </div>
                     
                     <div class="stat-progress">
                         <div style="display: flex; justify-content: space-between;">
@@ -1421,28 +1432,141 @@
                         </div>
                     </div>
 
-                    <!-- Vouchers -->
-                    <h4 style="font-size: 16px; margin: 40px 0 15px;">Mã giảm giá khả dụng</h4>
-                    <div class="voucher-grid">
-                        <div class="voucher-card">
-                            <div class="voucher-left"><i class="fa-solid fa-percent"></i></div>
-                            <div class="voucher-right">
-                                <span class="voucher-code">DIENMAYNEW</span>
-                                <button class="btn-copy-voucher" onclick="copyVoucher('DIENMAYNEW', this)">Sao chép</button>
-                                <div class="voucher-title">Giảm 50k cho đơn từ 500k</div>
-                                <div class="voucher-expiry">HSD: 31/12/2026</div>
-                            </div>
+                    <!-- Vouchers & Quà đã đổi -->
+                    <h4 style="font-size: 16px; margin: 40px 0 15px;"><i class="fa-solid fa-gift"></i> Ưu đãi & Quà tặng đã đổi của bạn</h4>
+                    @if($redemptions->count() > 0 || $spins->where('status', 'won')->whereNotNull('reward_id')->count() > 0)
+                        <div class="voucher-grid">
+                            {{-- Quà từ Catalog Đổi Thưởng --}}
+                            @foreach($redemptions as $redemption)
+                                @php
+                                    $reward = json_decode($redemption->reward_snapshot, true);
+                                    $isExpired = $redemption->expires_at ? \Carbon\Carbon::parse($redemption->expires_at)->isPast() : false;
+                                    $statusLabel = 'Khả dụng';
+                                    $statusColor = '#166534';
+                                    
+                                    if ($redemption->status === 'cancelled') {
+                                        $statusLabel = 'Đã hủy';
+                                        $statusColor = '#991b1b';
+                                    } elseif ($isExpired) {
+                                        $statusLabel = 'Hết hạn';
+                                        $statusColor = '#64748b';
+                                    } elseif ($redemption->status === 'pending') {
+                                        $statusLabel = 'Chờ duyệt';
+                                        $statusColor = '#d97706';
+                                    }
+                                @endphp
+                                <div class="voucher-card" style="{{ $redemption->status === 'cancelled' || $isExpired ? 'opacity: 0.6;' : '' }}">
+                                    <div class="voucher-left" style="background: {{ $redemption->status === 'cancelled' || $isExpired ? '#64748b' : '#0046ab' }};">
+                                        <i class="fa-solid fa-percent"></i>
+                                    </div>
+                                    <div class="voucher-right">
+                                        <span class="voucher-code">{{ $redemption->redemption_code }}</span>
+                                        <button class="btn-copy-voucher" onclick="copyVoucher('{{ $redemption->redemption_code }}', this)">Sao chép</button>
+                                        <div class="voucher-title" style="font-weight: 600; margin-bottom: 2px;">{{ $reward['name'] ?? 'Mã ưu đãi' }}</div>
+                                        <div style="font-size: 11px; margin-bottom: 5px;">
+                                            Trạng thái: <strong style="color: {{ $statusColor }};">{{ $statusLabel }}</strong>
+                                        </div>
+                                        <div class="voucher-expiry">HSD: {{ $redemption->expires_at ? \Carbon\Carbon::parse($redemption->expires_at)->format('d/m/Y') : 'Không giới hạn' }}</div>
+                                    </div>
+                                </div>
+                            @endforeach
+
+                            {{-- Quà trúng từ Vòng Quay May Mắn --}}
+                            @foreach($spins as $spin)
+                                @if($spin->status === 'won' && $spin->reward_id)
+                                    @php
+                                        $prize = json_decode($spin->result_snapshot, true);
+                                        $isExpired = $spin->expires_at ? \Carbon\Carbon::parse($spin->expires_at)->isPast() : false;
+                                        $statusLabel = 'Trúng thưởng';
+                                        $statusColor = '#166534';
+
+                                        if ($isExpired) {
+                                            $statusLabel = 'Hết hạn';
+                                            $statusColor = '#64748b';
+                                        }
+                                    @endphp
+                                    <div class="voucher-card" style="{{ $isExpired ? 'opacity: 0.6;' : '' }}">
+                                        <div class="voucher-left" style="background: {{ $isExpired ? '#64748b' : '#e21033' }};">
+                                            <i class="fa-solid fa-gift"></i>
+                                        </div>
+                                        <div class="voucher-right">
+                                            <span class="voucher-code">{{ $spin->spin_code }}</span>
+                                            <button class="btn-copy-voucher" onclick="copyVoucher('{{ $spin->spin_code }}', this)">Sao chép</button>
+                                            <div class="voucher-title" style="font-weight: 600; margin-bottom: 2px;">{{ $prize['name'] ?? 'Phần quà Vòng quay' }}</div>
+                                            <div style="font-size: 11px; margin-bottom: 5px;">
+                                                Nguồn: <strong style="color: {{ $statusColor }};">{{ $statusLabel }}</strong>
+                                            </div>
+                                            <div class="voucher-expiry">HSD: {{ $spin->expires_at ? \Carbon\Carbon::parse($spin->expires_at)->format('d/m/Y') : 'Không giới hạn' }}</div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
                         </div>
-                        <div class="voucher-card">
-                            <div class="voucher-left" style="background: #e21033;"><i class="fa-solid fa-truck"></i></div>
-                            <div class="voucher-right">
-                                <span class="voucher-code">FREESHIP26</span>
-                                <button class="btn-copy-voucher" onclick="copyVoucher('FREESHIP26', this)">Sao chép</button>
-                                <div class="voucher-title">Miễn phí vận chuyển toàn quốc</div>
-                                <div class="voucher-expiry">HSD: 01/06/2026</div>
-                            </div>
+                    @else
+                        <div class="dash-empty" style="padding: 30px 0; border: 1px dashed #eee; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                            <i class="fa-solid fa-gift" style="font-size: 40px; color: #ddd; margin-bottom: 10px;"></i>
+                            <p style="font-size: 13px; color: #666; margin: 0 0 10px 0;">Bạn chưa có ưu đãi nào được đổi.</p>
+                            <a href="{{ route('rewards.index') }}" class="btn-outline" style="margin: 0; padding: 6px 15px; font-size: 12px;">Đổi quà ngay</a>
                         </div>
-                    </div>
+                    @endif
+
+                    <!-- Lịch sử tích/tiêu điểm -->
+                    <h4 style="font-size: 16px; margin: 40px 0 15px;"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử biến động điểm</h4>
+                    @if($pointTransactions->count() > 0)
+                        <div style="overflow-x: auto;">
+                            <table class="order-table">
+                                <thead>
+                                    <tr>
+                                        <th>Thời Gian</th>
+                                        <th>Loại Điểm</th>
+                                        <th>Giao Dịch</th>
+                                        <th>Số Điểm</th>
+                                        <th>Nội Dung</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($pointTransactions as $trans)
+                                    <tr>
+                                        <td>{{ \Carbon\Carbon::parse($trans->created_at)->format('d/m/Y H:i') }}</td>
+                                        <td>
+                                            @if($trans->point_type === 'wallet')
+                                                <span class="status-badge" style="background: #fef3c7; color: #d97706; font-size: 11px;"><i class="fa-solid fa-coins"></i> Tiêu dùng</span>
+                                            @else
+                                                <span class="status-badge" style="background: #f5f3ff; color: #7c3aed; font-size: 11px;"><i class="fa-solid fa-star"></i> Tích lũy hạng</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($trans->action === 'earn')
+                                                <span style="color: #166534; font-weight: bold;">Cộng điểm</span>
+                                            @elseif($trans->action === 'use')
+                                                <span style="color: #991b1b; font-weight: bold;">Trừ điểm</span>
+                                            @elseif($trans->action === 'refund')
+                                                <span style="color: #0369a1; font-weight: bold;">Hoàn điểm</span>
+                                            @else
+                                                <span style="color: #555;">{{ $trans->action }}</span>
+                                            @endif
+                                        </td>
+                                        <td style="font-weight: bold; font-size: 14px;">
+                                            @if($trans->points > 0 && in_array($trans->action, ['earn', 'refund']))
+                                                <span style="color: #166534;">+{{ number_format($trans->points) }}</span>
+                                            @elseif($trans->points > 0 && $trans->action === 'use')
+                                                <span style="color: #b91c1c;">-{{ number_format($trans->points) }}</span>
+                                            @else
+                                                <span style="color: #555;">{{ ($trans->points > 0 ? '+' : '') . number_format($trans->points) }}</span>
+                                            @endif
+                                        </td>
+                                        <td style="font-size: 13px;">{{ $trans->description }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="dash-empty" style="padding: 20px 0; border: 1px dashed #eee; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                            <i class="fa-solid fa-list-check" style="font-size: 30px; color: #ddd; margin-bottom: 10px;"></i>
+                            <p style="font-size: 13px; color: #666; margin: 0;">Chưa có lịch sử biến động điểm.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -1657,7 +1781,7 @@
             </form>
         </div>
         <div class="student-modal-footer">
-            <button type="button" class="btn-outline" style="margin-top: 0; border-color: #0046ab; color: #0046ab;" onclick="closeAddressModal()">Đóng</button>
+            <button type="button" class="btn-outline" style="margin-top: 0;" onclick="closeAddressModal()">Đóng</button>
             <button type="button" id="addressSubmitBtn" class="btn-update" style="margin-top: 0; padding: 8px 20px; background: #0046ab;" onclick="submitAddress()">Lưu địa chỉ</button>
         </div>
     </div>
@@ -1763,7 +1887,7 @@
                 </div>
                 
                 <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-                    <button type="button" class="btn-outline" style="margin: 0; border-color: #0046ab; color: #0046ab;" onclick="closeRepairModal()">Hủy bỏ</button>
+                    <button type="button" class="btn-outline" style="margin: 0;" onclick="closeRepairModal()">Hủy bỏ</button>
                     <button type="submit" id="repairSubmitBtn" class="btn-update" style="margin: 0; background: #0046ab;">Đăng ký lịch hẹn</button>
                 </div>
             </form>
@@ -2061,11 +2185,26 @@
     }
 
     // --- Address Modal ---
+    const isEnglish = {{ App::getLocale() === 'en' ? 'true' : 'false' }};
+
     function openAddressModal() {
         document.getElementById('addressModal').classList.add('active');
         if (document.getElementById('addrCity').options.length <= 1) {
             fetchProvincesData();
         }
+    }
+
+    function closeAddressModal() {
+        document.getElementById('addressModal').classList.remove('active');
+        document.getElementById('addAddressForm').reset();
+        document.getElementById('addrId').value = '';
+        
+        // Reset selections
+        document.getElementById('addrCity').selectedIndex = 0;
+        document.getElementById('addrDistrict').innerHTML = '<option value="">Chọn Quận/Huyện</option>';
+        document.getElementById('addrDistrict').disabled = true;
+        document.getElementById('addrWard').innerHTML = '<option value="">Chọn Phường/Xã</option>';
+        document.getElementById('addrWard').disabled = true;
     }
 
     // Fetch API Data (Stable Version)
@@ -2080,15 +2219,33 @@
             .catch(err => console.error('Error fetching provinces:', err));
     }
 
+    // 34 allowed provinces from header (Nghị quyết 202/2025/QH15)
+    // We map esgoo IDs to the Vietnamese display names. Since these strings contain Vietnamese accented characters,
+    // they will be automatically translated into English by the TranslateHtmlResponse middleware when App::getLocale() is 'en'.
+    const provinceIdMap = {
+        '79': 'TP. Hồ Chí Minh', '01': 'TP. Hà Nội', '31': 'TP. Hải Phòng', '48': 'TP. Đà Nẵng', '92': 'TP. Cần Thơ', '46': 'TP. Huế',
+        '89': 'An Giang', '27': 'Bắc Ninh', '96': 'Cà Mau', '04': 'Cao Bằng',
+        '66': 'Đắk Lắk', '11': 'Điện Biên', '75': 'Đồng Nai', '87': 'Đồng Tháp',
+        '64': 'Gia Lai', '42': 'Hà Tĩnh', '33': 'Hưng Yên', '56': 'Khánh Hòa',
+        '12': 'Lai Châu', '68': 'Lâm Đồng', '20': 'Lạng Sơn', '10': 'Lào Cai',
+        '40': 'Nghệ An', '37': 'Ninh Bình', '25': 'Phú Thọ', '51': 'Quảng Ngãi',
+        '22': 'Quảng Ninh', '45': 'Quảng Trị', '14': 'Sơn La', '72': 'Tây Ninh',
+        '19': 'Thái Nguyên', '38': 'Thanh Hóa', '08': 'Tuyên Quang', '86': 'Vĩnh Long'
+    };
+
     function populateCities(data) {
         const citySelect = document.getElementById('addrCity');
         citySelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
         data.forEach(city => {
-            let option = document.createElement('option');
-            option.value = city.full_name;
-            option.dataset.code = city.id;
-            option.textContent = city.full_name;
-            citySelect.appendChild(option);
+            // Check if the province ID is in the allowed whitelist
+            if (provinceIdMap.hasOwnProperty(city.id)) {
+                let displayName = provinceIdMap[city.id];
+                let option = document.createElement('option');
+                option.value = displayName;
+                option.dataset.code = city.id;
+                option.textContent = displayName;
+                citySelect.appendChild(option);
+            }
         });
     }
 
@@ -2110,9 +2267,10 @@
                     if(data.error === 0 && data.data) {
                         data.data.forEach(dist => {
                             let option = document.createElement('option');
-                            option.value = dist.full_name;
+                            let displayName = (isEnglish && dist.full_name_en) ? dist.full_name_en : dist.full_name;
+                            option.value = displayName;
                             option.dataset.code = dist.id;
-                            option.textContent = dist.full_name;
+                            option.textContent = displayName;
                             districtSelect.appendChild(option);
                         });
                         districtSelect.disabled = false;
@@ -2141,8 +2299,9 @@
                     if(data.error === 0 && data.data) {
                         data.data.forEach(ward => {
                             let option = document.createElement('option');
-                            option.value = ward.full_name;
-                            option.textContent = ward.full_name;
+                            let displayName = (isEnglish && ward.full_name_en) ? ward.full_name_en : ward.full_name;
+                            option.value = displayName;
+                            option.textContent = displayName;
                             wardSelect.appendChild(option);
                         });
                         wardSelect.disabled = false;
@@ -2232,20 +2391,41 @@
 
         setTimeout(() => {
             const citySelect = document.getElementById('addrCity');
+            
+            // Helper function to normalize names for robust matching of old and new formats across languages
+            const normalize = (name) => {
+                if (!name) return "";
+                return name.toLowerCase()
+                           .replace(/^(tỉnh|thành\s+phố|tp\.)\s+/i, "")
+                           .replace(/^(quận|huyện|thị\s+xã)\s+/i, "")
+                           .replace(/^(phường|xã|thị\s+trấn)\s+/i, "")
+                           .replace(/thừa thiên huế/i, "huế")
+                           .replace(/\s+(city|province|district|town|ward|commune)$/i, "")
+                           .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Strip accents for cross-language compatibility
+                           .trim();
+            };
+
+            const normalizedCity = normalize(city);
+
             for(let i=0; i<citySelect.options.length; i++) {
-                if(citySelect.options[i].value === city) { citySelect.selectedIndex = i; break; }
+                if(normalize(citySelect.options[i].value) === normalizedCity) { 
+                    citySelect.selectedIndex = i; 
+                    break; 
+                }
             }
             citySelect.dispatchEvent(new Event('change'));
             setTimeout(() => {
                 const distSelect = document.getElementById('addrDistrict');
+                const normalizedDist = normalize(district);
                 for(let i=0; i<distSelect.options.length; i++) {
-                    if(distSelect.options[i].value === district) { distSelect.selectedIndex = i; break; }
+                    if(normalize(distSelect.options[i].value) === normalizedDist) { distSelect.selectedIndex = i; break; }
                 }
                 distSelect.dispatchEvent(new Event('change'));
                 setTimeout(() => {
                     const wardSelect = document.getElementById('addrWard');
+                    const normalizedWard = normalize(ward);
                     for(let i=0; i<wardSelect.options.length; i++) {
-                        if(wardSelect.options[i].value === ward) { wardSelect.selectedIndex = i; break; }
+                        if(normalize(wardSelect.options[i].value) === normalizedWard) { wardSelect.selectedIndex = i; break; }
                     }
                 }, 500);
             }, 500);
