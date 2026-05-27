@@ -16,6 +16,8 @@
 ## Files Changed
 - **Checkout / Payment Validation:**
   - `ThuongMaiDienTu/resources/views/frontend/cart/pay.blade.php`
+  - `ThuongMaiDienTu/resources/views/frontend/cart/maQR.blade.php`
+  - `ThuongMaiDienTu/resources/views/partials/chatbot.blade.php`
 - **Articles:**
   - `ThuongMaiDienTu/app/Http/Controllers/ArticleFrontendController.php`
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/ArticleController.php`
@@ -90,6 +92,16 @@
   - Implemented real-time checking for Số điện thoại (Phone): numbers only (showing "Bạn chỉ nhập số" on letters) and standard formatting constraint.
   - Implemented 40-character limit constraint for Địa chỉ giao hàng (Shipping Address) with active real-time character counter.
   - Implemented 250-character limit constraint for Ghi chú (Note) with active real-time character counter.
+- **QR Code Payment Page Improvements:**
+  - Removed the red expiration timer element and added null-checks to prevent JavaScript crashes when countdown/timer elements are missing.
+  - Centered the QR code container utilizing flexbox.
+  - Added a "Về trang chủ" (Back to homepage) action button below the main control buttons.
+  - Implemented an interactive multi-step "Waiting for admin approval" state when clicking "Xác nhận đã thanh toán", which simulates checking transactions, sending approval requests, and waiting for admin confirmations before displaying the success state.
+  - Implemented a custom cancel transaction confirmation modal ("Bạn có muốn hủy đơn hàng không?") with "Có" (cancels order and submits cancel form to backend) and "Không" (closes modal) options.
+- **Pending Payment Notification on Storefront:**
+  - Stored the pending order ID in local storage when visiting the QR code payment page.
+  - Cleared the pending order ID from local storage once payment is successfully confirmed.
+  - Implemented a floating cart icon and notification ("Bạn đang có đơn chờ thanh toán") positioned directly above the chatbot FAB on all pages if there is a pending payment, redirecting users back to the respective QR page when clicked.
 
 ## TODOs & Follow-up Work
 - **Articles:**

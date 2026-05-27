@@ -265,6 +265,37 @@
     @keyframes chatPing {
         75%, 100% { transform: scale(2); opacity: 0; }
     }
+
+    /* Pending payment alert container */
+    #pending-payment-alert {
+        position: fixed;
+        bottom: 80px;
+        right: 16px;
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        gap: 10px;
+        animation: slideInUpAlert 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @media (min-width: 768px) {
+        #pending-payment-alert {
+            bottom: 92px;
+            right: 24px;
+        }
+    }
+    @keyframes slideInUpAlert {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Pulse effect for the alert message */
+    .alert-pulse {
+        animation: alertPulse 2s infinite ease-in-out;
+    }
+    @keyframes alertPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+    }
 </style>
 
 {{-- Cửa sổ Chat AI --}}
@@ -306,6 +337,19 @@
             <i class="fa-solid fa-paper-plane" style="font-size: 14px;"></i>
         </button>
     </div>
+</div>
+
+{{-- Alert giỏ hàng chờ thanh toán --}}
+<div id="pending-payment-alert">
+    <!-- Message box -->
+    <a href="#" id="pending-payment-link" class="alert-pulse shadow-lg" style="background: #ef4444; color: white; font-weight: 600; padding: 10px 16px; border-radius: 12px; font-size: 12px; white-space: nowrap; text-decoration: none; display: flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.2);">
+        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: white; animation: chatPing 1s infinite;"></span>
+        Bạn đang có đơn chờ thanh toán
+    </a>
+    <!-- Cart button icon -->
+    <a href="#" id="pending-payment-btn" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #ef4444 0%, #ff5722 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4); text-decoration: none; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <i class="fa-solid fa-cart-shopping" style="font-size: 20px; color: white;"></i>
+    </a>
 </div>
 
 {{-- Nút FAB mở chat --}}
@@ -396,9 +440,38 @@
         }
     }
 
-    // Tự động khởi chạy khôi phục lịch sử khi load trang
-    document.addEventListener('DOMContentLoaded', initChatSession);
+    /**
+     * Check pending payment order and show alert above chatbot FAB
+     */
+    function checkPendingPayment() {
+        const orderId = localStorage.getItem('pending_payment_order_id');
+        const alertEl = document.getElementById('pending-payment-alert');
+        
+        // Don't show if we are currently on the maQR page
+        const isQRPage = window.location.pathname.includes('/maQR') || window.location.pathname.includes('/ma-qr');
+        
+        if (orderId && !isQRPage) {
+            if (alertEl) {
+                alertEl.style.display = 'flex';
+                const link = `/maQR?order_id=${orderId}`;
+                
+                const linkEl = document.getElementById('pending-payment-link');
+                const btnEl = document.getElementById('pending-payment-btn');
+                if (linkEl) linkEl.href = link;
+                if (btnEl) btnEl.href = link;
+            }
+        } else {
+            if (alertEl) {
+                alertEl.style.display = 'none';
+            }
+        }
+    }
 
+    // Tự động khởi chạy khôi phục lịch sử và kiểm tra thanh toán khi load trang
+    document.addEventListener('DOMContentLoaded', () => {
+        initChatSession();
+        checkPendingPayment();
+    });
     /**
      * Mở/đóng cửa sổ chat
      */
