@@ -498,6 +498,15 @@
             $featured_video = $found;
         }
     }
+
+    $hasMp4 = false;
+    $hasYoutube = false;
+    $defaultSource = 'mp4';
+    if ($featured_video) {
+        $hasMp4 = !empty($featured_video->video_path);
+        $hasYoutube = !empty($featured_video->youtube_url);
+        $defaultSource = $hasMp4 ? 'mp4' : ($hasYoutube ? 'youtube' : 'mp4');
+    }
 @endphp
 
 <div class="video-page-shell min-h-screen pb-20">
@@ -660,12 +669,6 @@
                                     🔥 Đang chiếu
                                 </span>
                             </div>
-
-                            @php
-                                $hasMp4 = !empty($featured_video->video_path);
-                                $hasYoutube = !empty($featured_video->youtube_url);
-                                $defaultSource = $hasMp4 ? 'mp4' : ($hasYoutube ? 'youtube' : 'mp4');
-                            @endphp
                             <!-- BỘ CHUYỂN NGUỒN PHÁT DỰ PHÒNG -->
                             <div id="source-switcher" class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start text-[11px] font-bold text-gray-700 {{ (!$hasMp4 || !$hasYoutube) ? 'hidden' : '' }}">
                                 <span class="px-1.5 text-gray-500 uppercase text-[9px]">Nguồn:</span>
