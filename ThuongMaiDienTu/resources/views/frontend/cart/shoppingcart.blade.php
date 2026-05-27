@@ -97,16 +97,85 @@
                 </div>
             </div>
         </div>
+
+        <!-- Section: Gợi ý sản phẩm tương tự -->
+        @if(isset($recommendedProducts) && $recommendedProducts->isNotEmpty())
+            <div id="similar-products-section" class="mt-16">
+                <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800">
+                    <i class="fa-solid fa-fire text-amber-500 animate-pulse"></i> Có thể bạn quan tâm
+                </h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    @foreach($recommendedProducts as $product)
+                        @php
+                            $imageUrl = $product->thumbnail;
+                            if (!$imageUrl || !Str::startsWith($imageUrl, 'http')) {
+                                $imageUrl = asset('uploads/products/' . ($product->image ?: 'default.jpg'));
+                            }
+                        @endphp
+                        <div class="product-card group relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                            <!-- Image Container -->
+                            <div class="relative h-44 overflow-hidden bg-gray-50 p-4 flex items-center justify-center">
+                                @if($product->discount_percent)
+                                    <span class="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
+                                        -{{ $product->discount_percent }}%
+                                    </span>
+                                @endif
+                                <img src="{{ $imageUrl }}" alt="{{ $product->name }}"
+                                    class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                                    onerror="this.src='https://loremflickr.com/400/400/technology?lock={{ $product->product_id }}'; this.onerror=null;">
+                            </div>
+                            
+                            <!-- Product Info -->
+                            <div class="p-4">
+                                <!-- Category -->
+                                <div class="text-xs text-gray-400 mb-1">
+                                    {{ $product->category->name ?? 'Điện máy' }}
+                                </div>
+                                
+                                <!-- Product Name -->
+                                <h3 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 min-h-[40px]" title="{{ $product->name }}">
+                                    <a href="{{ route('product.show', $product->product_id) }}" class="hover:text-[#0047b3] transition-colors">
+                                        {{ $product->name }}
+                                    </a>
+                                </h3>
+                                
+                                <!-- Price -->
+                                <div class="flex items-center gap-2 mb-4">
+                                    <span class="text-base font-bold text-red-600">
+                                        {{ number_format($product->base_price, 0, ',', '.') }} ₫
+                                    </span>
+                                    @if($product->old_price && $product->old_price > $product->base_price)
+                                        <span class="text-xs text-gray-400 line-through">
+                                            {{ number_format($product->old_price, 0, ',', '.') }} ₫
+                                        </span>
+                                    @endif
+                                </div>
+                                
+                                <!-- Buttons -->
+                                <div class="flex gap-2">
+                                    <a href="{{ route('product.show', $product->product_id) }}"
+                                        class="flex-1 text-center bg-[#0047b3] text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
+                                        Xem chi tiết
+                                    </a>
+                                    <form action="{{ route('cart.add') }}" method="POST" class="flex-1">
+                                        @csrf
+                                        <input type="hidden" name="product_id" value="{{ $product->product_id }}">
+                                        <button type="submit"
+                                            class="w-full bg-gray-100 text-gray-800 py-2 rounded-lg text-xs font-bold hover:bg-gray-200 transition-all">
+                                            Thêm vào giỏ
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 </main>
 
-<!-- Toast Thông báo -->
-<div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-6 py-3 rounded-xl shadow-2xl transform transition-all duration-300 translate-y-20 opacity-0 flex items-center gap-3 z-50">
-    <div id="toast-icon" class="text-green-400">
-        <i class="fa-solid fa-circle-check text-xl"></i>
-    </div>
-    <span id="toast-message" class="font-medium">Đã cập nhật giỏ hàng.</span>
-</div>
 
 @endsection
 
@@ -121,19 +190,10 @@
             const raw = '{!! isset($cartItems) ? json_encode($cartItems) : "[]" !!}';
             window.cartData = JSON.parse(raw);
             
-            // Fallback nếu empty (dành cho demo hoặc nếu controller chưa truyền data)
-            if (window.cartData.length === 0) {
-                 window.cartData = [
-                    { id: 1, name: 'Android Tivi Sony 4K 65 inch KD-65X75K', price: 16990000, quantity: 2, stock: 10, selected: true, image: 'https://dienmay247.com.vn/wp-content/uploads/2022/06/google-tivi-sony-4k-65-inch-kd-65x75k.jpg', url: '#' },
-                    { id: 2, name: 'Tủ lạnh Aqua Inverter 189 lít AQR-T219FA(PB)', price: 4990000, quantity: 1, stock: 5, selected: true, image: 'https://tse3.mm.bing.net/th/id/OIP.LNhrlkGhn21EpGRM9z8O9QHaE8?pid=Api&h=220&P=0', url: '#' }
-                ];
-            }
+            // Nếu Controller không truyền data thì raw là "[]", JSON.parse vẫn trả về mảng rỗng.
         } catch (e) {
-            console.warn("Lỗi parse dữ liệu, sử dụng dữ liệu mặc định.");
-            window.cartData = [
-                { id: 101, name: "Tủ lạnh Samsung Inverter 300L", price: 8500000, quantity: 1, stock: 5, selected: true, image: "https://placehold.co/100x100?text=Samsung", url: "#" },
-                { id: 102, name: "Máy giặt LG cửa ngang 9kg", price: 10200000, quantity: 1, stock: 3, selected: true, image: "https://placehold.co/100x100?text=LG", url: "#" }
-            ];
+            console.warn("Lỗi parse dữ liệu giỏ hàng:", e);
+            window.cartData = [];
         }
     }
 
@@ -158,8 +218,17 @@
                 document.getElementById('selectAllCheckbox').disabled = true;
                 document.getElementById('selectAllCheckbox').checked = false;
             }
+            const similarSection = document.getElementById('similar-products-section');
+            if (similarSection) {
+                similarSection.style.display = 'none';
+            }
             window.updateSummary();
             return;
+        }
+
+        const similarSection = document.getElementById('similar-products-section');
+        if (similarSection) {
+            similarSection.style.display = 'block';
         }
 
         window.cartData.forEach(item => {
@@ -238,76 +307,184 @@
     };
 
     window.toggleAll = (isChecked) => {
-        window.cartData.forEach(i => i.selected = isChecked);
-        window.renderCart();
+        fetch('{{ route("cart.toggleAll") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ selected: isChecked })
+        })
+        .then(response => response.json())
+        .then(res => {
+            if(res.status === 'success') {
+                window.cartData.forEach(i => i.selected = isChecked);
+                window.renderCart();
+            }
+        })
+        .catch(err => console.error(err));
     };
 
     window.toggleItem = (id, isChecked) => {
-        const item = window.cartData.find(i => i.id === id);
-        if(item) item.selected = isChecked;
-        window.updateSummary();
+        fetch('{{ route("cart.toggleSelect") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ product_id: id, selected: isChecked })
+        })
+        .then(response => response.json())
+        .then(res => {
+            if(res.status === 'success') {
+                const item = window.cartData.find(i => i.id === id);
+                if(item) item.selected = isChecked;
+                window.updateSummary();
+            }
+        })
+        .catch(err => console.error(err));
     };
 
     window.changeQuantity = (id, delta) => {
         const item = window.cartData.find(i => i.id === id);
         if(item) {
             const newQty = item.quantity + delta;
-            if(newQty >= 1 && newQty <= (item.stock || 99)) {
-                item.quantity = newQty;
-                window.renderCart();
-                showToast("Đã cập nhật số lượng");
-            } else if (newQty > item.stock) {
-                 showToast(`Chỉ còn ${item.stock} sản phẩm trong kho!`, 'warning');
-            }
+            if(newQty < 1) return;
+
+            fetch('{{ route("cart.update") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ product_id: id, quantity: newQty })
+            })
+            .then(response => response.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    item.quantity = newQty;
+                    window.renderCart();
+                    showToast("Đã cập nhật số lượng");
+                    
+                    const badge = document.getElementById('headerCartBadge');
+                    if (badge && res.cart_count !== undefined) {
+                        badge.innerText = res.cart_count;
+                        badge.style.display = res.cart_count > 0 ? 'block' : 'none';
+                    }
+                } else if(res.message) {
+                    showToast(res.message, 'warning');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast("Đã xảy ra lỗi!", 'error');
+            });
         }
     };
 
-    window.deleteItem = (id) => {
-        if(confirm('Bạn muốn xóa sản phẩm này khỏi giỏ hàng?')) {
-            window.cartData = window.cartData.filter(i => i.id !== id);
-            window.renderCart();
-            showToast("Đã xóa sản phẩm", "info");
+    window.deleteItem = async (id) => {
+        const result = await Swal.fire({
+            title: 'Xóa sản phẩm?',
+            text: 'Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true
+        });
+
+        if (result.isConfirmed) {
+            fetch('{{ route("cart.remove") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ product_id: id })
+            })
+            .then(response => response.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    window.cartData = window.cartData.filter(i => i.id !== id);
+                    window.renderCart();
+                    showToast("Đã xóa sản phẩm", "info");
+                    
+                    // Cập nhật số badge trên Header nếu có
+                    const badge = document.getElementById('headerCartBadge');
+                    if (badge && res.cart_count !== undefined) {
+                        badge.innerText = res.cart_count;
+                        badge.style.display = res.cart_count > 0 ? 'block' : 'none';
+                    }
+                }
+            })
+            .catch(err => console.error(err));
         }
     };
 
-    window.clearCart = () => {
-        if(confirm('Bạn muốn làm trống giỏ hàng?')) {
-            window.cartData = [];
-            window.renderCart();
-            showToast("Đã làm trống giỏ hàng");
+    window.clearCart = async () => {
+        const result = await Swal.fire({
+            title: 'Làm trống giỏ hàng?',
+            text: 'Bạn có chắc chắn muốn xóa toàn bộ sản phẩm khỏi giỏ hàng?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Làm trống',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true
+        });
+
+        if (result.isConfirmed) {
+            fetch('{{ route("cart.clear") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    window.cartData = [];
+                    window.renderCart();
+                    showToast("Đã làm trống giỏ hàng");
+                    
+                    const badge = document.getElementById('headerCartBadge');
+                    if (badge) {
+                        badge.style.display = 'none';
+                        badge.innerText = '0';
+                    }
+                }
+            })
+            .catch(err => console.error(err));
         }
     };
 
     function showToast(msg, type = "success") {
-        const t = document.getElementById('toast');
-        const m = document.getElementById('toast-message');
-        const icon = document.getElementById('toast-icon');
-        
-        if (!t || !m) return;
-        
-        m.innerText = msg;
-        
-        if (type === 'warning') {
-            icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-xl text-orange-400"></i>';
-        } else {
-            icon.innerHTML = type === "success" 
-                ? '<i class="fa-solid fa-circle-check text-xl text-green-400"></i>'
-                : '<i class="fa-solid fa-circle-info text-xl text-blue-400"></i>';
-        }
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'bottom-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
 
-        t.classList.remove('translate-y-20', 'opacity-0');
-        t.classList.add('translate-y-0', 'opacity-100');
-        
-        setTimeout(() => {
-            t.classList.add('translate-y-20', 'opacity-0');
-            t.classList.remove('translate-y-0', 'opacity-100');
-        }, 3000);
+        Toast.fire({
+            icon: type,
+            title: msg
+        });
     }
 
     window.proceedToCheckout = () => {
-        const selectedIds = window.cartData.filter(i => i.selected).map(i => i.id);
-        if (selectedIds.length > 0) {
-            window.location.href = `{{ url('/pay') }}?items=${selectedIds.join(',')}`;
+        const selectedItems = window.cartData.filter(i => i.selected);
+        if (selectedItems.length > 0) {
+            window.location.href = `{{ url('/pay') }}`;
         }
     };
 

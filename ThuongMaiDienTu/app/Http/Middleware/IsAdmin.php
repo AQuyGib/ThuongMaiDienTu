@@ -20,13 +20,13 @@ class IsAdmin
             return redirect()->route('login')->with('error', 'Vui lòng đăng nhập để truy cập trang này.');
         }
 
-        // 2. Kiểm tra vai trò (role_id 1: Admin, role_id 2: Quản lý)
+        // 2. Chỉ cho phép Admin thật sự
         $user = Auth::user();
-        if ($user->role_id == 1 || $user->role_id == 2) {
+        if ((int) $user->role_id === 1) {
             return $next($request);
         }
 
-        // 3. Nếu là Khách hàng (role_id 3) hoặc khác, từ chối truy cập
+        // 3. Nếu không phải Admin, từ chối truy cập
         return redirect()->route('home')->with('error', 'Bạn không có quyền truy cập vào trang quản trị.');
     }
 }

@@ -1,353 +1,471 @@
 @extends('layouts.app')
-
-@section('title', 'Thông tin thanh toán - DIENMAYPRO')
+@section('title', 'Thanh toán - DIENMAYPRO')
 
 @push('styles')
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Tùy chỉnh radio button */
-        .radio-custom:checked + label {
-            border-color: #3b82f6; /* blue-500 */
-            background-color: #eff6ff; /* blue-50 */
-        }
-        .radio-custom:checked + label .outer-circle {
-            border-color: #3b82f6;
-        }
-        .radio-custom:checked + label .inner-circle {
-            opacity: 1;
-        }
-    </style>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+.pay-radio:checked ~ .pay-label { border-color:#2563eb; background:#eff6ff; }
+.pay-radio:checked ~ .pay-label .dot-outer { border-color:#2563eb; }
+.pay-radio:checked ~ .pay-label .dot-inner { opacity:1; }
+.method-panel { display:none; }
+.method-panel.active { display:block; }
+@keyframes scanLine {
+  0%,100%{top:0;opacity:0} 50%{top:calc(100% - 4px);opacity:1}
+}
+.qr-scan-line { animation: scanLine 2.5s ease-in-out infinite; }
+.step-done { background:#16a34a!important; }
+</style>
 @endpush
 
 @section('content')
-<div class="bg-gray-100 text-gray-800 font-sans pb-12 pt-8">
+<div class="bg-gray-50 min-h-screen py-8">
+<div class="max-w-6xl mx-auto px-4">
 
-    <div class="max-w-6xl mx-auto px-4">
-        <!-- Tiêu đề -->
-        <div class="mb-6 flex items-center gap-3 text-2xl font-bold text-[#003399]">
-            <div class="bg-[#003399] text-white p-1 rounded">
-                <i class="fa-solid fa-money-check-dollar"></i>
-            </div>
-            Thông tin thanh toán
+  {{-- Breadcrumb --}}
+  <nav class="text-sm text-gray-500 mb-6">
+    <a href="{{ url('/') }}" class="hover:text-blue-600">Trang chủ</a>
+    <span class="mx-2">/</span>
+    <a href="{{ route('cart.index') }}" class="hover:text-blue-600">Giỏ hàng</a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-800 font-semibold">Thanh toán</span>
+  </nav>
+
+  {{-- Progress Steps --}}
+  <div class="flex items-center gap-3 mb-8">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold">✓</div>
+      <span class="text-sm font-semibold text-green-600 hidden sm:inline">Giỏ hàng</span>
+    </div>
+    <div class="flex-1 h-0.5 bg-blue-500"></div>
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">2</div>
+      <span class="text-sm font-semibold text-blue-600 hidden sm:inline">Thanh toán</span>
+    </div>
+    <div class="flex-1 h-0.5 bg-gray-200"></div>
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-sm font-bold">3</div>
+      <span class="text-sm font-semibold text-gray-400 hidden sm:inline">Xác nhận</span>
+    </div>
+  </div>
+
+  <form id="checkout-form" method="POST" action="{{ route('cart.place-order') }}" class="flex flex-col lg:flex-row gap-6">
+    @csrf
+    <input type="hidden" name="payment_method" id="payment_method_input" value="COD">
+    <input type="hidden" name="wallet_points_used" id="wallet_points_used_input" value="0">
+
+    {{-- ===== CỘT TRÁI ===== --}}
+    <div class="w-full lg:w-3/5 space-y-5">
+
+      {{-- Thông tin người nhận --}}
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-base font-bold mb-4 flex items-center gap-2 text-gray-800">
+          <span class="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+          Thông tin người nhận
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Họ và tên *</label>
+            <input id="inp-name" name="customer_name" type="text" required
+              class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
+              value="{{ Auth::check() ? Auth::user()->name : '' }}" placeholder="Nguyễn Văn A">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại *</label>
+            <input id="inp-phone" name="customer_phone" type="tel" required
+              class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
+              value="{{ Auth::check() && Auth::user()->phone ? Auth::user()->phone : '' }}" placeholder="0901234567">
+          </div>
+        </div>
+        <div class="mt-4">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ giao hàng *</label>
+          <input id="inp-address" name="shipping_address" type="text" required
+            class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
+            placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
+        </div>
+        <div class="mt-4">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Ghi chú (tùy chọn)</label>
+          <textarea id="inp-note" name="note" rows="2"
+            class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm resize-none"
+            placeholder="Giao giờ hành chính, gọi trước khi giao..."></textarea>
+        </div>
+      </div>
+
+      {{-- Phương thức thanh toán --}}
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-base font-bold mb-4 flex items-center gap-2 text-gray-800">
+          <span class="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+          Phương thức thanh toán
+        </h2>
+        <div class="space-y-3" id="payment-methods">
+
+          {{-- QR Code --}}
+          <div class="relative">
+            <input type="radio" name="payment_method" id="pm-qr" value="qr" class="pay-radio sr-only" checked>
+            <label for="pm-qr" onclick="selectMethod('qr')"
+              class="pay-label flex items-center p-4 border-2 border-blue-500 bg-blue-50 rounded-xl cursor-pointer transition-all hover:border-blue-500">
+              <div class="flex items-center gap-3 w-full">
+                <div class="dot-outer w-5 h-5 rounded-full border-2 border-blue-500 flex items-center justify-center shrink-0">
+                  <div class="dot-inner w-2.5 h-2.5 rounded-full bg-blue-500 opacity-100"></div>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <p class="font-bold text-sm text-gray-800">Chuyển khoản qua mã QR (Ngân hàng)</p>
+                    <span class="bg-red-100 text-red-600 text-[9px] px-2 py-0.5 rounded-full font-bold">KHUYÊN DÙNG</span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-0.5">Hỗ trợ tất cả ứng dụng ngân hàng và ví điện tử. Tự động xác nhận.</p>
+                </div>
+                <i class="fa-solid fa-qrcode text-2xl text-blue-600 hidden sm:block"></i>
+              </div>
+            </label>
+          </div>
+
+          {{-- COD --}}
+          <div class="relative">
+            <input type="radio" name="payment_method" id="pm-cod" value="cod" class="pay-radio sr-only">
+            <label for="pm-cod" onclick="selectMethod('cod')"
+              class="pay-label flex items-center p-4 border-2 border-gray-200 rounded-xl cursor-pointer transition-all hover:border-green-400">
+              <div class="flex items-center gap-3 w-full">
+                <div class="dot-outer w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center shrink-0">
+                  <div class="dot-inner w-2.5 h-2.5 rounded-full bg-blue-500 opacity-0"></div>
+                </div>
+                <div class="flex-1">
+                  <p class="font-bold text-sm text-gray-800">Thanh toán khi nhận hàng (COD)</p>
+                  <p class="text-xs text-gray-500 mt-0.5">Trả tiền mặt cho nhân viên giao hàng.</p>
+                </div>
+                <i class="fa-solid fa-hand-holding-dollar text-2xl text-green-600 hidden sm:block"></i>
+              </div>
+            </label>
+          </div>
         </div>
 
-        <form action="/orders" method="POST" id="checkoutForm">
-            <!-- Token bảo mật của Laravel -->
-            <input type="hidden" name="_token" value="{{ csrf_token() ?? '' }}">
-            
-            <div class="flex flex-col lg:flex-row gap-6">
-                <!-- Cột trái: Thông tin & Phương thức thanh toán -->
-                <div class="w-full lg:w-2/3 space-y-6">
-                    
-                    <!-- Thông tin người nhận -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 class="text-lg font-bold mb-4 text-gray-800">Thông tin người nhận</h3>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Họ và tên *</label>
-                                <input type="text" name="fullname" required class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value="{{ Auth::check() ? Auth::user()->name : '' }}" placeholder="VD: Quản Trị Viên">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại *</label>
-                                <input type="tel" name="phone" required pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '');" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="VD: 0901234567" value="{{ Auth::check() ? Auth::user()->phone : '' }}">
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ giao hàng chi tiết *</label>
-                            <input type="text" name="address" required class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Số nhà, Tên đường, Phường/Xã...">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Ghi chú đơn hàng (Tùy chọn)</label>
-                            <textarea name="note" rows="3" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Ghi chú thêm về thời gian giao hàng..."></textarea>
-                        </div>
-                    </div>
 
-                    <!-- Phương thức thanh toán -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 class="text-lg font-bold mb-4 text-gray-800">Phương thức thanh toán</h3>
-                        
-                        <div class="space-y-3">
-                            <!-- VNPay -->
-                            <div class="relative">
-                                <input type="radio" name="payment_method" id="vnpay" value="vnpay" class="peer sr-only radio-custom" checked>
-                                <label for="vnpay" class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition-all hover:bg-gray-50">
-                                    <div class="flex items-center gap-4 w-full">
-                                        <div class="outer-circle w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors">
-                                            <div class="inner-circle w-2.5 h-2.5 rounded-full bg-blue-500 opacity-0 transition-opacity"></div>
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="flex items-center gap-2">
-                                                <p class="font-bold text-gray-800">Chuyển khoản QR Code</p>
-                                                <span class="bg-red-100 text-red-500 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">Khuyên dùng</span>
-                                            </div>
-                                            <p class="text-sm text-gray-500 mt-0.5">Mở ứng dụng ngân hàng và quét mã QR. Nhanh chóng, tiện lợi, tự động xác nhận.</p>
-                                        </div>
-                                        <div class="shrink-0 hidden sm:block">
-                                            <img src="https://vnpay.vn/s1/statics.vnpay.vn/2023/6/0oxhzjmxbksr1686814746087.png" alt="VNPay" class="h-6 object-contain">
-                                        </div>
-                                    </div>
-                                </label>
-                            </div>
-
-                            <!-- MoMo -->
-                            <div class="relative">
-                                <input type="radio" name="payment_method" id="momo" value="momo" class="peer sr-only radio-custom">
-                                <label for="momo" class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition-all hover:bg-gray-50">
-                                    <div class="flex items-center gap-4 w-full">
-                                        <div class="outer-circle w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors">
-                                            <div class="inner-circle w-2.5 h-2.5 rounded-full bg-blue-500 opacity-0 transition-opacity"></div>
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="font-bold text-gray-800">Thanh toán qua Ví MoMo</p>
-                                            <p class="text-sm text-gray-500 mt-0.5">Quét mã QR qua ứng dụng MoMo.</p>
-                                        </div>
-                                        <div class="shrink-0 hidden sm:block">
-                                            <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MoMo" class="h-6 object-contain">
-                                        </div>
-                                    </div>
-                                </label>
-                            </div>
-
-                            <!-- Stripe -->
-                            <div class="relative">
-                                <input type="radio" name="payment_method" id="stripe" value="stripe" class="peer sr-only radio-custom">
-                                <label for="stripe" class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition-all hover:bg-gray-50">
-                                    <div class="flex items-center gap-4 w-full">
-                                        <div class="outer-circle w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors">
-                                            <div class="inner-circle w-2.5 h-2.5 rounded-full bg-blue-500 opacity-0 transition-opacity"></div>
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="font-bold text-gray-800">Thanh toán bằng Thẻ quốc tế (Stripe)</p>
-                                            <p class="text-sm text-gray-500 mt-0.5">Hỗ trợ Visa, Mastercard, JCB, Amex...</p>
-                                        </div>
-                                        <div class="shrink-0 hidden sm:flex gap-1 text-2xl">
-                                            <i class="fa-brands fa-cc-visa text-blue-800"></i>
-                                            <i class="fa-brands fa-cc-mastercard text-red-600"></i>
-                                            <i class="fa-brands fa-cc-stripe text-indigo-500"></i>
-                                        </div>
-                                    </div>
-                                </label>
-                            </div>
-
-                            <!-- COD -->
-                            <div class="relative">
-                                <input type="radio" name="payment_method" id="cod" value="cod" class="peer sr-only radio-custom">
-                                <label for="cod" class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer transition-all hover:bg-gray-50">
-                                    <div class="flex items-center gap-4 w-full">
-                                        <div class="outer-circle w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center transition-colors">
-                                            <div class="inner-circle w-2.5 h-2.5 rounded-full bg-blue-500 opacity-0 transition-opacity"></div>
-                                        </div>
-                                        <div class="flex-1">
-                                            <p class="font-bold text-gray-800">Thanh toán khi nhận hàng (COD)</p>
-                                            <p class="text-sm text-gray-500 mt-0.5">Thanh toán bằng tiền mặt cho nhân viên giao hàng.</p>
-                                        </div>
-                                        <div class="shrink-0 hidden sm:block text-2xl text-green-600">
-                                            <i class="fa-solid fa-hand-holding-dollar"></i>
-                                        </div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Cột phải: Tổng quan đơn hàng -->
-                <div class="w-full lg:w-1/3">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-                        <h3 class="text-lg font-bold mb-4 text-gray-800 border-b pb-3">Đơn hàng của bạn (2 sp)</h3>
-                        
-                        <!-- Danh sách sản phẩm -->
-                        <div class="space-y-4 mb-6">
-                            <!-- Item 1 -->
-                            <div class="flex justify-between items-start text-sm">
-                                <div class="flex gap-2 flex-1 min-w-0 pr-4">
-                                    <span class="font-semibold text-gray-600 shrink-0">2x</span>
-                                    <p class="font-medium text-gray-800 leading-snug truncate" title="Android Tivi Sony 4K 65 inch KD-123456">Android Tivi Sony 4K 65 inch KD-123456</p>
-                                </div>
-                                <span class="font-bold whitespace-nowrap shrink-0">33,980,000đ</span>
-                            </div>
-                            <!-- Item 2 -->
-                            <div class="flex justify-between items-start text-sm">
-                                <div class="flex gap-2 flex-1 min-w-0 pr-4">
-                                    <span class="font-semibold text-gray-600 shrink-0">1x</span>
-                                    <p class="font-medium text-gray-800 leading-snug truncate" title="Tủ lạnh Aqua Inverter 189 lít AQR-T219FA(PB)">Tủ lạnh Aqua Inverter 189 lít AQR-T219FA(PB)</p>
-                                </div>
-                                <span class="font-bold whitespace-nowrap shrink-0">4,990,000đ</span>
-                            </div>
-                        </div>
-
-                        <!-- Mã giảm giá -->
-                        <div class="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-100">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Mã giảm giá</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="discount_code" class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 outline-none transition-colors" placeholder="Nhập mã (VD: PRO10)">
-                                <button type="button" id="btn-apply-discount" onclick="applyDiscount()" class="bg-gray-800 text-white px-4 rounded-lg font-semibold hover:bg-gray-900 transition-colors whitespace-nowrap">Áp dụng</button>
-                            </div>
-                            <p id="discount-message" class="text-xs mt-2 font-medium flex items-center gap-1 hidden">
-                            </p>
-                        </div>
-
-                        <!-- Tóm tắt chi phí -->
-                        <div class="space-y-3 text-sm border-t border-gray-100 pt-4 mb-4">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Tạm tính:</span>
-                                <span class="font-medium text-gray-800" id="subtotal">38,970,000đ</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Phí vận chuyển:</span>
-                                <span class="font-medium text-green-600" id="shipping-fee">Miễn phí</span>
-                            </div>
-                            <div class="flex justify-between hidden" id="discount-row">
-                                <span class="text-gray-600">Giảm giá:</span>
-                                <span class="font-medium text-green-600" id="discount-amount">-0đ</span>
-                            </div>
-                        </div>
-
-                        <!-- Tổng tiền -->
-                        <div class="border-t border-gray-200 pt-4 mb-6">
-                            <div class="flex justify-between items-end mb-1">
-                                <span class="font-bold text-gray-800 text-base">Thành tiền:</span>
-                                <span class="text-3xl font-bold text-red-600 leading-none" id="total-price">38,970,000đ</span>
-                            </div>
-                            <p class="text-right text-xs text-gray-500 italic">(Đã bao gồm VAT nếu có)</p>
-                        </div>
-
-                        <!-- Nút đặt hàng -->
-                        <button type="submit" id="btn-submit-order" class="w-full bg-[#e30019] text-white p-3.5 rounded-lg font-bold text-lg hover:bg-red-700 transition-all shadow-md text-center opacity-50 cursor-not-allowed" disabled>
-                            XÁC NHẬN ĐẶT HÀNG
-                        </button>
-                        
-                        <!-- Quay lại giỏ hàng -->
-                        <div class="mt-4 text-center">
-                            <a href="{{ route('cart.index') }}" class="text-sm text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1 font-medium">
-                                <i class="fa-solid fa-arrow-left"></i> Quay lại giỏ hàng
-                            </a>
-                        </div>
-                    </div>
-                </div>
+        {{-- COD Panel --}}
+        <div id="cod-panel" class="mt-5 p-4 bg-green-50 border border-green-200 rounded-2xl method-panel">
+          <div class="flex items-start gap-3">
+            <i class="fa-solid fa-circle-info text-green-600 mt-0.5"></i>
+            <div class="text-sm text-green-800">
+              <p class="font-bold">Thanh toán khi nhận hàng</p>
+              <p class="mt-1 text-green-700">Bạn sẽ thanh toán bằng tiền mặt khi nhân viên giao hàng đến. Vui lòng chuẩn bị đúng số tiền để thuận tiện cho quá trình giao hàng.</p>
             </div>
-        </form>
+          </div>
+        </div>
+      </div>
     </div>
+
+    {{-- ===== CỘT PHẢI ===== --}}
+    <div class="w-full lg:w-2/5">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-4">
+        <h2 class="text-base font-bold mb-4 text-gray-800 border-b pb-3 flex items-center justify-between">
+          <span>Đơn hàng của bạn</span>
+          <span id="item-badge" class="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-bold">0 sản phẩm</span>
+        </h2>
+
+        {{-- Danh sách sản phẩm --}}
+        <div id="order-items" class="space-y-3 mb-5 max-h-56 overflow-y-auto pr-1">
+          <p class="text-sm text-gray-400 text-center py-6">Đang tải đơn hàng...</p>
+        </div>
+
+        {{-- Mã giảm giá --}}
+        <div class="mb-5 bg-gray-50 rounded-xl border border-gray-100 p-4">
+          <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Mã giảm giá</label>
+          <div class="flex gap-2">
+            <input id="discount-code" type="text"
+              class="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-400 outline-none"
+              placeholder="VD: PRO10">
+            <button type="button" onclick="applyDiscount()" id="btn-discount"
+              class="px-4 bg-gray-800 text-white text-sm rounded-lg font-semibold hover:bg-gray-900 transition whitespace-nowrap">
+              Áp dụng
+            </button>
+          </div>
+          <p id="discount-msg" class="text-xs mt-2 hidden font-medium"></p>
+        </div>
+
+        <div class="mb-5 bg-blue-50 rounded-xl border border-blue-100 p-4">
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-bold text-blue-700 uppercase tracking-wide">Điểm tiêu dùng</label>
+            <span id="wallet-balance" class="text-xs font-semibold text-blue-600">{{ Auth::check() ? number_format(($balance['wallet_points'] ?? 0)) : 0 }} điểm</span>
+          </div>
+          <p class="text-[11px] text-blue-700 mb-2">Điểm đã được chuyển sang trang đổi thưởng <a href="{{ route('rewards.index') }}" class="font-semibold underline">/rewards</a>.</p>
+        </div>
+
+        {{-- Tóm tắt tiền --}}
+        <div class="space-y-2.5 text-sm border-t pt-4">
+          <div class="flex justify-between text-gray-600">
+            <span>Tạm tính</span>
+            <span id="sum-subtotal" class="font-medium">0đ</span>
+          </div>
+          <div class="flex justify-between text-gray-600">
+            <span>Phí vận chuyển</span>
+            <span class="font-medium text-green-600">Miễn phí</span>
+          </div>
+          <div id="sum-discount-row" class="flex justify-between text-gray-600 hidden">
+            <span>Giảm giá</span>
+            <span id="sum-discount" class="font-medium text-green-600">-0đ</span>
+          </div>
+          <div id="sum-wallet-row" class="flex justify-between text-gray-600 hidden">
+            <span>Điểm tiêu dùng</span>
+            <span id="sum-wallet" class="font-medium text-green-600">-0đ</span>
+          </div>
+          <div class="flex justify-between items-end pt-3 border-t">
+            <span class="font-bold text-gray-800">Thành tiền</span>
+            <span id="sum-total" class="text-2xl font-bold text-red-600">0đ</span>
+          </div>
+          <p class="text-right text-xs text-gray-400 italic">Đã bao gồm VAT</p>
+          <input type="hidden" name="discount_amount" id="discount_amount_input" value="0">
+        </div>
+
+        {{-- Nút đặt hàng --}}
+        <button type="submit" id="btn-order"
+          class="w-full mt-5 bg-red-600 text-white py-3.5 rounded-xl font-bold text-base hover:bg-red-700 transition-all shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
+          disabled>
+          <i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG
+        </button>
+
+        <a href="{{ route('cart.index') }}" class="block mt-3 text-center text-sm text-blue-600 hover:underline">
+          <i class="fa-solid fa-arrow-left mr-1"></i>Quay lại giỏ hàng
+        </a>
+      </div>
+    </div>
+
+  </div>
 </div>
-@push('scripts')
-    <script>
-        // --- XỬ LÝ MÃ GIẢM GIÁ VÀ TÍNH TỔNG TIỀN ---
-        let subtotal = 38970000;
-        let shippingFee = 0;
-        let discountValue = 0;
+</div>
 
-        function formatMoney(amount) {
-            return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
-        }
-
-        function updateTotals() {
-            const total = subtotal + shippingFee - discountValue;
-            document.getElementById('total-price').innerText = formatMoney(total);
-            
-            const discountRow = document.getElementById('discount-row');
-            if (discountValue > 0) {
-                discountRow.classList.remove('hidden');
-                document.getElementById('discount-amount').innerText = '-' + formatMoney(discountValue);
-            } else {
-                discountRow.classList.add('hidden');
-            }
-        }
-
-        function applyDiscount() {
-            const input = document.getElementById('discount_code');
-            const btn = document.getElementById('btn-apply-discount');
-            const msg = document.getElementById('discount-message');
-            
-            if (btn.innerText === 'Áp dụng') {
-                const code = input.value.trim();
-                if (!code) return;
-                
-                // Giả lập API call
-                btn.innerText = 'Đang xử lý...';
-                btn.disabled = true;
-                
-                setTimeout(() => {
-                    if (code.toUpperCase() === 'PRO10') {
-                        discountValue = 1000; // Giảm 1000đ
-                        input.readOnly = true;
-                        input.classList.remove('border-gray-300', 'focus:ring-gray-400');
-                        input.classList.add('border-green-500', 'focus:ring-green-500', 'bg-green-50', 'text-green-700');
-                        
-                        btn.innerText = 'Xóa';
-                        btn.classList.remove('bg-gray-800', 'hover:bg-gray-900');
-                        btn.classList.add('bg-red-500', 'hover:bg-red-600');
-                        btn.disabled = false;
-                        
-                        msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Áp dụng mã thành công! (Giảm ' + formatMoney(discountValue) + ')';
-                        msg.classList.remove('hidden', 'text-red-500');
-                        msg.classList.add('text-green-600');
-                        
-                        updateTotals();
-                    } else {
-                        btn.innerText = 'Áp dụng';
-                        btn.disabled = false;
-                        msg.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Mã giảm giá không hợp lệ!';
-                        msg.classList.remove('hidden', 'text-green-600');
-                        msg.classList.add('text-red-500');
-                    }
-                }, 500);
-            } else {
-                // Hủy / Xóa mã
-                discountValue = 0;
-                input.value = '';
-                input.readOnly = false;
-                input.classList.add('border-gray-300', 'focus:ring-gray-400');
-                input.classList.remove('border-green-500', 'focus:ring-green-500', 'bg-green-50', 'text-green-700');
-                
-                btn.innerText = 'Áp dụng';
-                btn.classList.add('bg-gray-800', 'hover:bg-gray-900');
-                btn.classList.remove('bg-red-500', 'hover:bg-red-600');
-                
-                msg.classList.add('hidden');
-                updateTotals();
-            }
-        }
-
-        // --- KIỂM TRA FORM HỢP LỆ ĐỂ KÍCH HOẠT NÚT ĐẶT HÀNG ---
-        const form = document.getElementById('checkoutForm');
-        const btnSubmit = document.getElementById('btn-submit-order');
-        const requiredInputs = form.querySelectorAll('input[required]');
-
-        function checkFormValidity() {
-            let isValid = true;
-            requiredInputs.forEach(input => {
-                if (!input.value.trim() || !input.checkValidity()) {
-                    isValid = false;
-                }
-            });
-            
-            if (isValid) {
-                btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
-                btnSubmit.disabled = false;
-            } else {
-                btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
-                btnSubmit.disabled = true;
-            }
-        }
-
-        requiredInputs.forEach(input => {
-            input.addEventListener('input', checkFormValidity);
-        });
-
-        // Xử lý chuyển hướng khi chọn phương thức thanh toán QR
-        form.addEventListener('submit', function(e) {
-            const selectedMethod = document.querySelector('input[name="payment_method"]:checked').value;
-            if (selectedMethod === 'vnpay' || selectedMethod === 'momo') {
-                e.preventDefault();
-                window.location.href = "{{ route('cart.ai') }}";
-            }
-        });
-
-        // Chạy lần đầu lúc tải trang
-        checkFormValidity();
-    </script>
-@endpush
+{{-- Success Overlay --}}
+<div id="success-overlay" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+  <div class="bg-white rounded-3xl p-10 text-center max-w-sm mx-4 shadow-2xl">
+    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+      <i class="fa-solid fa-circle-check text-5xl text-green-500"></i>
+    </div>
+    <h3 class="text-2xl font-bold text-gray-800 mb-2">Đặt hàng thành công!</h3>
+    <p class="text-gray-500 text-sm mb-6">Cảm ơn bạn đã mua hàng. Chúng tôi sẽ liên hệ xác nhận sớm nhất.</p>
+    <a href="{{ url('/') }}" class="inline-block bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition">
+      Về trang chủ
+    </a>
+  </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+// ---- CONFIG ----
+const BANK = { id: 'MB', account: '123456789', name: 'DIENMAYPRO' };
+
+// ---- STATE ----
+let cartItems = [];
+let subtotalVal = 0;
+let discountVal = 0;
+let currentMethod = 'cod';
+
+// ---- FORMAT ----
+const fmt = n => new Intl.NumberFormat('vi-VN').format(n || 0) + 'đ';
+
+// ---- LOAD CART FROM SESSIONSTORAGE ----
+function loadCart() {
+  try {
+    const raw = '{!! json_encode($cartItems) !!}';
+    cartItems = JSON.parse(raw);
+  } catch(e) {
+    console.error("Lỗi nạp giỏ hàng từ server:", e);
+    cartItems = [];
+  }
+
+  renderItems();
+}
+
+function renderItems() {
+  const el = document.getElementById('order-items');
+  if (!cartItems.length) {
+    el.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">Không có sản phẩm.</p>';
+    document.getElementById('btn-order').disabled = true;
+    return;
+  }
+  subtotalVal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
+  el.innerHTML = cartItems.map(i => `
+    <div class="flex justify-between items-start gap-3 text-sm">
+      <div class="flex gap-1.5 flex-1 min-w-0">
+        <span class="shrink-0 font-bold text-gray-500">${i.quantity}×</span>
+        <p class="text-gray-800 font-medium leading-snug truncate" title="${i.name}">${i.name}</p>
+      </div>
+      <span class="shrink-0 font-bold text-gray-800">${fmt(i.price * i.quantity)}</span>
+    </div>`).join('');
+  document.getElementById('item-badge').textContent = cartItems.length + ' sản phẩm';
+  updateTotals();
+  checkFormValidity();
+}
+
+function updateTotals() {
+  const total = subtotalVal - discountVal;
+  document.getElementById('sum-subtotal').textContent = fmt(subtotalVal);
+  document.getElementById('sum-total').textContent = fmt(total > 0 ? total : 0);
+  document.getElementById('discount_amount_input').value = discountVal;
+  if (discountVal > 0) {
+    document.getElementById('sum-discount-row').classList.remove('hidden');
+    document.getElementById('sum-discount').textContent = '-' + fmt(discountVal);
+  } else {
+    document.getElementById('sum-discount-row').classList.add('hidden');
+  }
+}
+
+// ---- QR (Đã chuyển sang trang maQR) ----
+// ---- PAYMENT METHOD ----
+function selectMethod(method) {
+  currentMethod = method;
+
+  // Reset all labels
+  document.querySelectorAll('.pay-label').forEach(l => {
+    l.classList.remove('border-blue-500','bg-blue-50','border-pink-400','bg-pink-50','border-green-400','bg-green-50');
+    l.classList.add('border-gray-200');
+    l.querySelector('.dot-outer').style.borderColor = '#d1d5db';
+    l.querySelector('.dot-inner').style.opacity = '0';
+  });
+
+  // Activate selected
+  const sel = document.querySelector(`label[for="pm-${method}"]`);
+  if (sel) {
+    sel.classList.remove('border-gray-200');
+    const colors = {qr:['border-blue-500','bg-blue-50','#2563eb'], cod:['border-green-500','bg-green-50','#16a34a']};
+    const [bc, bg, dc] = colors[method] || colors.qr;
+    sel.classList.add(bc, bg);
+    sel.querySelector('.dot-outer').style.borderColor = dc;
+    sel.querySelector('.dot-inner').style.opacity = '1';
+    sel.querySelector('.dot-inner').style.backgroundColor = dc;
+  }
+
+  // Show/hide panels
+  document.getElementById('cod-panel')?.classList.remove('active');
+  if (method === 'qr') {
+    // Không hiện panel QR nữa, sẽ redirect khi bấm xác nhận
+  } else {
+    document.getElementById('cod-panel')?.classList.add('active');
+  }
+
+  checkFormValidity();
+}
+
+// ---- DISCOUNT ----
+function applyDiscount() {
+  const inp = document.getElementById('discount-code');
+  const btn = document.getElementById('btn-discount');
+  const msg = document.getElementById('discount-msg');
+
+  if (btn.textContent.trim() === 'Áp dụng') {
+    const code = inp.value.trim().toUpperCase();
+    if (!code) return;
+    btn.textContent = '...';
+    btn.disabled = true;
+    setTimeout(() => {
+      if (code === 'PRO10') {
+        discountVal = Math.round(subtotalVal * 0.1);
+        inp.readOnly = true;
+        inp.classList.add('bg-green-50','border-green-400','text-green-700');
+        btn.textContent = 'Xóa'; btn.disabled = false;
+        btn.classList.replace('bg-gray-800','bg-red-500');
+        msg.className = 'text-xs mt-2 font-medium text-green-600';
+        msg.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i>Giảm 10% thành công!';
+      } else {
+        btn.textContent = 'Áp dụng'; btn.disabled = false;
+        msg.className = 'text-xs mt-2 font-medium text-red-500';
+        msg.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i>Mã không hợp lệ!';
+      }
+      msg.classList.remove('hidden');
+      updateTotals();
+    }, 500);
+  } else {
+    discountVal = 0;
+    inp.value = ''; inp.readOnly = false;
+    inp.classList.remove('bg-green-50','border-green-400','text-green-700');
+    btn.textContent = 'Áp dụng';
+    btn.classList.replace('bg-red-500','bg-gray-800');
+    msg.classList.add('hidden');
+    updateTotals();
+  }
+}
+
+// ---- FORM VALIDITY ----
+function checkFormValidity() {
+  const name = document.getElementById('inp-name').value.trim();
+  const phone = document.getElementById('inp-phone').value.trim();
+  const addr = document.getElementById('inp-address').value.trim();
+  const valid = name && phone && /^0[0-9]{8,9}$/.test(phone) && addr;
+  const btn = document.getElementById('btn-order');
+  btn.disabled = !valid;
+}
+
+['inp-name','inp-phone','inp-address'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', checkFormValidity);
+});
+
+// ---- SUBMIT ----
+document.getElementById('checkout-form')?.addEventListener('submit', function (e) {
+  e.preventDefault();
+
+  const name = document.getElementById('inp-name').value.trim();
+  const phone = document.getElementById('inp-phone').value.trim();
+  const addr = document.getElementById('inp-address').value.trim();
+  const note = document.getElementById('inp-note').value.trim();
+  const discountInp = document.getElementById('discount-code');
+  const discountCode = discountInp && discountInp.readOnly ? discountInp.value.trim().toUpperCase() : '';
+
+  if (!name || !phone || !addr) return;
+
+  const btn = document.getElementById('btn-order');
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang xử lý...';
+  btn.disabled = true;
+
+  const data = {
+    name: name,
+    phone: phone,
+    address: addr,
+    note: note,
+    payment_method: currentMethod,
+    discount_code: discountCode
+  };
+
+  fetch('{{ route("cart.confirm") }}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(res => {
+    if (res.status === 'success') {
+      const badge = document.getElementById('headerCartBadge');
+      if (badge) {
+        fetch('{{ route("cart.count") }}')
+          .then(r => r.json())
+          .then(d => {
+             badge.innerText = d.cart_count;
+             if (d.cart_count === 0) badge.style.display = 'none';
+          });
+      }
+
+      if (currentMethod === 'qr') {
+        window.location.href = "{{ route('cart.qr') }}?order_id=" + res.order_id;
+      } else {
+        document.getElementById('success-overlay').classList.remove('hidden');
+      }
+    } else {
+      alert(res.message || 'Đã xảy ra lỗi khi đặt hàng!');
+      btn.innerHTML = '<i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG';
+      btn.disabled = false;
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Đã xảy ra lỗi hệ thống!');
+    btn.innerHTML = '<i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG';
+    btn.disabled = false;
+  });
+});
+
+// ---- INIT ----
+document.addEventListener('DOMContentLoaded', () => {
+  loadCart();
+  selectMethod('cod');
+});
+</script>
+@endpush

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $product->name . ' - TechZone')
+@section('title', $product->name . ' - DIENMAYPRO')
 
 @push('styles')
 <style>
@@ -24,14 +24,14 @@
 .pd-thumb img { max-width:100%; max-height:100%; object-fit:contain; }
 
 /* Modal Zoom Image */
-#imageZoomModal { display: none; position: fixed; z-index: 9999; inset: 0; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
+#imageZoomModal { display: none; position: fixed; z-index: 10005; inset: 0; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
 #imageZoomModal.active { display: flex; }
-#zoomedImg { width: 70vw; height: 70vh; object-fit: contain; }
-.close-zoom { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 30px; cursor: pointer; transition: 0.2s; }
+#zoomedImg { width: 90vw; height: 90vh; object-fit: contain; }
+.close-zoom { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; transition: 0.2s; z-index: 10010; }
 .close-zoom:hover { color: #d70018; }
 
 /* Info */
-.pd-info { display:flex; flex-direction:column; gap:14px; }
+.pd-info { display:flex; flex-direction:column; gap:14px; position: relative; z-index: 500; }
 .pd-category { font-size:12px; font-weight:600; color:#0046ab; background:#eef2ff; padding:3px 10px; border-radius:20px; display:inline-block; width:fit-content; }
 .pd-name { font-size:22px; font-weight:800; color:#1a1a2e; line-height:1.3; }
 .pd-rating { display:flex; align-items:center; gap:8px; font-size:13px; }
@@ -49,7 +49,8 @@
 .variant-btn.selected { border-color:#0046ab; background:#0046ab; color:#fff; }
 
 /* Buttons */
-.pd-actions { display:flex; flex-direction:column; gap:10px; margin-top: 5px; }
+.pd-actions { display:flex; flex-direction:column; gap:10px; margin-top: 5px; position: relative; z-index: 600; }
+.pd-actions button { pointer-events: auto !important; }
 .btn-buy { padding:14px; font-size:16px; font-weight:700; border-radius:10px; border:none; cursor:pointer; transition:.2s; text-align:center; }
 .btn-buy-now { background:linear-gradient(135deg,#d70018,#ff4444); color:#fff; }
 .btn-buy-now:hover { background:linear-gradient(135deg,#b50014,#e03333); transform:translateY(-1px); box-shadow:0 6px 16px rgba(215,0,24,.3); }
@@ -82,64 +83,6 @@
 .specs-table td:first-child { width:40%; font-weight:600; color:#555; }
 .specs-table td:last-child { color:#222; }
 
-/* Reviews */
-.pd-reviews { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
-.pd-reviews h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
-.review-stats { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
-.review-average { text-align: center; }
-.review-average h3 { font-size: 32px; color: #d70018; margin-bottom: 5px; }
-.review-average .stars { color: #f59e0b; font-size: 14px; }
-.review-item { padding: 15px 0; border-bottom: 1px solid #f5f5f5; }
-.review-item:last-child { border-bottom: none; }
-.review-user { font-weight: 600; font-size: 14px; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
-.review-user span { background: #16a34a; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: normal;}
-.review-stars { color: #f59e0b; font-size: 12px; margin-bottom: 8px; }
-.review-content { font-size: 14px; color: #444; }
-
-/* Media Upload */
-.review-media-upload { margin: 10px 0; }
-.media-upload-label { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 2px dashed #d0d0d0; border-radius: 8px; cursor: pointer; font-size: 13px; color: #666; transition: 0.2s; background: #fafafa; }
-.media-upload-label:hover { border-color: #0046ab; color: #0046ab; background: #eef2ff; }
-.media-preview-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.media-preview-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
-.media-preview-item img, .media-preview-item video { width: 100%; height: 100%; object-fit: cover; }
-.media-preview-remove { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-/* Review Media Display */
-.review-media-display { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.review-media-thumb { width: 90px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; cursor: pointer; position: relative; }
-.review-media-thumb img { width: 100%; height: 100%; object-fit: cover; transition: 0.2s; }
-.review-media-thumb:hover img { opacity: 0.85; }
-.review-media-thumb .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); color: #fff; font-size: 24px; pointer-events: none; }
-
-/* Custom Confirm Modal */
-#confirmModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-#confirmModal.active { display: flex; }
-.confirm-box { background: #fff; border-radius: 16px; padding: 32px 28px 24px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: confirmPop 0.25s ease; }
-@keyframes confirmPop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-.confirm-icon { font-size: 48px; color: #f59e0b; margin-bottom: 14px; }
-.confirm-title { font-size: 17px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
-.confirm-desc { font-size: 14px; color: #666; margin-bottom: 24px; line-height: 1.5; }
-.confirm-actions { display: flex; gap: 12px; justify-content: center; }
-.confirm-btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; }
-.confirm-btn-cancel { background: #f1f5f9; color: #555; }
-.confirm-btn-cancel:hover { background: #e2e8f0; }
-.confirm-btn-danger { background: #d70018; color: #fff; }
-.confirm-btn-danger:hover { background: #b50014; box-shadow: 0 4px 12px rgba(215,0,24,0.3); }
-
-/* Media Lightbox */
-#mediaLightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 99998; align-items: center; justify-content: center; }
-#mediaLightbox.active { display: flex; }
-#mediaLightbox img, #mediaLightbox video { max-width: 90vw; max-height: 88vh; border-radius: 8px; object-fit: contain; }
-.lightbox-close { position: absolute; top: 18px; right: 24px; color: #fff; font-size: 28px; cursor: pointer; transition: 0.2s; }
-.lightbox-close:hover { color: #f59e0b; }
-
-/* Review Replies */
-.reply-btn { background: none; border: none; color: #0046ab; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; margin-top: 10px; display: inline-flex; align-items: center; gap: 5px; }
-.reply-btn:hover { text-decoration: underline; }
-.reply-form { margin-top: 10px; display: none; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
-.reply-item { margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 3px solid #cbd5e1; }
-
 /* ===== RELATED ===== */
 .pd-related { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
 .pd-related h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
@@ -164,12 +107,13 @@
 .bottom-action-bar {
     position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; box-shadow: 0 -4px 15px rgba(0,0,0,0.08); padding: 12px 0; z-index: 9999;
     transform: translateY(100%); transition: transform 0.3s ease;
+    visibility: hidden; pointer-events: none;
 }
-.bottom-action-bar.show { transform: translateY(0); }
+.bottom-action-bar.show { transform: translateY(0); visibility: visible; pointer-events: auto; }
 
 /* Installment Modal */
-#installmentModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10002; align-items: center; justify-content: center; }
-#installmentModal.active { display: flex; }
+#installmentModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10002; align-items: center; justify-content: center; pointer-events: none; }
+#installmentModal.active { display: flex; pointer-events: auto; }
 .installment-content { background: #fff; width: 90%; max-width: 800px; max-height: 90vh; border-radius: 12px; overflow-y: auto; position: relative; }
 .installment-header { position: sticky; top: 0; background: #fff; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10; border-radius: 12px 12px 0 0; }
 .installment-body { padding: 20px; }
@@ -199,8 +143,13 @@
     padding: 20px;
 }
 .zoom-nav:hover { color: #fff; }
-.zoom-nav.prev { left: 20px; }
 .zoom-nav.next { right: 20px; }
+
+/* Progress Bar cho Flash Sale */
+.fs-progress-wrapper { margin-top: 15px; background: #ffcdd2; border-radius: 10px; height: 22px; position: relative; overflow: hidden; display: flex; align-items: center; }
+.fs-progress-bar { background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%); height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+.fs-progress-text { position: absolute; width: 100%; text-align: center; font-size: 13px; font-weight: 700; color: #fff; text-shadow: 0px 0px 3px rgba(0,0,0,0.5); z-index: 2; }
+.fs-fire-icon { position: absolute; left: 8px; color: #fff; font-size: 14px; z-index: 2; }
 </style>
 @endpush
 
@@ -221,15 +170,16 @@
         ];
     })->toJson();
     
-    // Load reviews
-    $reviews = App\Models\Review::with('replies')->where('product_id', $product->product_id)->whereNull('parent_id')->orderBy('created_at', 'desc')->get();
-    $reviewCount = App\Models\Review::where('product_id', $product->product_id)->whereNull('parent_id')->count();
-    $avgRating = $reviewCount > 0 ? round(App\Models\Review::where('product_id', $product->product_id)->whereNull('parent_id')->avg('rating'), 1) : 0;
 
     $discountPercent = 0;
     if ($oldPrice > 0 && $oldPrice > $basePrice) {
         $discountPercent = round((($oldPrice - $basePrice) / $oldPrice) * 100);
     }
+    $isWishlisted = false;
+    if(auth()->check()){
+        $isWishlisted = auth()->user()->wishlists()->where('product_id', $product->product_id)->where('type', 'Wishlist')->exists();
+    }
+    $isFlashSale = isset($flashSaleProduct) && $flashSaleProduct;
 @endphp
 
 <div class="container">
@@ -285,26 +235,44 @@
 
             <h1 class="pd-name">{{ $product->name }}</h1>
 
-            <div class="pd-rating">
-                <div class="pd-stars" id="topReviewStars">
-                    @for($i=1; $i<=5; $i++)
-                        @if($i <= round($avgRating))
-                            <i class="fa-solid fa-star" style="color:#f59e0b"></i>
-                        @else
-                            <i class="fa-regular fa-star" style="color:#ccc"></i>
-                        @endif
-                    @endfor
+            @if($isFlashSale)
+                <div style="display:inline-flex; align-items:center; gap:8px; background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; padding:8px 12px; border-radius:999px; font-size:13px; font-weight:700; width:fit-content;">
+                    <i class="fa-solid fa-bolt"></i>
+                    Flash Sale đang diễn ra
+                    <span id="flashSaleCountdown" data-end-at="{{ optional($flashSaleProduct->flashSale->end_at)->toIso8601String() }}"></span>
                 </div>
-                <span class="pd-rating-count"><span id="topReviewCount">({{ $reviewCount }} đánh giá)</span> · <span style="color:#16a34a;font-weight:600;">Còn hàng</span></span>
+            @endif
+
+            <div class="pd-rating">
+                <span class="pd-rating-count"><span style="color:#16a34a;font-weight:600;">Còn hàng</span></span>
             </div>
 
             {{-- Giá --}}
             <div class="pd-price-block">
-                <div class="pd-price" id="displayPrice">{{ number_format($basePrice, 0, ',', '.') }}đ</div>
-                @if($oldPrice)
-                    <div class="pd-old-price" id="displayOldPrice">{{ number_format($oldPrice, 0, ',', '.') }}đ</div>
+                <div class="pd-price" id="displayPrice">{{ number_format($effectivePrice ?? $basePrice, 0, ',', '.') }}đ</div>
+                @if($oldPrice || $isFlashSale)
+                    <div class="pd-old-price" id="displayOldPrice">{{ number_format($oldPrice > 0 ? $oldPrice : $basePrice, 0, ',', '.') }}đ</div>
                     <div class="pd-saving" id="displaySaving">
-                        Tiết kiệm: {{ number_format($oldPrice - $basePrice, 0, ',', '.') }}đ
+                        Tiết kiệm: {{ number_format(($oldPrice > 0 ? $oldPrice : $basePrice) - ($effectivePrice ?? $basePrice), 0, ',', '.') }}đ
+                    </div>
+                @endif
+                
+                @if($isFlashSale && isset($flashSaleProduct))
+                    @php
+                        $sold = $flashSaleProduct->sold_quantity ?? 0;
+                        $limit = $flashSaleProduct->stock_limit ?? 1;
+                        $percent = min(100, round(($sold / $limit) * 100));
+                    @endphp
+                    <div class="fs-progress-wrapper">
+                        <div class="fs-progress-bar" style="width: {{ $percent }}%"></div>
+                        <i class="fa-solid fa-fire fs-fire-icon"></i>
+                        <span class="fs-progress-text">
+                            @if($percent >= 100)
+                                Đã bán hết (Sale kết thúc)
+                            @else
+                                Đã bán {{ $sold }}/{{ $limit }}
+                            @endif
+                        </span>
                     </div>
                 @endif
             </div>
@@ -347,8 +315,8 @@
                         <i class="fa-solid fa-credit-card"></i> TRẢ GÓP 0%
                     </button>
                 </div>
-                <div style="display:flex; gap:10px; width:100%; margin-top:10px; flex-wrap:wrap;">
-                    <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700; min-width:180px;">
+                <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
+                    <button class="btn-buy btn-add-cart" id="btnAddCart" onclick="addToCart()" style="flex:1; font-size:13px; font-weight:700;">
                         <i class="fa-solid fa-cart-plus"></i> THÊM VÀO GIỎ HÀNG
                     </button>
                     <button type="button" class="btn-wishlist {{ $isWishlisted ? 'active' : '' }}" id="btnWishlist" onclick="toggleWishlist()" style="flex:1; min-width:140px;">
@@ -386,6 +354,9 @@
             </div>
         </div>
     </div>
+
+    {{-- Mua kèm Combo tiết kiệm --}}
+    @include('frontend.products._combo_bundle', ['comboProducts' => $comboProducts])
 
     {{-- Layout Giữa: Giới thiệu + Specs --}}
     <div class="middle-section">
@@ -436,9 +407,11 @@
         @endif
     </div>
 
-    {{-- Review section removed to avoid merge conflicts with Hien/danhgia --}}
+    {{-- Đánh giá sản phẩm --}}
+    @include('frontend.products.partials.reviews')
 
-
+    {{-- Gợi ý bán chéo: Thường mua cùng nhau --}}
+    @include('frontend.products._cross_sell', ['crossSellProducts' => $crossSellProducts])
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())
         <div class="pd-related">
@@ -601,30 +574,9 @@
     <i class="fa-solid fa-chevron-right zoom-nav next" onclick="nextZoomImage()"></i>
 </div>
 
-<!-- Toast -->
 <div class="toast-notification" id="toast">
-    <i class="fa-solid fa-circle-check"></i>
+    <i id="toastIcon" class="fa-solid fa-circle-check"></i>
     <span id="toastMsg">Thêm vào giỏ hàng thành công!</span>
-</div>
-
-<!-- Custom Confirm Modal -->
-<div id="confirmModal">
-    <div class="confirm-box">
-        <div class="confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="confirm-title" id="confirmTitle">Xác nhận xóa</div>
-        <div class="confirm-desc" id="confirmDesc">Bạn có chắc chắn muốn xóa đánh giá này không? Hành động này không thể hoàn tác.</div>
-        <div class="confirm-actions">
-            <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirmModal()">Hủy bỏ</button>
-            <button class="confirm-btn confirm-btn-danger" id="confirmOkBtn">Xóa ngay</button>
-        </div>
-    </div>
-</div>
-
-<!-- Media Lightbox -->
-<div id="mediaLightbox" onclick="closeMediaLightbox()">
-    <i class="fa-solid fa-xmark lightbox-close" onclick="closeMediaLightbox()"></i>
-    <img id="lightboxImg" src="" alt="" style="display:none;">
-    <video id="lightboxVideo" src="" controls style="display:none;"></video>
 </div>
 
     {{-- Đăng ký nhận khuyến mãi --}}
@@ -651,18 +603,25 @@
     </div>
 
     {{-- Promo Success Modal --}}
-    <div id="promoSuccessModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; justify-content: center; align-items: center;">
+    <div id="promoSuccessModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; justify-content: center; align-items: center; display: none;">
         <div style="background: #fff; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
             <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #16a34a; margin-bottom: 20px;"></i>
             <h3 style="font-size: 22px; color: #333; margin-bottom: 10px;">Cảm ơn quý khách!</h3>
             <p style="font-size: 15px; color: #555; line-height: 1.5; margin-bottom: 0;">Đăng ký nhận khuyến mãi thành công. Chúng tôi sẽ gửi mã giảm giá 10% qua Email và Số điện thoại của quý khách.</p>
         </div>
     </div>
-
 @endsection
 
 @push('scripts')
 <script>
+// --- Chatbot AI: Cung cấp ngữ cảnh sản phẩm đang xem ---
+window.chatbotProductName = {!! json_encode($product->name) !!};
+window.chatbotProductContext = {!! json_encode(
+    $product->name . ' - Giá: ' . number_format($product->base_price, 0, ',', '.') . 'đ' .
+    ($product->old_price ? ' (Giá gốc: ' . number_format($product->old_price, 0, ',', '.') . 'đ)' : '') .
+    ($product->category ? ' - Danh mục: ' . $product->category->name : '')
+) !!};
+
 // --- Tự cuộn lên đầu khi F5 ---
 if (history.scrollRestoration) {
     history.scrollRestoration = 'manual';
@@ -713,15 +672,34 @@ function switchImg(el, src) {
 }
 
 // --- Xử lý Chọn Cấu hình & Đổi Giá ---
-const basePrice = {{ $basePrice }};
+const basePrice = {{ $effectivePrice ?? $basePrice }};
+const originalBasePrice = {{ $basePrice }};
 const oldPrice = {{ $oldPrice ?? 0 }};
 const variants = {!! $variantsJson !!}; 
 
 let currentExtraPrice = 0;
 
 function formatCurrency(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
+    return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
 }
+
+function updateFlashSaleCountdown() {
+    const el = document.getElementById('flashSaleCountdown');
+    if (!el) return;
+    const endAt = new Date(el.dataset.endAt);
+    const diff = endAt - new Date();
+    if (diff <= 0) {
+        el.innerText = 'Đã kết thúc';
+        return;
+    }
+    const totalSeconds = Math.floor(diff / 1000);
+    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    el.innerText = `${hours}:${minutes}:${seconds}`;
+}
+setInterval(updateFlashSaleCountdown, 1000);
+updateFlashSaleCountdown();
 
 function updatePriceDisplay() {
     const finalPrice = basePrice + currentExtraPrice;
@@ -754,7 +732,7 @@ function updatePriceDisplay() {
         variantStr = ' - ' + [romVal, colorVal].filter(Boolean).join(' ');
     }
     
-    const baseName = `{{ $product->name }}`;
+    const baseName = "{{ $product->name }}";
     const fullName = baseName + variantStr;
     
     const stickyProductName = document.getElementById('stickyProductName');
@@ -835,39 +813,75 @@ function selectColor(el) {
     calculateVariantPrice();
 }
 
-// Review JS functions removed to avoid merge conflicts with Hien/danhgia
 
-
-function buyNow() {
-    window.location.href = "{{ route('cart.index') }}";
-}
-
-let userId = '{{ Auth::id() ?? "guest" }}';
-let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || document.getElementById('headerCartBadge')?.innerText || 0);
-
-// --- Toast & Actions ---
-function showToast(msg) {
+function showToast(msg, type = 'success') {
     const toast = document.getElementById('toast');
     if (toast) {
         const msgEl = document.getElementById('toastMsg');
+        const iconEl = document.getElementById('toastIcon');
         if (msgEl) msgEl.innerText = msg;
+        if (iconEl) {
+            iconEl.className = 'fa-solid';
+            if (type === 'error' || msg.toLowerCase().includes('lỗi') || msg.toLowerCase().includes('không')) {
+                iconEl.classList.add('fa-circle-xmark');
+                toast.style.borderLeft = '4px solid #ef4444';
+            } else {
+                iconEl.classList.add('fa-circle-check');
+                toast.style.borderLeft = '4px solid #16a34a';
+            }
+        }
         toast.classList.add('show');
-        setTimeout(() => { toast.classList.remove('show'); }, 2000);
+        setTimeout(() => { toast.classList.remove('show'); }, 2500);
     }
 }
 
-function addToCart() {
-    showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
-    
-    // Cập nhật số lượng trên header và lưu vào localStorage theo user
-    cartCount++;
-    localStorage.setItem('cartCount_' + userId, cartCount);
-    
-    const headerBadge = document.getElementById('headerCartBadge');
-    if (headerBadge) {
-        headerBadge.innerText = cartCount;
-        headerBadge.style.display = 'block';
+function showProductToast(msg) { 
+    if (typeof showToastReview === 'function') {
+        showToastReview('Thông báo', msg, 'info');
+    } else {
+        showToast(msg);
     }
+}
+
+function addToCart(redirect = false) {
+    const data = {
+        product_id: '{{ $product->product_id }}',
+        quantity: 1
+    };
+
+    fetch('{{ route("cart.add") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(res => {
+        if(res.status === 'success') {
+            if (redirect) {
+                window.location.href = "{{ route('cart.index') }}";
+            } else {
+                showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
+                const headerBadge = document.getElementById('headerCartBadge');
+                if (headerBadge && res.cart_count !== undefined) {
+                    headerBadge.innerText = res.cart_count;
+                    headerBadge.style.display = res.cart_count > 0 ? 'block' : 'none';
+                }
+            }
+        } else if(res.error) {
+            showToast(res.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Đã xảy ra lỗi khi thêm vào giỏ hàng!', 'error');
+    });
+}
+
+function buyNow() {
+    addToCart(true);
 }
 
 // Wishlist Toggle
@@ -878,6 +892,10 @@ function toggleWishlist() {
         return;
     }
 
+    const btn = document.getElementById('btnWishlist');
+    const icon = document.getElementById('wishlistIcon');
+    const text = document.getElementById('wishlistText');
+    
     fetch('{{ route("wishlist.toggle") }}', {
         method: 'POST',
         headers: {
@@ -886,47 +904,58 @@ function toggleWishlist() {
         },
         body: JSON.stringify({ product_id: '{{ $product->product_id }}' })
     })
-    .then(r => r.json())
+    .then(response => response.json())
     .then(data => {
-        const icon = document.getElementById('wishlistIcon');
-        const text = document.getElementById('wishlistText');
-        const btn = document.getElementById('btnWishlist');
-
-        if (data.status === 'added') {
+        if(data.status === 'added') {
             isWishlist = true;
-            icon.classList.replace('fa-regular', 'fa-solid');
+            btn.classList.add('active');
+            icon.classList.remove('fa-regular');
+            icon.classList.add('fa-solid');
             icon.style.color = '#d70018';
             text.innerText = 'Đã thêm yêu thích';
-            btn.classList.add('active');
-            showToast('Đã thêm vào yêu thích!');
-        } else {
+            showToast('Đã thêm vào danh sách yêu thích!');
+        } else if(data.status === 'removed') {
             isWishlist = false;
-            icon.classList.replace('fa-solid', 'fa-regular');
+            btn.classList.remove('active');
+            icon.classList.remove('fa-solid');
+            icon.classList.add('fa-regular');
             icon.style.color = '';
             text.innerText = 'Thêm yêu thích';
-            btn.classList.remove('active');
-            showToast('Đã xóa khỏi yêu thích.');
+            showToast('Đã xóa khỏi danh sách yêu thích.');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Đã xảy ra lỗi!');
     });
 }
 
-// --- Trả góp logic ---
+// --- Installment Modal ---
 let instCurrentBasePrice = basePrice;
 let instSelectedCompany = 'Shinhan Finance';
 let instSelectedMonth = 6;
 
 function checkAuthAndOpenInstallment() {
-    if (!{{ auth()->check() ? 'true' : 'false' }}) {
-        window.location.href = "{{ route('login_register') }}";
-        return;
-    }
-    openInstallmentModal();
+    @auth
+        openInstallmentModal();
+    @else
+        showProductToast('Vui lòng đăng nhập để đăng ký trả góp!');
+        setTimeout(() => {
+            window.location.href = "{{ route('login_register') }}";
+        }, 1500);
+    @endauth
 }
 
 function openInstallmentModal() {
     document.getElementById('installmentModal').classList.add('active');
+    
+    // Reset lại giao diện
+    document.getElementById('instSuccessMsg').style.display = 'none';
+    switchInstTab(0);
+    
     updateInstallmentTable();
 }
+
 function closeInstallmentModal() {
     document.getElementById('installmentModal').classList.remove('active');
 }
@@ -951,9 +980,12 @@ function confirmInstallment() {
 }
 
 // Close when clicking outside
-document.getElementById('installmentModal').addEventListener('click', function(e) {
-    if(e.target === this) closeInstallmentModal();
-});
+const instModal = document.getElementById('installmentModal');
+if (instModal) {
+    instModal.addEventListener('click', function(e) {
+        if(e.target === this) closeInstallmentModal();
+    });
+}
 
 function selectCompany(el, company) {
     document.querySelectorAll('.inst-company').forEach(c => c.classList.remove('active'));
@@ -970,7 +1002,7 @@ function selectMonth(el, month) {
 }
 
 function updateInstallmentTable() {
-    const format = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
+    const format = (num) => Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
     
     document.getElementById('instProductPrice').innerText = format(instCurrentBasePrice);
     document.getElementById('instBasePrice').innerText = format(instCurrentBasePrice);

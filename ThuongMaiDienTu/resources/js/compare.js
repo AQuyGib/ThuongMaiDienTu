@@ -81,7 +81,8 @@ function renderSearchResults(results) {
                 name: product.name,
                 image: product.thumbnail,
                 price: new Intl.NumberFormat('vi-VN').format(product.base_price) + 'đ',
-                categoryId: product.category_id
+                categoryId: product.category_id,
+                rootCategoryId: product.root_category_id
             };
             addToCompare(productData);
         };
@@ -143,7 +144,8 @@ window.addToCompare = async function(productOrId) {
                     name: p.name,
                     image: p.thumbnail,
                     price: new Intl.NumberFormat('vi-VN').format(p.base_price) + 'đ',
-                    categoryId: p.category_id
+                    categoryId: p.category_id,
+                    rootCategoryId: p.root_category_id
                 };
             } else {
                 showToast('Không tìm thấy thông tin sản phẩm', 'error');
@@ -158,10 +160,40 @@ window.addToCompare = async function(productOrId) {
         productData = productOrId;
     }
 
-    // Kiểm tra cùng loại sản phẩm
-    const existingSlot = document.querySelector('.compare-slot-filled[data-category-id]:not([data-category-id=""])');
-    if (existingSlot && existingSlot.dataset.categoryId != productData.categoryId) {
-        if (confirm('Sản phẩm này khác loại với danh sách hiện tại. Bạn có muốn xóa danh sách cũ để bắt đầu so sánh loại mới này không?')) {
+    // Kiểm tra cùng loại sản phẩm (sử dụng Root Category)
+    const existingSlot = document.querySelector('.compare-slot-filled[data-root-category-id]:not([data-root-category-id=""])');
+    if (existingSlot && existingSlot.dataset.rootCategoryId != productData.rootCategoryId) {
+        const result = await Swal.fire({
+            title: '<span class="text-2xl font-black text-gray-900">Khác loại sản phẩm?</span>',
+            html: `<div class="text-gray-500 font-medium leading-relaxed mt-2">
+                Sản phẩm này khác loại với danh sách hiện tại.<br>
+                Bạn có muốn <span class="text-red-500 font-bold">xóa danh sách cũ</span> để bắt đầu so sánh loại mới này không?
+            </div>`,
+            icon: 'warning',
+            iconColor: '#f59e0b',
+            showCancelButton: true,
+            confirmButtonColor: '#0046ab',
+            cancelButtonColor: '#94a3b8',
+            confirmButtonText: 'Đồng ý, xóa cũ',
+            cancelButtonText: 'Để sau',
+            reverseButtons: true,
+            padding: '2rem',
+            background: '#ffffff',
+            borderRadius: '24px',
+            customClass: {
+                popup: 'rounded-[2rem] shadow-2xl border-none',
+                confirmButton: 'rounded-xl px-6 py-3 font-bold text-sm',
+                cancelButton: 'rounded-xl px-6 py-3 font-bold text-sm'
+            },
+            showClass: {
+                popup: 'animate__animated animate__fadeInUp animate__faster'
+            },
+            hideClass: {
+                popup: 'animate__animated animate__fadeOutDown animate__faster'
+            }
+        });
+
+        if (result.isConfirmed) {
             clearCompare();
         } else {
             return;
@@ -183,6 +215,7 @@ window.addToCompare = async function(productOrId) {
     filledDiv.querySelector('.compare-slot-price').textContent = productData.price;
     filledDiv.dataset.productId = productData.id;
     filledDiv.dataset.categoryId = productData.categoryId;
+    filledDiv.dataset.rootCategoryId = productData.rootCategoryId;
 
     currentSlotIndex = null; // Reset slot index
     updateCount();
@@ -216,6 +249,7 @@ window.clearCompare = function() {
         el.style.display = 'none';
         el.dataset.productId = "";
         el.dataset.categoryId = "";
+        el.dataset.rootCategoryId = "";
     });
     const emptyDivs = document.querySelectorAll('.compare-slot-empty');
     emptyDivs.forEach(el => el.style.display = 'flex');
@@ -280,16 +314,27 @@ function syncWithServer() {
 }
 
 function showToast(message, type = 'success') {
-    const toast = document.getElementById('compareToast');
-    if (!toast) return;
-
-    toast.querySelector('span').textContent = message;
-    toast.className = 'compare-global-toast ' + type;
-    toast.classList.add('show');
-
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        background: '#ffffff',
+        color: '#1e293b',
+        borderRadius: '16px',
+        didOpen: (toast) => {
+            toast.onmouseenter = Swal.stopTimer;
+            toast.onmouseleave = Swal.resumeTimer;
+        }
+    });
+    Toast.fire({
+        icon: type,
+        title: `<span class="text-sm font-bold ml-2">${message}</span>`,
+        customClass: {
+            popup: 'shadow-xl border border-gray-100 rounded-2xl'
+        }
+    });
 }
 
 // --- Toggle Collapse ---
@@ -378,24 +423,41 @@ async function loadComparePage() {
 
         if (emptyState) emptyState.classList.add('hidden');
         if (tableWrap) tableWrap.classList.remove('hidden');
+        const chartWrap = document.getElementById('compareChartWrap');
+        if (chartWrap) {
+            if (products.length >= 2) {
+                chartWrap.classList.remove('hidden');
+                renderRadarChart(products, rows);
+            } else {
+                chartWrap.classList.add('hidden');
+            }
+        }
         if (metaEl) metaEl.textContent = `${products.length} sản phẩm`;
 
         // Render Head
         if (headEl) {
             headEl.innerHTML = `
-                <tr class="sticky top-0 z-20 shadow-sm">
-                    <th class="bg-gray-50 p-4 text-left font-semibold text-gray-700 w-56 border-b border-gray-200">Thuộc tính</th>
+                <tr class="z-[900]">
+                    <th class="bg-white/95 backdrop-blur-md p-6 text-left font-black text-gray-900 w-64 uppercase tracking-wider text-xs border-r border-gray-100">Đặc điểm nổi bật</th>
                     ${products.map(p => `
-                        <th class="p-4 text-left min-w-72 align-top bg-white border-b border-gray-200">
-                            <div class="space-y-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                                <div class="flex items-start justify-between gap-3">
-                                    <div class="font-semibold text-gray-900 leading-6 truncate">${escapeHtml(p.name)}</div>
-                                    <button type="button" class="text-red-500 hover:text-red-700" onclick="window.removeAndRefresh('${p.product_id}')">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
+                        <th class="p-6 text-left min-w-[300px] align-top bg-white/95 backdrop-blur-md border-r border-gray-100 last:border-r-0">
+                            <div class="relative group">
+                                <button type="button" class="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center rounded-full bg-red-50 text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-lg" onclick="window.removeAndRefresh('${p.product_id}')">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <div class="space-y-4">
+                                    <div class="h-40 w-full overflow-hidden rounded-2xl bg-gray-50/50 p-4 flex items-center justify-center group-hover:bg-blue-50/30 transition-colors">
+                                        <img src="${p.thumbnail}" alt="${escapeHtml(p.name)}" class="h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="font-black text-gray-900 leading-tight h-10 line-clamp-2 group-hover:text-blue-600 transition-colors">${escapeHtml(p.name)}</div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-xl font-black text-blue-600">${new Intl.NumberFormat('vi-VN').format(p.base_price)}đ</span>
+                                            ${p.discount_percent ? `<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">-${p.discount_percent}%</span>` : ''}
+                                        </div>
+                                    </div>
+                                    <a href="/product/${p.product_id}" class="inline-flex w-full items-center justify-center py-2.5 rounded-xl border-2 border-blue-600 text-blue-600 font-bold text-xs hover:bg-blue-600 hover:text-white transition-all">Xem chi tiết</a>
                                 </div>
-                                <img src="${p.thumbnail}" alt="${escapeHtml(p.name)}" class="h-24 w-full object-contain rounded-xl bg-gray-50 p-2">
-                                <div class="text-red-600 font-bold">${new Intl.NumberFormat('vi-VN').format(p.base_price)}đ</div>
                             </div>
                         </th>
                     `).join('')}
@@ -403,16 +465,18 @@ async function loadComparePage() {
             `;
         }
 
+        const diffOnly = document.getElementById('diffOnlyCheckbox')?.checked || false;
+
         // Render Body
         if (bodyEl) {
             const processedGeneralRows = [
-                { label: 'Giá hiện tại', values: products.map(p => new Intl.NumberFormat('vi-VN').format(p.base_price) + 'đ') },
-                { label: 'Giá cũ', values: products.map(p => p.old_price ? new Intl.NumberFormat('vi-VN').format(p.old_price) + 'đ' : '—') },
-                { label: 'Đánh giá', values: products.map(p => p.rating ? `${p.rating}/5` : 'Chưa có') },
-                { label: 'Danh mục', values: products.map(p => p.category_name || '—') },
+                { label: 'Giá ưu đãi', values: products.map(p => `<span class="font-black text-blue-600 text-base">${new Intl.NumberFormat('vi-VN').format(p.base_price)}đ</span>`) },
+                { label: 'Giá niêm yết', values: products.map(p => p.old_price ? `<span class="text-gray-400 line-through">${new Intl.NumberFormat('vi-VN').format(p.old_price)}đ</span>` : '<span class="text-gray-300">—</span>') },
+                { label: 'Đánh giá người dùng', values: products.map(p => p.rating ? `<div class="flex items-center gap-1"><i class="fa-solid fa-star text-yellow-400"></i><span class="font-bold">${p.rating}</span><span class="text-gray-400 text-xs">(${p.review_count} lượt)</span></div>` : '<span class="text-gray-400">Chưa có</span>') },
+                { label: 'Phân khúc', values: products.map(p => `<span class="px-2 py-1 bg-gray-100 rounded-md text-[10px] font-bold text-gray-600 uppercase">${p.category_name || '—'}</span>`) },
             ].map(row => ({
                 ...row,
-                is_different: new Set(row.values).size > 1
+                is_different: new Set(row.values.map(v => v.replace(/<[^>]*>/g, ''))).size > 1
             }));
 
             const specRows = rows.map(row => ({
@@ -421,16 +485,17 @@ async function loadComparePage() {
                 values: row.values
             }));
 
-            const diffOnly = document.getElementById('diffOnlyCheckbox')?.checked || false;
-
             const filteredGeneralRows = diffOnly ? processedGeneralRows.filter(r => r.is_different) : processedGeneralRows;
 
             let html = filteredGeneralRows.map(row => `
-                <tr class="${row.is_different ? 'bg-blue-50/50' : ''}">
-                    <th class="sticky left-0 ${row.is_different ? 'bg-blue-50' : 'bg-white'} p-4 text-left font-medium text-gray-700 border-r border-gray-100">
-                        ${row.label} ${row.is_different ? '<span class="ml-2 text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">Khác biệt</span>' : ''}
+                <tr class="group hover:bg-gray-50/50 transition-colors ${row.is_different ? 'bg-blue-50/30' : ''}">
+                    <th class="p-4 text-left font-bold text-gray-500 border-r border-gray-100 bg-white group-hover:bg-gray-50/80 transition-colors">
+                        <div class="flex items-center gap-2">
+                            ${row.label}
+                            ${row.is_different ? '<span class="flex h-2 w-2 rounded-full bg-blue-500"></span>' : ''}
+                        </div>
                     </th>
-                    ${row.values.map(v => `<td class="p-4 text-gray-700">${v}</td>`).join('')}
+                    ${row.values.map(v => `<td class="p-4 text-gray-700 border-r border-gray-100 last:border-r-0">${v}</td>`).join('')}
                 </tr>
             `).join('');
 
@@ -442,23 +507,34 @@ async function loadComparePage() {
                 const maxVal = (numbers.length > 1) ? Math.max(...numbers) : null;
 
                 return `
-                    <tr class="${row.is_different ? 'bg-blue-50/50' : ''}">
-                        <th class="sticky left-0 ${row.is_different ? 'bg-blue-50' : 'bg-white'} p-4 text-left font-medium text-gray-700 border-r border-gray-100">
-                            ${row.label} ${row.is_different ? '<span class="ml-2 text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">Khác biệt</span>' : ''}
+                    <tr class="group hover:bg-gray-50/50 transition-colors ${row.is_different ? 'bg-blue-50/30' : ''}">
+                        <th class="p-4 text-left font-bold text-gray-500 border-r border-gray-100 bg-white group-hover:bg-gray-50/80 transition-colors">
+                            <div class="flex items-center gap-2">
+                                ${row.label}
+                                ${row.is_different ? '<span class="flex h-2 w-2 rounded-full bg-blue-500"></span>' : ''}
+                            </div>
                         </th>
                         ${rowValues.map(v => {
                             const num = extractNumber(v);
                             const isBest = maxVal !== null && num === maxVal;
-                            return `<td class="p-4 text-gray-700 ${isBest ? 'text-blue-600 font-bold bg-blue-50/30' : ''}">
-                                ${isBest ? '<i class="fa-solid fa-award mr-1 text-blue-500"></i>' : ''}${v}
+                            return `<td class="p-4 text-gray-700 border-r border-gray-100 last:border-r-0 ${isBest ? 'bg-blue-50/40' : ''}">
+                                <div class="flex items-center gap-2">
+                                    ${isBest ? '<i class="fa-solid fa-crown text-blue-500 animate-bounce"></i>' : ''}
+                                    <span class="${isBest ? 'text-blue-700 font-black' : ''}">${v}</span>
+                                </div>
                             </td>`;
                         }).join('')}
                     </tr>
                 `;
             }).join('');
 
-            if (diffOnly && filteredSpecRows.length === 0) {
-                html += `<tr><td colspan="${products.length + 1}" class="p-10 text-center text-gray-400 italic">Không có khác biệt về thông số kỹ thuật</td></tr>`;
+            if (diffOnly && filteredSpecRows.length === 0 && filteredGeneralRows.length === 0) {
+                html += `<tr><td colspan="${products.length + 1}" class="p-20 text-center">
+                    <div class="flex flex-col items-center gap-4 text-gray-400">
+                        <i class="fa-solid fa-equals text-4xl opacity-20"></i>
+                        <p class="italic text-lg font-medium">Không có sự khác biệt đáng kể giữa các sản phẩm được chọn</p>
+                    </div>
+                </td></tr>`;
             }
 
             bodyEl.innerHTML = html;
@@ -467,26 +543,33 @@ async function loadComparePage() {
         // Render Mobile Cards
         if (mobileCardsEl) {
             mobileCardsEl.innerHTML = products.map((p, idx) => `
-                <div class="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
-                    <div class="flex gap-4 mb-4">
-                        <img src="${p.thumbnail}" alt="${escapeHtml(p.name)}" class="w-20 h-20 object-contain rounded-lg border border-gray-50">
-                        <div class="flex-1">
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-bold text-gray-900 text-sm line-clamp-2">${escapeHtml(p.name)}</h3>
-                                <button onclick="window.removeAndRefresh('${p.product_id}')" class="text-red-500"><i class="fa-solid fa-xmark"></i></button>
+                <div class="bg-white rounded-3xl border border-gray-100 p-6 shadow-xl shadow-blue-900/5 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4">
+                         <button onclick="window.removeAndRefresh('${p.product_id}')" class="w-10 h-10 flex items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all">
+                            <i class="fa-solid fa-trash-can"></i>
+                         </button>
+                    </div>
+                    <div class="flex gap-5 mb-6">
+                        <div class="w-24 h-24 rounded-2xl bg-gray-50 p-2 flex items-center justify-center shrink-0">
+                            <img src="${p.thumbnail}" alt="${escapeHtml(p.name)}" class="max-h-full object-contain">
+                        </div>
+                        <div class="flex-1 pt-1">
+                            <h3 class="font-black text-gray-900 text-base line-clamp-2 mb-2 pr-8">${escapeHtml(p.name)}</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg font-black text-blue-600">${new Intl.NumberFormat('vi-VN').format(p.base_price)}đ</span>
+                                ${p.discount_percent ? `<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">-${p.discount_percent}%</span>` : ''}
                             </div>
-                            <div class="text-red-600 font-bold mt-1">${new Intl.NumberFormat('vi-VN').format(p.base_price)}đ</div>
                         </div>
                     </div>
-                    <div class="space-y-2 pt-2 border-t border-gray-50">
+                    <div class="space-y-4 pt-4 border-t border-gray-50">
                         ${(diffOnly ? rows.filter(r => r.is_different) : rows).map(row => `
-                            <div class="flex justify-between text-xs">
-                                <span class="text-gray-500">${row.label}</span>
-                                <span class="font-medium text-gray-900 text-right">${formatSpecValue(row.values[idx])}</span>
+                            <div class="flex justify-between items-center gap-4 text-xs">
+                                <span class="text-gray-400 font-bold uppercase tracking-tight">${row.label}</span>
+                                <span class="font-black text-gray-900 text-right">${formatSpecValue(row.values[idx])}</span>
                             </div>
                         `).join('')}
-                        ${diffOnly && rows.filter(r => r.is_different).length === 0 ? '<div class="text-center text-[10px] text-gray-400 italic pt-2">Không có khác biệt</div>' : ''}
                     </div>
+                    <a href="/product/${p.product_id}" class="mt-6 flex w-full items-center justify-center py-3 rounded-2xl bg-blue-600 text-white font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">Xem chi tiết sản phẩm</a>
                 </div>
             `).join('');
         }
@@ -494,6 +577,114 @@ async function loadComparePage() {
     } catch (error) {
         console.error('Error loading comparison page:', error);
     }
+}
+
+let compareRadarChartInstance = null;
+function renderRadarChart(products, rows) {
+    const canvas = document.getElementById('compareRadarChart');
+    if (!canvas) return;
+
+    if (compareRadarChartInstance) {
+        compareRadarChartInstance.destroy();
+    }
+
+    const labels = ['Màn hình', 'RAM', 'Pin', 'Đánh giá', 'Camera'];
+    
+    const datasets = products.map((p, idx) => {
+        const getVal = (label) => {
+            const row = rows.find(r => r.label.toLowerCase().includes(label.toLowerCase()));
+            if (!row) return 0;
+            const val = row.values[idx];
+            return extractNumber(val) || 0;
+        };
+
+        const screen = getVal('Màn hình');
+        const ram = getVal('RAM');
+        const battery = getVal('Pin');
+        const camera = getVal('Camera');
+        const rating = p.rating || 0;
+
+        const data = [
+            Math.min((screen / 7) * 100, 100),
+            Math.min((ram / 16) * 100, 100),
+            Math.min((battery / 6000) * 100, 100),
+            (rating / 5) * 100,
+            Math.min((camera / 200) * 100, 100)
+        ];
+
+        const colors = [
+            { border: '#2563eb', background: 'rgba(37, 99, 235, 0.15)' },
+            { border: '#dc2626', background: 'rgba(220, 38, 38, 0.15)' },
+            { border: '#16a34a', background: 'rgba(22, 163, 74, 0.15)' }
+        ];
+        const color = colors[idx % colors.length];
+
+        return {
+            label: p.name,
+            data: data,
+            fill: true,
+            backgroundColor: color.background,
+            borderColor: color.border,
+            borderWidth: 3,
+            pointBackgroundColor: color.border,
+            pointBorderColor: '#fff',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.2
+        };
+    });
+
+    compareRadarChartInstance = new Chart(canvas, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(0,0,0,0.05)' },
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: { display: false },
+                    pointLabels: {
+                        font: { size: 14, weight: '900', family: "'Inter', sans-serif" },
+                        color: '#1e293b'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { 
+                        boxWidth: 15, 
+                        padding: 30, 
+                        usePointStyle: true,
+                        font: { size: 13, weight: '700', family: "'Inter', sans-serif" },
+                        color: '#475569'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#1e293b',
+                    bodyColor: '#475569',
+                    borderColor: '#e2e8f0',
+                    borderWidth: 1,
+                    padding: 12,
+                    boxPadding: 6,
+                    usePointStyle: true,
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.dataset.label}: ${context.raw.toFixed(1)}/100`;
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
 
 window.removeAndRefresh = function(id) {
@@ -528,9 +719,32 @@ window.copyCompareLink = function() {
 
 const clearAllBtn = document.getElementById('compareClearAllBtn');
 if (clearAllBtn) {
-    clearAllBtn.addEventListener('click', () => {
-        clearCompare();
-        loadComparePage();
+    clearAllBtn.addEventListener('click', async () => {
+        const result = await Swal.fire({
+            title: '<span class="text-2xl font-black text-gray-900">Xóa toàn bộ?</span>',
+            html: '<div class="text-gray-500 font-medium mt-2">Bạn có chắc chắn muốn xóa tất cả sản phẩm trong danh sách so sánh? Hành động này không thể hoàn tác.</div>',
+            icon: 'question',
+            iconColor: '#0046ab',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#94a3b8',
+            confirmButtonText: 'Đồng ý, xóa hết',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true,
+            padding: '2rem',
+            background: '#ffffff',
+            borderRadius: '24px',
+            customClass: {
+                popup: 'rounded-[2rem] shadow-2xl border-none',
+                confirmButton: 'rounded-xl px-6 py-3 font-bold text-sm',
+                cancelButton: 'rounded-xl px-6 py-3 font-bold text-sm'
+            }
+        });
+
+        if (result.isConfirmed) {
+            clearCompare();
+            loadComparePage();
+        }
     });
 }
 
@@ -574,6 +788,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 
                                 filled.dataset.productId = productData.product_id;
                                 filled.dataset.categoryId = productData.category_id;
+                                filled.dataset.rootCategoryId = productData.root_category_id;
                             }
                         }
                     }

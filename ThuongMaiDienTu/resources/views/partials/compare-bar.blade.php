@@ -50,7 +50,3 @@
     </div>
 </div>
 
-<div id="compareToast" class="compare-global-toast">
-    <i class="fa-solid fa-circle-check"></i>
-    <span></span>
-</div>

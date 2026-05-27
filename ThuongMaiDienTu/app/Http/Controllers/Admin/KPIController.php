@@ -17,24 +17,38 @@ class KPIController extends Controller
     public function index(Request $request)
     {
         // 1. Xử lý bộ lọc ngày
-        $filter = $request->input('filter', 'month'); // mặc định là tháng này
+        $filter = $request->input('filter', 'month');
         $startDate = now()->startOfMonth();
         $endDate = now()->endOfDay();
 
-        if ($filter == 'today') {
+        if ($filter === 'today') {
             $startDate = now()->startOfDay();
-        } elseif ($filter == 'yesterday') {
+        } elseif ($filter === 'yesterday') {
             $startDate = now()->subDay()->startOfDay();
             $endDate = now()->subDay()->endOfDay();
-        } elseif ($filter == 'last_month') {
+        } elseif ($filter === 'week') {
+            $startDate = now()->startOfWeek();
+        } elseif ($filter === 'last_month') {
             $startDate = now()->subMonth()->startOfMonth();
             $endDate = now()->subMonth()->endOfMonth();
-        } elseif ($filter == 'custom' && $request->has('start_date') && $request->has('end_date')) {
-            $startDate = \Carbon\Carbon::parse($request->start_date)->startOfDay();
-            $endDate = \Carbon\Carbon::parse($request->end_date)->endOfDay();
+        } elseif ($filter === 'year') {
+            $startDate = now()->startOfYear();
+        } elseif ($filter === 'custom') {
+            $requestStart = $request->input('start');
+            $requestEnd = $request->input('end');
+            
+            if ($requestStart && $requestEnd) {
+                $startDate = \Carbon\Carbon::parse($requestStart)->startOfDay();
+                $endDate = \Carbon\Carbon::parse($requestEnd)->endOfDay();
+                
+                // Đảm bảo không vượt quá ngày hiện tại
+                if ($endDate > now()) {
+                    $endDate = now()->endOfDay();
+                }
+            }
         }
 
-        // 2. Thống kê Sales (Role 4)
+        // 2. Thống kê Sales KPI
         $salesKPI = User::where('role_id', 4)
             ->withCount(['salesOrders as total_orders' => function($query) use ($startDate, $endDate) {
                 $query->where('status', 'Delivered')
@@ -46,7 +60,7 @@ class KPIController extends Controller
             }], 'final_amount')
             ->get();
 
-        // 3. Thống kê Kỹ thuật viên (Lấy tất cả user có repair tickets)
+        // 3. Thống kê Kỹ thuật KPI
         $techKPI = User::whereHas('repairTickets')
             ->withCount(['repairTickets as completed_tickets' => function($query) use ($startDate, $endDate) {
                 $query->where('status', 'Done')
@@ -54,13 +68,24 @@ class KPIController extends Controller
             }])
             ->get();
 
-        // 4. Dữ liệu cho biểu đồ Doanh thu (Group by Date)
-        $revenueChart = Order::where('status', 'Delivered')
+        // 4. Dữ liệu biểu đồ doanh thu theo ngày
+        $rawRevenue = Order::where('status', 'Delivered')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(final_amount) as total'))
+            ->selectRaw('DATE(created_at) as date, SUM(final_amount) as total')
             ->groupBy('date')
-            ->orderBy('date')
-            ->get();
+            ->get()
+            ->pluck('total', 'date');
+
+        // Lấp đầy các ngày trống bằng 0
+        $revenueChart = collect();
+        $period = \Carbon\CarbonPeriod::create($startDate, $endDate);
+        foreach ($period as $date) {
+            $dateStr = $date->format('Y-m-d');
+            $revenueChart->push([
+                'date' => $dateStr,
+                'total' => $rawRevenue->get($dateStr, 0)
+            ]);
+        }
 
         // 5. Thống kê tổng hợp cho Dashboard
         $stats = [
@@ -74,6 +99,26 @@ class KPIController extends Controller
             'end_date' => $endDate->format('Y-m-d'),
         ];
 
-        return view('admin.kpi.index', compact('salesKPI', 'techKPI', 'stats', 'revenueChart'));
+        $props = [
+            'stats' => [
+                'total_sales_revenue' => (float)($stats['total_sales_revenue'] ?? 0),
+                'total_orders_completed' => (int)($stats['total_orders_completed'] ?? 0),
+                'total_repairs_done' => (int)($stats['total_repairs_done'] ?? 0),
+                'top_sales' => $stats['top_sales'] ? $stats['top_sales']->only(['user_id', 'full_name', 'total_revenue']) : null,
+                'top_tech' => $stats['top_tech'] ? $stats['top_tech']->only(['user_id', 'full_name', 'completed_tickets']) : null,
+                'filter' => $stats['filter'],
+                'start_date' => $stats['start_date'],
+                'end_date' => $stats['end_date'],
+            ],
+            'salesKPI' => $salesKPI->map(fn($u) => $u->only(['user_id', 'full_name', 'total_orders', 'total_revenue']))->values()->toArray(),
+            'techKPI' => $techKPI->map(fn($u) => $u->only(['user_id', 'full_name', 'completed_tickets']))->values()->toArray(),
+            'revenueChart' => $revenueChart->values()->toArray()
+        ];
+
+        if (request()->wantsJson()) {
+            return response()->json($props);
+        }
+
+        return view('admin.kpi.index', compact('props'));
     }
 }

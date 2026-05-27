@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\NotificationService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -22,6 +23,26 @@ class Article extends Model
         'embedded_product_ids' => 'array',
         'published_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(function (Article $article) {
+            if (! $article->slug) {
+                return;
+            }
+
+            app(NotificationService::class)->notifyCustomers([
+                'type' => 'article.published',
+                'title' => 'Có bài viết mới: ' . $article->title,
+                'content' => $article->summary ?: 'Khám phá ngay bài viết mới trên trang tin công nghệ.',
+                'action_url' => url('/lifestyle/' . $article->slug),
+                'data' => [
+                    'article_id' => $article->article_id,
+                    'slug' => $article->slug,
+                ],
+            ]);
+        });
+    }
 
     public function author()
     {

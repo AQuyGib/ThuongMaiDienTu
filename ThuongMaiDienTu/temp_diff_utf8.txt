@@ -1,0 +1,1021 @@
+﻿diff --git a/ThuongMaiDienTu/resources/views/videos/index.blade.php b/ThuongMaiDienTu/resources/views/videos/index.blade.php
+index 68a2dab..01817ec 100644
+--- a/ThuongMaiDienTu/resources/views/videos/index.blade.php
++++ b/ThuongMaiDienTu/resources/views/videos/index.blade.php
+@@ -1,191 +1,863 @@
+ @extends('layouts.app')
+ 
+-@section('title', 'Video của tôi')
++@section('title', 'Góc Video Trải Nghiệm Công Nghệ')
+ 
+ @push('styles')
+ <style>
+-    .video-list-page {
+-        padding: 44px 0 64px;
++    /* ============================================================
++     * ULTRA MODERN LIGHT - TECH JOURNAL PORTAL DESIGN SYSTEM
++     * ============================================================
++     */
++    .video-page-shell {
++        background-color: #f8fafc;
++        color: #0f172a;
++        min-height: 100vh;
+     }
+ 
+-    .video-list-shell {
+-        max-width: 1180px;
+-        margin: 0 auto;
++    /* Minimalist luxury header */
++    .section-title-wrapper {
++        position: relative;
++        padding-bottom: 12px;
++        border-bottom: 2px solid #e2e8f0;
+     }
+-
+-    .video-list-hero {
+-        background: linear-gradient(135deg, #0046ab 0%, #0061f2 100%);
+-        color: #fff;
+-        border-radius: 22px;
+-        padding: 26px 28px;
+-        box-shadow: var(--shadow-premium);
+-        margin-bottom: 22px;
++    
++    .section-title-wrapper::after {
++        content: '';
++        position: absolute;
++        bottom: -2px;
++        left: 0;
++        width: 80px;
++        height: 2px;
++        background-color: #0046ab;
+     }
+ 
+-    .video-list-hero h1 {
+-        font-size: 26px;
+-        font-weight: 800;
+-        margin-bottom: 6px;
++    /* Category filter tabs bar */
++    .filter-tab {
++        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
++        font-weight: 700;
++        font-size: 13px;
++        letter-spacing: 0.02em;
+     }
+ 
+-    .video-list-hero p {
+-        font-size: 14px;
+-        opacity: .92;
++    /* Video player container design (Cinema Aspect + Floating details) */
++    .player-card {
++        background: #ffffff;
++        border: 1px solid #e2e8f0;
++        border-radius: 24px;
++        box-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.12);
++        overflow: hidden;
+     }
+ 
+-    .video-filter-bar,
+-    .video-table-card {
+-        background: #fff;
+-        border: 1px solid var(--border-color);
+-        border-radius: 18px;
+-        box-shadow: var(--shadow-premium);
++    .video-player-frame {
++        position: relative;
++        aspect-ratio: 16 / 9;
++        min-height: 500px;
++        background: #020617;
+         overflow: hidden;
+     }
++    
++    @media (max-width: 1024px) {
++        .video-player-frame {
++            min-height: 380px;
++        }
++    }
++    @media (max-width: 768px) {
++        .video-player-frame {
++            min-height: 250px;
++        }
++    }
+ 
+-    .status-pill {
++    /* Source switcher integrated pill */
++    .pill-switcher {
++        background: rgba(241, 245, 249, 0.9);
++        border: 1px solid #e2e8f0;
++        border-radius: 14px;
++        padding: 3px;
+         display: inline-flex;
+-        align-items: center;
+-        gap: 6px;
+-        padding: 7px 12px;
+-        border-radius: 999px;
+-        font-size: 12px;
+-        font-weight: 800;
+-        letter-spacing: .02em;
+-        text-transform: capitalize;
+-        box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
+-    }
+-    .status-pending {
+-        background: linear-gradient(135deg, #fef3c7, #fde68a);
+-        color: #92400e;
+-        border: 1px solid #f59e0b33;
+-    }
+-    .status-published {
+-        background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+-        color: #166534;
+-        border: 1px solid #22c55e33;
+-    }
+-    .status-hidden {
+-        background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+-        color: #334155;
+-        border: 1px solid #94a3b833;
+-    }
+-
+-    .video-thumb {
+-        width: 110px;
+-        height: 70px;
+-        border-radius: 12px;
+-        object-fit: cover;
+-        background: #f8fafc;
++        gap: 2px;
++    }
++
++    .switcher-btn {
++        font-size: 11px;
++        font-weight: 700;
++        padding: 6px 12px;
++        border-radius: 10px;
++        transition: all 0.25s ease;
++    }
++
++    .switcher-btn.active {
++        background: #0046ab;
++        color: #ffffff;
++        box-shadow: 0 4px 10px -2px rgba(0, 70, 171, 0.25);
++    }
++
++    /* Playlist sidebar styling */
++    .playlist-card {
++        background: #ffffff;
+         border: 1px solid #e2e8f0;
++        border-radius: 24px;
++        box-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.12);
++        display: flex;
++        flex-col: column;
+     }
+ 
+-    .empty-state {
+-        padding: 50px 24px;
+-        text-align: center;
+-        color: #64748b;
++    .playlist-scroll {
++        max-height: 500px;
++        overflow-y: auto;
+     }
+ 
+-    @media (max-width: 768px) {
+-        .video-list-page { padding: 18px 0 34px; }
+-        .video-list-hero { padding: 20px; border-radius: 18px; }
+-        .video-list-hero h1 { font-size: 22px; }
++    .playlist-item {
++        border-bottom: 1px solid #f1f5f9;
++        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
++    }
++
++    .playlist-item:last-child {
++        border-bottom: none;
++    }
++
++    .playlist-item:hover {
++        background-color: #f8fafc;
++        transform: translateX(4px);
++    }
++
++    .playlist-item.active {
++        background-color: #f0f7ff;
++        border-left: 4px solid #0046ab;
++        padding-left: 8px;
++    }
++
++    .playlist-item.active h4 {
++        color: #0046ab;
++    }
++
++    .playlist-scroll::-webkit-scrollbar {
++        width: 4px;
++    }
++    .playlist-scroll::-webkit-scrollbar-track {
++        background: transparent;
++    }
++    .playlist-scroll::-webkit-scrollbar-thumb {
++        background: rgba(148, 163, 184, 0.3);
++        border-radius: 10px;
++    }
++
++    /* Equalizer Soundwave */
++    .equalizer-container {
++        display: none;
++        align-items: flex-end;
++        gap: 2.5px;
++        width: 14px;
++        height: 12px;
++    }
++
++    .playlist-item.active .equalizer-container {
++        display: inline-flex;
++    }
++
++    .eq-bar {
++        width: 2.5px;
++        background-color: #0046ab;
++        border-radius: 1px;
++        animation: eq-bounce 0.8s ease-in-out infinite alternate;
++        transform-origin: bottom;
++    }
++
++    .eq-bar-1 { height: 100%; animation-delay: 0.1s; }
++    .eq-bar-2 { height: 60%; animation-delay: 0.3s; }
++    .eq-bar-3 { height: 80%; animation-delay: 0.5s; }
++
++    @keyframes eq-bounce {
++        0% { transform: scaleY(0.25); }
++        100% { transform: scaleY(1); }
++    }
++
++    /* Interactive Bottom Cards Grid */
++    .grid-card {
++        background: #ffffff;
++        border: 1px solid #e2e8f0;
++        border-radius: 20px;
++        overflow: hidden;
++        box-shadow: 0 4px 15px -2px rgba(148, 163, 184, 0.08);
++        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
++    }
++
++    .grid-card:hover {
++        transform: translateY(-5px);
++        box-shadow: 0 12px 25px -5px rgba(0, 70, 171, 0.12);
++        border-color: rgba(0, 70, 171, 0.2);
++    }
++
++    .grid-thumb {
++        position: relative;
++        aspect-ratio: 16 / 9;
++        overflow: hidden;
++        background: #f1f5f9;
++    }
++
++    .grid-thumb img {
++        width: 100%;
++        height: 100%;
++        object-fit: cover;
++        transition: transform 0.5s ease;
++    }
++
++    .grid-card:hover .grid-thumb img {
++        transform: scale(1.05);
++    }
++
++    .play-overlay-circle {
++        position: absolute;
++        inset: 0;
++        background: rgba(15, 23, 42, 0.1);
++        display: grid;
++        place-items: center;
++        opacity: 0;
++        transition: all 0.3s ease;
++    }
++
++    .grid-card:hover .play-overlay-circle {
++        opacity: 1;
++        background: rgba(15, 23, 42, 0.25);
++    }
++
++    .play-icon-badge {
++        width: 44px;
++        height: 44px;
++        border-radius: 50%;
++        background: #ffffff;
++        color: #0046ab;
++        display: grid;
++        place-items: center;
++        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
++        transform: scale(0.85);
++        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
++    }
++
++    .grid-card:hover .play-icon-badge {
++        transform: scale(1);
++        background: #0046ab;
++        color: #ffffff;
++    }
++
++    /* Heart Pop animation */
++    @keyframes heart-pop-scale {
++        0% { transform: scale(1); }
++        50% { transform: scale(1.4); }
++        100% { transform: scale(1); }
++    }
++    .heart-pop {
++        animation: heart-pop-scale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
++    }
++
++    /* General classes helpers */
++    .text-primary { color: #0046ab !important; }
++    .bg-primary { background-color: #0046ab !important; }
++    .text-secondary { color: #ffcf00 !important; }
++    .text-danger { color: #ef4444 !important; }
++    
++    .grid { display: grid; }
++    .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
++    .gap-4 { gap: 1rem; }
++    .gap-6 { gap: 1.5rem; }
++    .gap-8 { gap: 2rem; }
++
++    @media (min-width: 640px) {
++        .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++        .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
++    }
++    @media (min-width: 1024px) {
++        .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
++        .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
++        .lg\:col-span-2 { grid-column: span 2 / span 2; }
++    }
++
++    .line-clamp-1 {
++        display: -webkit-box;
++        -webkit-line-clamp: 1;
++        -webkit-box-orient: vertical;
++        overflow: hidden;
++    }
++    .line-clamp-2 {
++        display: -webkit-box;
++        -webkit-line-clamp: 2;
++        -webkit-box-orient: vertical;
++        overflow: hidden;
+     }
+ </style>
+ @endpush
+ 
+ @section('content')
+-<div class="video-list-page">
+-    <div class="video-list-shell container">
+-        @if(session('success'))
+-            <div class="alert alert-success mb-4">{{ session('success') }}</div>
+-        @endif
+-
+-        <div class="video-list-hero">
+-            <h1>Video của tôi</h1>
+-            <p>Theo dõi trạng thái video đã tải lên: <strong>pending</strong>, <strong>published</strong>, <strong>hidden</strong>.</p>
+-        </div>
++@php
++    $getVideoUrl = function($path) {
++        if (!$path) return '';
++        if (filter_var($path, FILTER_VALIDATE_URL)) return $path;
++        return asset('storage/' . $path);
++    };
+ 
+-        <div class="video-filter-bar p-4 mb-4">
+-            <form method="GET" action="{{ route('videos.index') }}" class="row g-3 align-items-end">
+-                <div class="col-md-4">
+-                    <label class="form-label fw-bold">Trạng thái</label>
+-                    <select name="status" class="form-select">
+-                        <option value="">Tất cả</option>
+-                        <option value="pending" @selected(request('status') === 'pending')>Pending</option>
+-                        <option value="published" @selected(request('status') === 'published')>Published</option>
+-                        <option value="hidden" @selected(request('status') === 'hidden')>Hidden</option>
+-                    </select>
+-                </div>
+-                <div class="col-md-4">
+-                    <a href="{{ route('videos.create') }}" class="btn btn-primary w-100">
+-                        <i class="fa-solid fa-circle-plus me-1"></i> Upload video mới
+-                    </a>
++    $getThumbUrl = function($path) {
++        if (!$path) return 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=800&q=80';
++        if (filter_var($path, FILTER_VALIDATE_URL)) return $path;
++        return asset('storage/' . $path);
++    };
++
++    // Active featured video setup
++    $featured_video = $videos->first();
++    $selected_id = request()->integer('id');
++    if ($selected_id > 0) {
++        $found = $videos->firstWhere('id', $selected_id);
++        if ($found) $featured_video = $found;
++    }
++
++    // Get categories dynamically
++    $categories = $videos->pluck('category')->unique()->filter()->values();
++@endphp
++
++<div class="video-page-shell pb-20">
++    @if($videos->isEmpty())
++        <div class="container mx-auto px-4 py-20 flex items-center justify-center min-h-[70vh]">
++            <div class="text-center p-12 max-w-lg bg-white rounded-3xl border border-slate-200 shadow-xl">
++                <div class="w-24 h-24 mx-auto mb-6 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
++                    <i class="fa-solid fa-video-slash text-3xl"></i>
+                 </div>
+-                <div class="col-md-4">
+-                    <button class="btn btn-outline-secondary w-100" type="submit">
+-                        <i class="fa-solid fa-filter me-1"></i> Lọc
+-                    </button>
++                <h2 class="text-xl font-bold text-slate-800 mb-2">Góc Video đang cập nhật</h2>
++                <p class="text-slate-500 text-sm mb-6 leading-relaxed">
++                    Hiện chưa có video review nào khả dụng. Vui lòng liên hệ quản trị viên hoặc quay lại sau!
++                </p>
++                <a href="{{ url('/') }}" class="px-6 py-2.5 rounded-xl bg-primary text-white font-bold hover:bg-blue-800 transition">
++                    Quay về Trang chủ
++                </a>
++            </div>
++        </div>
++    @else
++        <!-- TOP NAVIGATION BANNER & TITLE -->
++        <div class="bg-white border-b border-slate-200 py-6 mb-8">
++            <div class="container mx-auto px-4">
++                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
++                    <div>
++                        <div class="section-title-wrapper">
++                            <h1 class="text-2xl md:text-3xl font-black tracking-tight text-slate-900 uppercase">
++                                Góc Video Trải Nghiệm
++                            </h1>
++                        </div>
++                        <p class="text-slate-500 text-xs md:text-sm mt-2">
++                            Xem video cận cảnh review sản phẩm & mẹo hướng dẫn từ chuyên gia kỹ thuật.
++                        </p>
++                    </div>
++
++                    <!-- Category Tab Filters -->
++                    <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
++                        <button onclick="filterCategory('all')" class="filter-tab px-4 py-2 rounded-full bg-primary text-white shadow-sm hover:shadow transition-all whitespace-nowrap">
++                            Tất cả
++                        </button>
++                        @foreach($categories as $cat)
++                            <button onclick="filterCategory('{{ $cat }}')" class="filter-tab px-4 py-2 rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition-all whitespace-nowrap">
++                                {{ $cat }}
++                            </button>
++                        @endforeach
++                    </div>
+                 </div>
+-            </form>
++            </div>
+         </div>
+ 
+-        <div class="video-table-card">
+-            <div class="table-responsive">
+-                <table class="table align-middle mb-0">
+-                    <thead class="table-light">
+-                        <tr>
+-                            <th>Video</th>
+-                            <th>Tiêu đề</th>
+-                            <th>Mô tả</th>
+-                            <th>Trạng thái</th>
+-                            <th>Ngày tải lên</th>
+-                        </tr>
+-                    </thead>
+-                    <tbody>
+-                        @forelse($videos as $video)
+-                            <tr>
+-                                <td>
+-                                    @if($video->thumbnail_path)
+-                                        <img src="{{ asset('storage/' . $video->thumbnail_path) }}" alt="thumb" class="video-thumb">
+-                                    @else
+-                                        <div class="video-thumb d-flex align-items-center justify-content-center text-slate-400">
+-                                            <i class="fa-regular fa-image"></i>
+-                                        </div>
+-                                    @endif
+-                                </td>
+-                                <td>
+-                                    <div class="fw-bold">{{ $video->title }}</div>
+-                                    <div class="text-muted small">{{ number_format(($video->file_size ?? 0) / 1024 / 1024, 2) }} MB</div>
+-                                </td>
+-                                <td class="text-muted" style="max-width: 320px;">{{ $video->description ?: 'Không có mô tả' }}</td>
+-                                <td>
+-                                    <span class="status-pill status-{{ $video->status }}">
+-                                        <i class="fa-solid fa-circle"></i> {{ $video->status }}
++        <main class="container mx-auto px-4">
++            <!-- MAIN ROW: PLAYER + PLAYLIST SIDEBAR -->
++            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
++                
++                <!-- LEFT COLUMN: Main Cinematic Player -->
++                <div class="lg:col-span-2 player-card">
++                    <!-- Top control bar on the player card -->
++                    <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
++                        <div class="flex items-center gap-2">
++                            <span id="player-category" class="px-2.5 py-0.5 rounded-md bg-blue-50 text-primary text-[10px] font-extrabold uppercase border border-blue-100 tracking-wider">
++                                {{ $featured_video->category ?: 'Smart Home' }}
++                            </span>
++                            <span class="px-2 py-0.5 rounded-md bg-red-50 text-danger text-[10px] font-bold border border-red-100 flex items-center gap-1 animate-pulse">
++                                <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span> Đang xem
++                            </span>
++                        </div>
++
++                        <!-- Source Switcher integrated -->
++                        <div id="source-switcher" class="pill-switcher {{ !$featured_video->youtube_url ? 'hidden' : '' }}">
++                            <button id="src-mp4-btn" onclick="switchSource('mp4')" class="switcher-btn active">
++                                <i class="fa-solid fa-file-video mr-0.5"></i> MP4
++                            </button>
++                            <button id="src-yt-btn" onclick="switchSource('youtube')" class="switcher-btn text-red-500 hover:text-red-600">
++                                <i class="fa-brands fa-youtube mr-0.5"></i> YouTube
++                            </button>
++                        </div>
++                    </div>
++
++                    <!-- Expanded Cinematic Player Video Frame -->
++                    <div class="video-player-frame">
++                        <div id="mp4-player-container" class="w-full h-full">
++                            <video id="main-video-player" class="w-full h-full object-cover" controls preload="auto" poster="{{ $getThumbUrl($featured_video->thumbnail_path) }}" src="{{ $getVideoUrl($featured_video->video_path) }}">
++                                Trình duyệt của bạn không hỗ trợ phát video HTML5.
++                            </video>
++                        </div>
++
++                        <div id="youtube-player-container" class="w-full h-full hidden">
++                            <iframe id="main-youtube-player" class="w-full h-full border-0 absolute inset-0" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
++                        </div>
++                    </div>
++
++                    <!-- Info and Actions -->
++                    <div class="p-6">
++                        <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 border-b border-slate-100">
++                            <div>
++                                <h2 id="player-title" class="text-xl md:text-2xl font-extrabold text-slate-800 leading-tight">
++                                    {{ $featured_video->title }}
++                                </h2>
++                                <div class="flex items-center gap-4 text-xs text-slate-400 mt-2">
++                                    <span id="player-date" class="flex items-center gap-1">
++                                        <i class="fa-regular fa-calendar"></i> Cập nhật ngày: {{ optional($featured_video->published_at ?: $featured_video->created_at)->format('d/m/Y') }}
++                                    </span>
++                                    <span id="player-views" class="flex items-center gap-1">
++                                        <i class="fa-solid fa-eye text-primary"></i> {{ number_format($featured_video->views) }} lượt xem
+                                     </span>
+-                                </td>
+-                                <td>{{ optional($video->created_at)->format('d/m/Y H:i') }}</td>
+-                            </tr>
+-                        @empty
+-                            <tr>
+-                                <td colspan="5">
+-                                    <div class="empty-state">
+-                                        <i class="fa-solid fa-video fa-2x mb-3 text-primary"></i>
+-                                        <h3 class="h5 fw-bold text-slate-900">Bạn chưa có video nào</h3>
+-                                        <p class="mb-3">Hãy upload video đầu tiên để bắt đầu.</p>
+-                                        <a href="{{ route('videos.create') }}" class="btn btn-primary">
+-                                            <i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload video
+-                                        </a>
++                                </div>
++                            </div>
++
++                            <!-- Floating Action Buttons -->
++                            <div class="flex items-center gap-2 shrink-0">
++                                <button id="like-btn" onclick="toggleLikeCurrentVideo()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-all border border-slate-200/40 text-xs">
++                                    <i id="like-icon" class="fa-regular fa-heart text-red-500"></i>
++                                    <span>Thích</span>
++                                    <span id="like-count" class="bg-white px-2 py-0.5 rounded-md text-[10px] text-slate-500 border border-slate-200/50 shadow-sm font-extrabold">{{ $featured_video->likes }}</span>
++                                </button>
++
++                                <button id="share-btn" onclick="shareCurrentVideo()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-all border border-slate-200/40 text-xs">
++                                    <i class="fa-solid fa-share text-blue-500"></i>
++                                    <span>Chia sẻ</span>
++                                </button>
++                            </div>
++                        </div>
++
++                        <p id="player-desc" class="text-slate-600 mt-4 leading-relaxed text-sm">
++                            {{ $featured_video->description ?: 'Chưa có mô tả chi tiết cho video này.' }}
++                        </p>
++                    </div>
++                </div>
++
++                <!-- RIGHT COLUMN: Playlist sidebar -->
++                <div class="playlist-card p-4">
++                    <h3 class="font-extrabold text-slate-800 text-sm mb-3 pb-3 border-b border-slate-100 flex items-center justify-between">
++                        <span class="flex items-center gap-1.5">
++                            <i class="fa-solid fa-list-ul text-primary"></i> Danh sách phát
++                        </span>
++                        <span id="playlist-count" class="text-[10px] font-extrabold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
++                            {{ $videos->count() }} Video
++                        </span>
++                    </h3>
++
++                    <div class="playlist-scroll pr-1 flex flex-col gap-1.5">
++                        @foreach($videos as $v)
++                            <button id="playlist-item-{{ $v->id }}" onclick="playVideo({{ $v->id }})" data-category="{{ $v->category }}" class="w-full text-left playlist-item p-2 flex gap-3 items-center rounded-xl {{ $v->id == $featured_video->id ? 'active' : '' }}">
++                                <div class="w-20 h-12 rounded-lg overflow-hidden shrink-0 bg-slate-100 relative shadow-sm border border-slate-200/50">
++                                    <img src="{{ $getThumbUrl($v->thumbnail_path) }}" class="w-full h-full object-cover" alt="thumbnail">
++                                    <span class="absolute bottom-0.5 right-0.5 bg-black/75 text-white text-[8px] font-bold px-1 py-0.5 rounded leading-none">
++                                        {{ $v->duration ?: '0:00' }}
++                                    </span>
++                                </div>
++                                <div class="flex-1 min-w-0">
++                                    <span class="text-[8px] font-bold text-primary uppercase block leading-none mb-1">
++                                        {{ $v->category ?: 'REVIEW' }}
++                                    </span>
++                                    <h4 class="font-bold text-slate-700 text-xs line-clamp-1 leading-snug">{{ $v->title }}</h4>
++                                    <div class="flex items-center gap-1.5 mt-1">
++                                        <span class="text-[9px] text-slate-400"><i class="fa-solid fa-eye text-[8px]"></i> {{ number_format($v->views) }}</span>
++                                        
++                                        <!-- Soundwave playing icon -->
++                                        <div class="equalizer-container ms-auto">
++                                            <div class="eq-bar eq-bar-1"></div>
++                                            <div class="eq-bar eq-bar-2"></div>
++                                            <div class="eq-bar eq-bar-3"></div>
++                                        </div>
+                                     </div>
+-                                </td>
+-                            </tr>
+-                        @endforelse
+-                    </tbody>
+-                </table>
+-            </div>
+-            <div class="p-3 p-md-4">
+-                {{ $videos->links() }}
++                                </div>
++                            </button>
++                        @endforeach
++                    </div>
++
++                    <!-- Sidebar info banner -->
++                    <div class="mt-4 p-4 rounded-xl bg-blue-50 border border-blue-100">
++                        <h4 class="font-extrabold text-xs text-slate-800 flex items-center gap-1.5">
++                            <i class="fa-solid fa-headset text-primary"></i> Đội ngũ hỗ trợ
++                        </h4>
++                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
++                            Toàn bộ video review được thực hiện trực tiếp bởi chuyên gia điện máy chuyên môn cao.
++                        </p>
++                    </div>
++                </div>
+             </div>
+-        </div>
+-    </div>
++
++            <!-- BOTTOM SECTION: Other reviews cards grid -->
++            <section class="mt-14">
++                <div class="flex items-center justify-between mb-6 pb-2 border-b border-slate-200">
++                    <h3 class="text-lg font-extrabold text-slate-800 flex items-center gap-2">
++                        <i class="fa-solid fa-video text-primary text-sm"></i> Các video khác được đề xuất
++                    </h3>
++                </div>
++
++                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
++                    @foreach($videos as $v)
++                        <div class="grid-card cursor-pointer" onclick="playVideo({{ $v->id }})">
++                            <div class="grid-thumb">
++                                <img src="{{ $getThumbUrl($v->thumbnail_path) }}" alt="video thumb">
++                                <div class="play-overlay-circle">
++                                    <span class="play-icon-badge"><i class="fa-solid fa-play"></i></span>
++                                </div>
++                                <span class="absolute bottom-2 right-2 bg-black/75 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
++                                    {{ $v->duration ?: '0:00' }}
++                                </span>
++                            </div>
++                            <div class="p-4">
++                                <span class="text-[9px] font-extrabold text-primary bg-blue-50 px-2 py-0.5 rounded-full uppercase border border-blue-100">
++                                    {{ $v->category ?: 'REVIEW' }}
++                                </span>
++                                <h4 class="font-bold text-slate-800 text-xs mt-2 line-clamp-1 hover:text-primary transition-colors">{{ $v->title }}</h4>
++                                <p class="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
++                                    <i class="fa-solid fa-eye text-[9px]"></i> {{ number_format($v->views) }} lượt xem
++                                </p>
++                            </div>
++                        </div>
++                    @endforeach
++                </div>
++            </section>
++        </main>
++    @endif
+ </div>
+ @endsection
++
++@push('scripts')
++<script>
++    const videosData = @json($videos);
++    const csrfToken = "{{ csrf_token() }}";
++    let currentSourceType = 'mp4';
++    let currentVideoId = @json($featured_video ? $featured_video->id : 0);
++
++    // Interactive category filtering
++    function filterCategory(category) {
++        // Adjust style of the tabs
++        const tabs = document.querySelectorAll('.filter-tab');
++        tabs.forEach(tab => {
++            tab.classList.remove('bg-primary', 'text-white', 'shadow-sm');
++            tab.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
++        });
++
++        const activeTab = event.currentTarget;
++        activeTab.classList.add('bg-primary', 'text-white', 'shadow-sm');
++        activeTab.classList.remove('bg-white', 'text-slate-600', 'border', 'border-slate-200');
++
++        // Filter playlist items
++        let visibleCount = 0;
++        document.querySelectorAll('.playlist-item').forEach(item => {
++            const itemCat = item.getAttribute('data-category');
++            if (category === 'all' || itemCat === category) {
++                item.style.display = 'flex';
++                visibleCount++;
++            } else {
++                item.style.display = 'none';
++            }
++        });
++
++        // Update display count
++        document.getElementById('playlist-count').innerText = `${visibleCount} Video`;
++    }
++
++    function switchSource(type) {
++        currentSourceType = type;
++        const mp4Btn = document.getElementById('src-mp4-btn');
++        const ytBtn = document.getElementById('src-yt-btn');
++        const mp4Container = document.getElementById('mp4-player-container');
++        const ytContainer = document.getElementById('youtube-player-container');
++        const mp4Player = document.getElementById('main-video-player');
++        const ytPlayer = document.getElementById('main-youtube-player');
++
++        const video = videosData.find(v => v.id == currentVideoId);
++        if (!video) return;
++
++        if (type === 'mp4') {
++            mp4Btn.classList.add('bg-primary', 'text-white', 'shadow-sm', 'active');
++            mp4Btn.classList.remove('text-indigo-400', 'hover:text-indigo-500');
++            ytBtn.classList.add('text-red-500', 'hover:text-red-600');
++            ytBtn.classList.remove('bg-primary', 'text-white', 'shadow-sm', 'active');
++
++            mp4Container.classList.remove('hidden');
++            ytContainer.classList.add('hidden');
++
++            ytPlayer.src = '';
++            mp4Player.src = getFullUrl(video.video_path);
++            mp4Player.load();
++            mp4Player.play().catch(() => {});
++        } else {
++            ytBtn.classList.add('bg-primary', 'text-white', 'shadow-sm', 'active');
++            ytBtn.classList.remove('text-red-500', 'hover:text-red-600');
++            mp4Btn.classList.add('text-indigo-400', 'hover:text-indigo-500');
++            mp4Btn.classList.remove('bg-primary', 'text-white', 'shadow-sm', 'active');
++
++            ytContainer.classList.remove('hidden');
++            mp4Container.classList.add('hidden');
++
++            mp4Player.pause();
++            let ytEmbed = video.youtube_url;
++            if (ytEmbed && !ytEmbed.includes('autoplay=')) {
++                ytEmbed += (ytEmbed.includes('?') ? '&' : '?') + 'autoplay=1&rel=0';
++            }
++            ytPlayer.src = ytEmbed;
++        }
++    }
++
++    function getFullUrl(path) {
++        if (!path) return '';
++        if (path.startsWith('http://') || path.startsWith('https://')) {
++            return path;
++        }
++        return `{{ asset('storage') }}/${path}`;
++    }
++
++    function showToast(message, type = 'success') {
++        const oldToast = document.getElementById('custom-toast');
++        if (oldToast) oldToast.remove();
++
++        const toast = document.createElement('div');
++        toast.id = 'custom-toast';
++
++        let bgColor = 'bg-slate-900/90';
++        let icon = '<i class="fa-solid fa-circle-check text-green-400 mr-2"></i>';
++        if (type === 'error') {
++            bgColor = 'bg-red-900/90';
++            icon = '<i class="fa-solid fa-circle-exclamation text-red-400 mr-2"></i>';
++        } else if (type === 'info') {
++            bgColor = 'bg-blue-900/90';
++            icon = '<i class="fa-solid fa-circle-info text-blue-400 mr-2"></i>';
++        }
++
++        toast.className = `fixed-bottom end-0 m-4 z-5 flex items-center px-4 py-3 rounded-xl text-white text-xs font-bold shadow-2xl transition-all duration-300 transform translate-y-10 opacity-0 ${bgColor} border border-white/10 backdrop-blur-md`;
++        toast.style.width = 'fit-content';
++        toast.style.marginLeft = 'auto';
++        toast.innerHTML = `${icon}<span>${message}</span>`;
++
++        document.body.appendChild(toast);
++
++        setTimeout(() => {
++            toast.classList.remove('translate-y-10', 'opacity-0');
++        }, 50);
++
++        setTimeout(() => {
++            toast.classList.add('translate-y-10', 'opacity-0');
++            setTimeout(() => {
++                toast.remove();
++            }, 300);
++        }, 3000);
++    }
++
++    function updateLikeButtonUI(videoId) {
++        const isLiked = localStorage.getItem('liked_video_' + videoId) === 'true';
++        const likeIcon = document.getElementById('like-icon');
++        const likeBtn = document.getElementById('like-btn');
++        const likeCountSpan = document.getElementById('like-count');
++
++        const video = videosData.find(v => v.id == videoId);
++        if (!video) return;
++
++        let baseLikes = parseInt(video.likes || 0);
++
++        if (isLiked) {
++            likeIcon.className = "fa-solid fa-heart text-red-500 scale-110";
++            likeBtn.className = "flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold transition-all border border-red-200/50 shadow-sm text-xs";
++        } else {
++            likeIcon.className = "fa-regular fa-heart text-red-500";
++            likeBtn.className = "flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-all border border-slate-200/40 text-xs";
++        }
++
++        likeCountSpan.innerText = baseLikes;
++    }
++
++    function toggleLikeCurrentVideo() {
++        if (!currentVideoId) return;
++
++        const isLiked = localStorage.getItem('liked_video_' + currentVideoId) === 'true';
++        const action = isLiked ? 'unlike' : 'like';
++
++        const likeIcon = document.getElementById('like-icon');
++        likeIcon.classList.add('heart-pop');
++        setTimeout(() => likeIcon.classList.remove('heart-pop'), 450);
++
++        fetch(`/videos/${currentVideoId}/like`, {
++            method: 'POST',
++            headers: {
++                'Content-Type': 'application/json',
++                'X-CSRF-TOKEN': csrfToken
++            },
++            body: JSON.stringify({ action: action })
++        })
++        .then(res => res.json())
++        .then(data => {
++            if (data.success) {
++                const video = videosData.find(v => v.id == currentVideoId);
++                if (video) {
++                    video.likes = data.likes;
++                }
++
++                if (isLiked) {
++                    localStorage.setItem('liked_video_' + currentVideoId, 'false');
++                    showToast('Đã bỏ thích video.', 'info');
++                } else {
++                    localStorage.setItem('liked_video_' + currentVideoId, 'true');
++                    showToast('Cảm ơn bạn đã thích video này! ❤️', 'success');
++                }
++
++                updateLikeButtonUI(currentVideoId);
++            }
++        })
++        .catch(() => {
++            showToast('Không thể kết nối máy chủ.', 'error');
++        });
++    }
++
++    function copyToClipboard(text) {
++        if (navigator.clipboard && window.isSecureContext) {
++            return navigator.clipboard.writeText(text);
++        } else {
++            const textArea = document.createElement("textarea");
++            textArea.value = text;
++            textArea.style.position = "fixed";
++            textArea.style.opacity = "0";
++            document.body.appendChild(textArea);
++            textArea.focus();
++            textArea.select();
++            try {
++                const successful = document.execCommand('copy');
++                document.body.removeChild(textArea);
++                return successful ? Promise.resolve() : Promise.reject();
++            } catch (err) {
++                document.body.removeChild(textArea);
++                return Promise.reject(err);
++            }
++        }
++    }
++
++    function shareCurrentVideo() {
++        if (!currentVideoId) return;
++
++        const shareUrl = window.location.origin + window.location.pathname + '?id=' + currentVideoId;
++
++        copyToClipboard(shareUrl).then(() => {
++            showToast('Đã sao chép liên kết', 'success');
++        }).catch(() => {
++            showToast('Không thể sao chép, liên kết: ' + shareUrl, 'error');
++        });
++    }
++
++    function incrementViews(videoId) {
++        fetch(`/videos/${videoId}/view`, {
++            method: 'POST',
++            headers: {
++                'Content-Type': 'application/json',
++                'X-CSRF-TOKEN': csrfToken
++            }
++        })
++        .then(res => res.json())
++        .then(data => {
++            if (data.success) {
++                const video = videosData.find(v => v.id == videoId);
++                if (video) {
++                    video.views = data.views;
++                }
++                const viewsSpan = document.getElementById('player-views');
++                if (viewsSpan && currentVideoId == videoId) {
++                    viewsSpan.innerHTML = `<i class="fa-solid fa-eye text-primary mr-1"></i> ${Number(data.views).toLocaleString()} lượt xem`;
++                }
++                // Update views count in the sidebar
++                const itemViews = document.querySelector(`#playlist-item-${videoId} .fa-eye`);
++                if (itemViews && itemViews.nextSibling) {
++                    itemViews.nextSibling.textContent = ` ${Number(data.views).toLocaleString()}`;
++                }
++            }
++        })
++        .catch(err => console.log('Error counting view:', err));
++    }
++
++    function playVideo(id, preventScroll = false) {
++        const video = videosData.find(v => v.id == id);
++        if (!video) return;
++
++        currentVideoId = id;
++        updateLikeButtonUI(id);
++        incrementViews(id);
++
++        const mp4Player = document.getElementById('main-video-player');
++        const ytPlayer = document.getElementById('main-youtube-player');
++
++        const switcher = document.getElementById('source-switcher');
++        if (switcher) {
++            if (video.youtube_url && video.youtube_url.trim() !== '') {
++                switcher.classList.remove('hidden');
++            } else {
++                switcher.classList.add('hidden');
++                if (currentSourceType !== 'mp4') {
++                    switchSource('mp4');
++                    return;
++                }
++            }
++        }
++
++        if (currentSourceType === 'mp4') {
++            mp4Player.src = getFullUrl(video.video_path);
++            mp4Player.poster = getFullUrl(video.thumbnail_path);
++            mp4Player.load();
++            mp4Player.play().catch(() => {});
++
++            ytPlayer.src = '';
++        } else {
++            let ytEmbed = video.youtube_url;
++            if (ytEmbed && !ytEmbed.includes('autoplay=')) {
++                ytEmbed += (ytEmbed.includes('?') ? '&' : '?') + 'autoplay=1&rel=0';
++            }
++            ytPlayer.src = ytEmbed;
++
++            mp4Player.pause();
++        }
++
++        document.getElementById('player-title').innerText = video.title;
++        document.getElementById('player-desc').innerText = video.description || 'Chưa có mô tả chi tiết cho video này.';
++        document.getElementById('player-category').innerText = video.category || 'REVIEW';
++
++        const dateSrc = video.published_at || video.created_at;
++        if (dateSrc) {
++            const videoDate = new Date(dateSrc);
++            const formattedDate = String(videoDate.getDate()).padStart(2, '0') + '/' + String(videoDate.getMonth() + 1).padStart(2, '0') + '/' + videoDate.getFullYear();
++            document.getElementById('player-date').innerText = 'Cập nhật ngày: ' + formattedDate;
++        }
++        
++        document.querySelectorAll('.playlist-item').forEach(item => {
++            item.classList.remove('active');
++        });
++
++        const activeItem = document.getElementById(`playlist-item-${id}`);
++        if (activeItem) {
++            activeItem.classList.add('active');
++            activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
++        }
++
++        if (!preventScroll) {
++            document.getElementById('featured-video').scrollIntoView({ behavior: 'smooth', block: 'start' });
++        }
++    }
++
++    window.addEventListener('DOMContentLoaded', () => {
++        if (currentVideoId) {
++            updateLikeButtonUI(currentVideoId);
++        }
++
++        const urlParams = new URLSearchParams(window.location.search);
++        const urlVideoId = urlParams.get('id');
++        if (urlVideoId) {
++            const videoExists = videosData.some(v => v.id == urlVideoId);
++            if (videoExists && urlVideoId != currentVideoId) {
++                playVideo(urlVideoId, true);
++            }
++        }
++    });
++</script>
++@endpush
