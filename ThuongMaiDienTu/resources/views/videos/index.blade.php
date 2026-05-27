@@ -482,6 +482,9 @@
         if (filter_var($path, FILTER_VALIDATE_URL)) {
             return $path;
         }
+        if (file_exists(public_path($path))) {
+            return asset($path);
+        }
         return asset('storage/' . $path);
     };
 
@@ -607,27 +610,16 @@
             </section>
 
             @php
-                // Get all root categories from database
+                // Get all categories represented in the current videos list
                 $all_categories = [];
-                foreach($categories as $cat) {
-                    $all_categories[$cat->category_id] = $cat->name;
-                }
-                
-                // Add any missing custom category strings from the videos list if they don't match db names
                 foreach($videos as $v) {
-                    if (!$v->category_id && $v->category) {
-                        $matches_db = false;
-                        foreach($all_categories as $db_name) {
-                            if (mb_strtolower($db_name) === mb_strtolower($v->category)) {
-                                $matches_db = true;
-                                break;
-                            }
-                        }
-                        if (!$matches_db && !in_array($v->category, $all_categories)) {
-                            $all_categories[$v->category] = $v->category;
-                        }
+                    if ($v->category_id) {
+                        $all_categories[$v->category_id] = $v->categoryRel ? $v->categoryRel->name : ($v->category ?: 'REVIEW');
+                    } elseif ($v->category) {
+                        $all_categories[$v->category] = $v->category;
                     }
                 }
+                asort($all_categories);
             @endphp
 
             <!-- CATEGORY FILTER PILLS -->
