@@ -16,7 +16,7 @@ class VideoManagementController extends Controller
 
     public function create()
     {
-        $categories = \App\Models\Category::whereHas('products')->orderBy('name')->get();
+        $categories = \App\Models\Category::whereNull('parent_id')->orderBy('name')->get();
         return view('admin.videos.create', compact('categories'));
     }
 
@@ -127,7 +127,7 @@ class VideoManagementController extends Controller
 
     public function edit(Video $video)
     {
-        $categories = \App\Models\Category::whereHas('products')->orderBy('name')->get();
+        $categories = \App\Models\Category::whereNull('parent_id')->orderBy('name')->get();
         return view('admin.videos.edit', compact('video', 'categories'));
     }
 

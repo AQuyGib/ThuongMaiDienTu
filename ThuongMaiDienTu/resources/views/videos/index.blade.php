@@ -482,6 +482,9 @@
         if (filter_var($path, FILTER_VALIDATE_URL)) {
             return $path;
         }
+        if (file_exists(public_path($path))) {
+            return asset($path);
+        }
         return asset('storage/' . $path);
     };
 
@@ -497,6 +500,15 @@
         if ($found) {
             $featured_video = $found;
         }
+    }
+
+    $hasMp4 = false;
+    $hasYoutube = false;
+    $defaultSource = 'mp4';
+    if ($featured_video) {
+        $hasMp4 = !empty($featured_video->video_path);
+        $hasYoutube = !empty($featured_video->youtube_url);
+        $defaultSource = $hasMp4 ? 'mp4' : ($hasYoutube ? 'youtube' : 'mp4');
     }
 @endphp
 
@@ -519,7 +531,7 @@
                     <a href="{{ url('/') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-blue-800 transition shadow-md">
                         <i class="fa-solid fa-house"></i> Quay về Trang chủ
                     </a>
-                    <a href="{{ url('/#support') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-50 border border-gray-200 text-gray-600 font-semibold hover:bg-slate-100 transition">
+                    <a href="javascript:void(0)" onclick="chatbotToggle()" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-50 border border-gray-200 text-gray-600 font-semibold hover:bg-slate-100 transition">
                         <i class="fa-solid fa-headset text-primary"></i> Trợ giúp trực tuyến
                     </a>
                 </div>
@@ -568,7 +580,7 @@
                                     </span>
                                 </div>
                                 <span class="text-[10px] font-bold text-primary bg-blue-50 px-2 py-0.5 rounded-full uppercase">
-                                    {{ $hero_video_1->category ?: 'REVIEW' }}
+                                    {{ $hero_video_1->category_name }}
                                 </span>
                                 <h3 class="font-bold text-gray-800 text-sm mt-1.5 line-clamp-1">{{ $hero_video_1->title }}</h3>
                                 <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ $hero_video_1->description ?: 'Không có mô tả' }}</p>
@@ -587,7 +599,7 @@
                                     </span>
                                 </div>
                                 <span class="text-[10px] font-bold text-primary bg-blue-50 px-2 py-0.5 rounded-full uppercase">
-                                    {{ $hero_video_2->category ?: 'REVIEW' }}
+                                    {{ $hero_video_2->category_name }}
                                 </span>
                                 <h3 class="font-bold text-gray-800 text-sm mt-1.5 line-clamp-1">{{ $hero_video_2->title }}</h3>
                                 <p class="text-xs text-gray-500 mt-1 line-clamp-2">{{ $hero_video_2->description ?: 'Không có mô tả' }}</p>
@@ -598,27 +610,19 @@
             </section>
 
             @php
-                // Get all root categories from database
+                // Get all parent categories represented in the current videos list
                 $all_categories = [];
-                foreach($categories as $cat) {
-                    $all_categories[$cat->category_id] = $cat->name;
-                }
-                
-                // Add any missing custom category strings from the videos list if they don't match db names
                 foreach($videos as $v) {
-                    if (!$v->category_id && $v->category) {
-                        $matches_db = false;
-                        foreach($all_categories as $db_name) {
-                            if (mb_strtolower($db_name) === mb_strtolower($v->category)) {
-                                $matches_db = true;
-                                break;
-                            }
-                        }
-                        if (!$matches_db && !in_array($v->category, $all_categories)) {
-                            $all_categories[$v->category] = $v->category;
-                        }
+                    $root = $v->getRootCategory();
+                    if ($root) {
+                        $all_categories[$root->category_id] = $root->name;
+                    } elseif ($v->category_id) {
+                        $all_categories[$v->category_id] = $v->categoryRel ? $v->categoryRel->name : ($v->category ?: 'REVIEW');
+                    } elseif ($v->category) {
+                        $all_categories[$v->category] = $v->category;
                     }
                 }
+                asort($all_categories);
             @endphp
 
             <!-- CATEGORY FILTER PILLS -->
@@ -654,18 +658,12 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span id="player-category" class="px-2.5 py-1 rounded-full bg-blue-50 text-primary text-xs font-bold uppercase tracking-wider">
-                                    {{ $featured_video->category ?: 'Smart Home' }}
+                                    {{ $featured_video->category_name }}
                                 </span>
                                 <span class="px-2.5 py-1 rounded-full bg-red-50 text-danger text-xs font-bold animate-pulse">
                                     🔥 Đang chiếu
                                 </span>
                             </div>
-
-                            @php
-                                $hasMp4 = !empty($featured_video->video_path);
-                                $hasYoutube = !empty($featured_video->youtube_url);
-                                $defaultSource = $hasMp4 ? 'mp4' : ($hasYoutube ? 'youtube' : 'mp4');
-                            @endphp
                             <!-- BỘ CHUYỂN NGUỒN PHÁT DỰ PHÒNG -->
                             <div id="source-switcher" class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start text-[11px] font-bold text-gray-700 {{ (!$hasMp4 || !$hasYoutube) ? 'hidden' : '' }}">
                                 <span class="px-1.5 text-gray-500 uppercase text-[9px]">Nguồn:</span>
@@ -789,7 +787,7 @@
                                         $parentId = $v->categoryRel->parent_id;
                                     }
                                 @endphp
-                                <button id="playlist-item-{{ $v->id }}" onclick="playVideo({{ $v->id }})" data-category-id="{{ $v->category_id }}" data-parent-id="{{ $parentId }}" data-category-name="{{ $v->category }}" data-video-id="{{ $v->id }}" class="w-full text-left playlist-item p-2.5 flex gap-3 items-center rounded-xl hover:bg-slate-50 transition-all border border-gray-100 {{ $v->id == $featured_video->id ? 'active' : '' }}">
+                                <button id="playlist-item-{{ $v->id }}" onclick="playVideo({{ $v->id }})" data-category-id="{{ $v->getRootCategory() ? $v->getRootCategory()->category_id : $v->category_id }}" data-parent-id="{{ $parentId }}" data-category-name="{{ $v->category_name }}" data-video-id="{{ $v->id }}" class="w-full text-left playlist-item p-2.5 flex gap-3 items-center rounded-xl hover:bg-slate-50 transition-all border border-gray-100 {{ $v->id == $featured_video->id ? 'active' : '' }}">
                                     <div class="w-24 h-14 rounded-lg overflow-hidden shrink-0 bg-blue-50 relative shadow-sm border border-gray-200/40">
                                         <img src="{{ $getThumbUrl($v->thumbnail_path) }}" class="w-full h-full object-cover" alt="thumbnail">
                                         <span class="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold px-1 py-0.5 rounded leading-none">
@@ -798,7 +796,7 @@
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <span class="text-[9px] font-bold text-primary uppercase tracking-wider block leading-none mb-1">
-                                            {{ $v->category ?: 'REVIEW' }}
+                                            {{ $v->category_name }}
                                         </span>
                                         <h4 class="font-extrabold text-gray-800 text-xs line-clamp-2 leading-snug">{{ $v->title }}</h4>
                                         <div class="flex items-center gap-1.5 mt-1">
@@ -1247,7 +1245,7 @@
 
         document.getElementById('player-title').innerText = video.title;
         document.getElementById('player-desc').innerText = video.description || 'Chưa có mô tả chi tiết cho video này.';
-        document.getElementById('player-category').innerText = video.category || 'REVIEW';
+        document.getElementById('player-category').innerText = video.category_name || 'REVIEW';
 
         const dateSrc = video.published_at || video.created_at;
         if (dateSrc) {
