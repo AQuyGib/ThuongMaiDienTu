@@ -843,24 +843,45 @@ function showProductToast(msg) {
     }
 }
 
-function buyNow() {
-    window.location.href = "{{ route('cart.index') }}";
+function addToCart(redirect = false) {
+    const data = {
+        product_id: '{{ $product->product_id }}',
+        quantity: 1
+    };
+
+    fetch('{{ route("cart.add") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(res => {
+        if(res.status === 'success') {
+            if (redirect) {
+                window.location.href = "{{ route('cart.index') }}";
+            } else {
+                showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
+                const headerBadge = document.getElementById('headerCartBadge');
+                if (headerBadge && res.cart_count !== undefined) {
+                    headerBadge.innerText = res.cart_count;
+                    headerBadge.style.display = res.cart_count > 0 ? 'block' : 'none';
+                }
+            }
+        } else if(res.error) {
+            showToast(res.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Đã xảy ra lỗi khi thêm vào giỏ hàng!', 'error');
+    });
 }
 
-function addToCart() {
-    showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
-    
-    // Update cart count logic
-    let userId = '{{ Auth::id() ?? "guest" }}';
-    let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || 0);
-    cartCount++;
-    localStorage.setItem('cartCount_' + userId, cartCount);
-    
-    const headerBadge = document.getElementById('headerCartBadge');
-    if (headerBadge) {
-        headerBadge.innerText = cartCount;
-        headerBadge.style.display = 'block';
-    }
+function buyNow() {
+    addToCart(true);
 }
 
 // Wishlist Toggle

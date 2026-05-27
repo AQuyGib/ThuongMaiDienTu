@@ -263,9 +263,12 @@ const fmt = n => new Intl.NumberFormat('vi-VN').format(n || 0) + 'đ';
 // ---- LOAD CART FROM SESSIONSTORAGE ----
 function loadCart() {
   try {
-    const raw = sessionStorage.getItem('checkoutItems');
-    if (raw) cartItems = JSON.parse(raw);
-  } catch(e) {}
+    const raw = '{!! json_encode($cartItems) !!}';
+    cartItems = JSON.parse(raw);
+  } catch(e) {
+    console.error("Lỗi nạp giỏ hàng từ server:", e);
+    cartItems = [];
+  }
 
   renderItems();
 }
@@ -397,39 +400,66 @@ function checkFormValidity() {
 document.getElementById('checkout-form')?.addEventListener('submit', function (e) {
   e.preventDefault();
 
+  const name = document.getElementById('inp-name').value.trim();
+  const phone = document.getElementById('inp-phone').value.trim();
+  const addr = document.getElementById('inp-address').value.trim();
+  const note = document.getElementById('inp-note').value.trim();
+  const discountInp = document.getElementById('discount-code');
+  const discountCode = discountInp && discountInp.readOnly ? discountInp.value.trim().toUpperCase() : '';
+
+  if (!name || !phone || !addr) return;
+
   const btn = document.getElementById('btn-order');
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang xử lý...';
   btn.disabled = true;
 
-  const payload = new FormData(this);
-  payload.set('customer_name', document.getElementById('inp-name').value.trim());
-  payload.set('customer_phone', document.getElementById('inp-phone').value.trim());
-  payload.set('shipping_address', document.getElementById('inp-address').value.trim());
-  payload.set('note', document.getElementById('inp-note').value.trim());
-  payload.set('payment_method', currentMethod === 'qr' ? 'VNPAY' : 'COD');
+  const data = {
+    name: name,
+    phone: phone,
+    address: addr,
+    note: note,
+    payment_method: currentMethod,
+    discount_code: discountCode
+  };
 
-  fetch(this.action, {
+  fetch('{{ route("cart.confirm") }}', {
     method: 'POST',
     headers: {
-      'X-CSRF-TOKEN': document.querySelector('input[name=_token]').value,
-      'Accept': 'application/json'
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': '{{ csrf_token() }}'
     },
-    body: payload
+    body: JSON.stringify(data)
   })
-    .then(async (response) => {
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Không thể tạo đơn hàng');
+  .then(response => response.json())
+  .then(res => {
+    if (res.status === 'success') {
+      const badge = document.getElementById('headerCartBadge');
+      if (badge) {
+        fetch('{{ route("cart.count") }}')
+          .then(r => r.json())
+          .then(d => {
+             badge.innerText = d.cart_count;
+             if (d.cart_count === 0) badge.style.display = 'none';
+          });
       }
-      sessionStorage.removeItem('checkoutItems');
-      sessionStorage.removeItem('paymentTotal');
-      window.location.href = data.redirect_url;
-    })
-    .catch((error) => {
-      alert(error.message || 'Đã xảy ra lỗi');
-      btn.disabled = false;
+
+      if (currentMethod === 'qr') {
+        window.location.href = "{{ route('cart.qr') }}?order_id=" + res.order_id;
+      } else {
+        document.getElementById('success-overlay').classList.remove('hidden');
+      }
+    } else {
+      alert(res.message || 'Đã xảy ra lỗi khi đặt hàng!');
       btn.innerHTML = '<i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG';
-    });
+      btn.disabled = false;
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Đã xảy ra lỗi hệ thống!');
+    btn.innerHTML = '<i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG';
+    btn.disabled = false;
+  });
 });
 
 // ---- INIT ----

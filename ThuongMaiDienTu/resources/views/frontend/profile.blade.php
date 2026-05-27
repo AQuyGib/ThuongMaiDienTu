@@ -2286,9 +2286,9 @@
             if(data.status === 'success' || data.success) {
                 showToast('Thành công', data.message || 'Đã thêm sản phẩm vào giỏ hàng!', 'success');
                 const badge = document.getElementById('headerCartBadge');
-                if(badge) {
+                if(badge && data.cart_count !== undefined) {
                     badge.innerText = data.cart_count;
-                    badge.style.display = 'block';
+                    badge.style.display = data.cart_count > 0 ? 'block' : 'none';
                 }
             } else {
                 showToast('Lỗi', data.message || 'Không thể thêm vào giỏ hàng.', 'error');
