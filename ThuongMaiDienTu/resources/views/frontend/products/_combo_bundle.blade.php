@@ -261,8 +261,16 @@
 
 @push('scripts')
 <script>
+// Giá bán thực tế của sản phẩm chính hiện tại (đã bao gồm giá Flash Sale nếu có)
 const mainPrice = {{ $mainProductPrice }};
 
+/**
+ * Hàm: updateComboTotal
+ * Công dụng: Tính toán và hiển thị tổng số tiền và số tiền tiết kiệm được của combo phụ kiện.
+ *            - Duyệt qua tất cả các checkbox sản phẩm phụ kiện đang được chọn.
+ *            - Cộng dồn giá bán đã giảm (`data-price`) và số tiền tiết kiệm (`data-saved`).
+ *            - Cập nhật số lượng sản phẩm, tổng giá tiền và số tiền tiết kiệm lên giao diện theo thời gian thực.
+ */
 function updateComboTotal() {
     let total = mainPrice;
     let count = 1;
@@ -288,9 +296,17 @@ function updateComboTotal() {
     }
 }
 
-// Chạy lần đầu khi load
+// Gọi cập nhật tổng tiền combo ngay khi trang web tải xong
 document.addEventListener('DOMContentLoaded', updateComboTotal);
 
+/**
+ * Hàm: buyCombo
+ * Công dụng: Thêm toàn bộ các sản phẩm trong combo đang được chọn vào giỏ hàng.
+ * Hoạt động:
+ *   - Tạo danh sách các sản phẩm cần thêm, bao gồm sản phẩm chính và các phụ kiện đi kèm (có kèm theo parent_id).
+ *   - Gửi yêu cầu POST liên tiếp (sequential) đến endpoint `/cart/add` để thêm từng sản phẩm.
+ *   - Hiển thị thông báo toast thành công và cập nhật lại số lượng sản phẩm trên icon giỏ hàng ở header.
+ */
 async function buyCombo() {
     const btn = document.querySelector('.btn-combo-buy');
     const originalHtml = btn.innerHTML;
@@ -325,7 +341,7 @@ async function buyCombo() {
             showToast('Đã thêm trọn bộ combo vào giỏ hàng thành công!');
         }
         
-        // Cập nhật giỏ hàng nếu có hàm reload
+        // Cập nhật lại số lượng hiển thị trên giỏ hàng của Header
         if(typeof updateCartCount === 'function') updateCartCount();
 
     } catch (error) {

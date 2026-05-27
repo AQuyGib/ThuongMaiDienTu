@@ -676,6 +676,13 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
+        /**
+         * Hàm: formatProduct
+         * Công dụng: Định dạng hiển thị của mỗi sản phẩm trong danh sách dropdown gợi ý của Select2.
+         *            Hiển thị ảnh thumbnail sản phẩm và tên sản phẩm thông thoáng, rõ ràng.
+         * Tham số:
+         *   - state: Đối tượng chứa thông tin option của Select2 (id, text, element).
+         */
         function formatProduct(state) {
             if (!state.id) {
                 return state.text;
@@ -695,6 +702,13 @@
             return $state;
         }
 
+        /**
+         * Hàm: formatProductSelection
+         * Công dụng: Định dạng hiển thị của sản phẩm sau khi đã được chọn (nằm trên input bar).
+         *            Hiển thị icon nhỏ của sản phẩm bên cạnh tên sản phẩm để giao diện trực quan, gọn đẹp.
+         * Tham số:
+         *   - state: Đối tượng chứa thông tin sản phẩm được chọn.
+         */
         function formatProductSelection(state) {
             if (!state.id) {
                 return state.text;
@@ -714,6 +728,7 @@
             return $state;
         }
 
+        // Khởi tạo Select2 cho tính năng gợi ý bán chéo (Cross-sell) nằm trong CrossSell Modal
         $('.select2-crosssell').select2({
             placeholder: "Tìm kiếm và chọn sản phẩm...",
             allowClear: true,
@@ -722,6 +737,8 @@
             dropdownParent: $('#crossSellModal'),
             width: '100%'
         });
+
+        // Khởi tạo Select2 cho cấu hình Combo mua kèm giảm giá nằm trong Combo Modal
         $('.select2-combo').select2({
             placeholder: "Tìm kiếm và chọn sản phẩm cho combo...",
             allowClear: true,
@@ -731,11 +748,20 @@
             width: '100%'
         });
 
+        /**
+         * Hàm: renderComboTable
+         * Công dụng: Tự động kết xuất bảng cấu hình chi tiết mức giảm giá cho các sản phẩm được chọn trong combo.
+         *            - Lấy danh sách sản phẩm đang chọn trong Select2.
+         *            - Giữ lại giá trị cấu hình loại giảm giá và số tiền giảm giá cũ của các dòng đang chỉnh sửa.
+         *            - Sinh các dòng tr kèm ảnh, tên, giá bán, dropdown chọn loại giảm giá (đ hoặc %), input nhập giá trị giảm.
+         *            - Tích hợp tính toán thời gian thực (real-time) giá sau khi giảm giá của từng sản phẩm.
+         */
         function renderComboTable() {
             var selectedOptions = $('#comboProductSelect option:selected');
             var tbody = $('#comboConfigTableBody');
             var container = $('#comboConfigTableContainer');
             
+            // Nếu không chọn sản phẩm nào, ẩn bảng cấu hình đi
             if (selectedOptions.length === 0) {
                 container.hide();
                 tbody.empty();
@@ -746,6 +772,7 @@
             container.show();
             $('#comboCountBadge').text(selectedOptions.length + ' đã chọn');
             
+            // Lưu lại giá trị cấu hình tạm thời của các hàng đang hiển thị
             var currentValues = {};
             tbody.find('tr').each(function() {
                 var pid = $(this).data('product-id');
@@ -757,6 +784,7 @@
             
             tbody.empty();
             
+            // Duyệt qua từng sản phẩm được chọn để dựng dòng tr tương ứng
             selectedOptions.each(function() {
                 var option = $(this);
                 var pid = option.val();
@@ -764,11 +792,13 @@
                 var thumbnail = option.data('thumbnail');
                 var price = parseFloat(option.data('price')) || 0;
                 
+                // Ưu tiên lấy giá trị người dùng vừa sửa, nếu không có thì lấy giá trị khởi tạo từ DB
                 var discType = currentValues[pid] ? currentValues[pid].type : option.data('discount-type');
                 var discVal = currentValues[pid] ? currentValues[pid].val : option.data('discount-value');
                 
                 var row = $('<tr data-product-id="' + pid + '" class="hover:bg-slate-50 transition">');
                 
+                // Cột thông tin sản phẩm (ảnh + tên)
                 var tdProduct = $('<td class="px-4 py-3">').append(
                     $('<div class="flex items-center gap-3">').append(
                         $('<img src="' + thumbnail + '" class="w-10 h-10 object-contain rounded border bg-white flex-shrink-0" />'),
@@ -776,23 +806,28 @@
                     )
                 );
                 
+                // Cột giá gốc của sản phẩm phụ kiện
                 var tdPrice = $('<td class="px-4 py-3 text-sm text-slate-500 font-medium">').text(new Intl.NumberFormat('vi-VN').format(price) + '₫');
                 
+                // Cột chọn loại giảm giá (Cố định đ hoặc Phần trăm %)
                 var typeSelect = $('<select name="discount_types[' + pid + ']" class="discount-type-select rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm outline-none w-full bg-white">')
                     .append($('<option value="fixed">đ</option>'))
                     .append($('<option value="percentage">%</option>'));
                 typeSelect.val(discType);
                 var tdType = $('<td class="px-4 py-3">').append(typeSelect);
                 
+                // Cột nhập mức giảm giá
                 var valInput = $('<input type="number" min="0" step="any" name="discount_values[' + pid + ']" class="discount-value-input rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none w-full" />');
                 valInput.val(discVal);
                 var tdVal = $('<td class="px-4 py-3">').append(valInput);
                 
+                // Cột hiển thị giá thực tế sau giảm giá (tính toán real-time)
                 var tdFinal = $('<td class="px-4 py-3 text-sm font-bold text-indigo-600 final-price-cell">');
                 
                 row.append(tdProduct, tdPrice, tdType, tdVal, tdFinal);
                 tbody.append(row);
                 
+                // Hàm nội bộ: Tính toán giá cuối cùng sau khi áp dụng giảm giá
                 function updateFinalPrice() {
                     var t = typeSelect.val();
                     var v = parseFloat(valInput.val()) || 0;
@@ -806,29 +841,57 @@
                     tdFinal.text(new Intl.NumberFormat('vi-VN').format(finalPrice) + '₫');
                 }
                 
+                // Lắng nghe sự kiện thay đổi loại và mức giảm để cập nhật lại giá trị tức thời
                 typeSelect.on('change', updateFinalPrice);
                 valInput.on('input change', updateFinalPrice);
                 updateFinalPrice();
             });
         }
         
+        // Gắn sự kiện thay đổi lựa chọn sản phẩm combo để vẽ lại bảng cấu hình giảm giá
         $('#comboProductSelect').on('change', renderComboTable);
         renderComboTable();
     });
 
+    // Các hằng số phục vụ định tuyến API và Modal
     const productId = {{ $product->product_id }};
     const baseUrl = "{{ url('admin/products') }}";
 
+    /**
+     * Hàm: openModal
+     * Công dụng: Hiển thị một Modal popup tương ứng theo ID bằng cách gỡ class hidden và gán class flex.
+     * Tham số:
+     *   - id: ID của thẻ div chứa modal cần mở.
+     */
     function openModal(id) {
         const el = document.getElementById(id);
         if (el) { el.classList.remove('hidden'); el.classList.add('flex'); }
     }
 
+    /**
+     * Hàm: closeModal
+     * Công dụng: Ẩn một Modal popup đang mở bằng cách gán class hidden và gỡ class flex.
+     * Tham số:
+     *   - id: ID của thẻ div chứa modal cần đóng.
+     */
     function closeModal(id) {
         const el = document.getElementById(id);
         if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
     }
 
+    /**
+     * Hàm: openEditVariant
+     * Công dụng: Đổ dữ liệu chi tiết của biến thể sản phẩm vào form và kích hoạt Modal chỉnh sửa biến thể.
+     * Tham số:
+     *   - id: ID của biến thể sản phẩm.
+     *   - color: Màu sắc biến thể.
+     *   - ram: Dung lượng RAM.
+     *   - rom: Dung lượng ROM.
+     *   - cpu: Loại CPU.
+     *   - gpu: Loại GPU.
+     *   - price: Giá bán của biến thể.
+     *   - imageUrl: Đường dẫn ảnh đại diện biến thể.
+     */
     function openEditVariant(id, color, ram, rom, cpu, gpu, price, imageUrl) {
         document.getElementById('evColor').value = color || '';
         const evRam = document.getElementById('evRam');
@@ -845,6 +908,13 @@
         openModal('editVariantModal');
     }
 
+    /**
+     * Hàm: confirmDeleteVariant
+     * Công dụng: Hiển thị cảnh báo xác nhận trước khi thực hiện xóa biến thể bằng hộp thoại SweetAlert2.
+     *            Nếu quản trị viên đồng ý, gửi POST form kèm phương thức DELETE để tiến hành xóa.
+     * Tham số:
+     *   - id: ID của biến thể sản phẩm cần xóa.
+     */
     function confirmDeleteVariant(id) {
         Swal.fire({
             title: 'Xác nhận xóa?',

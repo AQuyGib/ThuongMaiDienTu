@@ -6,10 +6,17 @@ use Illuminate\Database\Seeder;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Class: ProductComboSeeder
+ * Công dụng: Khởi tạo dữ liệu mẫu cho tính năng Combo giảm giá mua kèm.
+ *            - Truy vấn động sản phẩm chính bằng tên.
+ *            - Gắn liên kết các sản phẩm phụ kiện bằng quan hệ comboProducts() vào bảng trung gian product_combos.
+ *            - Thiết lập loại giảm giá (phần trăm % hoặc số tiền cố định đ) và mức giảm tương ứng cho từng combo.
+ */
 class ProductComboSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Chạy seed dữ liệu combo.
      */
     public function run(): void
     {
