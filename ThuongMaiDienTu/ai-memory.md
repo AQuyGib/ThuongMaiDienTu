@@ -56,6 +56,8 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
         - Sửa triệt để lỗi không tua được video (chủ yếu xảy ra trên `php artisan serve` do không hỗ trợ range requests): Xây dựng route stream video `/videos/{video}/stream` trỏ đến phương thức `stream` của `VideoController` để trả về phản hồi `206 Partial Content` (Range Request) kèm theo header `Accept-Ranges: bytes` phù hợp. Áp dụng route stream này cho toàn bộ trình phát video HTML5 ở cả trang người dùng và trang chi tiết Admin.
         - Sửa lỗi "Undefined variable $defaultSource" xảy ra khi danh sách video trống bằng cách khai báo trước các biến `$defaultSource`, `$hasMp4`, `$hasYoutube` tại khối khởi tạo `@php` ở đầu view `resources/views/videos/index.blade.php`.
         - Cập nhật `VideoSeeder.php` để lấy 4 video ảo cục bộ (`Iphone 17.mp4`, `Top10maylocnc.mp4`, `dieuhoa.mp4`, `maylanh.mp4`) nằm trong thư mục `public/uploads/video/` làm dữ liệu seeder mẫu, tự động đo dung lượng thực tế (file_size) và gán định dạng (mime_type) khi chạy seeding.
+        - Chuyển đổi ảnh đại diện (thumbnail) của video trong seeder sang các tệp tin hình ảnh cục bộ (`public/uploads/video/*_thumb.png`) được tạo riêng để tránh lỗi không tải được ảnh do các nhà mạng Việt Nam chặn tên miền Unsplash (`images.unsplash.com`).
+        - Cập nhật accessor `getThumbnailUrlAttribute` trong Model `Video.php` tự động kiểm tra và trả về đường dẫn `public_path()` nếu ảnh đại diện tồn tại cục bộ dưới thư mục public.
         - Cải tiến hàm `stream()` tại `VideoController.php` hỗ trợ tìm và stream video từ thư mục `public_path()` nếu không tìm thấy trong `storage_path()`.
         - Cập nhật `.gitignore` loại trừ thư mục `/public/uploads/video/` tránh commit tệp tin video nặng lên git.
 
