@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\CrossSellService;
 use App\Services\FlashSaleService;
 use App\Services\ProductFilterService;
 use App\Models\Review;
@@ -16,7 +17,8 @@ class ProductController extends Controller
 {
     public function __construct(
         private readonly ProductFilterService $productFilterService,
-        private readonly FlashSaleService $flashSaleService
+        private readonly FlashSaleService     $flashSaleService,
+        private readonly CrossSellService     $crossSellService
     ) {
     }
 
@@ -78,6 +80,9 @@ class ProductController extends Controller
         $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->count();
         $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->avg('rating') ?: 5;
 
+        // Gợi ý bán chéo: FBT → Brand → Flash Sale → Category
+        $crossSellProducts = $this->crossSellService->getFullCrossSellList($product, 8);
+
         return view('frontend.products.show', compact(
             'product', 
             'relatedProducts', 
@@ -86,7 +91,8 @@ class ProductController extends Controller
             'effectivePrice',
             'reviews',
             'reviewCount',
-            'avgRating'
+            'avgRating',
+            'crossSellProducts'
         ));
     }
 }

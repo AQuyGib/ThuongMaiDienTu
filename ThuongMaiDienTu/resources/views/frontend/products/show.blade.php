@@ -355,6 +355,9 @@
         </div>
     </div>
 
+    {{-- Mua kèm Combo tiết kiệm --}}
+    @include('frontend.products._combo_bundle', ['crossSellProducts' => $crossSellProducts])
+
     {{-- Layout Giữa: Giới thiệu + Specs --}}
     <div class="middle-section">
         {{-- Giới thiệu --}}
@@ -406,6 +409,9 @@
 
     {{-- Đánh giá sản phẩm --}}
     @include('frontend.products.partials.reviews')
+
+    {{-- Gợi ý bán chéo: Thường mua cùng nhau --}}
+    @include('frontend.products._cross_sell', ['crossSellProducts' => $crossSellProducts])
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())
         <div class="pd-related">
@@ -608,6 +614,14 @@
 
 @push('scripts')
 <script>
+// --- Chatbot AI: Cung cấp ngữ cảnh sản phẩm đang xem ---
+window.chatbotProductName = {!! json_encode($product->name) !!};
+window.chatbotProductContext = {!! json_encode(
+    $product->name . ' - Giá: ' . number_format($product->base_price, 0, ',', '.') . 'đ' .
+    ($product->old_price ? ' (Giá gốc: ' . number_format($product->old_price, 0, ',', '.') . 'đ)' : '') .
+    ($product->category ? ' - Danh mục: ' . $product->category->name : '')
+) !!};
+
 // --- Tự cuộn lên đầu khi F5 ---
 if (history.scrollRestoration) {
     history.scrollRestoration = 'manual';

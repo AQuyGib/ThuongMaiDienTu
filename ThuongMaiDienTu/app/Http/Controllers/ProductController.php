@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Models\Order;
 use App\Models\WishlistRecentlyViewed;
+use App\Services\CrossSellService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -74,6 +75,10 @@ class ProductController extends Controller
                 ->exists();
         }
 
+        // Gợi ý bán chéo (Cross-selling): FBT → Brand → Flash Sale
+        $crossSellProducts = app(CrossSellService::class)
+            ->getFullCrossSellList($product, 8);
+
         return view('frontend.products.show', compact(
             'product',
             'discountPercent',
@@ -82,7 +87,8 @@ class ProductController extends Controller
             'reviews',
             'reviewCount',
             'avgRating',
-            'hasPurchased'
+            'hasPurchased',
+            'crossSellProducts'
         ));
     }
 }

@@ -20,6 +20,34 @@ interface AdminSidebarProps {
     csrfToken: string;
 }
 
+const getActiveIconColor = (label: string): string => {
+    switch (label) {
+        case 'Bảng điều khiển': return 'text-emerald-400';
+        case 'Thống kê KPI': return 'text-cyan-300';
+        case 'Đơn hàng': return 'text-orange-400';
+        case 'Khách hàng': return 'text-sky-300';
+        case 'Sổ Quỹ & Thu chi': return 'text-green-300';
+        case 'Hóa đơn dịch vụ': return 'text-teal-300';
+        case 'Phiếu sửa chữa': return 'text-amber-400';
+        case 'Flash Sale': return 'text-red-400';
+        case 'Sản phẩm': return 'text-indigo-300';
+        case 'Bài viết & CMS': return 'text-fuchsia-300';
+        case 'Quản lý Kho': return 'text-blue-300';
+        case 'Video': return 'text-yellow-300';
+        case 'Điều chuyển kho': return 'text-violet-400';
+        case 'Nhà cung cấp': return 'text-pink-400';
+        case 'Danh mục': return 'text-lime-300';
+        case 'Đổi thưởng': return 'text-rose-400';
+        case 'Tùy biến Giao diện': return 'text-purple-300';
+        case 'Thông báo': return 'text-amber-300';
+        case 'Quản lý Trang chủ': return 'text-teal-400';
+        case 'Tài khoản': return 'text-violet-300';
+        case 'Cài đặt hệ thống': return 'text-slate-300';
+        case 'Nhật ký hoạt động': return 'text-orange-300';
+        default: return 'text-yellow-300';
+    }
+};
+
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logoutRoute, csrfToken }) => {
     const [collapsed, setCollapsed] = useState(false);
 
@@ -27,6 +55,27 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
         const handleToggle = () => setCollapsed(prev => !prev);
         window.addEventListener('admin-sidebar-toggle', handleToggle);
         return () => window.removeEventListener('admin-sidebar-toggle', handleToggle);
+    }, []);
+
+    useEffect(() => {
+        const navEl = document.getElementById('admin-sidebar-nav');
+        if (navEl) {
+            const savedPosition = localStorage.getItem('sidebar-scroll-position');
+            if (savedPosition) {
+                setTimeout(() => {
+                    navEl.scrollTop = parseInt(savedPosition, 10);
+                }, 50);
+            }
+            
+            const handleScroll = () => {
+                localStorage.setItem('sidebar-scroll-position', navEl.scrollTop.toString());
+            };
+            
+            navEl.addEventListener('scroll', handleScroll);
+            return () => {
+                navEl.removeEventListener('scroll', handleScroll);
+            };
+        }
     }, []);
 
     if (!menu || !user) return <div className="p-4 text-white bg-rose-600">MISSING PROPS</div>;
@@ -52,7 +101,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                 </div>
             </div>
 
-            <nav className={`flex-1 space-y-6 overflow-y-auto premium-scrollbar transition-all ${collapsed ? 'p-2 px-3' : 'p-4'}`}>
+            <nav id="admin-sidebar-nav" className={`flex-1 space-y-6 overflow-y-auto premium-scrollbar transition-all ${collapsed ? 'p-2 px-3' : 'p-4'}`}>
                 {(() => {
                     const sections: { [key: string]: MenuItem[] } = {};
                     menu.forEach(item => {
@@ -68,17 +117,23 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{sectionName}</p>
                                 </div>
                             )}
-                            {items.map((item, idx) => (
+                            {items.map((item, idx) => {
+                                return (
                                 <a
                                     key={idx}
                                     href={item.route}
                                     title={collapsed ? item.label : ''}
-                                    className={`flex items-center rounded-xl transition-all duration-300 ${collapsed ? 'justify-center py-4 px-0' : 'gap-4 px-4 py-3'} ${item.active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                                    className={`group flex items-center rounded-xl transition-all duration-300 ${collapsed ? 'justify-center py-4 px-0' : 'gap-4 px-4 py-3'} ${item.active ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg shadow-indigo-600/25 ring-1 ring-white/10' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                                 >
-                                    <i className={`${item.icon} ${collapsed ? 'text-lg' : 'w-5 text-center'}`}></i>
-                                    {!collapsed && <span className="font-bold text-sm truncate">{item.label}</span>}
+                                    <i className={`${item.icon} ${collapsed ? 'text-lg' : 'w-5 text-center'} ${item.active ? `${getActiveIconColor(item.label)} drop-shadow` : ''}`}></i>
+                                    {!collapsed && (
+                                        <span className="flex items-center gap-2 min-w-0">
+                                            <span className="font-bold text-sm truncate">{item.label}</span>
+                                        </span>
+                                    )}
                                 </a>
-                            ))}
+                                );
+                            })}
                             {collapsed && <div className="h-px bg-slate-800/50 my-4 mx-2" />}
                         </div>
                     ));

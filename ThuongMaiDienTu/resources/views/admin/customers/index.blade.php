@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends('admin.layouts.master')
 
 @section('title', 'Quản lý Khách hàng')
 
 @section('content')
-<div class="container py-6">
+<div class="space-y-6">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">Quản lý Khách hàng</h1>
         <div class="flex gap-2">
@@ -15,12 +15,12 @@
                     <i class="fa-solid fa-clock-rotate-left"></i> Nhật ký hoạt động
                 </button>
             @endif
-            <a href="{{ route('admin.customers.export', request()->query()) }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+            <a href="{{ route('admin.customers.export', request()->query()) }}" download class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition flex items-center gap-2">
                 <i class="fa-solid fa-file-export"></i> Xuất Excel
             </a>
-            <a href="{{ route('admin.customers.create') }}" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-red-700 transition flex items-center gap-2">
+            <button type="button" onclick="openAddCustomerModal()" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-red-700 transition flex items-center gap-2">
                 <i class="fa-solid fa-plus"></i> Thêm khách hàng
-            </a>
+            </button>
         </div>
     </div>
 
@@ -167,7 +167,15 @@
                                 </div>
                                 <div>
                                     <div class="text-sm font-bold text-gray-800">{{ $customer->full_name }}</div>
-                                    <div class="text-xs text-gray-400">Khách hàng thân thiết</div>
+                                    <div class="text-[10px] mt-0.5">
+                                        @if(($customer->member_tier ?? 'Dong') == 'Vang')
+                                            <span class="text-amber-600 font-extrabold uppercase tracking-wider"><i class="fa-solid fa-crown mr-0.5"></i> Hạng Vàng</span>
+                                        @elseif(($customer->member_tier ?? 'Dong') == 'Bac')
+                                            <span class="text-slate-500 font-bold uppercase tracking-wider"><i class="fa-solid fa-medal mr-0.5"></i> Hạng Bạc</span>
+                                        @else
+                                            <span class="text-orange-600 font-semibold uppercase tracking-wider"><i class="fa-solid fa-award mr-0.5"></i> Hạng Đồng</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </td>
@@ -191,16 +199,24 @@
                                    class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition" title="Xem chi tiết">
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.customers.edit', $customer->user_id) }}" 
-                                   class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Sửa">
+                                <button type="button" 
+                                        onclick="openEditCustomerModal({{ json_encode([
+                                            'id' => $customer->user_id,
+                                            'full_name' => $customer->full_name,
+                                            'email' => $customer->email,
+                                            'phone_number' => $customer->phone_number,
+                                            'status' => $customer->status,
+                                            'address' => $customer->address,
+                                            'version' => $customer->version
+                                        ]) }})"
+                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Sửa">
                                     <i class="fa-solid fa-edit"></i>
-                                </a>
+                                </button>
                                 @if(in_array(Auth::user()->role_id, [1, 2]))
-                                    <form action="{{ route('admin.customers.destroy', $customer->user_id) }}" method="POST" 
-                                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa khách hàng này?')">
+                                    <form id="delete-form-{{ $customer->user_id }}" action="{{ route('admin.customers.destroy', $customer->user_id) }}" method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Xóa">
+                                        <button type="button" onclick="confirmDelete('{{ $customer->user_id }}', '{{ e($customer->full_name) }}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Xóa">
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </form>
@@ -258,6 +274,244 @@
 </div>
 @endif
 
+<!-- Modal Thêm khách hàng -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-2xl border-0 shadow-xl overflow-hidden bg-white">
+            <div class="modal-header px-6 py-4 border-0" style="background-color: #0f172a !important; color: #ffffff !important;">
+                <h5 class="modal-title font-bold text-lg flex items-center gap-2" style="color: #ffffff !important;">
+                    <i class="fa-solid fa-user-plus text-rose-500"></i> Thêm Khách Hàng Mới
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('admin.customers.store') }}" method="POST" class="p-6 space-y-6">
+                @csrf
+                <input type="hidden" name="version" value="1">
+                
+                @if($errors->any() && !old('user_id'))
+                    <div class="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                        <div class="font-bold mb-1"><i class="fa-solid fa-circle-exclamation mr-2"></i>Vui lòng kiểm tra lại thông tin:</div>
+                        <ul class="list-disc pl-5 space-y-1">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Họ tên -->
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Họ và tên <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-user"></i></span>
+                            <input type="text" name="full_name" value="{{ old('user_id') ? '' : old('full_name') }}" required
+                                   maxlength="50"
+                                   class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-medium text-slate-700"
+                                   style="padding-left: 2.75rem;"
+                                   placeholder="Nhập họ và tên khách hàng">
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Email <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
+                            <input type="email" name="email" value="{{ old('user_id') ? '' : old('email') }}" required
+                                   maxlength="100"
+                                   class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-medium text-slate-700"
+                                   style="padding-left: 2.75rem;"
+                                   placeholder="example@gmail.com">
+                        </div>
+                    </div>
+
+                    <!-- Số điện thoại -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Số điện thoại</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-phone"></i></span>
+                            <input type="text" name="phone_number" value="{{ old('user_id') ? '' : old('phone_number') }}"
+                                   maxlength="10"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-medium text-slate-700"
+                                   style="padding-left: 2.75rem;"
+                                   placeholder="0987xxxxxx">
+                        </div>
+                    </div>
+
+                    <!-- Mật khẩu -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Mật khẩu <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                            <input type="password" name="password" required
+                                   maxlength="255"
+                                   class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-medium text-slate-700"
+                                   style="padding-left: 2.75rem;"
+                                   placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <!-- Trạng thái -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Trạng thái <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-circle-info"></i></span>
+                            <select name="status" required
+                                    class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-semibold text-slate-700 appearance-none"
+                                    style="padding-left: 2.75rem;">
+                                <option value="Active" {{ (old('user_id') ? '' : old('status')) == 'Active' ? 'selected' : '' }}>Đang hoạt động</option>
+                                <option value="Banned" {{ (old('user_id') ? '' : old('status')) == 'Banned' ? 'selected' : '' }}>Khóa tài khoản</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Địa chỉ -->
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Địa chỉ</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-4 text-slate-400"><i class="fa-solid fa-location-dot"></i></span>
+                            <textarea name="address" rows="3" 
+                                      maxlength="255"
+                                      class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-medium text-slate-700"
+                                      style="padding-left: 2.75rem;"
+                                      placeholder="Nhập địa chỉ khách hàng">{{ old('user_id') ? '' : old('address') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button type="button" class="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-slate-950 text-white font-bold hover:bg-black transition shadow-lg shadow-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Lưu thông tin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chỉnh sửa khách hàng -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-2xl border-0 shadow-xl overflow-hidden bg-white">
+            <div class="modal-header px-6 py-4 border-0" style="background-color: #1e3a8a !important; color: #ffffff !important;">
+                <h5 class="modal-title font-bold text-lg flex items-center gap-2" style="color: #ffffff !important;">
+                    <i class="fa-solid fa-user-pen text-blue-200"></i> Chỉnh Sửa Khách Hàng
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editCustomerForm" method="POST" class="p-6 space-y-6">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="user_id" id="edit_user_id" value="{{ old('user_id') }}">
+                <input type="hidden" name="version" id="edit_version" value="{{ old('version') }}">
+                
+                @if($errors->any() && old('user_id'))
+                    <div class="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                        <div class="font-bold mb-1"><i class="fa-solid fa-circle-exclamation mr-2"></i>Vui lòng kiểm tra lại thông tin:</div>
+                        <ul class="list-disc pl-5 space-y-1">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Họ tên -->
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Họ và tên <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-user"></i></span>
+                            <input type="text" name="full_name" id="edit_full_name" value="{{ old('user_id') ? old('full_name') : '' }}" required
+                                   maxlength="50"
+                                   class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-medium text-slate-700"
+                                   style="padding-left: 2.75rem;"
+                                   placeholder="Nhập họ và tên khách hàng">
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Email <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-envelope"></i></span>
+                            <input type="email" name="email" id="edit_email" value="{{ old('user_id') ? old('email') : '' }}" required
+                                   maxlength="100"
+                                   class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-medium text-slate-700"
+                                   style="padding-left: 2.75rem;"
+                                   placeholder="example@gmail.com">
+                        </div>
+                    </div>
+
+                    <!-- Số điện thoại -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Số điện thoại</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-phone"></i></span>
+                            <input type="text" name="phone_number" id="edit_phone_number" value="{{ old('user_id') ? old('phone_number') : '' }}"
+                                   maxlength="10"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                   class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-medium text-slate-700"
+                                   style="padding-left: 2.75rem;"
+                                   placeholder="0987xxxxxx">
+                        </div>
+                    </div>
+
+                    <!-- Mật khẩu -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Mật khẩu (Để trống nếu không đổi)</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                            <input type="password" name="password"
+                                   maxlength="255"
+                                   class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-medium text-slate-700"
+                                   style="padding-left: 2.75rem;"
+                                   placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <!-- Trạng thái -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Trạng thái <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"><i class="fa-solid fa-circle-info"></i></span>
+                            <select name="status" id="edit_status" required
+                                    class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-semibold text-slate-700 appearance-none"
+                                    style="padding-left: 2.75rem;">
+                                <option value="Active" {{ (old('user_id') ? old('status') : '') == 'Active' ? 'selected' : '' }}>Đang hoạt động</option>
+                                <option value="Banned" {{ (old('user_id') ? old('status') : '') == 'Banned' ? 'selected' : '' }}>Khóa tài khoản</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Địa chỉ -->
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Địa chỉ</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-4 text-slate-400"><i class="fa-solid fa-location-dot"></i></span>
+                            <textarea name="address" id="edit_address" rows="3" 
+                                      maxlength="255"
+                                      class="w-full pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition font-medium text-slate-700"
+                                      style="padding-left: 2.75rem;"
+                                      placeholder="Nhập địa chỉ khách hàng">{{ old('user_id') ? old('address') : '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button type="button" class="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-500 hover:bg-slate-50 transition" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition shadow-lg shadow-blue-200 flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Cập nhật
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
     function toggleModal(id) {
         const modal = document.getElementById(id);
@@ -295,32 +549,149 @@
         updateBulkBar();
     }
 
+    function confirmDelete(id, name) {
+        Swal.fire({
+            title: 'Xác nhận xóa',
+            html: `Bạn có chắc muốn xóa khách hàng <strong>${name}</strong> không?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            background: '#fff',
+            customClass: {
+                popup: 'rounded-2xl shadow-lg',
+                confirmButton: 'px-4 py-2 text-sm font-semibold rounded-lg',
+                cancelButton: 'px-4 py-2 text-sm font-semibold rounded-lg'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById(`delete-form-${id}`).submit();
+            }
+        });
+    }
+
     function handleBulkAction(action) {
         const ids = Array.from(document.querySelectorAll('.customer-checkbox:checked')).map(cb => cb.value);
         if (ids.length === 0) return;
 
-        let confirmMsg = `Bạn có chắc muốn thực hiện thao tác này cho ${ids.length} khách hàng?`;
-        if (action === 'delete') confirmMsg = `Bạn có chắc muốn XÓA TẠM ${ids.length} khách hàng đã chọn?`;
-        
-        if (!confirm(confirmMsg)) return;
+        let title = 'Xác nhận';
+        let htmlMsg = `Bạn có chắc muốn thực hiện thao tác này cho <strong>${ids.length}</strong> khách hàng?`;
+        let confirmBtnText = 'Xác nhận';
+        let confirmBtnColor = '#1e293b';
 
-        // Gửi request hàng loạt
-        fetch("{{ route('admin.customers.bulk-action') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({ ids, action })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert(data.message || 'Có lỗi xảy ra!');
+        if (action === 'delete') {
+            title = 'Xác nhận xóa';
+            htmlMsg = `Bạn có chắc muốn <strong>XÓA TẠM</strong> <strong>${ids.length}</strong> khách hàng đã chọn?`;
+            confirmBtnText = 'Xóa tạm';
+            confirmBtnColor = '#dc2626';
+        } else if (action === 'Active') {
+            title = 'Kích hoạt tài khoản';
+            htmlMsg = `Kích hoạt trạng thái hoạt động cho <strong>${ids.length}</strong> khách hàng đã chọn?`;
+            confirmBtnText = 'Kích hoạt';
+            confirmBtnColor = '#16a34a';
+        } else if (action === 'Banned') {
+            title = 'Khóa tài khoản';
+            htmlMsg = `Khóa <strong>${ids.length}</strong> tài khoản khách hàng đã chọn?`;
+            confirmBtnText = 'Khóa';
+            confirmBtnColor = '#ea580c';
+        }
+
+        Swal.fire({
+            title: title,
+            html: htmlMsg,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: confirmBtnText,
+            cancelButtonText: 'Hủy',
+            reverseButtons: true,
+            confirmButtonColor: confirmBtnColor,
+            cancelButtonColor: '#64748b',
+            background: '#fff',
+            customClass: {
+                popup: 'rounded-2xl shadow-lg',
+                confirmButton: 'px-4 py-2 text-sm font-semibold rounded-lg',
+                cancelButton: 'px-4 py-2 text-sm font-semibold rounded-lg'
             }
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            // Gửi request hàng loạt
+            fetch("{{ route('admin.customers.bulk-action') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ ids, action })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi!',
+                        text: data.message || 'Có lỗi xảy ra!'
+                    });
+                }
+            });
         });
     }
+
+    let addModalInstance = null;
+    let editModalInstance = null;
+
+    function openAddCustomerModal() {
+        if (!addModalInstance) {
+            addModalInstance = new bootstrap.Modal(document.getElementById('addCustomerModal'));
+        }
+        addModalInstance.show();
+    }
+
+    function openEditCustomerModal(customer) {
+        const id = customer.user_id || customer.id;
+        document.getElementById('editCustomerForm').action = `/admin/customers/${id}`;
+        document.getElementById('edit_user_id').value = id;
+        document.getElementById('edit_full_name').value = customer.full_name || '';
+        document.getElementById('edit_email').value = customer.email || '';
+        document.getElementById('edit_phone_number').value = customer.phone_number || '';
+        document.getElementById('edit_status').value = customer.status || 'Active';
+        document.getElementById('edit_address').value = customer.address || '';
+        document.getElementById('edit_version').value = customer.version || '1';
+
+        if (!editModalInstance) {
+            editModalInstance = new bootstrap.Modal(document.getElementById('editCustomerModal'));
+        }
+        editModalInstance.show();
+    }
+
+    // Tự động mở modal từ Session hoặc Validation Error Redirects
+    document.addEventListener('DOMContentLoaded', function() {
+        @if(session('show_create_modal'))
+            openAddCustomerModal();
+        @elseif(session('edit_customer'))
+            openEditCustomerModal({!! json_encode(session('edit_customer')) !!});
+        @endif
+
+        @if($errors->any())
+            @if(old('user_id'))
+                // Khi có lỗi từ trang Edit, mở lại modal Edit
+                if (!editModalInstance) {
+                    editModalInstance = new bootstrap.Modal(document.getElementById('editCustomerModal'));
+                }
+                editModalInstance.show();
+            @else
+                // Khi có lỗi từ trang Add, mở lại modal Add
+                if (!addModalInstance) {
+                    addModalInstance = new bootstrap.Modal(document.getElementById('addCustomerModal'));
+                }
+                addModalInstance.show();
+            @endif
+        @endif
+    });
 </script>
 @endsection

@@ -36,6 +36,20 @@
             'section' => 'Kinh doanh'
         ],
         [
+            'label' => 'Hóa đơn dịch vụ',
+            'route' => route('admin.service-invoices.index'),
+            'icon' => 'fa-solid fa-file-invoice-dollar',
+            'active' => request()->is('admin/service-invoices*'),
+            'section' => 'Kinh doanh'
+        ],
+        [
+            'label' => 'Phiếu sửa chữa',
+            'route' => route('admin.repair-tickets.index'),
+            'icon' => 'fa-solid fa-wrench',
+            'active' => request()->is('admin/repair-tickets*'),
+            'section' => 'Kinh doanh'
+        ],
+        [
             'label' => 'Flash Sale',
             'route' => route('admin.flash-sales.index'),
             'icon' => 'fa-solid fa-bolt',
@@ -64,6 +78,13 @@
             'section' => 'Sản phẩm & Kho'
         ],
         [
+            'label' => 'Video',
+            'route' => route('admin.videos.index'),
+            'icon' => 'fa-solid fa-video',
+            'active' => request()->is('admin/videos*'),
+            'section' => 'Sản phẩm & Kho'
+        ],
+        [
             'label' => 'Điều chuyển kho',
             'route' => route('admin.warehouse-transfers.index'),
             'icon' => 'fa-solid fa-truck-ramp-box',
@@ -85,10 +106,24 @@
             'section' => 'Sản phẩm & Kho'
         ],
         [
+            'label' => 'Đổi thưởng',
+            'route' => route('admin.rewards.index'),
+            'icon' => 'fa-solid fa-gift',
+            'active' => request()->routeIs('admin.rewards.index'),
+            'section' => 'Thiết lập'
+        ],
+        [
             'label' => 'Tùy biến Giao diện',
             'route' => route('admin.settings.theme'),
             'icon' => 'fa-solid fa-paint-brush',
             'active' => request()->routeIs('admin.settings.theme'),
+            'section' => 'Thiết lập'
+        ],
+        [
+            'label' => 'Thông báo',
+            'route' => route('admin.notifications.index'),
+            'icon' => 'fa-regular fa-bell',
+            'active' => request()->is('admin/notifications*'),
             'section' => 'Thiết lập'
         ],
         [
