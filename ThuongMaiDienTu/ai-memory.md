@@ -123,3 +123,6 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 ## Ghi chú quan trọng
 - Sidebar Admin đã được tách biệt thành `resources/views/admin/partials/sidebar.blade.php` và `resources/js/components/AdminSidebar.tsx` để dễ quản lý.
 - Toàn bộ tính năng video đã được merge thành công từ branch `Hien/Video` vào `master`, không xảy ra xung đột mã nguồn.
+- Chỉnh sửa form Thêm/Sửa video ở Admin chỉ lấy danh mục cha (`whereNull('parent_id')`) thay vì danh mục chứa sản phẩm.
+- Liên kết nút "Trợ giúp trực tuyến" ở trang phát video với Trợ lý AI (gọi function `chatbotToggle()`).
+- Đã merge và push nhánh `Hien/Video` sạch sẽ lên remote `master`.
