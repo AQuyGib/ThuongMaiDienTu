@@ -43,26 +43,30 @@ class CartController extends Controller
             ];
         })->filter()->values();
 
-        // Query recommended products
-        $cartProductIds = $cartItems->pluck('id')->toArray();
-        $cartCategoryIds = $cartItems->pluck('category_id')->filter()->unique()->toArray();
+        $recommendedProducts = collect();
 
-        $query = Product::query()->whereNotIn('product_id', $cartProductIds);
+        // ONLY query recommended products if the cart is NOT empty
+        if ($cartItems->isNotEmpty()) {
+            $cartProductIds = $cartItems->pluck('id')->toArray();
+            $cartCategoryIds = $cartItems->pluck('category_id')->filter()->unique()->toArray();
 
-        if (!empty($cartCategoryIds)) {
-            $query->whereIn('category_id', $cartCategoryIds);
-        }
+            $query = Product::query()->whereNotIn('product_id', $cartProductIds);
 
-        $recommendedProducts = $query->inRandomOrder()->limit(4)->get();
+            if (!empty($cartCategoryIds)) {
+                $query->whereIn('category_id', $cartCategoryIds);
+            }
 
-        // If not enough products, fetch more from other categories
-        if ($recommendedProducts->count() < 4) {
-            $remainingCount = 4 - $recommendedProducts->count();
-            $moreProducts = Product::whereNotIn('product_id', array_merge($cartProductIds, $recommendedProducts->pluck('product_id')->toArray()))
-                ->inRandomOrder()
-                ->limit($remainingCount)
-                ->get();
-            $recommendedProducts = $recommendedProducts->merge($moreProducts);
+            $recommendedProducts = $query->inRandomOrder()->limit(4)->get();
+
+            // If not enough products, fetch more from other categories
+            if ($recommendedProducts->count() < 4) {
+                $remainingCount = 4 - $recommendedProducts->count();
+                $moreProducts = Product::whereNotIn('product_id', array_merge($cartProductIds, $recommendedProducts->pluck('product_id')->toArray()))
+                    ->inRandomOrder()
+                    ->limit($remainingCount)
+                    ->get();
+                $recommendedProducts = $recommendedProducts->merge($moreProducts);
+            }
         }
 
         return view('frontend.cart.shoppingcart', compact('cartItems', 'recommendedProducts'));

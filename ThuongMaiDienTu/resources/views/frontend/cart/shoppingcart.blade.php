@@ -100,7 +100,7 @@
 
         <!-- Section: Gợi ý sản phẩm tương tự -->
         @if(isset($recommendedProducts) && $recommendedProducts->isNotEmpty())
-            <div class="mt-16">
+            <div id="similar-products-section" class="mt-16">
                 <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800">
                     <i class="fa-solid fa-fire text-amber-500 animate-pulse"></i> Có thể bạn quan tâm
                 </h2>
@@ -218,8 +218,17 @@
                 document.getElementById('selectAllCheckbox').disabled = true;
                 document.getElementById('selectAllCheckbox').checked = false;
             }
+            const similarSection = document.getElementById('similar-products-section');
+            if (similarSection) {
+                similarSection.style.display = 'none';
+            }
             window.updateSummary();
             return;
+        }
+
+        const similarSection = document.getElementById('similar-products-section');
+        if (similarSection) {
+            similarSection.style.display = 'block';
         }
 
         window.cartData.forEach(item => {
