@@ -531,7 +531,7 @@
                     <a href="{{ url('/') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-blue-800 transition shadow-md">
                         <i class="fa-solid fa-house"></i> Quay về Trang chủ
                     </a>
-                    <a href="{{ url('/#support') }}" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-50 border border-gray-200 text-gray-600 font-semibold hover:bg-slate-100 transition">
+                    <a href="javascript:void(0)" onclick="chatbotToggle()" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-50 border border-gray-200 text-gray-600 font-semibold hover:bg-slate-100 transition">
                         <i class="fa-solid fa-headset text-primary"></i> Trợ giúp trực tuyến
                     </a>
                 </div>
