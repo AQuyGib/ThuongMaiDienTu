@@ -38,11 +38,34 @@ class CartController extends Controller
                 'stock' => 10,
                 'selected' => $item['selected'] ?? true,
                 'image' => $product->thumbnail,
-                'url' => route('product.show', $id)
+                'url' => route('product.show', $id),
+                'category_id' => $product->category_id
             ];
         })->filter()->values();
 
-        return view('frontend.cart.shoppingcart', compact('cartItems'));
+        // Query recommended products
+        $cartProductIds = $cartItems->pluck('id')->toArray();
+        $cartCategoryIds = $cartItems->pluck('category_id')->filter()->unique()->toArray();
+
+        $query = Product::query()->whereNotIn('product_id', $cartProductIds);
+
+        if (!empty($cartCategoryIds)) {
+            $query->whereIn('category_id', $cartCategoryIds);
+        }
+
+        $recommendedProducts = $query->inRandomOrder()->limit(4)->get();
+
+        // If not enough products, fetch more from other categories
+        if ($recommendedProducts->count() < 4) {
+            $remainingCount = 4 - $recommendedProducts->count();
+            $moreProducts = Product::whereNotIn('product_id', array_merge($cartProductIds, $recommendedProducts->pluck('product_id')->toArray()))
+                ->inRandomOrder()
+                ->limit($remainingCount)
+                ->get();
+            $recommendedProducts = $recommendedProducts->merge($moreProducts);
+        }
+
+        return view('frontend.cart.shoppingcart', compact('cartItems', 'recommendedProducts'));
     }
 
     public function add(Request $request)

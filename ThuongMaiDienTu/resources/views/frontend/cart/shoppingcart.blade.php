@@ -97,6 +97,82 @@
                 </div>
             </div>
         </div>
+
+        <!-- Section: Gợi ý sản phẩm tương tự -->
+        @if(isset($recommendedProducts) && $recommendedProducts->isNotEmpty())
+            <div class="mt-16">
+                <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800">
+                    <i class="fa-solid fa-fire text-amber-500 animate-pulse"></i> Có thể bạn quan tâm
+                </h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    @foreach($recommendedProducts as $product)
+                        @php
+                            $imageUrl = $product->thumbnail;
+                            if (!$imageUrl || !Str::startsWith($imageUrl, 'http')) {
+                                $imageUrl = asset('uploads/products/' . ($product->image ?: 'default.jpg'));
+                            }
+                        @endphp
+                        <div class="product-card group relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                            <!-- Image Container -->
+                            <div class="relative h-44 overflow-hidden bg-gray-50 p-4 flex items-center justify-center">
+                                @if($product->discount_percent)
+                                    <span class="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
+                                        -{{ $product->discount_percent }}%
+                                    </span>
+                                @endif
+                                <img src="{{ $imageUrl }}" alt="{{ $product->name }}"
+                                    class="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                                    onerror="this.src='https://loremflickr.com/400/400/technology?lock={{ $product->product_id }}'; this.onerror=null;">
+                            </div>
+                            
+                            <!-- Product Info -->
+                            <div class="p-4">
+                                <!-- Category -->
+                                <div class="text-xs text-gray-400 mb-1">
+                                    {{ $product->category->name ?? 'Điện máy' }}
+                                </div>
+                                
+                                <!-- Product Name -->
+                                <h3 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 min-h-[40px]" title="{{ $product->name }}">
+                                    <a href="{{ route('product.show', $product->product_id) }}" class="hover:text-[#0047b3] transition-colors">
+                                        {{ $product->name }}
+                                    </a>
+                                </h3>
+                                
+                                <!-- Price -->
+                                <div class="flex items-center gap-2 mb-4">
+                                    <span class="text-base font-bold text-red-600">
+                                        {{ number_format($product->base_price, 0, ',', '.') }} ₫
+                                    </span>
+                                    @if($product->old_price && $product->old_price > $product->base_price)
+                                        <span class="text-xs text-gray-400 line-through">
+                                            {{ number_format($product->old_price, 0, ',', '.') }} ₫
+                                        </span>
+                                    @endif
+                                </div>
+                                
+                                <!-- Buttons -->
+                                <div class="flex gap-2">
+                                    <a href="{{ route('product.show', $product->product_id) }}"
+                                        class="flex-1 text-center bg-[#0047b3] text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
+                                        Xem chi tiết
+                                    </a>
+                                    <form action="{{ route('cart.add') }}" method="POST" class="flex-1">
+                                        @csrf
+                                        <input type="hidden" name="product_id" value="{{ $product->product_id }}">
+                                        <button type="submit"
+                                            class="w-full bg-gray-100 text-gray-800 py-2 rounded-lg text-xs font-bold hover:bg-gray-200 transition-all">
+                                            Thêm vào giỏ
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 </main>
 
