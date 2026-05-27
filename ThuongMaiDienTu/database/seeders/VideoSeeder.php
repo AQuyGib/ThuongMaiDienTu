@@ -20,12 +20,13 @@ class VideoSeeder extends Seeder
             [
                 'title' => 'Đánh giá iPhone 17 - Siêu phẩm tương lai',
                 'description' => 'Review chi tiết thiết kế, hiệu năng và camera của iPhone 17 thế hệ mới.',
-                'video_path' => 'uploads/video/Iphone 17.mp4',
-                'thumbnail_path' => 'uploads/video/iphone17_thumb.png',
-                'duration' => '00:15',
+                'youtube_url' => 'https://www.youtube.com/watch?v=k3Vz3eYm0xY',
+                'video_path' => null,
+                'thumbnail_path' => null,
+                'duration' => '15:20',
                 'category' => 'Điện thoại',
-                'views' => 0,
-                'likes' => 0,
+                'views' => 1250,
+                'likes' => 340,
                 'status' => 'published',
                 'uploaded_by_admin' => true,
                 'user_id' => $adminId,
@@ -34,12 +35,13 @@ class VideoSeeder extends Seeder
             [
                 'title' => 'Top 10 máy lọc nước bán chạy nhất',
                 'description' => 'Đánh giá và so sánh chi tiết top 10 dòng máy lọc nước gia đình tốt nhất hiện nay.',
-                'video_path' => 'uploads/video/Top10maylocnc.mp4',
-                'thumbnail_path' => 'uploads/video/maylocnuoc_thumb.png',
-                'duration' => '00:20',
+                'youtube_url' => 'https://www.youtube.com/watch?v=W0vV5k9K5kI',
+                'video_path' => null,
+                'thumbnail_path' => null,
+                'duration' => '10:45',
                 'category' => 'Gia dụng',
-                'views' => 0,
-                'likes' => 0,
+                'views' => 840,
+                'likes' => 120,
                 'status' => 'published',
                 'uploaded_by_admin' => true,
                 'user_id' => $adminId,
@@ -48,12 +50,13 @@ class VideoSeeder extends Seeder
             [
                 'title' => 'Hướng dẫn sử dụng điều hòa tiết kiệm điện',
                 'description' => 'Mẹo bật điều hòa mát lạnh suốt mùa hè mà vẫn cực kỳ tiết kiệm điện năng cho gia đình.',
-                'video_path' => 'uploads/video/dieuhoa.mp4',
-                'thumbnail_path' => 'uploads/video/dieuhoa_thumb.png',
-                'duration' => '00:12',
+                'youtube_url' => 'https://www.youtube.com/watch?v=3mZpXJ6oN0w',
+                'video_path' => null,
+                'thumbnail_path' => null,
+                'duration' => '08:12',
                 'category' => 'Gia dụng',
-                'views' => 0,
-                'likes' => 0,
+                'views' => 2100,
+                'likes' => 450,
                 'status' => 'published',
                 'uploaded_by_admin' => true,
                 'user_id' => $adminId,
@@ -62,12 +65,13 @@ class VideoSeeder extends Seeder
             [
                 'title' => 'Đánh giá Máy lạnh thế hệ mới',
                 'description' => 'Trải nghiệm khả năng làm lạnh nhanh và khử mùi vượt trội của dòng máy lạnh cao cấp.',
-                'video_path' => 'uploads/video/maylanh.mp4',
-                'thumbnail_path' => 'uploads/video/maylanh_thumb.png',
-                'duration' => '00:18',
+                'youtube_url' => 'https://www.youtube.com/watch?v=D-w-w7G_H_A',
+                'video_path' => null,
+                'thumbnail_path' => null,
+                'duration' => '12:18',
                 'category' => 'Gia dụng',
-                'views' => 0,
-                'likes' => 0,
+                'views' => 620,
+                'likes' => 95,
                 'status' => 'published',
                 'uploaded_by_admin' => true,
                 'user_id' => $adminId,
@@ -80,12 +84,6 @@ class VideoSeeder extends Seeder
             if ($cat) {
                 $v['category_id'] = $cat->category_id;
                 $v['category'] = $cat->name;
-            }
-
-            $localPath = public_path($v['video_path']);
-            if (file_exists($localPath)) {
-                $v['file_size'] = filesize($localPath);
-                $v['mime_type'] = 'video/mp4';
             }
 
             Video::updateOrCreate(
