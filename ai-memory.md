@@ -2,7 +2,7 @@
 
 ## Current State & Focus
 - **Merge Activities:**
-  - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
+  - Merged `master` into branch `Vinhem/ThanhToan` successfully via fast-forward (synchronized with the latest changes from `master`).
   - Merged `master` into branch `Vinhem/QuetMaQR` successfully.
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
   - Added tag-based filtering on the lifestyle listing page.
@@ -88,9 +88,9 @@
   - Added visual, state-driven vertical progress Stepper tracking modal populating steps (`Received` -> `Checking` -> `Under_Repair` / `Waiting_Parts` -> `Done`), displaying estimated cost, assigned technicians, real service fees, and invoices dynamically.
   - Implemented automatic redirection / modal re-opening when Laravel validation errors occur during repair ticket submission.
 - **Checkout Form Real-Time Validation & Character Counter:**
-  - Implemented real-time checking for Họ và tên (Full Name): letters only (showing "Nhập họ và tên bằng chữ" on numbers) and constrained to minimum 15 characters (showing "Họ và tên phải từ 15 ký tự trở lên").
+  - Implemented real-time checking for Họ và tên (Full Name): letters and spaces only, limited to 30 characters (showing "Họ và tên chỉ nhập chữ không nhập số và ký tự đặc biệt" or "Họ và tên tối đa 30 ký tự").
   - Implemented real-time checking for Số điện thoại (Phone): numbers only (showing "Bạn chỉ nhập số" on letters) and standard formatting constraint.
-  - Implemented 40-character limit constraint for Địa chỉ giao hàng (Shipping Address) with active real-time character counter.
+  - Implemented 40-character limit constraint and special character prevention for Địa chỉ giao hàng (Shipping Address) with active real-time character counter (showing "Địa chỉ giao hàng không được chứa ký tự đặc biệt" or "Địa chỉ giao hàng tối đa 40 ký tự").
   - Implemented 250-character limit constraint for Ghi chú (Note) with active real-time character counter.
 - **QR Code Payment Page Improvements:**
   - Removed the red expiration timer element and added null-checks to prevent JavaScript crashes when countdown/timer elements are missing.
