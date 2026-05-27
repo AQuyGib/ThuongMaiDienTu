@@ -139,3 +139,30 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Đã khôi phục và đồng bộ chính xác file `ProductController.php` và `Product.blade.php` trên nhánh `Hien/dangonngu` trước khi merge vào `master`.
   - Tích hợp eager loading bản dịch (`withTranslation()` và `category.translations`) cho danh sách sản phẩm giúp trang quản trị hiển thị mượt mà.
   - Sau đó gộp (merge) sạch sẽ nhánh `Hien/dangonngu` vào `master`. Trang quản trị sản phẩm hiện tại hoạt động bình thường, không còn lỗi.
+
+### 8. Đồng bộ Tỉnh/Thành phố Form Địa chỉ & Sửa lỗi Đóng Modal & Hỗ trợ Đa ngôn ngữ (Localization)
+- **Đồng bộ Tỉnh/Thành phố:**
+  - Lọc danh sách Tỉnh/Thành phố của API `esgoo.net` trong Form "Thêm địa chỉ mới" (Address Modal) để chỉ hiển thị 34 tỉnh/thành được cho phép, đồng bộ hoàn toàn với danh sách trên Header.
+  - Áp dụng ánh xạ tên (mapping) từ API esgoo sang hiển thị thu gọn (ví dụ: "Thành phố Hồ Chí Minh" -> "TP. Hồ Chí Minh", "Tỉnh Thừa Thiên Huế" -> "TP. Huế") giúp đồng bộ giao diện hiển thị.
+  - Viết hàm chuẩn hóa tên tỉnh/thành (`normalize`) phục vụ việc chỉnh sửa địa chỉ (`editAddress`) giúp tự động nhận diện và khớp chính xác các địa chỉ cũ đã lưu trong DB (backward-compatible).
+- **Hỗ trợ Đa ngôn ngữ (Localization):**
+  - Chuyển cơ chế lọc sang so khớp ID thay vì chuỗi tiếng Việt thô, giúp ngăn chặn lỗi biến mất các tỉnh/thành phố khi bật tiếng Anh (do Middleware dịch tự động các chuỗi tiếng Việt trong script).
+  - Tự động hiển thị tên Quận/Huyện (`full_name_en`) và Phường/Xã (`full_name_en`) tiếng Anh bằng dữ liệu động từ API khi chế độ tiếng Anh được kích hoạt.
+  - Cải tiến hàm `normalize` hỗ trợ loại bỏ các từ khóa tiếng Anh (`district`, `ward`, `city`, `province`) cùng với cơ chế xóa dấu tiếng Việt giúp việc đối chiếu địa chỉ khi chỉnh sửa hoạt động mượt mà ở cả hai ngôn ngữ.
+- **Sửa lỗi Đóng Modal:**
+  - Định nghĩa hàm `closeAddressModal()` bị thiếu trong `profile.blade.php`, khôi phục hoạt động bình thường cho nút "Đóng" và nút "X" trên góc của modal.
+- **Sửa lỗi hiển thị màu chữ khi hover (Hover State Bug Fix):**
+  - Loại bỏ các khai báo màu sắc và đường viền inline dư thừa (`border-color` và `color`) trên hai nút "Đóng" (của Address Modal) và "Hủy bỏ" (của Repair Modal). Điều này loại bỏ xung đột độ ưu tiên (specificity) trong CSS, cho phép văn bản chuyển sang màu trắng (`#fff`) bình thường khi di chuột vào thay vì bị trùng màu xanh với nền làm mất chữ.
+
+### 9. Tích hợp Điểm & Hạng thành viên (Points & Rank Integration)
+- **Truy xuất thông tin ví điểm:** 
+  - Tích hợp `PointsService` vào `ProfileController@index` để lấy số dư thực tế của người dùng (`wallet_points`, `rank_points`, `current_rank`) từ bảng `user_points`.
+- **Đồng bộ hóa Logic thăng hạng:**
+  - Đồng bộ logic hiển thị hạng, tiến trình thăng hạng và mức chi tiêu còn thiếu của thẻ thành viên trên Sidebar theo các ngưỡng điểm rank thực tế từ `PointsService` (Đồng < 1000, Bạc < 5000, Vàng < 10000, Kim Cương >= 10000).
+  - Sử dụng cột `member_tier` từ bảng `users` làm nguồn hiển thị Hạng hiện tại thay vì `user_points.current_rank` để tôn trọng các thiết lập hạng thủ công từ Admin Panel (ví dụ: gán cứng hạng Vàng cho Admin), đồng thời bảo vệ công thức tính tiến trình (`tierProgress`) bằng hàm `max(0, ...)` chống lại các trường hợp điểm rank của user chưa đạt ngưỡng tương ứng.
+- **Cập nhật Giao diện (UI):**
+  - Bổ sung thêm dòng hiển thị trực quan số dư **Điểm tiêu dùng hiện có** (Wallet points) kèm icon 🪙 (`fa-coins`) và **Điểm tích lũy hạng** (Rank points) kèm icon ⭐ (`fa-star`) trên Thẻ thành viên của trang cá nhân.
+  - Tích hợp động danh sách **Mã ưu đãi đã đổi** (từ `reward_redemptions`) và **Quà tặng trúng từ Vòng quay** (từ `lucky_wheel_spins`) vào tab "Hạng thành viên & Ưu đãi" thay thế cho các mã voucher tĩnh. Các mã này đều đi kèm nút "Sao chép" (Copy) tiện lợi cho người dùng.
+  - Bổ sung bảng hiển thị **Lịch sử biến động điểm** chi tiết (từ `point_transactions`) hiển thị đầy đủ thông tin thời gian, loại điểm (tiêu dùng/rank), hình thức (cộng/trừ/hoàn) và số điểm thay đổi kèm nội dung mô tả cụ thể.
+  - Các chuỗi mô tả tiếng Việt mới đều tương thích hoàn toàn với middleware tự động dịch thuật sang tiếng Anh (`TranslateHtmlResponse`).
+
