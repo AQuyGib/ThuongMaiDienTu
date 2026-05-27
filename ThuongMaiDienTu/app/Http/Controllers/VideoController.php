@@ -52,10 +52,13 @@ class VideoController extends Controller
     {
         $commentsQuery = $video->comments()
             ->whereNull('parent_id')
-            ->with(['user', 'replies.user'])
+            ->where('is_approved', 1)
+            ->with(['user', 'replies' => function ($query) {
+                $query->where('is_approved', 1)->with('user');
+            }])
             ->get();
             
-        $totalCount = $video->comments()->count();
+        $totalCount = $video->comments()->where('is_approved', 1)->count();
         
         $comments = $commentsQuery->map(function ($comment) {
             return [
@@ -96,19 +99,30 @@ class VideoController extends Controller
             'parent_id' => 'nullable|exists:video_comments,id',
         ]);
 
+        $isAdmin = (auth()->check() && in_array(auth()->user()->role_id, [1, 2]));
+        if ($isAdmin) {
+            $isApproved = 1;
+        } else {
+            $moderator = app(\App\Services\CommentModerationService::class);
+            $isApproved = $moderator->isSafe($request->content) ? 1 : 0;
+        }
+
         $comment = \App\Models\VideoComment::create([
             'video_id' => $video->id,
             'parent_id' => $request->parent_id,
             'user_id' => auth()->id(),
             'content' => $request->content,
+            'is_approved' => $isApproved,
         ]);
 
         return response()->json([
             'success' => true,
+            'message' => $isApproved ? 'Bình luận thành công!' : 'Bình luận của bạn chứa từ khóa nhạy cảm và đang chờ kiểm duyệt!',
             'comment' => [
                 'id' => $comment->id,
                 'parent_id' => $comment->parent_id,
                 'content' => $comment->content,
+                'is_approved' => $comment->is_approved,
                 'created_at' => $comment->created_at->format('d/m/Y H:i'),
                 'user' => [
                     'name' => auth()->user()->full_name ?? auth()->user()->name ?? 'Người dùng',
@@ -132,6 +146,25 @@ class VideoController extends Controller
             'success' => false,
             'message' => 'Bạn không có quyền thực hiện hành động này.'
         ], 403);
+    }
+
+    /**
+     * Báo cáo bình luận video vi phạm.
+     */
+    public function reportComment($id)
+    {
+        $comment = \App\Models\VideoComment::findOrFail($id);
+        $comment->increment('report_count');
+
+        // Ngưỡng ẩn tự động khi đạt từ 3 báo cáo trở lên
+        if ($comment->report_count >= 3) {
+            $comment->update(['is_approved' => 0]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cảm ơn bạn đã báo cáo vi phạm. Ban quản trị sẽ sớm xem xét bình luận này!'
+        ]);
     }
 
     public function stream(Video $video)

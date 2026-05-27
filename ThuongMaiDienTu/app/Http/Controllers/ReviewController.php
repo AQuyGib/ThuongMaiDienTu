@@ -13,22 +13,69 @@ class ReviewController extends Controller
      */
     public function store(Request $request)
     {
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập để gửi đánh giá!'
+            ], 401);
+        }
+
         $request->validate([
             'product_id' => 'required|exists:products,product_id',
             'rating' => 'required|integer|min:1|max:5',
             'content' => 'required|string',
             'parent_id' => 'nullable|exists:reviews,id',
-            'author_name' => 'nullable|string|max:255',
-            'media.*' => 'nullable|file|mimes:jpg,jpeg,png,mp4,mov,avi|max:5120', // 5MB max
+            'media.*' => 'nullable|file|mimes:jpg,jpeg,png,webp,gif,jfif,mp4,mov,avi|max:102400', // 100MB max
+        ], [
+            'product_id.required' => 'Mã sản phẩm không được để trống.',
+            'product_id.exists' => 'Sản phẩm không tồn tại.',
+            'rating.required' => 'Vui lòng chọn số sao đánh giá.',
+            'rating.integer' => 'Số sao đánh giá phải là số nguyên.',
+            'rating.min' => 'Số sao đánh giá tối thiểu là 1.',
+            'rating.max' => 'Số sao đánh giá tối đa là 5.',
+            'content.required' => 'Nội dung đánh giá không được để trống.',
+            'parent_id.exists' => 'Bình luận phản hồi không tồn tại.',
+            'media.*.file' => 'Tệp tải lên không hợp lệ.',
+            'media.*.mimes' => 'Định dạng file không hỗ trợ. Vui lòng chọn ảnh (jpg, jpeg, png, webp, gif, jfif) hoặc video (mp4, mov, avi).',
+            'media.*.max' => 'Kích thước file vượt quá giới hạn tối đa 100MB.',
         ]);
 
-        $data = $request->only(['product_id', 'rating', 'content', 'parent_id', 'author_name']);
-        
-        if (Auth::check()) {
-            $data['user_id'] = Auth::id();
-            // Nếu đã đăng nhập thì không cần author_name từ request
-            $data['author_name'] = null;
+        // Kiểm tra số lượng ảnh tối đa là 5 và kích thước tệp (ảnh <= 5MB, video <= 100MB)
+        if ($request->hasFile('media')) {
+            $mediaFiles = $request->file('media');
+            $imageCount = 0;
+            foreach ($mediaFiles as $file) {
+                $mime = $file->getMimeType();
+                $size = $file->getSize(); // in bytes
+                
+                if (str_starts_with($mime, 'image/')) {
+                    $imageCount++;
+                    if ($size > 5 * 1024 * 1024) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Kích thước ảnh "' . $file->getClientOriginalName() . '" vượt quá giới hạn 5MB.'
+                        ], 422);
+                    }
+                } elseif (str_starts_with($mime, 'video/')) {
+                    if ($size > 100 * 1024 * 1024) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Kích thước video "' . $file->getClientOriginalName() . '" vượt quá giới hạn 100MB.'
+                        ], 422);
+                    }
+                }
+            }
+            if ($imageCount > 5) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn chỉ được phép tải lên tối đa 5 hình ảnh.'
+                ], 422);
+            }
         }
+
+        $data = $request->only(['product_id', 'rating', 'content', 'parent_id']);
+        $data['user_id'] = Auth::id();
+        $data['author_name'] = null;
 
         // Xử lý upload media
         if ($request->hasFile('media')) {
@@ -40,11 +87,19 @@ class ReviewController extends Controller
             $data['media'] = $mediaPaths;
         }
 
+        $isAdmin = (Auth::check() && in_array(Auth::user()->role_id, [1, 2]));
+        if ($isAdmin) {
+            $data['is_approved'] = 1;
+        } else {
+            $moderator = app(\App\Services\CommentModerationService::class);
+            $data['is_approved'] = $moderator->isSafe($request->content) ? 1 : 0;
+        }
+
         Review::create($data);
 
         return response()->json([
             'success' => true,
-            'message' => 'Cảm ơn bạn đã gửi đánh giá!'
+            'message' => $data['is_approved'] ? 'Cảm ơn bạn đã gửi đánh giá!' : 'Đánh giá của bạn chứa từ khóa nhạy cảm hoặc liên kết và đang chờ ban quản trị kiểm duyệt!'
         ]);
     }
 
@@ -68,5 +123,24 @@ class ReviewController extends Controller
             'success' => false,
             'message' => 'Bạn không có quyền thực hiện thao tác này.'
         ], 403);
+    }
+
+    /**
+     * Báo cáo đánh giá sản phẩm vi phạm.
+     */
+    public function report(Request $request, $id)
+    {
+        $review = Review::findOrFail($id);
+        $review->increment('report_count');
+
+        // Ngưỡng ẩn tự động khi đạt 3 báo cáo trở lên
+        if ($review->report_count >= 3) {
+            $review->update(['is_approved' => 0]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cảm ơn bạn đã báo cáo vi phạm. Ban quản trị sẽ sớm xem xét đánh giá này!'
+        ]);
     }
 }

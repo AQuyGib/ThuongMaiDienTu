@@ -21,6 +21,7 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\VideoController;
+use App\Http\Controllers\Admin\CommentManagementController;
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
@@ -68,6 +69,7 @@ Route::get('/', function () {
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
+Route::post('/reviews/{id}/report', [ReviewController::class, 'report'])->name('reviews.report')->middleware('auth');
 
 // Modules
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -106,6 +108,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/videos/{video}/comments', [VideoController::class, 'getComments'])->name('videos.comments.index');
     Route::post('/videos/{video}/comments', [VideoController::class, 'storeComment'])->name('videos.comments.store');
     Route::delete('/videos/comments/{comment}', [VideoController::class, 'destroyComment'])->name('videos.comments.destroy');
+    Route::post('/videos/comments/{comment}/report', [VideoController::class, 'reportComment'])->name('videos.comments.report');
 });
 
 // Articles & Lifestyle
@@ -165,6 +168,19 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::put('rewards/{reward}', [AdminRewardsController::class, 'update'])->name('admin.rewards.update');
     Route::put('rewards/{reward}/image', [RewardImageController::class, 'update'])->name('admin.rewards.image.update');
     Route::delete('rewards/{reward}', [AdminRewardsController::class, 'destroy'])->name('admin.rewards.destroy');
+
+    // Comment & Review Management
+    Route::get('comments', [CommentManagementController::class, 'index'])->name('admin.comments.index');
+    Route::post('comments/reviews/bulk-delete', [CommentManagementController::class, 'bulkDeleteReviews'])->name('admin.comments.reviews.bulk-delete');
+    Route::post('comments/video-comments/bulk-delete', [CommentManagementController::class, 'bulkDeleteVideoComments'])->name('admin.comments.video-comments.bulk-delete');
+    Route::delete('comments/reviews/{id}', [CommentManagementController::class, 'destroyReview'])->name('admin.comments.reviews.destroy');
+    Route::delete('comments/video-comments/{id}', [CommentManagementController::class, 'destroyVideoComment'])->name('admin.comments.video-comments.destroy');
+    Route::post('comments/reviews/{id}/reply', [CommentManagementController::class, 'replyReview'])->name('admin.comments.reviews.reply');
+    Route::post('comments/video-comments/{id}/reply', [CommentManagementController::class, 'replyVideoComment'])->name('admin.comments.video-comments.reply');
+    Route::post('comments/reviews/{id}/approve', [CommentManagementController::class, 'approveReview'])->name('admin.comments.reviews.approve');
+    Route::post('comments/video-comments/{id}/approve', [CommentManagementController::class, 'approveVideoComment'])->name('admin.comments.video-comments.approve');
+    Route::post('comments/reviews/{id}/clear-reports', [CommentManagementController::class, 'clearReviewReports'])->name('admin.comments.reviews.clear-reports');
+    Route::post('comments/video-comments/{id}/clear-reports', [CommentManagementController::class, 'clearVideoCommentReports'])->name('admin.comments.video-comments.clear-reports');
 });
 
 Route::middleware('auth')->group(function () {

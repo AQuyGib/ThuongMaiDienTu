@@ -58,12 +58,15 @@ class ProductController extends Controller
         // Lấy danh sách đánh giá (chỉ lấy review gốc, không phải reply)
         $reviews = Review::where('product_id', $id)
             ->whereNull('parent_id')
-            ->with(['user', 'replies'])
+            ->where('is_approved', 1)
+            ->with(['user', 'replies' => function ($query) {
+                $query->where('is_approved', 1);
+            }])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->count();
-        $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->avg('rating') ?: 5;
+        $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->where('is_approved', 1)->count();
+        $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->where('is_approved', 1)->avg('rating') ?: 5;
 
         // Kiểm tra user đã mua hàng chưa (cho chức năng đánh giá)
         $hasPurchased = false;

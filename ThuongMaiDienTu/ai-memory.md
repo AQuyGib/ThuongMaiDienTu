@@ -166,3 +166,92 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Bổ sung bảng hiển thị **Lịch sử biến động điểm** chi tiết (từ `point_transactions`) hiển thị đầy đủ thông tin thời gian, loại điểm (tiêu dùng/rank), hình thức (cộng/trừ/hoàn) và số điểm thay đổi kèm nội dung mô tả cụ thể.
   - Các chuỗi mô tả tiếng Việt mới đều tương thích hoàn toàn với middleware tự động dịch thuật sang tiếng Anh (`TranslateHtmlResponse`).
 
+### 10. Nâng cấp Xác thực & Giới hạn Đánh giá sản phẩm (Product Reviews Validation)
+- **Bảo mật & Phân quyền:**
+  - Bắt buộc đăng nhập mới được viết đánh giá (Backend kiểm tra qua `ReviewController@store` và trả về lỗi `401 Unauthorized` nếu chưa Login).
+  - Ẩn form viết đánh giá ngoài Frontend đối với khách vãng lai, thay bằng thông báo kèm nút dẫn đến trang Đăng nhập.
+  - Chỉ cho phép người dùng đã đăng nhập phản hồi (Reply) đánh giá (ẩn toàn bộ nút "Trả lời" và form Reply với khách vãng lai).
+- **Giới hạn số lượng ảnh/video & Hỗ trợ định dạng:**
+  - Bổ sung logic kiểm tra MimeType trên Backend để giới hạn tối đa chỉ cho phép upload 5 tệp tin hình ảnh cho mỗi đánh giá.
+  - Nâng giới hạn dung lượng tải video trong đánh giá sản phẩm lên **100MB** (ngang hàng với giới hạn đăng video ở trang quản lý của Admin), trong khi giữ giới hạn ảnh tối đa là **5MB**.
+  - Mở rộng danh sách định dạng ảnh hợp lệ tại Backend bao gồm cả `webp`, `gif`, và `jfif` nhằm tránh lỗi xác thực khi người dùng tải lên hình ảnh từ trình duyệt hiện đại hoặc screenshot.
+  - Việt hóa hoàn toàn các thông báo lỗi xác thực của Laravel để hiển thị thông tin rõ ràng và thân thiện.
+  - Đồng bộ nhãn chỉ dẫn tải tệp phía Frontend thành "Thêm ảnh / video (tối đa 5 ảnh, video < 100MB)".
+
+### 11. Trang quản lý Bình luận & Đánh giá trong Admin (Admin Comment Management)
+- **Bộ điều khiển (Controller):**
+  - Tạo mới `app/Http/Controllers/Admin/CommentManagementController.php` để xử lý kiểm duyệt đánh giá sản phẩm (`reviews`) và bình luận video (`video_comments`).
+  - Hỗ trợ phân trang độc lập, tìm kiếm theo từ khóa (tên người dùng, nội dung bình luận, tên sản phẩm/video), bộ lọc số sao (đối với đánh giá).
+  - Tích hợp tính năng xóa bình luận/đánh giá cha đồng thời tự động xóa (cascade) các phản hồi liên quan để giữ sạch dữ liệu.
+  - Tích hợp tính năng phản hồi (Reply) trực tiếp từ Admin.
+- **Định tuyến (Routes):**
+  - Đăng ký nhóm route `/admin/comments` cho phép xem danh sách, xóa và phản hồi cho cả 2 thực thể bình luận và đánh giá trong `routes/web.php`.
+- **Giao diện (Frontend & Sidebar):**
+  - Thêm menu điều hướng "Bình luận & Đánh giá" với icon `fa-comments` vào Sidebar Admin (`sidebar.blade.php`).
+  - Tạo view `resources/views/admin/comments/index.blade.php` sử dụng thiết kế dạng thẻ hiện đại, phân chia tab rõ ràng, hiển thị trực quan tệp đính kèm (ảnh/video với lightbox phóng to) và tích hợp các hộp thoại phản hồi/xác nhận xóa qua SweetAlert & Bootstrap Modal.
+
+### 12. Hệ thống kiểm duyệt Bình luận & Đánh giá (Comment Moderation & JS Fix)
+- **Hạ tầng & Database:**
+  - Tạo migration thêm cột `is_approved` (boolean, mặc định `true` cho các bản ghi cũ) vào bảng `reviews` và `video_comments` để giữ hiển thị cho dữ liệu lịch sử.
+  - Cấu hình fillable `is_approved` trong hai Model tương ứng.
+- **Quy trình Kiểm duyệt (Approval Flow):**
+  - Frontend: Khi người dùng bình thường đăng đánh giá sản phẩm hoặc bình luận góc video, giá trị `is_approved` mặc định lưu là `0` (Chờ duyệt). Trình duyệt sẽ nhận được thông báo phản hồi thân thiện về việc đang chờ duyệt. Đối với Admin/Manager (role 1, 2) hoặc các câu trả lời do Admin gửi, bình luận sẽ tự động duyệt ngay lập tức (`is_approved = 1`).
+  - Lọc hiển thị Frontend: Cập nhật `ProductController@show` và `VideoController@getComments` chỉ tải những đánh giá, bình luận gốc và các phản hồi con đã được kiểm duyệt (`where('is_approved', 1)`).
+- **Hành động trong Admin:**
+  - Thêm hai phương thức `approveReview` và `approveVideoComment` trong `CommentManagementController` và định nghĩa route tương ứng.
+  - Hiển thị cột "Trạng thái" dạng badge màu sắc trực quan (Đã duyệt / Chờ duyệt) ở trang danh sách admin. Bổ sung nút **Duyệt** màu xanh lá đối với các dòng đang chờ duyệt.
+  - Sửa lỗi nút **Xóa phản hồi** (Reply Delete) không hoạt động và lỗi JS liên quan đến Bootstrap modal khởi tạo thủ công bằng cách chuyển sang sử dụng hoàn toàn cơ chế kích hoạt khai báo qua các thuộc tính data-attributes HTML5 (`data-bs-toggle="modal"`, `data-bs-target`) và lắng nghe sự kiện Native Bootstrap (`show.bs.modal`, `hidden.bs.modal`), triệt tiêu hoàn toàn sự phụ thuộc trực tiếp vào biến toàn cục `bootstrap` trong Javascript.
+
+### 13. Hệ thống báo cáo vi phạm bình luận từ người dùng (User Comment Reporting & Auto-moderation)
+- **Cơ chế báo cáo vi phạm:**
+  - Người dùng có thể click nút "Báo cáo" cạnh mỗi đánh giá sản phẩm hoặc bình luận video.
+  - POST request gửi tới route `/reviews/{id}/report` hoặc `/videos/comments/{comment}/report` để tăng cột `report_count` lên 1.
+  - Ngưỡng tự động ẩn: Khi `report_count >= 3`, trạng thái `is_approved` tự động chuyển sang `0` (ẩn khỏi trang người dùng để chờ quản trị viên phê duyệt lại).
+- **Trang quản trị (Admin Panel):**
+  - Cột trạng thái hiển thị thêm badge báo động đỏ `Báo cáo: X` nếu `report_count > 0`.
+  - Nút hành động **Bỏ báo cáo** được tích hợp nhằm cho phép Admin xóa toàn bộ báo cáo vi phạm (`report_count = 0`), đồng thời tự động khôi phục và duyệt lại nội dung đó (`is_approved = 1`).
+- **Các file sửa đổi:**
+  - `routes/web.php`
+  - `app/Http/Controllers/ReviewController.php`
+  - `app/Http/Controllers/VideoController.php`
+  - `app/Http/Controllers/Admin/CommentManagementController.php`
+  - `resources/views/admin/comments/index.blade.php`
+  - `resources/views/frontend/products/partials/reviews.blade.php`
+  - `resources/views/videos/index.blade.php`
+
+- **Tích hợp Gemini AI:**
+  - Đã tích hợp Google Gemini AI (model `gemini-2.5-flash`) vào `CommentModerationService.php`.
+  - Tự động gọi API phân tích nội dung bình luận khi cấu hình `GEMINI_API_KEY` trong file `.env`.
+  - **Tối ưu hóa Fallback:** Nếu có API Key, hệ thống bỏ qua kiểm tra blacklist cục bộ. Nếu không cấu hình API Key, hệ thống sẽ sử dụng danh sách từ khóa đen tiếng Việt cục bộ (bao gồm các từ tục tĩu) và quét regex link spam để bảo vệ trang web.
+
+### 14. Hoàn thiện thông báo kiểm duyệt & Cơ chế Fallback an toàn (Comment Moderation Alert & Fallback Fixes)
+- **Cơ chế thông báo kiểm duyệt động & Cuộn mượt:**
+  - Cập nhật JavaScript frontend của đánh giá sản phẩm (`reviews.blade.php`) và bình luận video (`videos/index.blade.php`) để hiển thị thông báo phản hồi động từ server thay vì cố định thông báo "Đăng bình luận thành công" như trước.
+  - Tích hợp thêm kiểu dáng Warning cho Toast/Modal khi bình luận bị đánh dấu nhạy cảm và chờ duyệt để người dùng nắm rõ trạng thái.
+  - Thêm cơ chế tự động cuộn mượt (smooth scroll) về vị trí phần đánh giá (`#reviews-section`) sau khi trang tải lại để tránh tình trạng màn hình tự nhảy lên đầu trang.
+- **Tối ưu hóa Fallback kiểm duyệt:**
+  - Sửa lỗi trong `CommentModerationService.php`: Trong trường hợp có API Key nhưng cuộc gọi API Gemini gặp lỗi hoặc quá tải (trả về null), hệ thống sẽ tự động sử dụng danh sách từ khóa đen (blacklist) cục bộ làm phương án dự phòng thay vì tự động phê duyệt bình luận.
+- **Sửa quan hệ trong Eloquent:**
+  - Khắc phục quan hệ `user` trong Model `Review.php` bằng cách định nghĩa tường minh khóa ngoại và khóa chính (`user_id`, `user_id`) để tương thích với cấu trúc DB hiện tại.
+- **Các file sửa đổi:**
+  - `app/Services/CommentModerationService.php`
+  - `app/Models/Review.php`
+  - `resources/views/frontend/products/partials/reviews.blade.php`
+  - `resources/views/videos/index.blade.php`
+  - `app/Http/Controllers/Frontend/ProductController.php` (lọc các đánh giá và phản hồi chưa duyệt)
+  - `resources/views/admin/comments/index.blade.php` (sửa lỗi gửi POST nhầm sang admin/comments khi chạy dự án trong thư mục con)
+
+### 15. Xóa hàng loạt bình luận & Báo cáo comment phụ
+- **Xóa hàng loạt (Bulk Delete):**
+  - Thêm checkbox "Chọn tất cả" vào header bảng đánh giá và bảng bình luận video.
+  - Thêm checkbox từng dòng cho mỗi bình luận/đánh giá.
+  - Thanh hành động hàng loạt (bulk action bar) hiển thị khi có item được chọn, cho phép xóa nhiều bình luận cùng lúc với xác nhận SweetAlert.
+  - Backend: 2 route POST mới (`bulk-delete`) + 2 method mới trong `CommentManagementController`.
+- **Báo cáo comment phụ:**
+  - Thêm nút "Báo cáo" vào các reply (comment phụ) trong trang chi tiết sản phẩm (`reviews.blade.php`).
+- **Các file sửa đổi:**
+  - `routes/web.php`
+  - `app/Http/Controllers/Admin/CommentManagementController.php`
+  - `resources/views/admin/comments/index.blade.php`
+  - `resources/views/frontend/products/partials/reviews.blade.php`
+
