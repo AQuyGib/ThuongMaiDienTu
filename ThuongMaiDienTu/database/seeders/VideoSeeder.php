@@ -82,6 +82,12 @@ class VideoSeeder extends Seeder
                 $v['category'] = $cat->name;
             }
 
+            $localPath = public_path($v['video_path']);
+            if (file_exists($localPath)) {
+                $v['file_size'] = filesize($localPath);
+                $v['mime_type'] = 'video/mp4';
+            }
+
             Video::updateOrCreate(
                 ['title' => $v['title']],
                 $v
