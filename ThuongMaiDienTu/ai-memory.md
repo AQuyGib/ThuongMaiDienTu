@@ -1,8 +1,11 @@
 # AI Memory - Dự Án Thương Mại Điện Tử
 
 ## Tiến độ và Ngữ cảnh hiện tại
-Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/CMS chuyên nghiệp.
-## Các file đã tạo / chỉnh sửa & Công việc hoàn thành:
+Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/CMS chuyên nghiệp. Đang phát triển các phân hệ: Articles & Lifestyle, Storefront (So sánh & Bộ lọc), Phiếu sửa chữa & Dịch vụ (Repair Tickets & Customer Portal), và Phân hệ Quản lý & Phát Video (Videos Management).
+
+## Các file đã tạo / chỉnh sửa & Công việc hoàn thành
+
+### 1. Phân hệ Quản lý & Phát Video (Videos Management) - Mới hoàn thành từ branch `Hien/Video`
 - **Hạ tầng & Database:**
     - Đã **xóa** các file migration mặc định của Laravel (users, cache, jobs, etc.) để tránh xung đột.
     - Đã **tạo mới 20 file migration** nằm trong thư mục `database/migrations/` và 20 Eloquent Models hoàn chỉnh.
@@ -61,42 +64,62 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
         - Thay đổi cơ chế hiển thị thanh lọc danh mục "Xem theo danh mục" tại trang video frontend: tự động thu thập và xây dựng danh sách các danh mục trực tiếp từ tập hợp các video đã công khai (published videos) thay vì truy vấn các danh mục có chứa sản phẩm từ database, đồng thời tự động lấy danh mục cha cao nhất (root category) bằng đệ quy thông qua phương thức `getRootCategory()` của `Video` model để gom nhóm và hiển thị làm bộ lọc, giúp loại bỏ hoàn toàn các lỗi thiếu hoặc sai lệch danh mục.
         - Cải tiến hàm `stream()` tại `VideoController.php` hỗ trợ tìm và stream video từ thư mục `public_path()` nếu không tìm thấy trong `storage_path()`.
         - Cập nhật `.gitignore` loại trừ thư mục `/public/uploads/video/` tránh commit tệp tin video nặng lên git.
+- **Giao diện Admin (Quản trị Video):**
+  - Danh sách video (`admin/videos/index.blade.php`): Thiết kế lại bảng chuyên nghiệp, hiển thị ID (số thứ tự thực tế tăng dần), "Ảnh minh họa" (thumbnail), "Tiêu đề", "Mô tả chi tiết" (line-clamp 2 dòng), và các nút trạng thái Ẩn/Hiện bằng AJAX, nút Sửa, Xóa với xác nhận SweetAlert2.
+  - Trang đăng video (`admin/videos/create.blade.php`): Giao diện 2 cột cân đối, thanh thoát, không lồng card. Thêm vách ngăn dọc và tối ưu chiều cao form để tránh cuộn trang. Hỗ trợ upload video nội bộ (kéo thả drag & drop, validate size lên 100MB) hoặc nhúng link YouTube. Tự động lấy thời lượng video bằng JS.
+  - Trang sửa video (`admin/videos/edit.blade.php`): Cho phép chỉnh sửa thông tin video linh hoạt.
+  - Trang chi tiết video (`admin/videos/show.blade.php`): Layout 2 cột premium, hiển thị trình phát video (hoặc iframe YouTube), hiển thị thông tin chi tiết qua lưới thuộc tính sinh động, hiển thị danh sách bình luận kèm form xóa bình luận trực quan cho Admin.
+- **Giao diện Frontend (Khách hàng xem Video):**
+  - Trang phát video (`videos/index.blade.php`): Trình phát video HTML5 xịn sò, tự động phát đúng nguồn (YouTube hoặc local MP4). Tự động ẩn bộ chuyển đổi nếu chỉ có 1 nguồn.
+  - Cải tiến phát video: Hỗ trợ tua bằng phím mũi tên Trái/Phải (10s), Spacebar để play/pause, Double click trái/phải màn hình video để tua. Sửa lỗi "Undefined variable $defaultSource" khi danh sách video trống bằng cách khai báo trước các biến `$defaultSource`, `$hasMp4`, `$hasYoutube` tại khối khởi tạo `@php` ở đầu view `resources/views/videos/index.blade.php`.
+  - Sửa lỗi Range Requests (tua video bị đơ trên Local PHP server) bằng cách tạo route stream video riêng `/videos/{video}/stream` trả về response `206 Partial Content` (Accept-Ranges).
+  - Tương tác Video: Tự động đếm lượt xem khi tải trang, hỗ trợ Like/Unlike AJAX và cập nhật real-time lượt thích trên playlist bên phải.
+  - Bình luận Video: Hệ thống bình luận AJAX, hỗ trợ phân cấp bình luận gốc và các phản hồi (replies), tự động ẩn/hiện reply nếu có >2 phản hồi, hỗ trợ reply lồng sâu (tag mention @username), escape HTML chống XSS, cho phép người dùng/admin xóa bình luận của mình.
+- **Cấu hình Server:**
+  - Nâng giới hạn upload file từ 10MB/20MB lên 100MB ở Laravel backend, frontend JS, file `.htaccess`, `.user.ini`, và cấu hình `php.ini` của XAMPP.
+>>>>>>> 868cc549ac74a8fdf8ab553fd4b2a9d3bfbd2469
 
-## Thông tin kỹ thuật:
-- Auth: `user_id`, `password_hash`, custom primary key.
-- Phân quyền: Admin (1), Quản lý (2), Khách hàng (3), Nhân viên (4).
+### 2. Phân hệ Phiếu sửa chữa & Dịch vụ (Repair Tickets & Customer Profile)
+- **Repair Tickets CRUD & Invoicing Link:**
+  - Mở rộng `RepairTicketInvoiceController` hỗ trợ toàn bộ vòng đời phiếu sửa chữa (tạo, sửa, xóa).
+  - Migration cho phép `user_id` nullable trên bảng `repair_tickets` để hỗ trợ khách vãng lai, bổ sung thông tin địa chỉ, email, nguồn khách hàng.
+  - Nhập liệu thông minh: Tự động truy vấn và điền thông tin khách hàng bằng AJAX autocomplete khi nhập số điện thoại đã tồn tại.
+  - Quản lý hóa đơn dịch vụ (`ServiceInvoiceController`): Hỗ trợ xuất hóa đơn dịch vụ trực tiếp từ phiếu sửa chữa (chỉ cho phép khi phiếu có trạng thái `Done`), tự động đồng bộ hóa đơn với phiếu sửa chữa, hỗ trợ VAT (%) tính toán real-time bằng JS, in hóa đơn (`print.blade.php`).
+  - Thêm trạng thái sửa chữa `Under_Repair` (Đang sửa chữa). Đồng bộ tiền tố mã phiếu sửa chữa là `#RT-` trên toàn hệ thống.
+  - Tự động liên kết tài khoản user dựa trên số điện thoại khi admin lưu phiếu.
+- **Đăng ký Sửa chữa Online (Customer Portal):**
+  - Tích hợp tab Lịch sử & Đặt lịch sửa chữa trong trang Profile khách hàng.
+  - Form đăng ký sửa chữa online (tên khách hàng, SĐT, email, địa chỉ, số IMEI/Serial, ngày hẹn, mô tả lỗi). Tự động gán kỹ thuật viên mặc định khi đăng ký.
+  - Stepper theo dõi tiến độ sửa chữa trực quan theo chiều dọc hiển thị các bước (`Received` -> `Checking` -> `Under_Repair` / `Waiting_Parts` -> `Done`), hiển thị chi phí dự kiến và hóa đơn kèm theo.
 
-## TODO (Việc cần làm tiếp theo)
+### 3. Phân hệ Articles & Lifestyle CRUD
+- Tích hợp bộ lọc theo thẻ (tags) ở trang danh sách bài viết frontend.
+- Đồng bộ bộ lọc tìm kiếm và trạng thái bài viết ở trang quản lý bài viết Admin.
+- Tối ưu hóa giao diện soạn thảo bài viết và preview responsive trên thiết bị di động.
+
+### 4. Tính năng So sánh Sản phẩm & Bộ lọc Nâng cao (Compare & Filter)
+- Triển khai tính năng so sánh tối đa 3 sản phẩm cùng danh mục, so sánh thông số kỹ thuật tự động từ cột JSON `specifications` hoặc bảng phụ `product_specifications`.
+- Floating bar so sánh sản phẩm ở dưới chân trang, cho phép click tìm kiếm nhanh sản phẩm trống từ modal AJAX.
+- Bộ lọc nâng cao ở trang danh mục sản phẩm (sử dụng `ProductFilterService` xử lý AJAX lọc động theo thông số kỹ thuật chi tiết).
+
+## Thông tin kỹ thuật & Cấu trúc cơ sở dữ liệu
+- **Xác thực & Người dùng:**
+  - Khóa chính bảng users: `user_id`. Mã hóa mật khẩu qua cột `password_hash` (custom auth).
+  - Phân quyền (Roles): Admin (1), Quản lý (2), Khách hàng (3), Nhân viên (4).
+- **Video:**
+  - Bảng `videos`: khóa chính `video_id`.
+  - Bảng `video_comments`: khóa chính `comment_id`, khóa ngoại `user_id` và `video_id`, hỗ trợ `parent_id` cho bình luận phân cấp.
+- **Hóa đơn & Phiếu sửa chữa:**
+  - Khóa chính bảng `repair_tickets`: `ticket_id`. Khóa chính bảng `service_invoices`: `invoice_id`.
+
+## TODO (Các việc cần làm tiếp theo)
 - [ ] Kết nối dự án Laravel với Database thật (sửa file `.env`).
-- [x] Chạy lệnh `php artisan migrate` để đồng bộ Database.
-- [x] Khởi tạo các Eloquent Model tương ứng với 20 bảng cơ sở dữ liệu.
-- [x] Khởi tạo cấu trúc thư mục App & Views.
-- [x] Tạo file Seeder để chèn dữ liệu mẫu (Roles & Users).
-- [x] **Nâng cấp Lọc Sản Phẩm Động (Dynamic Filtering):**
-    - Cấu trúc lại Javascript gọi API cấu hình bộ lọc theo từng danh mục.
-    - Cấu trúc Controller nhận các specs động.
-    - Chỉnh sửa Product Model Scope để sử dụng `whereJsonContains` kết hợp filter linh hoạt qua các cột chuẩn hóa.
-    - Cập nhật hiển thị "Điểm nhấn kỹ thuật" linh động trên thẻ sản phẩm.
-- [ ] Tích hợp lấy dữ liệu động từ Database hiển thị ra trang chủ thay cho giao diện demo hiện tại.
-- [ ] **Giai đoạn 2:** Triển khai CRUD Danh mục và CRUD Sản phẩm (kèm biến thể).
-- [ ] **Giai đoạn 2:** Hiển thị sản phẩm lên trang chủ khách hàng (Frontend).
-- [ ] Bắt đầu viết logic trong `CartService` và `InventoryService`.
-- [x] Triển khai CRUD Bài viết (Articles) tích hợp ecosystem, gamification & shoppable content.
-- [x] **Triển khai Tính Năng So Sánh Sản Phẩm (Compare Feature):**
-    - Migration: `2026_05_08_215800_add_compare_type_to_wishlists_recently_viewed.php` — thêm enum 'Compare'
-    - `app/Services/CompareService.php` — Logic cốt lõi: thu thập specs từ JSON + bảng, cắm cờ `is_different`
-    - `app/Http/Controllers/CompareController.php` — API add/remove/clear, trang so sánh, live search, migrate session→DB
-    - Routes: POST /compare/add, DELETE /compare/remove/{id}, POST /compare/clear, GET /compare, GET /compare/data, GET /api/products/search-compare
-    - `resources/views/partials/compare-bar.blade.php` — Floating bar 3 slots + modal search
-    - `resources/views/frontend/products/compare.blade.php` — Trang so sánh: sticky header, toggle khác biệt, live search slot trống
-    - `public/assets/frontend/js/compare.js` — JS quản lý floating bar, AJAX, toast
-    - Tích hợp CSS floating bar + search modal vào `layouts/app.blade.php`
-    - Thêm nút "So sánh" vào `show.blade.php` (chi tiết SP) và `product_grid.blade.php` (card SP)
-    - Migrate session compare list vào DB khi login trong `AuthController.php`
-    - Product model: thêm alias `productSpecifications()` để tránh conflict với cột JSON `specifications`
-    - Validate: chỉ cho so sánh SP cùng category_id, tối đa 3 SP
+- [ ] Tích hợp lấy dữ liệu động từ Database hiển thị ra trang chủ khách hàng (Frontend) thay cho giao diện demo hiện tại.
+- [ ] Triển khai CRUD Danh mục và CRUD Sản phẩm (kèm biến thể) - Giai đoạn 2.
+- [ ] Hiển thị sản phẩm lên trang chủ khách hàng (Frontend).
+- [ ] Phát triển logic trong `CartService` và `InventoryService`.
+- [ ] Tối ưu hóa hiệu năng load video và caching lượt xem/likes để giảm tải cho DB.
 
-## Ghi chú quan trọng:
-- Đã tách Sidebar thành `resources/views/admin/partials/sidebar.blade.php` để team dễ phối hợp.
-- Sử dụng `primaryKey = 'user_id'` và `password_hash` thay cho mặc định của Laravel để khớp với yêu cầu DB.
-- **Compare Feature**: Dữ liệu thông số lấy từ 2 nguồn: cột JSON `specifications` trên bảng `products` (ưu tiên) và bảng `product_specifications` (fallback). Dùng `getRawOriginal('specifications')` để access cột JSON vì tên relationship `specifications()` conflict.
+## Ghi chú quan trọng
+- Sidebar Admin đã được tách biệt thành `resources/views/admin/partials/sidebar.blade.php` và `resources/js/components/AdminSidebar.tsx` để dễ quản lý.
+- Toàn bộ tính năng video đã được merge thành công từ branch `Hien/Video` vào `master`, không xảy ra xung đột mã nguồn.
