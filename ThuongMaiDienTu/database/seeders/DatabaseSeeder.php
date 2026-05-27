@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             RewardRuleSeeder::class,
             RewardHistorySeeder::class,
             VideoSeeder::class,
+            ProductComboSeeder::class,
         ]);
     }
 }

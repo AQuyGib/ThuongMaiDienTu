@@ -27,7 +27,7 @@ class SampleProductSeeder extends Seeder
 
         $supplierId = DB::table('suppliers')->insertGetId([
             'name' => 'Tổng kho Điện Máy Pro',
-            'contact_info' => '1900 1008'
+            'phone' => '1900 1008'
         ]);
 
         $poId = DB::table('purchase_orders')->insertGetId([

@@ -18,6 +18,13 @@ class CartController extends Controller
     public function __construct(private readonly FlashSaleService $flashSaleService)
     {
     }
+    /**
+     * Hàm: index
+     * Công dụng: Hiển thị trang giỏ hàng của khách hàng (Frontend shopping cart).
+     *            - Lấy danh sách sản phẩm hiện có trong session 'cart'.
+     *            - Truy vấn thông tin sản phẩm từ DB để cập nhật giá mới nhất (ưu tiên giá Flash Sale nếu có).
+     *            - Truyền dữ liệu giỏ hàng sang giao diện Blade.
+     */
     public function index()
     {
         $cart = session()->get('cart', []);
@@ -42,6 +49,20 @@ class CartController extends Controller
         return view('frontend.cart.shoppingcart', compact('cartItems'));
     }
 
+    /**
+     * Hàm: add
+     * Công dụng: Thêm một sản phẩm (hoặc combo sản phẩm phụ kiện mua kèm) vào giỏ hàng session.
+     * Logic đặc biệt:
+     *   1. Kiểm tra chương trình Flash Sale đang hoạt động của sản phẩm để áp dụng giá Flash Sale và kiểm tra tồn kho.
+     *   2. Xử lý bảo mật máy chủ (Server-side validation) cho combo mua kèm:
+     *      - Nếu request gửi kèm tham số `parent_id` (ID của sản phẩm chính), kiểm tra xem sản phẩm phụ kiện này có
+     *        nằm trong danh sách combo được cấu hình của sản phẩm chính trong DB hay không (`product_combos`).
+     *      - Nếu khớp cấu hình, truy vấn loại giảm giá ('percentage' hoặc 'fixed') và giá trị giảm tương ứng từ cột pivot.
+     *      - Áp dụng công thức giảm giá lên giá nền (giá bán thường hoặc giá Flash Sale) để tính ra giá thực tế sau giảm.
+     *      - Giá trị này được gán trực tiếp vào thuộc tính `price` và `flash_sale_price` trong giỏ hàng để tránh việc người
+     *        dùng can thiệp và sửa giá từ Client-side.
+     *   3. Trả về phản hồi JSON (nếu là AJAX) hoặc redirect về trang giỏ hàng (nếu là nút Mua Ngay).
+     */
     public function add(Request $request)
     {
         $productId = (int) $request->input('product_id');
@@ -60,6 +81,31 @@ class CartController extends Controller
                 return back()->with('error', 'Số lượng Flash Sale còn lại không đủ.');
             }
             $salePrice = (int) $flashSaleProduct->sale_price;
+        }
+
+        // Kiểm tra xem sản phẩm có được mua kèm theo combo của sản phẩm chính không
+        $parentProductId = $request->input('parent_id');
+        if ($parentProductId) {
+            $parentProduct = Product::find($parentProductId);
+            if ($parentProduct) {
+                // Truy vấn bảng trung gian product_combos để lấy thông tin cấu hình giảm giá
+                $comboRelation = $parentProduct->comboProducts()->where('product_combos.combo_product_id', $productId)->first();
+                if ($comboRelation) {
+                    $pivot = $comboRelation->pivot;
+                    $basePriceToDiscount = $salePrice ?? (int) $product->base_price;
+                    
+                    // Áp dụng giảm giá theo phần trăm (%) hoặc số tiền cố định (đ)
+                    if ($pivot->discount_type === 'percentage') {
+                        $salePrice = (int) ($basePriceToDiscount * (1 - $pivot->discount_value / 100));
+                    } else {
+                        $salePrice = (int) ($basePriceToDiscount - $pivot->discount_value);
+                    }
+                    
+                    if ($salePrice < 0) {
+                        $salePrice = 0;
+                    }
+                }
+            }
         }
 
         if (isset($cart[$productId])) {

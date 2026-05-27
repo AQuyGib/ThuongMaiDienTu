@@ -51,7 +51,7 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        $product = Product::with(['category', 'productSpecifications', 'variants'])->findOrFail($id);
+        $product = Product::with(['category', 'productSpecifications', 'variants', 'comboProducts'])->findOrFail($id);
         $flashSaleProduct = $this->flashSaleService->getFlashSaleProductFor($product);
         $effectivePrice = $this->flashSaleService->getEffectivePrice($product);
 
@@ -83,6 +83,10 @@ class ProductController extends Controller
         // Gợi ý bán chéo: FBT → Brand → Flash Sale → Category
         $crossSellProducts = $this->crossSellService->getFullCrossSellList($product, 8);
 
+        // Lấy danh sách Combo sản phẩm được cấu hình riêng biệt
+        $comboProducts = $product->comboProducts;
+        $this->crossSellService->attachFlashSaleInfo($comboProducts);
+
         return view('frontend.products.show', compact(
             'product', 
             'relatedProducts', 
@@ -92,7 +96,8 @@ class ProductController extends Controller
             'reviews',
             'reviewCount',
             'avgRating',
-            'crossSellProducts'
+            'crossSellProducts',
+            'comboProducts'
         ));
     }
 }

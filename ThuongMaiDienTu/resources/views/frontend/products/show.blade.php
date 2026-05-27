@@ -356,7 +356,7 @@
     </div>
 
     {{-- Mua kèm Combo tiết kiệm --}}
-    @include('frontend.products._combo_bundle', ['crossSellProducts' => $crossSellProducts])
+    @include('frontend.products._combo_bundle', ['comboProducts' => $comboProducts])
 
     {{-- Layout Giữa: Giới thiệu + Specs --}}
     <div class="middle-section">
