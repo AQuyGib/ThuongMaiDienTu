@@ -2080,15 +2080,42 @@
             .catch(err => console.error('Error fetching provinces:', err));
     }
 
+    // 34 allowed provinces from header (Nghị quyết 202/2025/QH15)
+    const allowedProvinces = [
+        'TP. Hồ Chí Minh', 'TP. Hà Nội', 'TP. Hải Phòng', 'TP. Đà Nẵng', 'TP. Cần Thơ', 'TP. Huế',
+        'An Giang', 'Bắc Ninh', 'Cà Mau', 'Cao Bằng',
+        'Đắk Lắk', 'Điện Biên', 'Đồng Nai', 'Đồng Tháp',
+        'Gia Lai', 'Hà Tĩnh', 'Hưng Yên', 'Khánh Hòa',
+        'Lai Châu', 'Lâm Đồng', 'Lạng Sơn', 'Lào Cai',
+        'Nghệ An', 'Ninh Bình', 'Phú Thọ', 'Quảng Ngãi',
+        'Quảng Ninh', 'Quảng Trị', 'Sơn La', 'Tây Ninh',
+        'Thái Nguyên', 'Thanh Hóa', 'Tuyên Quang', 'Vĩnh Long'
+    ];
+
+    const provinceMap = {
+        "Hồ Chí Minh": "TP. Hồ Chí Minh",
+        "Hà Nội": "TP. Hà Nội",
+        "Hải Phòng": "TP. Hải Phòng",
+        "Đà Nẵng": "TP. Đà Nẵng",
+        "Cần Thơ": "TP. Cần Thơ",
+        "Thừa Thiên Huế": "TP. Huế"
+    };
+
     function populateCities(data) {
         const citySelect = document.getElementById('addrCity');
         citySelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
         data.forEach(city => {
-            let option = document.createElement('option');
-            option.value = city.full_name;
-            option.dataset.code = city.id;
-            option.textContent = city.full_name;
-            citySelect.appendChild(option);
+            // Map the name to the display name format used in Image 2 / Header
+            let displayName = provinceMap[city.name] || city.name;
+            
+            // Check if the province is in the allowed list of 34 provinces
+            if (allowedProvinces.includes(displayName)) {
+                let option = document.createElement('option');
+                option.value = displayName; // Save as displaying format
+                option.dataset.code = city.id;
+                option.textContent = displayName;
+                citySelect.appendChild(option);
+            }
         });
     }
 
@@ -2232,8 +2259,25 @@
 
         setTimeout(() => {
             const citySelect = document.getElementById('addrCity');
+            
+            // Helper function to normalize names for robust matching of old and new formats
+            const normalize = (name) => {
+                if (!name) return "";
+                return name.toLowerCase()
+                           .replace(/^tỉnh\s+/i, "")
+                           .replace(/^thành\s+phố\s+/i, "")
+                           .replace(/^tp\.\s+/i, "")
+                           .replace(/thừa thiên huế/i, "huế")
+                           .trim();
+            };
+
+            const normalizedCity = normalize(city);
+
             for(let i=0; i<citySelect.options.length; i++) {
-                if(citySelect.options[i].value === city) { citySelect.selectedIndex = i; break; }
+                if(normalize(citySelect.options[i].value) === normalizedCity) { 
+                    citySelect.selectedIndex = i; 
+                    break; 
+                }
             }
             citySelect.dispatchEvent(new Event('change'));
             setTimeout(() => {
