@@ -123,17 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helper Service Providers
-    |--------------------------------------------------------------------------
-    |
-    | Provider này nạp các helper dùng chung cho Blade / API Resource.
-    |
-    */
-    'providers' => [
-        // ... existing providers ...
-        App\Providers\TranslatableHelperServiceProvider::class,
-    ],
 
 ];
+

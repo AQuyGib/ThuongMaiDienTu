@@ -8,26 +8,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('attribute_translations', function (Blueprint $table) {
+        Schema::create('product_translations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('attribute_id');
+            $table->unsignedInteger('product_id');
             $table->string('locale', 10);
             $table->string('name');
             $table->text('description')->nullable();
+            $table->text('seo_description')->nullable();
             $table->timestamps();
 
-            $table->unique(['attribute_id', 'locale']);
+            $table->unique(['product_id', 'locale']);
             $table->index('locale');
-
-            $table->foreign('attribute_id')
-                ->references('attribute_id')
-                ->on('attributes')
+            $table->foreign('product_id')
+                ->references('product_id')
+                ->on('products')
                 ->cascadeOnDelete();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('attribute_translations');
+        Schema::dropIfExists('product_translations');
     }
 };

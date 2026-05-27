@@ -12,11 +12,12 @@ class TranslationDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        $category = Category::create([
+        $category = Category::updateOrCreate([
+            'slug' => 'dien-thoai'
+        ], [
             'name' => 'Điện thoại',
             'description' => 'Danh mục điện thoại chính hãng',
             'seo_description' => 'Điện thoại giá tốt, chính hãng',
-            'slug' => 'dien-thoai',
             'sort_order' => 1,
             'is_active' => 1,
         ]);
@@ -29,10 +30,11 @@ class TranslationDemoSeeder extends Seeder
             'seo_description' => 'Best price official smartphones',
         ]);
 
-        $attribute = Attribute::create([
+        $attribute = Attribute::updateOrCreate([
+            'slug' => 'mau-sac'
+        ], [
             'name' => 'Màu sắc',
             'description' => 'Thuộc tính màu sắc',
-            'slug' => 'mau-sac',
             'is_active' => 1,
         ]);
 
@@ -43,13 +45,14 @@ class TranslationDemoSeeder extends Seeder
             'description' => 'Color attribute',
         ]);
 
-        $page = Page::create([
+        $page = Page::updateOrCreate([
+            'slug' => 'gioi-thieu'
+        ], [
             'title' => 'Giới thiệu',
             'excerpt' => 'Giới thiệu ngắn',
             'content' => 'Nội dung giới thiệu về công ty',
             'meta_title' => 'Trang giới thiệu',
             'meta_description' => 'Thông tin giới thiệu công ty',
-            'slug' => 'gioi-thieu',
             'is_active' => 1,
         ]);
 
@@ -63,15 +66,16 @@ class TranslationDemoSeeder extends Seeder
             'meta_description' => 'Company introduction information',
         ]);
 
-        $product = Product::create([
+        $product = Product::updateOrCreate([
+            'slug' => 'iphone-15-pro'
+        ], [
             'name' => 'iPhone 15 Pro',
             'description' => 'Điện thoại cao cấp mới nhất',
             'seo_description' => 'iPhone 15 Pro chính hãng',
             'category_id' => $category->category_id,
-            'slug' => 'iphone-15-pro',
             'base_price' => 29990000,
             'discount_percent' => 10,
-            'is_active' => 1,
+            'status' => 1,
         ]);
 
         $product->translations()->updateOrCreate([

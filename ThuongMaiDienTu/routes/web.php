@@ -51,6 +51,16 @@ Route::post('/2fa/toggle-confirm', [TwoFactorController::class, 'toggleConfirm']
 Route::get('/security',    [TwoFactorController::class, 'securityPage'])->name('security')->middleware('auth');
 Route::delete('/security/session/{id}', [TwoFactorController::class, 'logoutSession'])->name('security.session.destroy')->middleware('auth');
 
+// Language Switcher
+Route::get('/locale/{locale}', function (string $locale) {
+    $supported = array_keys(config('translatable.supported_locales', ['vi' => 'Tiếng Việt', 'en' => 'English']));
+    if (in_array($locale, $supported)) {
+        session(['locale' => $locale]);
+        app()->setLocale($locale);
+    }
+    return redirect()->back();
+})->name('locale.switch');
+
 // Frontend
 Route::get('/', function () {
     return redirect()->route('home');

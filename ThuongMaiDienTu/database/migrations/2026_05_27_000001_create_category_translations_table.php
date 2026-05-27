@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('category_translations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('category_id');
+            $table->unsignedInteger('category_id');
             $table->string('locale', 10);
             $table->string('name');
             $table->text('description')->nullable();

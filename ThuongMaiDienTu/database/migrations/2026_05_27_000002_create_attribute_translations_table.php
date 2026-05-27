@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('attribute_translations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('attribute_id');
+            $table->unsignedInteger('attribute_id');
             $table->string('locale', 10);
             $table->string('name');
             $table->text('description')->nullable();

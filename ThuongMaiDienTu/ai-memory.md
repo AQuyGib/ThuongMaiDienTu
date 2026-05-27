@@ -79,39 +79,6 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Nâng giới hạn upload file từ 10MB/20MB lên 100MB ở Laravel backend, frontend JS, file `.htaccess`, `.user.ini`, và cấu hình `php.ini` của XAMPP.
 >>>>>>> 868cc549ac74a8fdf8ab553fd4b2a9d3bfbd2469
 
-### 2. Phân hệ Phiếu sửa chữa & Dịch vụ (Repair Tickets & Customer Profile)
-- **Repair Tickets CRUD & Invoicing Link:**
-  - Mở rộng `RepairTicketInvoiceController` hỗ trợ toàn bộ vòng đời phiếu sửa chữa (tạo, sửa, xóa).
-  - Migration cho phép `user_id` nullable trên bảng `repair_tickets` để hỗ trợ khách vãng lai, bổ sung thông tin địa chỉ, email, nguồn khách hàng.
-  - Nhập liệu thông minh: Tự động truy vấn và điền thông tin khách hàng bằng AJAX autocomplete khi nhập số điện thoại đã tồn tại.
-  - Quản lý hóa đơn dịch vụ (`ServiceInvoiceController`): Hỗ trợ xuất hóa đơn dịch vụ trực tiếp từ phiếu sửa chữa (chỉ cho phép khi phiếu có trạng thái `Done`), tự động đồng bộ hóa đơn với phiếu sửa chữa, hỗ trợ VAT (%) tính toán real-time bằng JS, in hóa đơn (`print.blade.php`).
-  - Thêm trạng thái sửa chữa `Under_Repair` (Đang sửa chữa). Đồng bộ tiền tố mã phiếu sửa chữa là `#RT-` trên toàn hệ thống.
-  - Tự động liên kết tài khoản user dựa trên số điện thoại khi admin lưu phiếu.
-- **Đăng ký Sửa chữa Online (Customer Portal):**
-  - Tích hợp tab Lịch sử & Đặt lịch sửa chữa trong trang Profile khách hàng.
-  - Form đăng ký sửa chữa online (tên khách hàng, SĐT, email, địa chỉ, số IMEI/Serial, ngày hẹn, mô tả lỗi). Tự động gán kỹ thuật viên mặc định khi đăng ký.
-  - Stepper theo dõi tiến độ sửa chữa trực quan theo chiều dọc hiển thị các bước (`Received` -> `Checking` -> `Under_Repair` / `Waiting_Parts` -> `Done`), hiển thị chi phí dự kiến và hóa đơn kèm theo.
-
-### 3. Phân hệ Articles & Lifestyle CRUD
-- Tích hợp bộ lọc theo thẻ (tags) ở trang danh sách bài viết frontend.
-- Đồng bộ bộ lọc tìm kiếm và trạng thái bài viết ở trang quản lý bài viết Admin.
-- Tối ưu hóa giao diện soạn thảo bài viết và preview responsive trên thiết bị di động.
-
-### 4. Tính năng So sánh Sản phẩm & Bộ lọc Nâng cao (Compare & Filter)
-- Triển khai tính năng so sánh tối đa 3 sản phẩm cùng danh mục, so sánh thông số kỹ thuật tự động từ cột JSON `specifications` hoặc bảng phụ `product_specifications`.
-- Floating bar so sánh sản phẩm ở dưới chân trang, cho phép click tìm kiếm nhanh sản phẩm trống từ modal AJAX.
-- Bộ lọc nâng cao ở trang danh mục sản phẩm (sử dụng `ProductFilterService` xử lý AJAX lọc động theo thông số kỹ thuật chi tiết).
-
-## Thông tin kỹ thuật & Cấu trúc cơ sở dữ liệu
-- **Xác thực & Người dùng:**
-  - Khóa chính bảng users: `user_id`. Mã hóa mật khẩu qua cột `password_hash` (custom auth).
-  - Phân quyền (Roles): Admin (1), Quản lý (2), Khách hàng (3), Nhân viên (4).
-- **Video:**
-  - Bảng `videos`: khóa chính `video_id`.
-  - Bảng `video_comments`: khóa chính `comment_id`, khóa ngoại `user_id` và `video_id`, hỗ trợ `parent_id` cho bình luận phân cấp.
-- **Hóa đơn & Phiếu sửa chữa:**
-  - Khóa chính bảng `repair_tickets`: `ticket_id`. Khóa chính bảng `service_invoices`: `invoice_id`.
-
 ## TODO (Các việc cần làm tiếp theo)
 - [ ] Kết nối dự án Laravel với Database thật (sửa file `.env`).
 - [ ] Tích hợp lấy dữ liệu động từ Database hiển thị ra trang chủ khách hàng (Frontend) thay cho giao diện demo hiện tại.
@@ -127,3 +94,148 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - Liên kết nút "Trợ giúp trực tuyến" ở trang phát video với Trợ lý AI (gọi function `chatbotToggle()`).
 - Đã merge và push nhánh Hien/Video sạch sẽ lên remote master trước đó.
 - Khôi phục lại VideoSeeder của nhánh `Hien/Video` sử dụng 4 video cục bộ (bỏ YouTube link), đồng thời reset và chạy lại seeding dữ liệu database video cục bộ thành công theo yêu cầu của user.
+
+### 5. Phân hệ Đa Ngôn Ngữ (Dynamic Localization) – Branch `Hien/dangonngu`
+- **Hạ tầng dịch thuật:**
+  - `app/Services/TranslationService.php`: Dịch tự động qua Google Cloud API hoặc fallback Free Google Translate GTX API (miễn phí, không cần API key).
+  - `app/Traits/BaseTranslationTrait.php`: Trait gắn vào Model, tự động dịch khi `saved()`, intercept `getAttribute()` trả về bản dịch theo locale hiện tại.
+  - `app/Observers/BaseTranslationObserver.php`: Observer tách riêng vòng đời dịch.
+  - `app/Jobs/TranslateModelJob.php`: Job queue dịch bất đồng bộ (tùy config `translatable.observer.queue_if_available`).
+  - `config/translatable.php`: Cấu hình source_locale (vi), target_locale (en), supported_locales, auto_translate, observer settings.
+- **Database Translation Tables (Separate Translation Table pattern):**
+  - `product_translations`: migration `2026_05_27_000004`, model `ProductTranslation.php`.
+  - `category_translations`: migration `2026_05_27_000001`, model `CategoryTranslation.php`.
+  - `attribute_translations`: migration `2026_05_27_000002`, model `AttributeTranslation.php`.
+  - `page_translations`: migration `2026_05_27_000003`, model `PageTranslation.php`.
+  - Các bảng mới: `attributes` (migration `2026_05_26_000001`), `pages` (migration `2026_05_26_000002`).
+  - Bổ sung cột `description`, `seo_description`, `sort_order`, `is_active` vào bảng `categories` (migration `2026_05_27_000005`).
+- **API Đa Ngôn Ngữ:**
+  - `routes/api.php`: API v1 với middleware `ResolveApiLocale` hỗ trợ `?locale=en` hoặc header `X-Locale`.
+  - Controllers: `Api\ProductController`, `Api\CategoryController`, `Api\PageController`, `Api\AttributeController`.
+  - Resources: `ProductResource`, `CategoryResource`, `PageResource`, `AttributeResource` dùng trait `TranslatesResource`.
+  - `ApiWrapsResponse` trait bổ sung `locale` vào mọi API response.
+- **Batch Translation Command:**
+  - `app/Console/Commands/TranslateAllModels.php`: Lệnh `php artisan translate:all` dịch hàng loạt cho tất cả hoặc model cụ thể (`--model=Product`), hỗ trợ `--force` để dịch lại.
+  - Đã chạy thành công: 21 categories + 34 products đã được dịch tự động sang tiếng Anh.
+- **Language Switcher trên Frontend:**
+  - Đã thêm route `/locale/{locale}` đặt tại `routes/web.php` giúp lưu lựa chọn ngôn ngữ vào Session.
+  - `app/Http/Middleware/SetLocaleFromSession.php`: Middleware tự động kiểm tra và cấu hình ngôn ngữ `app()->setLocale()` dựa trên Session của mỗi Request. Đã đăng ký vào group `web` trong `bootstrap/app.php`.
+  - Đã tích hợp nút bấm và Menu thả xuống (Language Switcher dropdown) cực kỳ mượt mà, trực quan ngay góc trên bên phải của Top Bar tại `resources/views/partials/header.blade.php`, hỗ trợ lưu trạng thái cờ và ngôn ngữ được lựa chọn. Nút được thiết kế tinh giản chữ trơn màu trắng không viền, không nền để ăn nhập hoàn hảo với thanh Top Bar.
+  - **Sửa lỗi màu sắc Header:** Thiết lập màu nền của thanh **Top Bar** thành dải màu gradient chuyển từ Xanh dương sang Tím rồi tới Đỏ (`linear-gradient(90deg, #0046ab 0%, #6b21a8 50%, #d70018 100%)`).
+- **Dịch Text Tĩnh Giao Diện (Static UI Translation):**
+  - Tạo thư mục `lang/vi/ui.php` và `lang/en/ui.php` chứa toàn bộ chuỗi text tĩnh của giao diện (header, footer, mega menu, province modal).
+  - Đã cập nhật `resources/views/partials/header.blade.php`: Toàn bộ text tĩnh tiếng Việt (top bar, nút danh mục, thanh tìm kiếm, thông báo, giỏ hàng, đăng nhập/xuất, mega menu, province modal) đều dùng `__('ui.key')`.
+  - Đã cập nhật `resources/views/partials/footer.blade.php`: Toàn bộ text tĩnh (hotline, về công ty, chính sách, kết nối) đều dùng `__('ui.key')`.
+  - Khi chuyển ngôn ngữ sang EN, toàn bộ giao diện header + footer tự động hiển thị tiếng Anh.
+  - **Sửa Lỗi Icon Danh Mục Khi Dịch:** Khi dịch tên danh mục sang Tiếng Anh (`Smartphones`, `Laptops`...), map `$categoryIcons` và `$sidebarIcons`/`$quickLinkIcons` bị mất do key cũ là tiếng Việt. Đã bổ sung cả các key Tiếng Anh tương ứng vào các mảng này tại `resources/views/partials/header.blade.php` và `resources/views/home.blade.php` để giữ nguyên icon và ảnh đại diện cực kỳ chuẩn xác.
+  - **Tối Ưu Chống Giật Giao Diện (Layout Shift & Responsiveness):** Đã nâng cấp cơ chế chống giật sang dạng **co giãn mềm dẻo (Fluid responsive)** để vừa ngăn layout shift vừa không gây tràn/chồng chéo chữ trên mọi kích thước màn hình:
+    - Thiết lập `.logo` (`min-width: 160px`), `.header-category-btn` (`min-width: 110px`), `.header-province-btn` (`min-width: 120px`), `.action-item` (`min-width: 65px`), `.lang-switcher-btn` (`min-width: 60px`) kết hợp cùng padding mềm mại để các nút tự điều chỉnh theo độ dài chữ của từng ngôn ngữ mà không bị ép cứng chật chội.
+    - Khôi phục bản dịch tiếng Anh đầy đủ cho Top Bar (`lang/en/ui.php`) để khớp 100% ngữ nghĩa và số lượng cột của Tiếng Việt. Đồng thời thu gọn kích cỡ chữ Top Bar (`font-size: 11px`) để chứa trọn vẹn cả hai ngôn ngữ mà không bị lỗi hay lệch dòng.
+    - Loại bỏ thuộc tính `gap` (`gap: 0`) ở `.top-bar-left` và `.top-bar-right`, đồng thời thiết lập padding đồng đều `padding: 2px 8px` cho toàn bộ phần tử `span` và `.lang-switcher-btn`. Điều này giúp các vạch ngăn cách (divider border) được hiển thị đối xứng hoàn hảo, khoảng cách cực kỳ gọn gàng và tinh tế, không bị quá xa hay lệch.
+- **Provider Registration:**
+  - `bootstrap/providers.php`: Đã thêm `TranslationServiceProvider` và `TranslatableHelperServiceProvider`.
+  - **Fix:** Đã xóa key `providers` sai trong `config/app.php` (Laravel 11 dùng `bootstrap/providers.php` thay vì `config/app.php` để đăng ký providers).
+- **TranslationService Fallback (Free Google Translate):**
+  - Khi không có `GOOGLE_TRANSLATE_API_KEY` trong `.env`, hệ thống tự động fallback sang endpoint miễn phí: `https://translate.googleapis.com/translate_a/single?client=gtx`.
+  - Hỗ trợ `withoutVerifying()` khi `APP_ENV=local` để tránh lỗi SSL trên XAMPP.
+')`) thay vì danh mục chứa sản phẩm.
+- Liên kết nút "Trợ giúp trực tuyến" ở trang phát video với Trợ lý AI (gọi function `chatbotToggle()`).
+- Đã merge và push nhánh Hien/Video sạch sẽ lên remote master trước đó.
+- Khôi phục lại VideoSeeder của nhánh `Hien/Video` sử dụng 4 video cục bộ (bỏ YouTube link), đồng thời reset và chạy lại seeding dữ liệu database video cục bộ thành công theo yêu cầu của user.
+
+### 5. Phân hệ Đa Ngôn Ngữ (Dynamic Localization) – Branch `Hien/dangonngu`
+- **Hạ tầng dịch thuật:**
+  - `app/Services/TranslationService.php`: Dịch tự động qua Google Cloud API hoặc fallback Free Google Translate GTX API (miễn phí, không cần API key).
+  - `app/Traits/BaseTranslationTrait.php`: Trait gắn vào Model, tự động dịch khi `saved()`, intercept `getAttribute()` trả về bản dịch theo locale hiện tại.
+  - `app/Observers/BaseTranslationObserver.php`: Observer tách riêng vòng đời dịch.
+  - `app/Jobs/TranslateModelJob.php`: Job queue dịch bất đồng bộ (tùy config `translatable.observer.queue_if_available`).
+  - `config/translatable.php`: Cấu hình source_locale (vi), target_locale (en), supported_locales, auto_translate, observer settings.
+- **Database Translation Tables (Separate Translation Table pattern):**
+  - `product_translations`: migration `2026_05_27_000004`, model `ProductTranslation.php`.
+  - `category_translations`: migration `2026_05_27_000001`, model `CategoryTranslation.php`.
+  - `attribute_translations`: migration `2026_05_27_000002`, model `AttributeTranslation.php`.
+  - `page_translations`: migration `2026_05_27_000003`, model `PageTranslation.php`.
+  - Các bảng mới: `attributes` (migration `2026_05_26_000001`), `pages` (migration `2026_05_26_000002`).
+  - Bổ sung cột `description`, `seo_description`, `sort_order`, `is_active` vào bảng `categories` (migration `2026_05_27_000005`).
+- **API Đa Ngôn Ngữ:**
+  - `routes/api.php`: API v1 với middleware `ResolveApiLocale` hỗ trợ `?locale=en` hoặc header `X-Locale`.
+  - Controllers: `Api\ProductController`, `Api\CategoryController`, `Api\PageController`, `Api\AttributeController`.
+  - Resources: `ProductResource`, `CategoryResource`, `PageResource`, `AttributeResource` dùng trait `TranslatesResource`.
+  - `ApiWrapsResponse` trait bổ sung `locale` vào mọi API response.
+- **Batch Translation Command:**
+  - `app/Console/Commands/TranslateAllModels.php`: Lệnh `php artisan translate:all` dịch hàng loạt cho tất cả hoặc model cụ thể (`--model=Product`), hỗ trợ `--force` để dịch lại.
+  - Đã chạy thành công: 21 categories + 34 products đã được dịch tự động sang tiếng Anh.
+- **Provider Registration:**
+  - `bootstrap/providers.php`: Đã thêm `TranslationServiceProvider` và `TranslatableHelperServiceProvider`.
+  - **Fix:** Đã xóa key `providers` sai trong `config/app.php` (Laravel 11 dùng `bootstrap/providers.php` thay vì `config/app.php` để đăng ký providers).
+- **TranslationService Fallback (Free Google Translate):**
+  - Khi không có `GOOGLE_TRANSLATE_API_KEY` trong `.env`, hệ thống tự động fallback sang endpoint miễn phí: `https://translate.googleapis.com/translate_a/single?client=gtx`.
+- **TranslateHtmlResponse Middleware (Dịch tự động trang tĩnh):**
+  - Đã viết middleware `App\Http\Middleware\TranslateHtmlResponse` tự động bắt nội dung HTML phản hồi khi `locale = en`.
+  - Tách/trích xuất toàn bộ thẻ `<script>` và `<style>` ra ngoài trước khi dùng `DOMDocument` bằng các placeholder tạm thời, giúp bảo vệ mã nguồn JavaScript (bao gồm cả template literals chứa mã HTML) khỏi bị trình phân tích DOM biến đổi hay hiển thị nhầm ra ngoài màn hình. Sau khi dịch xong sẽ khôi phục lại nguyên vẹn.
+  - Sử dụng `DOMDocument` để lọc và duyệt qua các text node cũng như các thuộc tính tĩnh (`placeholder`, `title`, `alt`), dịch tự động từ tiếng Việt sang tiếng Anh qua `TranslationService` (endpoint miễn phí của Google GTX).
+  - Tối ưu hóa xử lý lỗi quá tải API/Timeout bằng cách gộp nhóm dịch hàng loạt (Batch translation theo từng cụm 15 từ) trong 1 cuộc gọi duy nhất thay vì gọi riêng rẽ cho mỗi từ, kèm theo cơ chế fallback chuẩn xác và nâng thời gian thực thi tối đa lên 120 giây.
+  - Tích hợp lưu cache trọn đời bằng `Cache::rememberForever` với key hash md5 của nội dung dịch để tối ưu hiệu năng và tránh bị giới hạn API Google.
+  - Đã đăng ký middleware vào group `web` trong `bootstrap/app.php` sau middleware `SetLocaleFromSession`.
+
+- **Căn chỉnh khoảng cách Top Bar:**
+  - Sửa `.top-bar .container` sang dùng `justify-content: center` kèm `gap: 40px` để thu hẹp khoảng trống lớn ở giữa nhóm bên trái và bên phải trên màn hình lớn.
+
+- **Đa ngôn ngữ cho Chatbot AI:**
+  - Đã dịch thuật toàn bộ giao diện Chatbot (`chatbot.blade.php`) gồm: tiêu đề, trạng thái hoạt động, placeholder ô nhập, tin nhắn chào mừng (greeting), tin nhắn lỗi/loading và các nút gợi ý nhanh.
+  - Sử dụng `@json` để xuất trực tiếp biến bản dịch của Laravel vào mã script JavaScript của Chatbot, giúp Chatbot hiển thị tiếng Anh chuẩn xác 100% khi người dùng đổi ngôn ngữ.
+  - Trí tuệ nhân tạo Gemini của Chatbot hoạt động theo cơ chế phát hiện ngôn ngữ tự động (khách hỏi tiếng Anh trả lời tiếng Anh, khách hỏi tiếng Việt trả lời tiếng Việt).
+
+- **Đa ngôn ngữ cho Modal Theo dõi Tiến độ Sửa chữa (Repair Progress):**
+  - Cập nhật middleware `TranslateHtmlResponse` để bỏ qua việc duyệt qua các thẻ con của `<textarea>` (tránh dịch dữ liệu người dùng nhập) nhưng vẫn dịch đầy đủ thuộc tính `placeholder` (như ô *"Mô tả chi tiết tình trạng máy lỗi và linh kiện cần thay thế..."*).
+  - Tích hợp hệ thống bản dịch vào script điều khiển Modal Theo dõi Tiến độ Sửa chữa ở trang cá nhân (`profile.blade.php`). Toàn bộ các dòng trạng thái tĩnh lẫn động được cập nhật qua JS (`step-received-desc`, `step-checking-desc`, `step-repairing-desc`, `step-done-desc`, `track-tech`) đã được đa ngôn ngữ hóa bằng `@json(__('ui.key'))`.
+  - Hỗ trợ dịch động tên Kỹ thuật viên phụ trách (Ví dụ: `Quản Trị Viên` thành `Administrator` khi chuyển sang ngôn ngữ tiếng Anh).
+
+- **Tự động dịch phản hồi JSON (AJAX/API Requests):**
+  - Nâng cấp middleware `TranslateHtmlResponse` để tự động phát hiện các phản hồi JSON (`JsonResponse` hoặc Content-Type `application/json`) từ controller hoặc API.
+  - Phân tích cú pháp JSON, duyệt đệ quy qua các giá trị chuỗi (values) và dịch tự động các chuỗi tiếng Việt sang tiếng Anh bằng `TranslationService` (vẫn tận dụng cache và dịch hàng loạt batch translation).
+  - Tối ưu hóa bộ lọc dịch `shouldTranslate` để bỏ qua các trường dữ liệu hệ thống như: URL (`http/https`), đường dẫn tương đối (`/storage`, `/assets`), tên tệp tin ảnh/assets nhằm đảm bảo giữ nguyên cấu trúc hệ thống.
+  - Hỗ trợ dịch tự động tất cả các thông báo lỗi AJAX động (như thông báo "Không tìm thấy thiết bị..." ở popup tra cứu bảo hành, hoặc các thông báo lỗi Validation Form).
+
+- **Tự động dịch thuộc tính JSON lồng trong HTML (React/Vue components props):**
+  - Mở rộng middleware `TranslateHtmlResponse` khi xử lý trang HTML để quét qua toàn bộ các thuộc tính HTML chứa chuỗi JSON (ví dụ các thẻ `<div id="joly-admin-sidebar" data-props="...">` hoặc các thuộc tính chứa từ khóa `props` hay `data-`).
+  - Giải mã tự động chuỗi JSON trong thuộc tính đó, dịch đệ quy các giá trị chuỗi tiếng Việt thành tiếng Anh, sau đó mã hóa ngược lại HTML-safe entity (`JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP`).
+  - Giúp toàn bộ giao diện Admin (bao gồm cả Sidebar và Topbar vốn được dựng bằng React và nạp dữ liệu qua `data-props`) tự động chuyển sang tiếng Anh hoàn chỉnh khi chuyển đổi ngôn ngữ, không cần phải sửa thủ công bất kỳ component React nào.
+
+- **Tự động dịch chuỗi văn bản cứng trong thẻ JavaScript (`<script>`):**
+  - Nâng cấp middleware `TranslateHtmlResponse` để tự động trích xuất, phát hiện các hằng số chuỗi (string literals trong dấu nháy đơn, nháy kép, nháy ngược backtick) nằm bên trong khối lệnh JS của các thẻ `<script>`.
+  - Thu thập tất cả các chuỗi có chứa ký tự tiếng Việt (như các câu thông báo Toast, SweetAlert2, các từ điển trạng thái động như `'Chưa kích hoạt'`, `'Còn bảo hành'`,...).
+  - Gộp chung vào đợt dịch hàng loạt (Batch translation) để giảm thiểu tối đa số cuộc gọi API, sau đó thay thế trực tiếp vào mã JS trước khi trả về cho client mà không làm thay đổi các biến hay cú pháp logic hệ thống.
+  - Xử lý triệt để toàn bộ các form ẩn, hộp thoại ẩn, cảnh báo động và popup trên toàn hệ thống (bao gồm cả trang tra cứu bảo hành, trang xem video, trang giỏ hàng,...).
+
+- **Tự động dịch thuộc tính `value` của nút bấm (`<input type="submit|button|reset">`):**
+  - Mở rộng phạm vi của `TranslateHtmlResponse` để tự động thu thập và dịch thuộc tính `value` của các thẻ `<input>` thuộc loại nút bấm.
+  - Đảm bảo các nút bấm như `<input type="submit" value="Lưu lại">` hoặc `<input type="button" value="Hủy">` được tự động chuyển ngữ sang tiếng Anh chính xác mà không dịch nhầm các ô nhập văn bản (text input).
+
+- **Từ điển ánh xạ dịch ưu tiên (Custom Translation Dictionary Overrides):**
+  - Tích hợp từ điển ưu tiên trong `TranslationService` để thay thế trực tiếp các thuật ngữ quản trị phổ biến thay vì dùng Google Translate API mặc định.
+  - Đảm bảo từ "Bảng điều khiển" luôn được dịch chuẩn xác là "Dashboard" (thay vì "Control panel" của Google Translate).
+  - Đồng thời chuẩn hóa dịch nhanh các mục menu khác của trang Admin như: "Sổ Quỹ & Thu chi" -> "Cashbook & Expenses", "Phiếu sửa chữa" -> "Repair Tickets", "Hóa đơn dịch vụ" -> "Service Invoices", "Điều chuyển kho" -> "Warehouse Transfer", "Đổi thưởng" -> "Rewards",...
+
+- **Đa ngôn ngữ hóa trang Thống kê KPI Nhân sự (admin/kpi):**
+  - Dịch tiêu đề trang và placeholder tải dữ liệu trong file blade `resources/views/admin/kpi/index.blade.php` dựa trên locale hiện tại (`app()->getLocale() === 'en'`).
+  - Hỗ trợ dịch thuật toàn diện các nhãn tĩnh, bộ lọc ngày tùy chỉnh, bảng vàng doanh thu của nhân viên kinh doanh & kỹ thuật trong component React `KPIDashboard.tsx` thông qua hàm `t(...)` có sẵn.
+  - Tối ưu hóa sidebar quản trị `AdminSidebar.tsx` và `sidebar.blade.php` để chuyển đổi toàn bộ nhãn menu (như "Bảng điều khiển" thành "Dashboard", "Thống kê KPI" thành "KPI Statistics", v.v.) và các tên danh mục quản trị theo locale hiện tại, đồng thời đảm bảo màu sắc icon hoạt động (`getActiveIconColor`) khớp chính xác bất kể nhãn là tiếng Anh hay tiếng Việt.
+  - Biên dịch thành công mã nguồn CSS/JS của Admin Dashboard và Sidebar bằng Vite (`npm run build`).
+
+- **Đa ngôn ngữ hóa Thanh công cụ Quản trị (AdminTopbar):**
+  - Khắc phục lỗi hiển thị thứ ngày bị cứng tiếng Việt bằng cách cấu hình phương thức `toLocaleDateString` và `toLocaleTimeString` trong component `AdminTopbar.tsx` sử dụng mã ngôn ngữ động dựa trên locale hiện tại (`isEn() ? 'en-US' : 'vi-VN'`).
+  - Thiết kế và triển khai menu thả xuống (Dropdown selector) được kích hoạt bởi biểu tượng quả địa cầu (Globe icon) kết hợp nhãn ngôn ngữ hiện tại (VI/EN) nằm ngay trước nút phóng to màn hình (fullscreen) trên `AdminTopbar.tsx`. Dropdown này hiện tại hỗ trợ lựa chọn Tiếng Việt (🇻🇳 Tiếng Việt) và English (🇺🇸 English), đồng thời được thiết kế theo dạng danh sách mở rộng (array config) để dễ dàng tích hợp thêm các ngôn ngữ khác trong tương lai.
+  - Tự động bắt sự kiện click-outside để đóng menu và biên dịch thành công mã nguồn với Vite.
+
+- **Tài liệu hóa & Comment chi tiết mã nguồn:**
+  - Viết chú thích (comments) bằng tiếng Việt cực kỳ chi tiết cho các file cốt lõi của tính năng gồm:
+    - `app/Http/Middleware/TranslateHtmlResponse.php`
+    - `app/Services/TranslationService.php`
+    - `app/Traits/BaseTranslationTrait.php`
+    - `resources/js/helpers.ts`
+    - `resources/js/components/AdminTopbar.tsx`
+  - Đảm bảo các kỹ sư tiếp quản dễ dàng nắm vững kiến trúc, các bước hoạt động (quét DOM, dịch gộp, bộ lọc dịch, cách intercept model, click-outside, v.v.).
+
+
+
