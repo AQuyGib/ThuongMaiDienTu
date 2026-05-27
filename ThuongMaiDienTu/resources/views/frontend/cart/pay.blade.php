@@ -65,7 +65,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Họ và tên *</label>
-            <input id="inp-name" name="customer_name" type="text" required
+            <input id="inp-name" name="customer_name" type="text" required maxlength="30"
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
               value="{{ Auth::check() ? Auth::user()->name : '' }}" placeholder="Nguyễn Văn A">
             <p id="err-name" class="text-xs text-red-500 mt-1 hidden"></p>
@@ -260,6 +260,8 @@
 <script>
 // ---- CONFIG ----
 const BANK = { id: 'MB', account: '123456789', name: 'DIENMAYPRO' };
+const VIETNAMESE_NAME_REGEX = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s]+$/;
+const VIETNAMESE_ADDRESS_REGEX = /^[a-zA-Z0-9ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s/,\.\-_]+$/;
 
 // ---- STATE ----
 let cartItems = [];
@@ -415,15 +417,15 @@ function checkFormValidity() {
   let noteValid = true;
 
   // 1. Họ và tên validation
-  if (name.length > 0 && /\d/.test(name)) {
+  if (name.trim().length > 0 && !VIETNAMESE_NAME_REGEX.test(name)) {
     if (errName) {
-      errName.textContent = 'Nhập họ và tên bằng chữ';
+      errName.textContent = 'Họ và tên chỉ nhập chữ không nhập số và ký tự đặc biệt';
       errName.classList.remove('hidden');
     }
     nameValid = false;
-  } else if (name.trim().length > 0 && name.trim().length < 15) {
+  } else if (name.trim().length > 30) {
     if (errName) {
-      errName.textContent = 'Họ và tên phải từ 15 ký tự trở lên';
+      errName.textContent = 'Họ và tên tối đa 30 ký tự';
       errName.classList.remove('hidden');
     }
     nameValid = false;
@@ -456,7 +458,13 @@ function checkFormValidity() {
   if (counterAddr) {
     counterAddr.textContent = `${addrLen}/40`;
   }
-  if (addrLen > 40) {
+  if (addrLen > 0 && !VIETNAMESE_ADDRESS_REGEX.test(addr)) {
+    if (errAddr) {
+      errAddr.textContent = 'Địa chỉ giao hàng không được chứa ký tự đặc biệt';
+      errAddr.classList.remove('hidden');
+    }
+    addrValid = false;
+  } else if (addrLen > 40) {
     if (errAddr) {
       errAddr.textContent = 'Địa chỉ giao hàng tối đa 40 ký tự';
       errAddr.classList.remove('hidden');
@@ -504,9 +512,9 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   const discountInp = document.getElementById('discount-code');
   const discountCode = discountInp && discountInp.readOnly ? discountInp.value.trim().toUpperCase() : '';
 
-  const isNameInvalid = /\d/.test(name) || name.length < 15;
+  const isNameInvalid = !VIETNAMESE_NAME_REGEX.test(name) || name.length > 30 || name.length === 0;
   const isPhoneInvalid = /[a-zA-Z]/.test(phone) || !/^0[0-9]{8,9}$/.test(phone);
-  const isAddrInvalid = addr.length > 40 || addr.length === 0;
+  const isAddrInvalid = !VIETNAMESE_ADDRESS_REGEX.test(addr) || addr.length > 40 || addr.length === 0;
   const isNoteInvalid = note.length > 250;
 
   if (isNameInvalid || isPhoneInvalid || isAddrInvalid || isNoteInvalid) {
