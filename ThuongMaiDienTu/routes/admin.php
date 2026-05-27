@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\AttributeController;
+use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Admin\FlashSaleProductController;
@@ -89,11 +91,21 @@ Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('
 
 // ===== Quản lý Sản Phẩm & Danh Mục =====
 Route::resource('products', ProductController::class);
+Route::get('/products/{product}/translation/en', [\App\Http\Controllers\Admin\ProductTranslationController::class, 'edit'])->name('products.translation.edit');
+Route::put('/products/{product}/translation/en', [\App\Http\Controllers\Admin\ProductTranslationController::class, 'update'])->name('products.translation.update');
 Route::get('/products/export', [ProductController::class, 'exportExcel'])->name('products.export');
 Route::get('/products/template', [ProductController::class, 'downloadTemplate'])->name('products.template');
 Route::get('/products/import', [ProductController::class, 'importForm'])->name('products.import.form');
 Route::post('/products/import', [ProductController::class, 'importExcel'])->name('products.import');
 Route::resource('categories', CategoryController::class);
+Route::get('/categories/{category}/translation/en', [\App\Http\Controllers\Admin\CategoryTranslationController::class, 'edit'])->name('categories.translation.edit');
+Route::put('/categories/{category}/translation/en', [\App\Http\Controllers\Admin\CategoryTranslationController::class, 'update'])->name('categories.translation.update');
+Route::resource('attributes', AttributeController::class);
+Route::get('/attributes/{attribute}/translation/en', [\App\Http\Controllers\Admin\AttributeTranslationController::class, 'edit'])->name('attributes.translation.edit');
+Route::put('/attributes/{attribute}/translation/en', [\App\Http\Controllers\Admin\AttributeTranslationController::class, 'update'])->name('attributes.translation.update');
+Route::resource('pages', PageController::class);
+Route::get('/pages/{page}/translation/en', [\App\Http\Controllers\Admin\PageTranslationController::class, 'edit'])->name('pages.translation.edit');
+Route::put('/pages/{page}/translation/en', [\App\Http\Controllers\Admin\PageTranslationController::class, 'update'])->name('pages.translation.update');
 
 // ===== Flash Sale =====
 Route::resource('flash-sales', FlashSaleController::class)->except(['create', 'edit', 'show']);
