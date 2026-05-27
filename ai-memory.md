@@ -3,6 +3,7 @@
 ## Current State & Focus
 - **Merge Activities:**
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
+  - Merged `master` into branch `Vinhem/QuetMaQR` successfully.
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
   - Added tag-based filtering on the lifestyle listing page.
   - Fixed admin article filters so status buttons and search now work together.
