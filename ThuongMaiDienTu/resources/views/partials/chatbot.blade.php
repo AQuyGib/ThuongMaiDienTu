@@ -276,10 +276,10 @@
                 <i class="fa-solid fa-robot"></i>
             </div>
             <div>
-                <div style="font-weight: 700; font-size: 14px; color: white;">Trợ lý AI PRO</div>
+                <div style="font-weight: 700; font-size: 14px; color: white;">{{ __('ui.chatbot_title') }}</div>
                 <div style="font-size: 10px; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 4px;">
-                    <span style="width: 6px; height: 6px; background: #4ade80; border-radius: 50; display: inline-block;"></span>
-                    Đang hoạt động
+                    <span style="width: 6px; height: 6px; background: #4ade80; border-radius: 50%; display: inline-block;"></span>
+                    {{ __('ui.chatbot_status') }}
                 </div>
             </div>
         </div>
@@ -293,14 +293,14 @@
 
     {{-- Gợi ý nhanh --}}
     <div style="padding: 8px 12px; background: white; overflow-x: auto; white-space: nowrap; border-top: 1px solid #f1f5f9; display: flex; gap: 6px;">
-        <button class="chatbot-quick-btn" onclick="chatbotQuickMsg('Tư vấn điện thoại giá rẻ dưới 5 triệu')">📱 Điện thoại giá rẻ</button>
-        <button class="chatbot-quick-btn" onclick="chatbotQuickMsg('Laptop nào phù hợp cho sinh viên?')">💻 Laptop sinh viên</button>
-        <button class="chatbot-quick-btn" onclick="chatbotQuickMsg('Sản phẩm nào đang khuyến mãi?')">🔥 Khuyến mãi</button>
+        <button class="chatbot-quick-btn" onclick="chatbotQuickMsg('{{ addslashes(__('ui.chatbot_quick_phone_query')) }}')">{{ __('ui.chatbot_quick_phone_btn') }}</button>
+        <button class="chatbot-quick-btn" onclick="chatbotQuickMsg('{{ addslashes(__('ui.chatbot_quick_laptop_query')) }}')">{{ __('ui.chatbot_quick_laptop_btn') }}</button>
+        <button class="chatbot-quick-btn" onclick="chatbotQuickMsg('{{ addslashes(__('ui.chatbot_quick_promo_query')) }}')">{{ __('ui.chatbot_quick_promo_btn') }}</button>
     </div>
 
     {{-- Input gửi tin nhắn --}}
     <div class="chatbot-input-area">
-        <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Nhập câu hỏi của bạn..."
+        <input type="text" id="chatbot-input" class="chatbot-input" placeholder="{{ __('ui.chatbot_placeholder') }}"
                onkeypress="if(event.key==='Enter') chatbotSend()">
         <button class="chatbot-send-btn" onclick="chatbotSend()">
             <i class="fa-solid fa-paper-plane" style="font-size: 14px;"></i>
@@ -408,11 +408,12 @@
             chatInput.focus();
             if (!hasWelcomed) {
                 hasWelcomed = true;
-                let greeting = 'Xin chào! 👋 Tôi là <b>Trợ lý AI</b> của DIENMAY PRO.<br>Tôi có thể giúp bạn tư vấn sản phẩm, so sánh giá cả, hoặc giải đáp mọi thắc mắc.<br><br>Bạn cần hỗ trợ gì hôm nay?';
+                let greeting = @json(__('ui.chatbot_greeting'));
 
                 // Nếu đang xem chi tiết sản phẩm, đổi lời chào
                 if (typeof window.chatbotProductContext !== 'undefined' && window.chatbotProductContext) {
-                    greeting = 'Xin chào! 👋 Tôi thấy bạn đang xem sản phẩm <b>' + (window.chatbotProductName || 'này') + '</b>.<br>Bạn muốn biết gì thêm về sản phẩm này không?';
+                    const prodName = window.chatbotProductName || '';
+                    greeting = @json(__('ui.chatbot_product_greeting')).replace(':product', prodName);
                 }
                 appendMsg(greeting, 'ai', true);
             }
@@ -517,7 +518,7 @@
             const aiResponse = await callBackend(text);
             removeLoading();
 
-            let cleanResponse = (aiResponse || 'Xin lỗi, tôi gặp chút trục trặc.').trim();
+            let cleanResponse = (aiResponse || @json(__('ui.chatbot_error'))).trim();
 
             // Loại bỏ markdown thừa mà AI có thể vẫn trả về
             cleanResponse = cleanResponse
@@ -535,7 +536,7 @@
         } catch (error) {
             removeLoading();
             console.error('Chatbot error:', error);
-            appendMsg('<b style="color:#ef4444">LỖI:</b><br><span style="font-size:12px;color:#6b7280">' + error.message + '</span>', 'ai', false);
+            appendMsg('<b style="color:#ef4444">' + @json(__('ui.chatbot_error')) + '</b><br><span style="font-size:12px;color:#6b7280">' + error.message + '</span>', 'ai', false);
         }
     };
 })();

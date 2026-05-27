@@ -1775,17 +1775,17 @@
 <div id="trackingModal" class="student-modal-overlay">
     <div class="student-modal" style="max-width: 520px; width: 95%;">
         <div class="student-modal-header" style="background: #0046ab;">
-            <h3>Chi tiết tiến độ sửa chữa #RT-<span id="track-id"></span></h3>
+            <h3>{{ __('ui.repair_title', ['id' => '']) }}<span id="track-id"></span></h3>
             <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 18px;" onclick="closeTrackingModal()"></i>
         </div>
         <div class="student-modal-body" style="max-height: 75vh; overflow-y: auto;">
             <!-- Tóm tắt thông tin thiết bị -->
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
-                    <div><span style="color: #64748b;">IMEI/Serial:</span> <strong id="track-imei" style="font-family: monospace;">-</strong></div>
-                    <div><span id="track-date-label" style="color: #64748b;">Ngày hẹn mang tới:</span> <strong id="track-date">-</strong></div>
-                    <div style="grid-column: 1 / -1;"><span style="color: #64748b;">Mô tả lỗi:</span> <span id="track-desc">-</span></div>
-                    <div style="grid-column: 1 / -1;"><span style="color: #64748b;">Kỹ thuật viên phụ trách:</span> <strong id="track-tech" style="color: #0046ab;">Đang phân công</strong></div>
+                    <div><span style="color: #64748b;">{{ __('ui.repair_imei') }}</span> <strong id="track-imei" style="font-family: monospace;">-</strong></div>
+                    <div><span id="track-date-label" style="color: #64748b;">{{ __('ui.repair_date_received_label') }}</span> <strong id="track-date">-</strong></div>
+                    <div style="grid-column: 1 / -1;"><span style="color: #64748b;">{{ __('ui.repair_error_desc') }}</span> <span id="track-desc">-</span></div>
+                    <div style="grid-column: 1 / -1;"><span style="color: #64748b;">{{ __('ui.repair_technician') }}</span> <strong id="track-tech" style="color: #0046ab;">{{ __('ui.repair_tech_assigning') }}</strong></div>
                 </div>
             </div>
 
@@ -1797,9 +1797,9 @@
                         <i class="fa-solid fa-receipt"></i>
                     </div>
                     <div class="step-content">
-                        <h4 class="step-title">Đã tiếp nhận thiết bị</h4>
+                        <h4 class="step-title">{{ __('ui.repair_step_received') }}</h4>
                         <div class="step-desc" id="step-received-desc">
-                            Cửa hàng đã nhận máy và đang làm thủ tục bàn giao cho bộ phận kỹ thuật.
+                            {{ __('ui.repair_step_received_desc') }}
                         </div>
                     </div>
                 </div>
@@ -1810,9 +1810,9 @@
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
                     <div class="step-content">
-                        <h4 class="step-title">Kiểm tra & báo giá</h4>
+                        <h4 class="step-title">{{ __('ui.repair_step_checking') }}</h4>
                         <div class="step-desc" id="step-checking-desc">
-                            Kỹ thuật viên đang kiểm tra lỗi và xác định chi phí sửa chữa.
+                            {{ __('ui.repair_step_checking_desc') }}
                         </div>
                     </div>
                 </div>
@@ -1823,9 +1823,9 @@
                         <i class="fa-solid fa-screwdriver-wrench"></i>
                     </div>
                     <div class="step-content">
-                        <h4 class="step-title">Đang sửa chữa</h4>
+                        <h4 class="step-title">{{ __('ui.repair_step_repairing') }}</h4>
                         <div class="step-desc" id="step-repairing-desc">
-                            Thiết bị đang được xử lý kỹ thuật hoặc chờ linh kiện thay thế.
+                            {{ __('ui.repair_step_repairing_desc') }}
                         </div>
                     </div>
                 </div>
@@ -1836,9 +1836,9 @@
                         <i class="fa-solid fa-circle-check"></i>
                     </div>
                     <div class="step-content">
-                        <h4 class="step-title">Sửa chữa hoàn tất</h4>
+                        <h4 class="step-title">{{ __('ui.repair_step_done') }}</h4>
                         <div class="step-desc" id="step-done-desc">
-                            Đã sửa chữa hoàn chỉnh, kiểm tra chất lượng và hoàn trả thiết bị cho khách hàng.
+                            {{ __('ui.repair_step_done_desc') }}
                         </div>
                     </div>
                 </div>
@@ -2460,13 +2460,16 @@
         // Tự động thay đổi nhãn của ngày hẹn tùy theo trạng thái
         const dateLabel = document.getElementById('track-date-label');
         if (['Under_Repair', 'Waiting_Parts', 'Done'].includes(ticket.status)) {
-            dateLabel.innerText = 'Ngày hẹn trả máy:';
+            dateLabel.innerText = @json(__('ui.repair_date_return_label'));
         } else {
-            dateLabel.innerText = 'Ngày hẹn mang tới:';
+            dateLabel.innerText = @json(__('ui.repair_date_received_label'));
         }
         document.getElementById('track-date').innerText = formattedDate;
         
-        const techName = ticket.technician ? ticket.technician.full_name : 'Đang phân công';
+        let techName = ticket.technician ? ticket.technician.full_name : @json(__('ui.repair_tech_assigning'));
+        if (techName === 'Quản Trị Viên') {
+            techName = @json(app()->getLocale() === 'en' ? 'Administrator' : 'Quản Trị Viên');
+        }
         document.getElementById('track-tech').innerText = techName;
         
         // Reset class active/completed cho tất cả các bước trong stepper
@@ -2479,10 +2482,10 @@
         });
         
         // Reset nội dung mô tả mặc định của các bước trước khi gán dữ liệu mới
-        document.getElementById('step-received-desc').innerHTML = 'Cửa hàng đã nhận máy và đang làm thủ tục bàn giao cho bộ phận kỹ thuật.';
-        document.getElementById('step-checking-desc').innerHTML = 'Kỹ thuật viên đang kiểm tra lỗi và xác định chi phí sửa chữa.';
-        document.getElementById('step-repairing-desc').innerHTML = 'Thiết bị đang được xử lý kỹ thuật hoặc chờ linh kiện thay thế.';
-        document.getElementById('step-done-desc').innerHTML = 'Đã sửa chữa hoàn chỉnh, kiểm tra chất lượng và hoàn trả thiết bị cho khách hàng.';
+        document.getElementById('step-received-desc').innerHTML = @json(__('ui.repair_step_received_desc'));
+        document.getElementById('step-checking-desc').innerHTML = @json(__('ui.repair_step_checking_desc'));
+        document.getElementById('step-repairing-desc').innerHTML = @json(__('ui.repair_step_repairing_desc'));
+        document.getElementById('step-done-desc').innerHTML = @json(__('ui.repair_step_done_desc'));
         
         const status = ticket.status;
         if (status === 'Received') {
@@ -2493,18 +2496,18 @@
             
             // Nếu có chi phí dự kiến thì hiển thị thêm ở bước Kiểm tra & báo giá
             const costHtml = ticket.estimated_cost > 0 
-                ? `<div style="margin-top:5px; color:#0369a1; font-weight:600;"><i class="fa-solid fa-calculator"></i> Chi phí dự kiến: ${new Intl.NumberFormat('vi-VN').format(ticket.estimated_cost)} đ</div>`
+                ? `<div style="margin-top:5px; color:#0369a1; font-weight:600;"><i class="fa-solid fa-calculator"></i> ` + @json(__('ui.repair_step_checking_cost')) + ` ${new Intl.NumberFormat('vi-VN').format(ticket.estimated_cost)} đ</div>`
                 : '';
-            document.getElementById('step-checking-desc').innerHTML = 'Đang tiến hành kiểm tra tình trạng máy và đề xuất chi phí sửa chữa.' + costHtml;
+            document.getElementById('step-checking-desc').innerHTML = @json(__('ui.repair_step_checking_progress')) + costHtml;
         } else if (status === 'Under_Repair' || status === 'Waiting_Parts') {
             document.getElementById('step-received').classList.add('completed');
             document.getElementById('step-checking').classList.add('completed');
             document.getElementById('step-repairing').classList.add('active');
             
             if (status === 'Waiting_Parts') {
-                document.getElementById('step-repairing-desc').innerHTML = '<span style="color:#d97706; font-weight:600;"><i class="fa-solid fa-hourglass-half"></i> Chờ linh kiện:</span> Thiết bị tạm thời chưa sửa xong do đang chờ linh kiện thay thế.';
+                document.getElementById('step-repairing-desc').innerHTML = @json(__('ui.repair_step_repairing_waiting'));
             } else {
-                document.getElementById('step-repairing-desc').innerHTML = 'Thiết bị đang được xử lý kỹ thuật bởi kỹ thuật viên: <strong>' + techName + '</strong>';
+                document.getElementById('step-repairing-desc').innerHTML = @json(__('ui.repair_step_repairing_tech')).replace(':name', techName);
             }
         } else if (status === 'Done') {
             document.getElementById('step-received').classList.add('completed');
@@ -2514,15 +2517,15 @@
             
             let doneDetails = '';
             if (ticket.service_name) {
-                doneDetails += `<div style="margin-top: 5px; font-weight: 600; color: #1e293b;">Dịch vụ thực hiện: ${ticket.service_name}</div>`;
+                doneDetails += `<div style="margin-top: 5px; font-weight: 600; color: #1e293b;">` + @json(__('ui.repair_step_done_service')) + ` ${ticket.service_name}</div>`;
             }
             if (ticket.service_fee > 0) {
-                doneDetails += `<div style="margin-top: 2px; color: #166534; font-weight: 700;">Phí dịch vụ thực tế: ${new Intl.NumberFormat('vi-VN').format(ticket.service_fee)} đ</div>`;
+                doneDetails += `<div style="margin-top: 2px; color: #166534; font-weight: 700;">` + @json(__('ui.repair_step_done_fee')) + ` ${new Intl.NumberFormat('vi-VN').format(ticket.service_fee)} đ</div>`;
             }
             if (ticket.invoice_no) {
-                doneDetails += `<div style="margin-top: 2px; font-size:11px; color:#64748b;">Mã hóa đơn dịch vụ: ${ticket.invoice_no}</div>`;
+                doneDetails += `<div style="margin-top: 2px; font-size:11px; color:#64748b;">` + @json(__('ui.repair_step_done_invoice')) + ` ${ticket.invoice_no}</div>`;
             }
-            document.getElementById('step-done-desc').innerHTML = 'Quá trình sửa chữa hoàn tất. Thiết bị đã được bàn giao cho quý khách hàng.' + doneDetails;
+            document.getElementById('step-done-desc').innerHTML = @json(__('ui.repair_step_done_delivered')) + doneDetails;
         }
         
         document.getElementById('trackingModal').classList.add('active');

@@ -78,39 +78,6 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - **Cấu hình Server:**
   - Nâng giới hạn upload file từ 10MB/20MB lên 100MB ở Laravel backend, frontend JS, file `.htaccess`, `.user.ini`, và cấu hình `php.ini` của XAMPP.
 
-### 2. Phân hệ Phiếu sửa chữa & Dịch vụ (Repair Tickets & Customer Profile)
-- **Repair Tickets CRUD & Invoicing Link:**
-  - Mở rộng `RepairTicketInvoiceController` hỗ trợ toàn bộ vòng đời phiếu sửa chữa (tạo, sửa, xóa).
-  - Migration cho phép `user_id` nullable trên bảng `repair_tickets` để hỗ trợ khách vãng lai, bổ sung thông tin địa chỉ, email, nguồn khách hàng.
-  - Nhập liệu thông minh: Tự động truy vấn và điền thông tin khách hàng bằng AJAX autocomplete khi nhập số điện thoại đã tồn tại.
-  - Quản lý hóa đơn dịch vụ (`ServiceInvoiceController`): Hỗ trợ xuất hóa đơn dịch vụ trực tiếp từ phiếu sửa chữa (chỉ cho phép khi phiếu có trạng thái `Done`), tự động đồng bộ hóa đơn với phiếu sửa chữa, hỗ trợ VAT (%) tính toán real-time bằng JS, in hóa đơn (`print.blade.php`).
-  - Thêm trạng thái sửa chữa `Under_Repair` (Đang sửa chữa). Đồng bộ tiền tố mã phiếu sửa chữa là `#RT-` trên toàn hệ thống.
-  - Tự động liên kết tài khoản user dựa trên số điện thoại khi admin lưu phiếu.
-- **Đăng ký Sửa chữa Online (Customer Portal):**
-  - Tích hợp tab Lịch sử & Đặt lịch sửa chữa trong trang Profile khách hàng.
-  - Form đăng ký sửa chữa online (tên khách hàng, SĐT, email, địa chỉ, số IMEI/Serial, ngày hẹn, mô tả lỗi). Tự động gán kỹ thuật viên mặc định khi đăng ký.
-  - Stepper theo dõi tiến độ sửa chữa trực quan theo chiều dọc hiển thị các bước (`Received` -> `Checking` -> `Under_Repair` / `Waiting_Parts` -> `Done`), hiển thị chi phí dự kiến và hóa đơn kèm theo.
-
-### 3. Phân hệ Articles & Lifestyle CRUD
-- Tích hợp bộ lọc theo thẻ (tags) ở trang danh sách bài viết frontend.
-- Đồng bộ bộ lọc tìm kiếm và trạng thái bài viết ở trang quản lý bài viết Admin.
-- Tối ưu hóa giao diện soạn thảo bài viết và preview responsive trên thiết bị di động.
-
-### 4. Tính năng So sánh Sản phẩm & Bộ lọc Nâng cao (Compare & Filter)
-- Triển khai tính năng so sánh tối đa 3 sản phẩm cùng danh mục, so sánh thông số kỹ thuật tự động từ cột JSON `specifications` hoặc bảng phụ `product_specifications`.
-- Floating bar so sánh sản phẩm ở dưới chân trang, cho phép click tìm kiếm nhanh sản phẩm trống từ modal AJAX.
-- Bộ lọc nâng cao ở trang danh mục sản phẩm (sử dụng `ProductFilterService` xử lý AJAX lọc động theo thông số kỹ thuật chi tiết).
-
-## Thông tin kỹ thuật & Cấu trúc cơ sở dữ liệu
-- **Xác thực & Người dùng:**
-  - Khóa chính bảng users: `user_id`. Mã hóa mật khẩu qua cột `password_hash` (custom auth).
-  - Phân quyền (Roles): Admin (1), Quản lý (2), Khách hàng (3), Nhân viên (4).
-- **Video:**
-  - Bảng `videos`: khóa chính `video_id`.
-  - Bảng `video_comments`: khóa chính `comment_id`, khóa ngoại `user_id` và `video_id`, hỗ trợ `parent_id` cho bình luận phân cấp.
-- **Hóa đơn & Phiếu sửa chữa:**
-  - Khóa chính bảng `repair_tickets`: `ticket_id`. Khóa chính bảng `service_invoices`: `invoice_id`.
-
 ## TODO (Các việc cần làm tiếp theo)
 - [ ] Kết nối dự án Laravel với Database thật (sửa file `.env`).
 - [ ] Tích hợp lấy dữ liệu động từ Database hiển thị ra trang chủ khách hàng (Frontend) thay cho giao diện demo hiện tại.
@@ -158,3 +125,17 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Tích hợp hàng đợi Laravel Queue: Tạo `SendNotificationCampaignJob` để xử lý gửi thông báo chiến dịch hàng loạt dưới background, giảm thiểu rủi ro Timeout.
   - Viết thêm Unit Test kiểm thử thành công cơ chế Dispatch Job và Xóa cache trong `tests/Feature/NotificationTest.php`.
 
+- **Tài liệu hóa & Comment chi tiết mã nguồn:**
+  - Viết chú thích (comments) bằng tiếng Việt cực kỳ chi tiết cho các file cốt lõi của tính năng gồm:
+    - `app/Http/Middleware/TranslateHtmlResponse.php`
+    - `app/Services/TranslationService.php`
+    - `app/Traits/BaseTranslationTrait.php`
+    - `resources/js/helpers.ts`
+    - `resources/js/components/AdminTopbar.tsx`
+  - Đảm bảo các kỹ sư tiếp quản dễ dàng nắm vững kiến trúc, các bước hoạt động (quét DOM, dịch gộp, bộ lọc dịch, cách intercept model, click-outside, v.v.).
+
+### 7. Phân hệ Đa Ngôn Ngữ (Dynamic Localization) - Gộp nhánh thành công
+- **Khắc phục lỗi View Product list:**
+  - Đã khôi phục và đồng bộ chính xác file `ProductController.php` và `Product.blade.php` trên nhánh `Hien/dangonngu` trước khi merge vào `master`.
+  - Tích hợp eager loading bản dịch (`withTranslation()` và `category.translations`) cho danh sách sản phẩm giúp trang quản trị hiển thị mượt mà.
+  - Sau đó gộp (merge) sạch sẽ nhánh `Hien/dangonngu` vào `master`. Trang quản trị sản phẩm hiện tại hoạt động bình thường, không còn lỗi.

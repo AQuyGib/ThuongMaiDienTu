@@ -1,15 +1,25 @@
 <?php
 namespace App\Models;
+
 use App\Services\NotificationService;
+use App\Traits\BaseTranslationTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, BaseTranslationTrait;
+
     protected $primaryKey = 'product_id';
     public $timestamps = false;
     protected $guarded = [];
+
+    protected array $translatable = [
+        'name',
+        'description',
+        'seo_description',
+    ];
+
     protected $casts = [
     ];
 
