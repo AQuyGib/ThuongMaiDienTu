@@ -21,29 +21,73 @@ interface AdminSidebarProps {
 }
 
 const getActiveIconColor = (label: string): string => {
-    switch (label) {
-        case 'Bảng điều khiển': return 'text-emerald-400';
-        case 'Thống kê KPI': return 'text-cyan-300';
-        case 'Đơn hàng': return 'text-orange-400';
-        case 'Khách hàng': return 'text-sky-300';
-        case 'Sổ Quỹ & Thu chi': return 'text-green-300';
-        case 'Hóa đơn dịch vụ': return 'text-teal-300';
-        case 'Phiếu sửa chữa': return 'text-amber-400';
-        case 'Flash Sale': return 'text-red-400';
-        case 'Sản phẩm': return 'text-indigo-300';
-        case 'Bài viết & CMS': return 'text-fuchsia-300';
-        case 'Quản lý Kho': return 'text-blue-300';
-        case 'Video': return 'text-yellow-300';
-        case 'Điều chuyển kho': return 'text-violet-400';
-        case 'Nhà cung cấp': return 'text-pink-400';
-        case 'Danh mục': return 'text-lime-300';
-        case 'Đổi thưởng': return 'text-rose-400';
-        case 'Tùy biến Giao diện': return 'text-purple-300';
-        case 'Thông báo': return 'text-amber-300';
-        case 'Quản lý Trang chủ': return 'text-teal-400';
-        case 'Tài khoản': return 'text-violet-300';
-        case 'Cài đặt hệ thống': return 'text-slate-300';
-        case 'Nhật ký hoạt động': return 'text-orange-300';
+    const l = label.toLowerCase();
+    switch (l) {
+        case 'bảng điều khiển':
+        case 'dashboard':
+            return 'text-emerald-400';
+        case 'thống kê kpi':
+        case 'kpi statistics':
+            return 'text-cyan-300';
+        case 'đơn hàng':
+        case 'orders':
+            return 'text-orange-400';
+        case 'khách hàng':
+        case 'customers':
+            return 'text-sky-300';
+        case 'sổ quỹ & thu chi':
+        case 'cashbook & expenses':
+            return 'text-green-300';
+        case 'hóa đơn dịch vụ':
+        case 'service invoices':
+            return 'text-teal-300';
+        case 'phiếu sửa chữa':
+        case 'repair tickets':
+            return 'text-amber-400';
+        case 'flash sale':
+            return 'text-red-400';
+        case 'sản phẩm':
+        case 'products':
+            return 'text-indigo-300';
+        case 'bài viết & cms':
+        case 'articles & cms':
+            return 'text-fuchsia-300';
+        case 'quản lý kho':
+        case 'inventory management':
+            return 'text-blue-300';
+        case 'video':
+        case 'videos':
+            return 'text-yellow-300';
+        case 'điều chuyển kho':
+        case 'warehouse transfer':
+            return 'text-violet-400';
+        case 'nhà cung cấp':
+        case 'suppliers':
+            return 'text-pink-400';
+        case 'danh mục':
+        case 'categories':
+            return 'text-lime-300';
+        case 'đổi thưởng':
+        case 'rewards':
+            return 'text-rose-400';
+        case 'tùy biến giao diện':
+        case 'theme customization':
+            return 'text-purple-300';
+        case 'thông báo':
+        case 'notifications':
+            return 'text-amber-300';
+        case 'quản lý trang chủ':
+        case 'home management':
+            return 'text-teal-400';
+        case 'tài khoản':
+        case 'accounts':
+            return 'text-violet-300';
+        case 'cài đặt hệ thống':
+        case 'system settings':
+            return 'text-slate-300';
+        case 'nhật ký hoạt động':
+        case 'activity logs':
+            return 'text-orange-300';
         default: return 'text-yellow-300';
     }
 };

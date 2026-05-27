@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,6 +30,7 @@
             --border-color: #e2e8f0;
             --glass: rgba(255, 255, 255, 0.7);
             --shadow-premium: 0 10px 40px -10px rgba(0, 70, 171, 0.15);
+            --hover-blue: #003380;
         }
 
         * {
@@ -68,26 +69,29 @@
            TOP BAR
            ============================ */
         .top-bar {
-            background-color: var(--hover-blue);
+            background: linear-gradient(90deg, #0046ab 0%, #6b21a8 50%, #d70018 100%);
             color: var(--white);
-            font-size: 12px;
-            padding: 6px 0;
+            font-size: 11px;
+            padding: 5px 0;
         }
 
         .top-bar .container {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
+            gap: 40px;
         }
 
         .top-bar-left,
         .top-bar-right {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 0;
         }
 
-        .top-bar span {
+        .top-bar-left > span,
+        .top-bar-right > span,
+        .top-bar-right > a > span {
             cursor: pointer;
             padding: 2px 8px;
             border-right: 1px solid rgba(255,255,255,0.3);
@@ -95,15 +99,21 @@
             white-space: nowrap;
         }
 
-        .top-bar span:last-child {
+        .top-bar-left > span:last-child,
+        .top-bar-right > span:last-child,
+        .top-bar-right > a:last-child > span {
             border-right: none;
         }
 
-        .top-bar span:hover {
+        .top-bar-left > span:hover,
+        .top-bar-right > span:hover,
+        .top-bar-right > a > span:hover {
             opacity: 0.8;
         }
 
-        .top-bar span i {
+        .top-bar-left > span i,
+        .top-bar-right > span i,
+        .top-bar-right > a > span i {
             margin-right: 4px;
         }
 
@@ -135,6 +145,7 @@
             text-transform: uppercase;
             white-space: nowrap;
             flex-shrink: 0;
+            min-width: 160px; /* Dùng min-width thay vì width cố định để tránh chồng chéo chữ */
         }
 
         .logo span {
@@ -145,8 +156,9 @@
         .header-category-btn {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
-            padding: 10px 16px;
+            padding: 10px 14px;
             background: rgba(255,255,255,0.15);
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 8px;
@@ -157,6 +169,7 @@
             transition: 0.2s;
             white-space: nowrap;
             flex-shrink: 0;
+            min-width: 110px; /* Co giãn linh hoạt hơn */
         }
 
         .header-category-btn:hover {
@@ -167,6 +180,7 @@
         .header-province-btn {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 5px;
             padding: 10px 14px;
             background: rgba(255,255,255,0.15);
@@ -179,6 +193,7 @@
             transition: 0.2s;
             white-space: nowrap;
             flex-shrink: 0;
+            min-width: 120px; /* Co giãn linh hoạt hơn */
         }
 
         .header-province-btn:hover {
@@ -336,13 +351,17 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             color: var(--white);
             font-size: 11px;
             cursor: pointer;
-            padding: 5px 10px;
+            padding: 5px 6px;
             border-radius: 8px;
             transition: 0.2s;
             white-space: nowrap;
+            min-width: 65px; /* Giữ chân cột rộng tối thiểu 65px để ổn định layout, co giãn tự động */
+            text-align: center;
+            flex-shrink: 0;
         }
 
         .action-item i {

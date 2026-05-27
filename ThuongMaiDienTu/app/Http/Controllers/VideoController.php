@@ -140,7 +140,11 @@ class VideoController extends Controller
             abort(404, 'Video path not found.');
         }
 
-        $path = storage_path('app/public/' . $video->video_path);
+        $path = public_path($video->video_path);
+        
+        if (!file_exists($path)) {
+            $path = storage_path('app/public/' . $video->video_path);
+        }
         
         if (!file_exists($path)) {
             if (filter_var($video->video_path, FILTER_VALIDATE_URL)) {

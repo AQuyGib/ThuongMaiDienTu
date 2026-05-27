@@ -2,6 +2,7 @@
     $headerCategories = \App\Models\Category::whereNull('parent_id')->with('children')->get();
 
     $categoryIcons = [
+        // Tiếng Việt
         'Điện thoại'          => 'fa-mobile-screen-button',
         'Laptop'              => 'fa-laptop',
         'Tablet'              => 'fa-tablet-screen-button',
@@ -10,6 +11,16 @@
         'Phụ kiện'            => 'fa-keyboard',
         'Tivi, Màn hình'      => 'fa-tv',
         'Gia dụng, Smarthome' => 'fa-plug',
+
+        // English
+        'Smartphones'         => 'fa-mobile-screen-button',
+        'Laptops'             => 'fa-laptop',
+        'Tablets'             => 'fa-tablet-screen-button',
+        'Sound'               => 'fa-headphones',
+        'Smart watch'         => 'fa-clock',
+        'Accessory'           => 'fa-keyboard',
+        'TV, Monitor'         => 'fa-tv',
+        'Household appliances, Smarthome' => 'fa-plug',
     ];
 
     // 34 tỉnh thành Việt Nam mới nhất (Nghị quyết 202/2025/QH15, từ 01/07/2025)
@@ -39,14 +50,34 @@
 <div class="top-bar">
     <div class="container">
         <div class="top-bar-left">
-            <span><i class="fa-solid fa-recycle"></i> Thu cũ giá ngon - Lên đời tiết kiệm</span>
-            <span><i class="fa-solid fa-certificate"></i> Sản phẩm <strong>Chính hãng</strong> - Xuất VAT đầy đủ</span>
-            <span><i class="fa-solid fa-truck-fast"></i> Giao nhanh - <strong>Miễn phí</strong> cho đơn 300k</span>
+            <span><i class="fa-solid fa-recycle"></i> {{ __('ui.topbar_trade_in') }}</span>
+            <span><i class="fa-solid fa-certificate"></i> {!! __('ui.topbar_genuine') !!}</span>
+            <span><i class="fa-solid fa-truck-fast"></i> {!! __('ui.topbar_fast_delivery') !!}</span>
         </div>
         <div class="top-bar-right">
-            <span><i class="fa-solid fa-store"></i> Cửa hàng gần bạn</span>
-            <a href="/orders" class="hover:text-white transition"><span><i class="fa-solid fa-truck"></i> Tra cứu đơn hàng</span></a>
+            <span><i class="fa-solid fa-store"></i> {{ __('ui.topbar_nearby_store') }}</span>
+            <a href="/orders" class="hover:text-white transition"><span><i class="fa-solid fa-truck"></i> {{ __('ui.topbar_track_order') }}</span></a>
             <span><i class="fa-solid fa-phone"></i> <strong>1800 2097</strong></span>
+            {{-- Language Switcher --}}
+            <div class="lang-switcher" id="langSwitcher">
+                <button class="lang-switcher-btn" id="langToggleBtn">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>{{ app()->getLocale() === 'en' ? 'EN' : 'VI' }}</span>
+                    <i class="fa-solid fa-chevron-down" style="font-size: 8px; margin-left: 1px;"></i>
+                </button>
+                <div class="lang-dropdown" id="langDropdown">
+                    <a href="{{ route('locale.switch', 'vi') }}" class="lang-option {{ app()->getLocale() === 'vi' ? 'active' : '' }}">
+                        <span class="lang-flag">🇻🇳</span>
+                        <span>Tiếng Việt</span>
+                        @if(app()->getLocale() === 'vi')<i class="fa-solid fa-check"></i>@endif
+                    </a>
+                    <a href="{{ route('locale.switch', 'en') }}" class="lang-option {{ app()->getLocale() === 'en' ? 'active' : '' }}">
+                        <span class="lang-flag">🇺🇸</span>
+                        <span>English</span>
+                        @if(app()->getLocale() === 'en')<i class="fa-solid fa-check"></i>@endif
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -102,7 +133,7 @@
         </a>
 
         <div class="header-category-btn" id="categoryToggleBtn">
-            <i class="fa-solid fa-bars"></i> Danh mục <i class="fa-solid fa-chevron-down" style="font-size:10px; margin-left:2px;"></i>
+            <i class="fa-solid fa-bars"></i> {{ __('ui.categories') }} <i class="fa-solid fa-chevron-down" style="font-size:10px; margin-left:2px;"></i>
         </div>
 
         <div class="header-province-btn" id="provinceToggleBtn">
@@ -113,7 +144,7 @@
 
         <div class="search-bar">
             <form action="{{ route('search.index') }}" method="GET" id="globalSearchForm">
-                <input type="text" name="q" id="globalSearchInput" placeholder="Bạn muốn mua gì hôm nay?" autocomplete="off">
+                <input type="text" name="q" id="globalSearchInput" placeholder="{{ __('ui.search_placeholder') }}" autocomplete="off">
                 <button type="submit"><i class="fa-solid fa-search"></i></button>
             </form>
             
@@ -217,7 +248,7 @@
         <div class="header-actions">
             <a href="/orders" class="action-item">
                 <i class="fa-solid fa-truck-fast {{ request()->is('orders*') ? 'text-orange-400 animate-pulse' : '' }}"></i>
-                <span>Tra cứu đơn</span>
+                <span>{{ __('ui.track_order_short') }}</span>
             </a>
             @auth
                 <div class="action-item group" style="position: relative;">
@@ -228,12 +259,12 @@
                         @else
                             <span id="notificationBadge" style="position: absolute; top: 0px; right: 8px; background: #d70018; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 10px; display:none;">0</span>
                         @endif
-                        <span>Thông báo</span>
+                        <span>{{ __('ui.notifications') }}</span>
                     </a>
                     <div class="notification-dropdown">
                         <div class="notification-dropdown-header">
-                            <strong>Thông báo mới</strong>
-                            <a href="{{ route('notifications.index') }}">Xem tất cả</a>
+                            <strong>{{ __('ui.new_notifications') }}</strong>
+                            <a href="{{ route('notifications.index') }}">{{ __('ui.view_all') }}</a>
                         </div>
                         <div class="notification-dropdown-body">
                             @forelse($headerNotifications as $notification)
@@ -246,7 +277,7 @@
                                     </div>
                                 </a>
                             @empty
-                                <div class="notification-empty">Chưa có thông báo mới.</div>
+                                <div class="notification-empty">{{ __('ui.no_notifications') }}</div>
                             @endforelse
                         </div>
                     </div>
@@ -254,26 +285,33 @@
             @endauth
             <a href="{{ route('videos.index') }}" class="action-item">
                 <i class="fa-solid fa-video text-secondary {{ request()->is('videos*') ? 'animate-pulse' : '' }}"></i>
-                <span>Góc video</span>
+                <span>{{ __('ui.video_corner') }}</span>
             </a>
             <a href="{{ route('cart.index') }}" class="action-item" style="position: relative;">
                 <i class="fa-solid fa-cart-shopping {{ request()->is('shoppingcart*') ? 'text-pink-400 animate-pulse' : '' }}"></i>
                 <span id="headerCartBadge" style="position: absolute; top: 0px; right: 8px; background: #d70018; color: #fff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 10px; display: none;">0</span>
-                <span>Giỏ hàng</span>
+                <span>{{ __('ui.cart') }}</span>
             </a>
             <script>
                 document.addEventListener("DOMContentLoaded", function() {
-                    let userId = '{{ Auth::id() ?? "guest" }}';
-                    let savedCount = localStorage.getItem('cartCount_' + userId);
-                    if(savedCount && parseInt(savedCount) > 0) {
-                        let badge = document.getElementById('headerCartBadge');
-                        if(badge) {
-                            badge.innerText = savedCount;
-                            badge.style.display = 'block';
-                        }
-                    }
+                    // Fetch cart count dynamically from server
+                    fetch('{{ route("cart.count") }}')
+                        .then(response => response.json())
+                        .then(res => {
+                            let badge = document.getElementById('headerCartBadge');
+                            if(badge) {
+                                if (res.cart_count > 0) {
+                                    badge.innerText = res.cart_count;
+                                    badge.style.display = 'block';
+                                } else {
+                                    badge.style.display = 'none';
+                                }
+                            }
+                        })
+                        .catch(err => console.error(err));
 
-                    // AJAX Polling for Client Unread Notifications Count
+                    // Notification Polling and AJAX Handling from master
+                    let userId = '{{ Auth::id() ?? "guest" }}';
                     if (userId !== 'guest') {
                         const notifBadge = document.getElementById('notificationBadge');
                         const endpoint = '{{ route('notifications.unread-count') }}';
@@ -343,20 +381,20 @@
                     <div class="user-dropdown">
                         @if(in_array(Auth::user()->role_id, [1, 2, 4]))
                             <a href="{{ route('admin.dashboard') }}" style="color: #d70018; font-weight: bold;">
-                                <i class="fa-solid fa-user-shield"></i> Trang quản trị
+                                <i class="fa-solid fa-user-shield"></i> {{ __('ui.admin_panel') }}
                             </a>
                         @endif
-                        <a href="/profile">Trang cá nhân</a>
+                        <a href="/profile">{{ __('ui.profile') }}</a>
                         <form action="{{ route('logout') ?? '/logout' }}" method="POST">
                             @csrf
-                            <button type="submit">Đăng xuất</button>
+                            <button type="submit">{{ __('ui.logout') }}</button>
                         </form>
                     </div>
                 </div>
             @else
                 <a href="{{ route('login_register') }}" class="action-item">
                     <i class="fa-regular fa-circle-user {{ request()->is('login*') || request()->is('login-register*') ? 'text-fuchsia-400 animate-pulse' : '' }}"></i>
-                    <span>Đăng nhập</span>
+                    <span>{{ __('ui.login') }}</span>
                 </a>
             @endauth
         </div>
@@ -375,28 +413,28 @@
                     <i class="fa-solid fa-angle-right mega-arrow"></i>
                 </a>
             @endforeach
-            <a href="#" class="mega-cat-item"><i class="fa-solid fa-gamepad"></i><span>Thu cũ đổi mới</span></a>
-            <a href="#" class="mega-cat-item"><i class="fa-solid fa-tags"></i><span>Hàng cũ</span></a>
-            <a href="#" class="mega-cat-item"><i class="fa-solid fa-percent"></i><span>Khuyến mãi</span></a>
-            <a href="{{ route('rewards.index') }}" class="mega-cat-item"><i class="fa-solid fa-gift"></i><span>Trang đổi thưởng</span></a>
-            <a href="{{ route('articles.index') }}" class="mega-cat-item"><i class="fa-solid fa-newspaper"></i><span>Tin công nghệ</span></a>
+            <a href="#" class="mega-cat-item"><i class="fa-solid fa-gamepad"></i><span>{{ __('ui.trade_in_renew') }}</span></a>
+            <a href="#" class="mega-cat-item"><i class="fa-solid fa-tags"></i><span>{{ __('ui.used_products') }}</span></a>
+            <a href="#" class="mega-cat-item"><i class="fa-solid fa-percent"></i><span>{{ __('ui.promotions') }}</span></a>
+            <a href="{{ route('rewards.index') }}" class="mega-cat-item"><i class="fa-solid fa-gift"></i><span>{{ __('ui.rewards_page') }}</span></a>
+            <a href="{{ route('articles.index') }}" class="mega-cat-item"><i class="fa-solid fa-newspaper"></i><span>{{ __('ui.tech_news') }}</span></a>
         </div>
         <div class="mega-col-right">
             @foreach($headerCategories as $cat)
                 <div class="mega-detail-panel {{ $loop->first ? 'active' : '' }}" data-panel="{{ $cat->category_id }}">
                     @if($cat->children->count())
                         <div class="mega-section mb-6">
-                            <h4 class="mega-section-title">Dòng sản phẩm {{ $cat->name }}</h4>
+                            <h4 class="mega-section-title">{{ __('ui.product_lines', ['name' => $cat->name]) }}</h4>
                             <div class="mega-tags">
                                 @foreach($cat->children as $child)
                                     <a href="{{ $child->slug ? route('products.category', $child->slug) : route('products.index') }}" class="mega-tag">{{ $child->name }}</a>
                                 @endforeach
-                                <a href="{{ $cat->slug ? route('products.category', $cat->slug) : route('products.index') }}" class="mega-tag see-all">Xem tất cả {{ $cat->name }}</a>
+                                <a href="{{ $cat->slug ? route('products.category', $cat->slug) : route('products.index') }}" class="mega-tag see-all">{{ __('ui.view_all_cat', ['name' => $cat->name]) }}</a>
                             </div>
                         </div>
                     @endif
                     <div class="mega-section mb-6">
-                        <h4 class="mega-section-title">Hãng sản xuất phổ biến</h4>
+                        <h4 class="mega-section-title">{{ __('ui.popular_brands') }}</h4>
                         <div class="mega-tags">
                             @php
                                 $brands = [];
@@ -411,17 +449,17 @@
                     </div>
                     @if(Str::contains($cat->name, ['Laptop', 'Điện thoại']))
                         <div class="mega-section mb-6">
-                            <h4 class="mega-section-title">Chọn theo nhu cầu</h4>
+                            <h4 class="mega-section-title">{{ __('ui.choose_by_need') }}</h4>
                             <div class="mega-tags">
-                                <a href="{{ route('products.category', $cat->slug) }}?needs=gaming" class="mega-tag">🎮 Chơi game/Đồ họa</a>
-                                <a href="{{ route('products.category', $cat->slug) }}?needs=student" class="mega-tag">🎓 Học tập/Văn phòng</a>
-                                <a href="{{ route('products.category', $cat->slug) }}?eco_friendly=1" class="mega-tag">🌱 Thân thiện môi trường</a>
+                                <a href="{{ route('products.category', $cat->slug) }}?needs=gaming" class="mega-tag">{{ __('ui.need_gaming') }}</a>
+                                <a href="{{ route('products.category', $cat->slug) }}?needs=student" class="mega-tag">{{ __('ui.need_student') }}</a>
+                                <a href="{{ route('products.category', $cat->slug) }}?eco_friendly=1" class="mega-tag">{{ __('ui.need_eco') }}</a>
                             </div>
                         </div>
                     @endif
                     <div class="mt-4 pt-4 border-t border-gray-100">
                         <a href="{{ route('products.category', $cat->slug) }}" class="text-primary font-bold hover:underline">
-                            <i class="fa-solid fa-arrow-right-long mr-2"></i> Xem tất cả {{ $cat->name }}
+                            <i class="fa-solid fa-arrow-right-long mr-2"></i> {{ __('ui.view_all_cat', ['name' => $cat->name]) }}
                         </a>
                     </div>
                 </div>
@@ -435,11 +473,11 @@
         <div class="province-modal-header">
             <div class="province-search-box">
                 <i class="fa-solid fa-search"></i>
-                <input type="text" id="provinceSearchInput" placeholder="Nhập tên tỉnh thành">
+                <input type="text" id="provinceSearchInput" placeholder="{{ __('ui.province_search') }}">
             </div>
-            <button class="province-close-btn" id="provinceCloseBtn">Đóng <i class="fa-solid fa-xmark"></i></button>
+            <button class="province-close-btn" id="provinceCloseBtn">{{ __('ui.province_close') }} <i class="fa-solid fa-xmark"></i></button>
         </div>
-        <p class="province-hint">Vui lòng chọn tỉnh, thành phố để biết chính xác giá, khuyến mãi và tồn kho</p>
+        <p class="province-hint">{{ __('ui.province_hint') }}</p>
         <div class="province-list" id="provinceList">
             @foreach($provinces as $prov)
                 <div class="province-item {{ $prov === 'TP. Hồ Chí Minh' ? 'selected' : '' }}" data-province="{{ $prov }}">
@@ -469,4 +507,35 @@
 .notification-text{font-size:12px; color:#4b5563; line-height:1.45;}
 .notification-time{font-size:11px; color:#9ca3af; margin-top:4px;}
 .notification-empty{padding:18px 14px; font-size:13px; color:#6b7280; text-align:center;}
+
+/* Language Switcher */
+.lang-switcher{position:relative; display:inline-flex; align-items:center;}
+.lang-switcher-btn{display:flex; align-items:center; justify-content:center; gap:5px; background:transparent; border:none; padding:2px 8px; color:#fff; font-size:12px; font-weight:500; cursor:pointer; transition:opacity .2s;}
+.lang-switcher-btn:hover{opacity:0.8;}
+.lang-switcher-btn .fa-globe{font-size:13px;}
+.lang-dropdown{display:none; position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid #e5e7eb; border-radius:10px; box-shadow:0 12px 36px rgba(0,0,0,.15); overflow:hidden; z-index:1100; min-width:160px;}
+.lang-dropdown.show{display:block;}
+.lang-option{display:flex; align-items:center; gap:10px; padding:10px 14px; font-size:13px; color:#374151; text-decoration:none; transition:background .15s;}
+.lang-option:hover{background:#f0f7ff; color:#0046ab;}
+.lang-option.active{background:#f0f7ff; color:#0046ab; font-weight:700;}
+.lang-option .fa-check{margin-left:auto; font-size:11px; color:#0046ab;}
+.lang-flag{font-size:18px; line-height:1;}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const langBtn = document.getElementById('langToggleBtn');
+    const langDropdown = document.getElementById('langDropdown');
+    if (langBtn && langDropdown) {
+        langBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            langDropdown.classList.toggle('show');
+        });
+        document.addEventListener('click', function(e) {
+            if (!langBtn.contains(e.target) && !langDropdown.contains(e.target)) {
+                langDropdown.classList.remove('show');
+            }
+        });
+    }
+});
+</script>

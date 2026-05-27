@@ -1,6 +1,8 @@
 # Project Memory
 
 ## Current State & Focus
+- **Merge Activities:**
+  - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
   - Added tag-based filtering on the lifestyle listing page.
   - Fixed admin article filters so status buttons and search now work together.
@@ -11,6 +13,8 @@
   - Service-based backend filtering via `ProductFilterService`.
 
 ## Files Changed
+- **Checkout / Payment Validation:**
+  - `ThuongMaiDienTu/resources/views/frontend/cart/pay.blade.php`
 - **Articles:**
   - `ThuongMaiDienTu/app/Http/Controllers/ArticleFrontendController.php`
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/ArticleController.php`
@@ -80,6 +84,11 @@
   - Implemented the multi-section grid layout for the online repair registration form (`customer_name`, `customer_phone`, `customer_email`, `customer_address`, `imei_serial`, `schedule_date`, `issue_desc`).
   - Added visual, state-driven vertical progress Stepper tracking modal populating steps (`Received` -> `Checking` -> `Under_Repair` / `Waiting_Parts` -> `Done`), displaying estimated cost, assigned technicians, real service fees, and invoices dynamically.
   - Implemented automatic redirection / modal re-opening when Laravel validation errors occur during repair ticket submission.
+- **Checkout Form Real-Time Validation & Character Counter:**
+  - Implemented real-time checking for Họ và tên (Full Name): letters only (showing "Nhập họ và tên bằng chữ" on numbers) and constrained to minimum 15 characters (showing "Họ và tên phải từ 15 ký tự trở lên").
+  - Implemented real-time checking for Số điện thoại (Phone): numbers only (showing "Bạn chỉ nhập số" on letters) and standard formatting constraint.
+  - Implemented 40-character limit constraint for Địa chỉ giao hàng (Shipping Address) with active real-time character counter.
+  - Implemented 250-character limit constraint for Ghi chú (Note) with active real-time character counter.
 
 ## TODOs & Follow-up Work
 - **Articles:**

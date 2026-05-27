@@ -51,6 +51,16 @@ Route::post('/2fa/toggle-confirm', [TwoFactorController::class, 'toggleConfirm']
 Route::get('/security',    [TwoFactorController::class, 'securityPage'])->name('security')->middleware('auth');
 Route::delete('/security/session/{id}', [TwoFactorController::class, 'logoutSession'])->name('security.session.destroy')->middleware('auth');
 
+// Language Switcher
+Route::get('/locale/{locale}', function (string $locale) {
+    $supported = array_keys(config('translatable.supported_locales', ['vi' => 'Tiếng Việt', 'en' => 'English']));
+    if (in_array($locale, $supported)) {
+        session(['locale' => $locale]);
+        app()->setLocale($locale);
+    }
+    return redirect()->back();
+})->name('locale.switch');
+
 // Frontend
 Route::get('/', function () {
     return redirect()->route('home');
@@ -64,6 +74,11 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/update', [CartController::class, 'update'])->name('cart.update');
+Route::post('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
+Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+Route::post('/cart/toggle-select', [CartController::class, 'toggleSelect'])->name('cart.toggleSelect');
+Route::post('/cart/toggle-all', [CartController::class, 'toggleAll'])->name('cart.toggleAll');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
 Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::post('/pay/wallet-points', [CartController::class, 'applyWalletPoints'])->name('cart.pay.wallet-points');

@@ -222,7 +222,7 @@ class CrossSellService
     /**
      * Gắn thêm thuộc tính flash_sale_price vào collection sản phẩm nếu đang sale.
      */
-    private function attachFlashSaleInfo(Collection $products): void
+    public function attachFlashSaleInfo(Collection $products): void
     {
         if ($products->isEmpty()) {
             return;

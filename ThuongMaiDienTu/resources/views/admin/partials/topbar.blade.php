@@ -4,7 +4,7 @@
         'pageTitle' => html_entity_decode($rawTitle, ENT_QUOTES, 'UTF-8'),
         'todayDate' => now()->format('d/m/Y')
     ];
-    $adminUnreadCount = \App\Models\Notification::unread()->count();
+    $adminUnreadCount = \App\Models\Notification::where('user_id', auth()->id())->unread()->count();
 @endphp
 
 <div id="joly-admin-topbar" data-props='{!! json_encode($props, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}'>

@@ -1,15 +1,25 @@
 <?php
 namespace App\Models;
+
 use App\Services\NotificationService;
+use App\Traits\BaseTranslationTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, BaseTranslationTrait;
+
     protected $primaryKey = 'product_id';
     public $timestamps = false;
     protected $guarded = [];
+
+    protected array $translatable = [
+        'name',
+        'description',
+        'seo_description',
+    ];
+
     protected $casts = [
     ];
 
@@ -169,6 +179,13 @@ class Product extends Model
         return $this->belongsToMany(Product::class, 'product_cross_sells', 'product_id', 'cross_sell_id')
             ->withPivot('sort_order')
             ->orderBy('product_cross_sells.sort_order', 'asc');
+    }
+
+    public function comboProducts()
+    {
+        return $this->belongsToMany(Product::class, 'product_combos', 'product_id', 'combo_product_id')
+            ->withPivot('sort_order', 'discount_type', 'discount_value')
+            ->orderBy('product_combos.sort_order', 'asc');
     }
 
     public function wishlistRecentlyViewed()

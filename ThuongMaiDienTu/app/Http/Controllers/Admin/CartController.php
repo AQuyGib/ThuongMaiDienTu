@@ -7,6 +7,9 @@ use App\Models\Order;
 use App\Models\InventoryItem;
 use App\Models\OrderDetail;
 use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Models\PurchaseOrder;
+use Illuminate\Support\Str;
 use App\Services\PointsService;
 use App\Services\FlashSaleService;
 use Illuminate\Http\Request;
@@ -18,6 +21,13 @@ class CartController extends Controller
     public function __construct(private readonly FlashSaleService $flashSaleService)
     {
     }
+    /**
+     * Hàm: index
+     * Công dụng: Hiển thị trang giỏ hàng của khách hàng (Frontend shopping cart).
+     *            - Lấy danh sách sản phẩm hiện có trong session 'cart'.
+     *            - Truy vấn thông tin sản phẩm từ DB để cập nhật giá mới nhất (ưu tiên giá Flash Sale nếu có).
+     *            - Truyền dữ liệu giỏ hàng sang giao diện Blade.
+     */
     public function index()
     {
         $cart = session()->get('cart', []);
@@ -33,15 +43,56 @@ class CartController extends Controller
                 'price' => $effectivePrice,
                 'quantity' => $item['quantity'],
                 'stock' => 10,
-                'selected' => true,
+                'selected' => $item['selected'] ?? true,
                 'image' => $product->thumbnail,
-                'url' => route('product.show', $id)
+                'url' => route('product.show', $id),
+                'category_id' => $product->category_id
             ];
         })->filter()->values();
 
-        return view('frontend.cart.shoppingcart', compact('cartItems'));
+        $recommendedProducts = collect();
+
+        // ONLY query recommended products if the cart is NOT empty
+        if ($cartItems->isNotEmpty()) {
+            $cartProductIds = $cartItems->pluck('id')->toArray();
+            $cartCategoryIds = $cartItems->pluck('category_id')->filter()->unique()->toArray();
+
+            $query = Product::query()->whereNotIn('product_id', $cartProductIds);
+
+            if (!empty($cartCategoryIds)) {
+                $query->whereIn('category_id', $cartCategoryIds);
+            }
+
+            $recommendedProducts = $query->inRandomOrder()->limit(4)->get();
+
+            // If not enough products, fetch more from other categories
+            if ($recommendedProducts->count() < 4) {
+                $remainingCount = 4 - $recommendedProducts->count();
+                $moreProducts = Product::whereNotIn('product_id', array_merge($cartProductIds, $recommendedProducts->pluck('product_id')->toArray()))
+                    ->inRandomOrder()
+                    ->limit($remainingCount)
+                    ->get();
+                $recommendedProducts = $recommendedProducts->merge($moreProducts);
+            }
+        }
+
+        return view('frontend.cart.shoppingcart', compact('cartItems', 'recommendedProducts'));
     }
 
+    /**
+     * Hàm: add
+     * Công dụng: Thêm một sản phẩm (hoặc combo sản phẩm phụ kiện mua kèm) vào giỏ hàng session.
+     * Logic đặc biệt:
+     *   1. Kiểm tra chương trình Flash Sale đang hoạt động của sản phẩm để áp dụng giá Flash Sale và kiểm tra tồn kho.
+     *   2. Xử lý bảo mật máy chủ (Server-side validation) cho combo mua kèm:
+     *      - Nếu request gửi kèm tham số `parent_id` (ID của sản phẩm chính), kiểm tra xem sản phẩm phụ kiện này có
+     *        nằm trong danh sách combo được cấu hình của sản phẩm chính trong DB hay không (`product_combos`).
+     *      - Nếu khớp cấu hình, truy vấn loại giảm giá ('percentage' hoặc 'fixed') và giá trị giảm tương ứng từ cột pivot.
+     *      - Áp dụng công thức giảm giá lên giá nền (giá bán thường hoặc giá Flash Sale) để tính ra giá thực tế sau giảm.
+     *      - Giá trị này được gán trực tiếp vào thuộc tính `price` và `flash_sale_price` trong giỏ hàng để tránh việc người
+     *        dùng can thiệp và sửa giá từ Client-side.
+     *   3. Trả về phản hồi JSON (nếu là AJAX) hoặc redirect về trang giỏ hàng (nếu là nút Mua Ngay).
+     */
     public function add(Request $request)
     {
         $productId = (int) $request->input('product_id');
@@ -62,10 +113,36 @@ class CartController extends Controller
             $salePrice = (int) $flashSaleProduct->sale_price;
         }
 
+        // Kiểm tra xem sản phẩm có được mua kèm theo combo của sản phẩm chính không
+        $parentProductId = $request->input('parent_id');
+        if ($parentProductId) {
+            $parentProduct = Product::find($parentProductId);
+            if ($parentProduct) {
+                // Truy vấn bảng trung gian product_combos để lấy thông tin cấu hình giảm giá
+                $comboRelation = $parentProduct->comboProducts()->where('product_combos.combo_product_id', $productId)->first();
+                if ($comboRelation) {
+                    $pivot = $comboRelation->pivot;
+                    $basePriceToDiscount = $salePrice ?? (int) $product->base_price;
+                    
+                    // Áp dụng giảm giá theo phần trăm (%) hoặc số tiền cố định (đ)
+                    if ($pivot->discount_type === 'percentage') {
+                        $salePrice = (int) ($basePriceToDiscount * (1 - $pivot->discount_value / 100));
+                    } else {
+                        $salePrice = (int) ($basePriceToDiscount - $pivot->discount_value);
+                    }
+                    
+                    if ($salePrice < 0) {
+                        $salePrice = 0;
+                    }
+                }
+            }
+        }
+
         if (isset($cart[$productId])) {
             $cart[$productId]['quantity'] = $newQuantity;
             $cart[$productId]['price'] = $salePrice ?? (int) $product->base_price;
             $cart[$productId]['flash_sale_price'] = $salePrice;
+            $cart[$productId]['selected'] = true;
         } else {
             $cart[$productId] = [
                 'name' => $product->name,
@@ -73,6 +150,7 @@ class CartController extends Controller
                 'price' => $salePrice ?? (int) $product->base_price,
                 'flash_sale_price' => $salePrice,
                 'image' => $product->thumbnail,
+                'selected' => true,
             ];
         }
 
@@ -82,7 +160,7 @@ class CartController extends Controller
             return redirect()->route('cart.index')->with('success', 'Đã thêm vào giỏ hàng!');
         }
 
-        return response()->json(['status' => 'success', 'cart_count' => count($cart)]);
+        return response()->json(['status' => 'success', 'cart_count' => $this->getCartTotalQuantity($cart)]);
     }
 
     public function shipping()
@@ -99,7 +177,7 @@ class CartController extends Controller
                 'stock' => 10,
                 'selected' => true,
                 'image' => $product->thumbnail,
-                'url' => route('product.detail', $id)
+                'url' => route('product.show', $id)
             ];
         })->filter()->values();
 
@@ -111,6 +189,123 @@ class CartController extends Controller
         return view('frontend.cart.pay');
     }
 
+    /**
+     * Cập nhật số lượng sản phẩm trong giỏ hàng.
+     */
+    public function update(Request $request)
+    {
+        $productId = (int) $request->input('product_id');
+        $quantity = (int) $request->input('quantity');
+
+        if ($quantity < 1) {
+            return response()->json(['status' => 'error', 'message' => 'Số lượng không hợp lệ.'], 400);
+        }
+
+        $product = Product::find($productId);
+        if (!$product) {
+            return response()->json(['status' => 'error', 'message' => 'Sản phẩm không tồn tại.'], 404);
+        }
+
+        $cart = session()->get('cart', []);
+        if (isset($cart[$productId])) {
+            $flashSaleProduct = $this->flashSaleService->getFlashSaleProductFor($product);
+            if ($flashSaleProduct && $flashSaleProduct->is_active) {
+                $remaining = $this->flashSaleService->getRemainingQuantity($flashSaleProduct);
+                if ($quantity > $remaining) {
+                    return response()->json([
+                        'status' => 'error', 
+                        'message' => "Số lượng Flash Sale tối đa có thể mua là $remaining."
+                    ], 400);
+                }
+            }
+
+            $cart[$productId]['quantity'] = $quantity;
+            session()->put('cart', $cart);
+
+            return response()->json([
+                'status' => 'success',
+                'cart_count' => $this->getCartTotalQuantity($cart),
+                'message' => 'Cập nhật số lượng thành công.'
+            ]);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Sản phẩm không có trong giỏ hàng.'], 404);
+    }
+
+    /**
+     * Xóa sản phẩm khỏi giỏ hàng.
+     */
+    public function remove(Request $request)
+    {
+        $productId = (int) $request->input('product_id');
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$productId])) {
+            unset($cart[$productId]);
+            session()->put('cart', $cart);
+            return response()->json([
+                'status' => 'success',
+                'cart_count' => $this->getCartTotalQuantity($cart),
+                'message' => 'Đã xóa sản phẩm khỏi giỏ hàng.'
+            ]);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Sản phẩm không có trong giỏ hàng.'], 404);
+    }
+
+    /**
+     * Xóa sạch giỏ hàng.
+     */
+    public function clear()
+    {
+        session()->forget('cart');
+        return response()->json([
+            'status' => 'success',
+            'cart_count' => 0,
+            'message' => 'Đã làm trống giỏ hàng.'
+        ]);
+    }
+
+    /**
+     * Bật/tắt chọn sản phẩm để thanh toán.
+     */
+    public function toggleSelect(Request $request)
+    {
+        $productId = (int) $request->input('product_id');
+        $selected = (bool) $request->input('selected', true);
+        $cart = session()->get('cart', []);
+
+        if (isset($cart[$productId])) {
+            $cart[$productId]['selected'] = $selected;
+            session()->put('cart', $cart);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Cập nhật trạng thái chọn thành công.'
+            ]);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Sản phẩm không có trong giỏ hàng.'], 404);
+    }
+
+    /**
+     * Bật/tắt chọn tất cả sản phẩm.
+     */
+    public function toggleAll(Request $request)
+    {
+        $selected = (bool) $request->input('selected', true);
+        $cart = session()->get('cart', []);
+
+        foreach ($cart as $productId => $item) {
+            $cart[$productId]['selected'] = $selected;
+        }
+
+        session()->put('cart', $cart);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Cập nhật trạng thái chọn tất cả thành công.'
+        ]);
+    }
+
     public function pay(Request $request, PointsService $pointsService)
     {
         $cart = session()->get('cart', []);
@@ -118,15 +313,39 @@ class CartController extends Controller
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống.');
         }
 
-        $lockOk = $this->flashSaleService->lockCartFlashSale($cart);
-        if (!$lockOk) {
+        $cartItems = collect($cart)->map(function ($item, $id) {
+            $product = Product::find($id);
+            if (!$product) {
+                return null;
+            }
+            $effectivePrice = isset($item['flash_sale_price']) ? (int) $item['flash_sale_price'] : (int) ($item['price'] ?? $product->base_price);
+            return [
+                'id' => $id,
+                'name' => $product->name,
+                'price' => $effectivePrice,
+                'quantity' => $item['quantity'],
+                'selected' => $item['selected'] ?? true,
+                'image' => $product->thumbnail,
+                'url' => route('product.show', $id)
+            ];
+        })->filter()->values();
+
+        $selectedItems = $cartItems->filter(fn($i) => $i['selected'])->values();
+        if ($selectedItems->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+        }
+
+        $selectedCart = collect($cart)->filter(fn($item) => $item['selected'] ?? true)->toArray();
+
+        $lockOk = $this->flashSaleService->lockCartFlashSale($selectedCart);
+        if (! $lockOk) {
             return redirect()->route('cart.index')->with('error', 'Một số sản phẩm Flash Sale đã hết số lượng hoặc hết hạn. Vui lòng kiểm tra lại giỏ hàng.');
         }
 
         session()->put('cart_locked', true);
 
-        $cartItems = $this->mapCartItems($cart);
-        $subtotal = (int) $cartItems->sum(fn ($item) => $item['price'] * $item['quantity']);
+        $checkoutItems = $selectedItems;
+        $subtotal = (int) $checkoutItems->sum(fn ($item) => $item['price'] * $item['quantity']);
         $discount = (int) session('checkout_discount', 0);
         $walletPointsUsed = (int) session('checkout_wallet_points', 0);
         $walletReduction = $walletPointsUsed * PointsService::POINT_VALUE;
@@ -135,15 +354,15 @@ class CartController extends Controller
             ? $pointsService->getBalance(Auth::user())
             : ['wallet_points' => 0, 'rank_points' => 0, 'current_rank' => 'Bronze'];
 
-        return view('frontend.cart.pay', compact(
-            'cartItems',
-            'subtotal',
-            'discount',
-            'walletPointsUsed',
-            'walletReduction',
-            'finalAmount',
-            'balance'
-        ));
+        return view('frontend.cart.pay', [
+            'cartItems' => $checkoutItems,
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'walletPointsUsed' => $walletPointsUsed,
+            'walletReduction' => $walletReduction,
+            'finalAmount' => $finalAmount,
+            'balance' => $balance
+        ]);
     }
 
     public function applyWalletPoints(Request $request, PointsService $pointsService)
@@ -259,9 +478,90 @@ class CartController extends Controller
     public function confirmOrder(Request $request)
     {
         $cart = session()->get('cart', []);
-        $this->flashSaleService->confirmCartFlashSale($cart);
-        session()->forget(['cart', 'cart_locked']);
-        return redirect()->route('home')->with('success', 'Đặt hàng thành công!');
+        $selectedCart = collect($cart)->filter(fn($item) => $item['selected'] ?? true)->toArray();
+
+        if (empty($selectedCart)) {
+            return response()->json(['status' => 'error', 'message' => 'Giỏ hàng trống hoặc chưa chọn sản phẩm.'], 400);
+        }
+
+        $totalAmount = collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
+        
+        $discount = 0;
+        if ($request->input('discount_code') === 'PRO10') {
+            $discount = (int) round($totalAmount * 0.1);
+        }
+        $finalAmount = $totalAmount - $discount;
+
+        $name = $request->input('name');
+        $phone = $request->input('phone');
+        $address = $request->input('address');
+        $note = $request->input('note');
+        $paymentMethod = $request->input('payment_method') === 'qr' ? 'VNPAY' : 'COD';
+
+        $order = Order::create([
+            'user_id' => auth()->id(),
+            'order_type' => 'Online',
+            'total_amount' => $totalAmount,
+            'shipping_fee' => 0,
+            'final_amount' => $finalAmount > 0 ? $finalAmount : 0,
+            'payment_method' => $paymentMethod,
+            'status' => 'Pending',
+        ]);
+
+        foreach ($selectedCart as $productId => $item) {
+            $qty = $item['quantity'];
+            $price = $item['price'];
+
+            $variant = ProductVariant::where('product_id', $productId)->first();
+            if (!$variant) {
+                $variant = ProductVariant::create([
+                    'product_id' => $productId,
+                    'color' => 'Mặc định',
+                    'stock' => 99,
+                ]);
+            }
+
+            $inventoryItems = InventoryItem::where('variant_id', $variant->variant_id)
+                ->where('status', 'In_Stock')
+                ->take($qty)
+                ->get();
+
+            $needed = $qty - $inventoryItems->count();
+            for ($i = 0; $i < $needed; $i++) {
+                $newItem = InventoryItem::create([
+                    'variant_id' => $variant->variant_id,
+                    'po_id' => PurchaseOrder::first()?->po_id ?? 1,
+                    'imei_serial' => 'ONLINE-' . strtoupper(Str::random(12)),
+                    'warehouse_loc' => 'Kho Online',
+                    'status' => 'In_Stock',
+                ]);
+                $inventoryItems->push($newItem);
+            }
+
+            foreach ($inventoryItems as $invItem) {
+                OrderDetail::create([
+                    'order_id' => $order->order_id,
+                    'item_id' => $invItem->item_id,
+                    'price' => $price,
+                ]);
+                
+                $invItem->status = 'Sold';
+                $invItem->save();
+            }
+        }
+
+        $this->flashSaleService->confirmCartFlashSale($selectedCart);
+
+        $remainingCart = collect($cart)->filter(fn($item) => !($item['selected'] ?? true))->toArray();
+        session()->put('cart', $remainingCart);
+        session()->forget('cart_locked');
+
+        return response()->json([
+            'status' => 'success',
+            'order_id' => $order->order_id,
+            'total_amount' => $finalAmount,
+            'message' => 'Đặt hàng thành công!'
+        ]);
     }
 
     public function cancelOrder(Request $request)
@@ -280,9 +580,11 @@ class CartController extends Controller
         return redirect()->route('cart.index')->with('error', 'Đơn hàng đã hết hạn thanh toán. Số lượng Flash Sale đã được hoàn lại.');
     }
 
-    public function ai()
+    public function ai(Request $request)
     {
-        return view('frontend.cart.maQR');
+        $orderId = $request->query('order_id');
+        $order = Order::with('details.inventoryItem.variant.product')->find($orderId);
+        return view('frontend.cart.maQR', compact('order'));
     }
 
     public function tracking()
@@ -319,6 +621,15 @@ class CartController extends Controller
     public function getCartCount()
     {
         $cart = session()->get('cart', []);
-        return response()->json(['cart_count' => count($cart)]);
+        return response()->json(['cart_count' => $this->getCartTotalQuantity($cart)]);
+    }
+
+    private function getCartTotalQuantity($cart)
+    {
+        $total = 0;
+        foreach ($cart as $item) {
+            $total += (int)($item['quantity'] ?? 0);
+        }
+        return $total;
     }
 }

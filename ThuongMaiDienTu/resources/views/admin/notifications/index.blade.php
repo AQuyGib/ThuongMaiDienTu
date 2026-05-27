@@ -195,8 +195,9 @@
                             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Đối tượng nhận</label>
                             <select name="target" id="notificationTarget" onchange="handleTargetChange()" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 font-bold text-slate-700">
                                 <option value="all">Tất cả người dùng</option>
-                                <option value="users">Khách hàng</option>
-                                <option value="admins">Admin / nhân sự nội bộ</option>
+                                @foreach($roles as $role)
+                                    <option value="role:{{ $role->role_id }}">{{ $role->name }}{{ $role->description ? ' — ' . $role->description : '' }}</option>
+                                @endforeach
                                 <option value="specific">Gửi cho tài khoản cụ thể</option>
                             </select>
                         </div>
