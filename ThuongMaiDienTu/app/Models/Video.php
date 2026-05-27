@@ -40,6 +40,7 @@ class Video extends Model
     protected $appends = [
         'thumbnail_url',
         'video_url',
+        'category_name',
     ];
 
     public function getThumbnailUrlAttribute()
@@ -91,6 +92,27 @@ class Video extends Model
     public function comments()
     {
         return $this->hasMany(VideoComment::class, 'video_id', 'id')->latest();
+    }
+
+    public function getRootCategory()
+    {
+        if ($this->categoryRel) {
+            $current = $this->categoryRel;
+            while ($current->parent) {
+                $current = $current->parent;
+            }
+            return $current;
+        }
+        return null;
+    }
+
+    public function getCategoryNameAttribute()
+    {
+        $root = $this->getRootCategory();
+        if ($root) {
+            return $root->name;
+        }
+        return $this->category ?: 'REVIEW';
     }
 }
 
