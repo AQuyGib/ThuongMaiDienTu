@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\CouponFlashSale;
 use App\Models\Notification;
 use App\Models\Product;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Jobs\SendNotificationCampaignJob;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -128,6 +130,7 @@ class NotificationCampaignController extends Controller
             'monthlyChart' => $cacheData['monthlyChart'],
             'promoItems' => CouponFlashSale::query()->orderByDesc('promo_id')->limit(20)->get(),
             'products' => Product::query()->orderByDesc('product_id')->limit(20)->get(),
+            'roles' => Role::query()->orderBy('role_id')->get(),
         ]);
     }
 
@@ -171,7 +174,7 @@ class NotificationCampaignController extends Controller
     public function unreadCount(Request $request)
     {
         return response()->json([
-            'unread_count' => Notification::unread()->count(),
+            'unread_count' => Notification::where('user_id', $request->user()->user_id)->unread()->count(),
         ]);
     }
 
@@ -219,13 +222,25 @@ class NotificationCampaignController extends Controller
         return view('admin.notifications.create', [
             'promoItems' => CouponFlashSale::query()->orderByDesc('promo_id')->limit(20)->get(),
             'products' => Product::query()->orderByDesc('product_id')->limit(20)->get(),
+            'roles' => Role::query()->orderBy('role_id')->get(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        if ($request->has('product_id') && !empty($request->input('product_id'))) {
+            $request->merge(['product_ids' => [(int) $request->input('product_id')]]);
+        }
+        if ($request->has('promo_id') && !empty($request->input('promo_id'))) {
+            $request->merge(['promo_ids' => [(int) $request->input('promo_id')]]);
+        }
+
+        // Lấy danh sách role_id hợp lệ để validate động
+        $validRoleTargets = Role::query()->pluck('role_id')->map(fn($id) => 'role:' . $id)->toArray();
+        $allowedTargets = array_merge(['all', 'specific'], $validRoleTargets);
+
         $data = $request->validate([
-            'target' => ['required', 'in:admins,users,all,specific'],
+            'target' => ['required', 'in:' . implode(',', $allowedTargets)],
             'user_ids' => ['required_if:target,specific', 'array'],
             'user_ids.*' => ['integer', 'exists:users,user_id'],
             'title' => ['required', 'string', 'max:255'],
@@ -238,30 +253,35 @@ class NotificationCampaignController extends Controller
         ]);
 
         if ($data['target'] === 'specific') {
-            $users = User::query()->whereIn('user_id', $data['user_ids'])->get();
+            $userIds = $data['user_ids'];
+        } elseif (str_starts_with($data['target'], 'role:')) {
+            // Lọc theo role cụ thể từ database
+            $roleId = (int) str_replace('role:', '', $data['target']);
+            $userIds = User::query()->where('role_id', $roleId)->pluck('user_id')->toArray();
         } else {
-            $users = match ($data['target']) {
-                'admins' => User::query()->whereIn('role_id', [1, 2, 4])->get(),
-                'users' => User::query()->whereNotIn('role_id', [1, 2, 4])->get(),
-                default => User::query()->get(),
-            };
+            // all
+            $userIds = User::query()->pluck('user_id')->toArray();
         }
 
-        foreach ($users as $user) {
-            $this->notificationService->createForUser($user, [
-                'type' => 'admin.manual_campaign',
-                'title' => $data['title'],
-                'content' => $data['content'],
-                'action_url' => $data['action_url'] ?? url('/'),
-                'data' => [
-                    'product_ids' => $data['product_ids'] ?? [],
-                    'promo_ids' => $data['promo_ids'] ?? [],
-                    'target' => $data['target'],
-                ],
-            ]);
-        }
+        $payload = [
+            'type' => 'admin.manual_campaign',
+            'title' => $data['title'],
+            'content' => $data['content'],
+            'action_url' => $data['action_url'] ?? url('/'),
+            'data' => [
+                'product_ids' => $data['product_ids'] ?? [],
+                'promo_ids' => $data['promo_ids'] ?? [],
+                'target' => $data['target'],
+            ],
+        ];
 
-        return back()->with('success', 'Đã gửi thông báo thành công.');
+        // Gửi qua hàng đợi chạy ngầm
+        SendNotificationCampaignJob::dispatch($userIds, $payload);
+
+        // Xóa cache thống kê
+        Cache::forget('admin_notifications_index_stats_and_charts');
+
+        return back()->with('success', 'Chiến dịch gửi thông báo đã được đưa vào hàng đợi xử lý.');
     }
 
     public function markAsRead(Notification $notification): RedirectResponse
@@ -274,6 +294,9 @@ class NotificationCampaignController extends Controller
     public function destroy(Notification $notification): RedirectResponse
     {
         $notification->delete();
+
+        // Xóa cache thống kê
+        Cache::forget('admin_notifications_index_stats_and_charts');
 
         return back()->with('success', 'Đã xóa thông báo.');
     }
@@ -288,6 +311,9 @@ class NotificationCampaignController extends Controller
         Notification::query()
             ->whereIn('notification_id', $data['notification_ids'])
             ->delete();
+
+        // Xóa cache thống kê
+        Cache::forget('admin_notifications_index_stats_and_charts');
 
         return back()->with('success', 'Đã xóa các thông báo đã chọn.');
     }
@@ -343,6 +369,9 @@ class NotificationCampaignController extends Controller
                 Notification::insert($chunk->toArray());
             });
         }
+
+        // Xóa cache thống kê
+        Cache::forget('admin_notifications_index_stats_and_charts');
 
         return back()->with('success', 'Đã kiểm tra tồn kho thấp cho ' . $count . ' biến thể.');
     }

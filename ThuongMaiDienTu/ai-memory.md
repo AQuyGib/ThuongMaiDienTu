@@ -118,6 +118,7 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - [ ] Hiển thị sản phẩm lên trang chủ khách hàng (Frontend).
 - [ ] Phát triển logic trong `CartService` và `InventoryService`.
 - [ ] Tối ưu hóa hiệu năng load video và caching lượt xem/likes để giảm tải cho DB.
+- [x] Nâng cấp hệ thống thông báo theo bản kế hoạch (sửa cache admin, sửa badge đếm chưa đọc của admin, đồng bộ form create, và tích hợp Laravel Queue).
 
 ### 5. Cấu hình Giảm giá Combo Mua Kèm (Combo Discounts)
 - **Hạ tầng & Database:**
@@ -142,3 +143,18 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - Đã merge và push nhánh Hien/Video sạch sẽ lên remote master trước đó.
 - Khôi phục lại VideoSeeder của nhánh `Hien/Video` sử dụng 4 video cục bộ (bỏ YouTube link), đồng thời reset và chạy lại seeding dữ liệu database video cục bộ thành công theo yêu cầu của user.
 - Tính năng Combo giảm giá và cấu hình Modal đã được triển khai hoàn chỉnh cả Backend lẫn Frontend.
+- Đã gộp (merge) nhánh `master` vào nhánh `AnhQuy/ThongBao` sạch sẽ, không có xung đột.
+
+### 6. Nâng cấp hệ thống Thông báo (Notification System Upgrade)
+- **Sửa lỗi Cache thống kê Admin:** Thêm `Cache::forget('admin_notifications_index_stats_and_charts')` vào `store()`, `destroy()`, `bulkDestroy()`, `lowStockCheck()` trong `NotificationCampaignController.php`.
+- **Sửa lỗi Badge đếm thông báo Admin:** Lọc `unreadCount` theo `user_id` của Admin đang đăng nhập thay vì đếm toàn hệ thống (cả `NotificationCampaignController@unreadCount` và `topbar.blade.php`).
+- **Tích hợp Laravel Queue:** Tạo `SendNotificationCampaignJob.php` xử lý gửi thông báo hàng loạt chạy ngầm, tránh timeout. Controller `store()` gọi `SendNotificationCampaignJob::dispatch()` thay vì xử lý đồng bộ.
+- **Nâng cấp form tạo chiến dịch:** Viết lại `admin/notifications/create.blade.php` từ layout cũ (`layouts.app`) sang layout admin (`admin.layouts.master`), thêm multi-select AJAX cho sản phẩm (`product_ids[]`), khuyến mãi (`promo_ids[]`), và tìm chọn tài khoản cụ thể (`user_ids[]`) giống Modal ở trang Index.
+- Đã gộp (merge) nhánh `master` vào nhánh hiện tại `AnhQuy/ThongBao` sạch sẽ, không có xung đột.
+- Đã lập bản kế hoạch và triển khai nâng cấp thành công hệ thống thông báo:
+  - Sửa lỗi Stale Cache thống kê Dashboard Admin: Xóa cache `admin_notifications_index_stats_and_charts` khi tạo mới, xóa, xóa hàng loạt, hoặc quét tồn kho thấp.
+  - Sửa lỗi lọc Badge Admin (Admin Unread Count): Badge trên topbar Admin chỉ đếm số thông báo chưa đọc của chính Admin đang đăng nhập.
+  - Đồng bộ Form tạo mới chiến dịch: Merge tự động các input đơn lẻ `product_id` và `promo_id` thành các mảng `product_ids` và `promo_ids` ở controller để tương thích hoàn toàn với cả form tạo mới trang lẻ và modal index.
+  - Tích hợp hàng đợi Laravel Queue: Tạo `SendNotificationCampaignJob` để xử lý gửi thông báo chiến dịch hàng loạt dưới background, giảm thiểu rủi ro Timeout.
+  - Viết thêm Unit Test kiểm thử thành công cơ chế Dispatch Job và Xóa cache trong `tests/Feature/NotificationTest.php`.
+
