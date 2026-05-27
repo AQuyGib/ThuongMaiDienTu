@@ -46,6 +46,8 @@ class SocialController extends Controller
             'prodienmay@gmail.com',
             'kaitovng@gmail.com',
             'thenghien2006@gmail.com',
+            'emvinh543@gmail.com',
+            'dama@gmail.com',
         ];
 
         $roleId = 3; // Mặc định là Khách hàng
@@ -76,7 +78,23 @@ class SocialController extends Controller
         }
 
         if ($user->status === 'Banned' || $user->status === 'Inactive') {
-            return redirect()->route('login')->withErrors(['login_error' => 'Tài khoản đã bị khóa.']);
+            return redirect()->route('login_register')->withErrors(['login_error' => 'Tài khoản đã bị khóa.']);
+        }
+
+        if ($user->is_2fa_enabled) {
+            $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $user->two_factor_code = $otp;
+            $user->two_factor_expires_at = now()->addMinutes(5);
+            $user->save();
+
+            \Illuminate\Support\Facades\Mail::send('emails.two_factor', ['user' => $user, 'otp' => $otp], function ($m) use ($user) {
+                $m->to($user->email)->subject('[DienMayPro] Mã xác thực đăng nhập (2FA)');
+            });
+
+            session(['2fa_user_id' => $user->user_id, '2fa_remember' => true]);
+            
+            \Illuminate\Support\Facades\Log::info("STEP 3: 2FA required for Social Login", ['user_id' => $user->user_id]);
+            return redirect()->route('2fa.show');
         }
 
         Auth::login($user, true);

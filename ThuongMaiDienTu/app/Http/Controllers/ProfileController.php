@@ -25,39 +25,48 @@ class ProfileController extends Controller
         $totalOrders = $orders->count();
         $totalSpent = $orders->where('status', 'Delivered')->sum('final_amount');
         
-        // Logic tính hạng thành viên thực tế
-        $currentTier = 'Đồng';
-        $nextTier = 'Bạc';
-        $spendNeeded = 0;
+        // Lấy thông tin điểm từ PointsService
+        $pointsService = app(\App\Services\PointsService::class);
+        $pointsBalance = $pointsService->getBalance($user);
+        
+        $walletPoints = $pointsBalance['wallet_points'];
+        $rankPoints = $pointsBalance['rank_points'];
+        
+        // Sử dụng member_tier của user làm hạng hiện tại để đồng bộ với Admin Panel và database
+        $dbRank = $user->member_tier ?? $pointsBalance['current_rank']; // 'Dong', 'Bac', 'Vang', 'KimCuong'
 
-        if ($totalSpent < 5000000) {
-            $currentTier = 'Đồng';
+        $rankNames = [
+            'Dong' => 'Đồng',
+            'Bac' => 'Bạc',
+            'Vang' => 'Vàng',
+            'KimCuong' => 'Kim Cương',
+            'Bronze' => 'Đồng',
+            'Silver' => 'Bạc',
+            'Gold' => 'Vàng',
+            'Diamond' => 'Kim Cương',
+        ];
+        $currentTier = $rankNames[$dbRank] ?? 'Đồng';
+
+        // Logic tính hạng và tiến trình thăng hạng theo PointsService
+        if (in_array($dbRank, ['Dong', 'Bronze'])) {
             $nextTier = 'Bạc';
-            $spendNeeded = 5000000 - $totalSpent;
-        } elseif ($totalSpent < 20000000) {
-            $currentTier = 'Bạc';
+            $pointsNeeded = max(0, 1000 - $rankPoints);
+            $spendNeeded = $pointsNeeded * \App\Services\PointsService::EARN_RATE;
+            $tierProgress = min(100, max(0, ($rankPoints / 1000) * 100));
+        } elseif (in_array($dbRank, ['Bac', 'Silver'])) {
             $nextTier = 'Vàng';
-            $spendNeeded = 20000000 - $totalSpent;
-        } elseif ($totalSpent < 50000000) {
-            $currentTier = 'Vàng';
+            $pointsNeeded = max(0, 5000 - $rankPoints);
+            $spendNeeded = $pointsNeeded * \App\Services\PointsService::EARN_RATE;
+            $tierProgress = min(100, max(0, (($rankPoints - 1000) / 4000) * 100));
+        } elseif (in_array($dbRank, ['Vang', 'Gold'])) {
             $nextTier = 'Kim Cương';
-            $spendNeeded = 50000000 - $totalSpent;
+            $pointsNeeded = max(0, 10000 - $rankPoints);
+            $spendNeeded = $pointsNeeded * \App\Services\PointsService::EARN_RATE;
+            $tierProgress = min(100, max(0, (($rankPoints - 5000) / 5000) * 100));
         } else {
-            $currentTier = 'Kim Cương';
             $nextTier = 'Đã đạt cấp tối đa';
             $spendNeeded = 0;
-        }
-
-        // Tính % tiến trình cho thanh bar
-        $tierProgress = 0;
-        if ($currentTier == 'Kim Cương') {
             $tierProgress = 100;
-        } else {
-            // Mục tiêu là số tiền cần đạt để lên hạng tiếp theo
-            $targetAmount = $totalSpent + $spendNeeded;
-            if ($targetAmount > 0) {
-                $tierProgress = ($totalSpent / $targetAmount) * 100;
-            }
         }
 
         $wishlist = $user->wishlists()->where('type', 'Wishlist')->with('product')->get();
@@ -66,7 +75,34 @@ class ProfileController extends Controller
             ->limit(10)
             ->get();
 
-        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'wishlist', 'loginHistories'));
+        $repairTickets = \App\Models\RepairTicket::with(['technician', 'serviceInvoice'])
+            ->where(function($query) use ($user) {
+                $query->where('user_id', $user->user_id);
+                if ($user->phone_number) {
+                    $query->orWhere('customer_phone', $user->phone_number);
+                }
+            })
+            ->latest('ticket_id')
+            ->get();
+
+        // Lấy danh sách ưu đãi đã đổi từ catalog và vòng quay
+        $redemptions = \DB::table('reward_redemptions')
+            ->where('user_id', $user->user_id)
+            ->orderBy('redemption_id', 'desc')
+            ->get();
+
+        $spins = \DB::table('lucky_wheel_spins')
+            ->where('user_id', $user->user_id)
+            ->orderBy('spin_id', 'desc')
+            ->get();
+
+        $pointTransactions = \DB::table('point_transactions')
+            ->where('user_id', $user->user_id)
+            ->orderBy('point_transaction_id', 'desc')
+            ->limit(30)
+            ->get();
+
+        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'wishlist', 'loginHistories', 'repairTickets', 'walletPoints', 'rankPoints', 'redemptions', 'spins', 'pointTransactions'));
     }
 
     /**
@@ -329,5 +365,67 @@ class ProfileController extends Controller
             ->delete();
 
         return response()->json(['success' => true, 'count' => 0]);
+    }
+
+    /**
+     * Lưu thông tin đăng ký lịch hẹn sửa chữa trực tuyến từ khách hàng.
+     * Logic này thực hiện các bước:
+     * 1. Xác thực tài khoản khách hàng đã đăng nhập.
+     * 2. Validate dữ liệu đầu vào: thông tin khách hàng, số IMEI và mô tả lỗi thiết bị.
+     * 3. Tạo mới phiếu sửa chữa (RepairTicket) với trạng thái mặc định 'Received'.
+     * 4. Chuyển hướng người dùng về tab quản lý sửa chữa kèm thông báo thành công.
+     */
+    public function storeRepairTicket(Request $request)
+    {
+        // Bước 1: Kiểm tra người dùng đã đăng nhập chưa
+        if (!Auth::check()) {
+            return redirect()->route('login_register');
+        }
+
+        $user = Auth::user();
+
+        // Bước 2: Thiết lập bộ quy tắc xác thực dữ liệu đầu vào
+        $request->validate([
+            'customer_name' => ['required', 'string', 'max:255'],
+            'customer_phone' => ['required', 'string', 'regex:/^[0-9]{10}$/'],
+            'customer_email' => ['nullable', 'email', 'max:255'],
+            'customer_address' => ['nullable', 'string', 'max:255'],
+            'imei_serial' => ['required', 'string', 'max:100', 'unique:repair_tickets,imei_serial'], // Đảm bảo IMEI duy nhất
+            'issue_desc' => ['required', 'string'],
+            'schedule_date' => ['required', 'date', 'after_or_equal:today'], // Ngày hẹn mang tới phải >= ngày hiện tại
+        ], [
+            'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
+            'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
+            'customer_phone.regex' => 'Số điện thoại liên hệ phải có đúng 10 chữ số.',
+            'customer_email.email' => 'Địa chỉ email không hợp lệ.',
+            'imei_serial.required' => 'Vui lòng nhập mã IMEI / Serial.',
+            'imei_serial.unique' => 'Mã IMEI / Serial này đã tồn tại trong hệ thống.',
+            'issue_desc.required' => 'Vui lòng nhập mô tả lỗi.',
+            'schedule_date.required' => 'Vui lòng chọn ngày hẹn mang máy tới.',
+            'schedule_date.after_or_equal' => 'Ngày hẹn mang máy tới phải từ hôm nay trở đi.',
+        ]);
+
+        // Bước 3: Tìm kỹ thuật viên phụ trách mặc định của cửa hàng (Quản trị viên hoặc quản lý hoặc kỹ thuật viên đầu tiên)
+        $defaultTech = \App\Models\User::whereIn('role_id', [1, 2, 4])->first();
+        $defaultTechId = $defaultTech ? $defaultTech->user_id : null;
+
+        // Bước 4: Lưu bản ghi phiếu sửa chữa vào cơ sở dữ liệu
+        \App\Models\RepairTicket::create([
+            'user_id' => $user->user_id, // Liên kết phiếu với ID của tài khoản khách hàng
+            'technician_id' => $defaultTechId, // Gán kỹ thuật viên phụ trách mặc định để đảm bảo luôn có kỹ thuật viên phụ trách
+            'customer_name' => $request->customer_name,
+            'customer_phone' => $request->customer_phone,
+            'customer_email' => $request->customer_email,
+            'customer_address' => $request->customer_address,
+            'customer_source' => 'Website', // Nguồn đăng ký từ giao diện Frontend Website
+            'imei_serial' => $request->imei_serial,
+            'issue_desc' => $request->issue_desc,
+            'schedule_date' => $request->schedule_date,
+            'status' => 'Received', // Gán trạng thái khởi tạo: Đã tiếp nhận (Received)
+            'estimated_cost' => 0,  // Chi phí dự kiến mặc định là 0 (kỹ thuật viên sẽ cập nhật khi kiểm tra trực tiếp)
+        ]);
+
+        // Bước 4: Điều hướng phản hồi về trang cá nhân của khách hàng, kích hoạt lại tab repair-tab
+        return redirect()->route('profile.index', ['tab' => 'repair-tab'])->with('repair_success', 'Đã đăng ký lịch hẹn sửa chữa trực tuyến thành công!');
     }
 }

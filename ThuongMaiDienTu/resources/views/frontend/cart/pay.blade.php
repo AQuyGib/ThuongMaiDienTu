@@ -48,7 +48,10 @@
     </div>
   </div>
 
-  <div class="flex flex-col lg:flex-row gap-6">
+  <form id="checkout-form" method="POST" action="{{ route('cart.place-order') }}" class="flex flex-col lg:flex-row gap-6">
+    @csrf
+    <input type="hidden" name="payment_method" id="payment_method_input" value="COD">
+    <input type="hidden" name="wallet_points_used" id="wallet_points_used_input" value="0">
 
     {{-- ===== CỘT TRÁI ===== --}}
     <div class="w-full lg:w-3/5 space-y-5">
@@ -62,28 +65,38 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Họ và tên *</label>
-            <input id="inp-name" type="text" required
+            <input id="inp-name" name="customer_name" type="text" required
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
               value="{{ Auth::check() ? Auth::user()->name : '' }}" placeholder="Nguyễn Văn A">
+            <p id="err-name" class="text-xs text-red-500 mt-1 hidden"></p>
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại *</label>
-            <input id="inp-phone" type="tel" required
+            <input id="inp-phone" name="customer_phone" type="tel" required
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
               value="{{ Auth::check() && Auth::user()->phone ? Auth::user()->phone : '' }}" placeholder="0901234567">
+            <p id="err-phone" class="text-xs text-red-500 mt-1 hidden"></p>
           </div>
         </div>
         <div class="mt-4">
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ giao hàng *</label>
-          <input id="inp-address" type="text" required
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-sm font-semibold text-gray-700">Địa chỉ giao hàng *</label>
+            <span id="counter-address" class="text-xs text-gray-400 font-medium">0/40</span>
+          </div>
+          <input id="inp-address" name="shipping_address" type="text" required maxlength="40"
             class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
             placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
+          <p id="err-address" class="text-xs text-red-500 mt-1 hidden"></p>
         </div>
         <div class="mt-4">
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Ghi chú (tùy chọn)</label>
-          <textarea id="inp-note" rows="2"
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-sm font-semibold text-gray-700">Ghi chú (tùy chọn)</label>
+            <span id="counter-note" class="text-xs text-gray-400 font-medium">0/250</span>
+          </div>
+          <textarea id="inp-note" name="note" rows="2" maxlength="250"
             class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm resize-none"
             placeholder="Giao giờ hành chính, gọi trước khi giao..."></textarea>
+          <p id="err-note" class="text-xs text-red-500 mt-1 hidden"></p>
         </div>
       </div>
 
@@ -169,12 +182,20 @@
             <input id="discount-code" type="text"
               class="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-400 outline-none"
               placeholder="VD: PRO10">
-            <button onclick="applyDiscount()" id="btn-discount"
+            <button type="button" onclick="applyDiscount()" id="btn-discount"
               class="px-4 bg-gray-800 text-white text-sm rounded-lg font-semibold hover:bg-gray-900 transition whitespace-nowrap">
               Áp dụng
             </button>
           </div>
           <p id="discount-msg" class="text-xs mt-2 hidden font-medium"></p>
+        </div>
+
+        <div class="mb-5 bg-blue-50 rounded-xl border border-blue-100 p-4">
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-xs font-bold text-blue-700 uppercase tracking-wide">Điểm tiêu dùng</label>
+            <span id="wallet-balance" class="text-xs font-semibold text-blue-600">{{ Auth::check() ? number_format(($balance['wallet_points'] ?? 0)) : 0 }} điểm</span>
+          </div>
+          <p class="text-[11px] text-blue-700 mb-2">Điểm đã được chuyển sang trang đổi thưởng <a href="{{ route('rewards.index') }}" class="font-semibold underline">/rewards</a>.</p>
         </div>
 
         {{-- Tóm tắt tiền --}}
@@ -191,15 +212,20 @@
             <span>Giảm giá</span>
             <span id="sum-discount" class="font-medium text-green-600">-0đ</span>
           </div>
+          <div id="sum-wallet-row" class="flex justify-between text-gray-600 hidden">
+            <span>Điểm tiêu dùng</span>
+            <span id="sum-wallet" class="font-medium text-green-600">-0đ</span>
+          </div>
           <div class="flex justify-between items-end pt-3 border-t">
             <span class="font-bold text-gray-800">Thành tiền</span>
             <span id="sum-total" class="text-2xl font-bold text-red-600">0đ</span>
           </div>
           <p class="text-right text-xs text-gray-400 italic">Đã bao gồm VAT</p>
+          <input type="hidden" name="discount_amount" id="discount_amount_input" value="0">
         </div>
 
         {{-- Nút đặt hàng --}}
-        <button id="btn-order" onclick="submitOrder()"
+        <button type="submit" id="btn-order"
           class="w-full mt-5 bg-red-600 text-white py-3.5 rounded-xl font-bold text-base hover:bg-red-700 transition-all shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
           disabled>
           <i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG
@@ -239,7 +265,7 @@ const BANK = { id: 'MB', account: '123456789', name: 'DIENMAYPRO' };
 let cartItems = [];
 let subtotalVal = 0;
 let discountVal = 0;
-let currentMethod = 'qr';
+let currentMethod = 'cod';
 
 // ---- FORMAT ----
 const fmt = n => new Intl.NumberFormat('vi-VN').format(n || 0) + 'đ';
@@ -247,16 +273,11 @@ const fmt = n => new Intl.NumberFormat('vi-VN').format(n || 0) + 'đ';
 // ---- LOAD CART FROM SESSIONSTORAGE ----
 function loadCart() {
   try {
-    const raw = sessionStorage.getItem('checkoutItems');
-    if (raw) cartItems = JSON.parse(raw);
-  } catch(e) {}
-
-  // Fallback nếu không có sessionStorage
-  if (!cartItems.length) {
-    cartItems = [
-      { name: 'Android Tivi Sony 4K 65 inch', price: 16990000, quantity: 2 },
-      { name: 'Tủ lạnh Aqua Inverter 189 lít', price: 4990000, quantity: 1 },
-    ];
+    const raw = '{!! json_encode($cartItems) !!}';
+    cartItems = JSON.parse(raw);
+  } catch(e) {
+    console.error("Lỗi nạp giỏ hàng từ server:", e);
+    cartItems = [];
   }
 
   renderItems();
@@ -266,6 +287,7 @@ function renderItems() {
   const el = document.getElementById('order-items');
   if (!cartItems.length) {
     el.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">Không có sản phẩm.</p>';
+    document.getElementById('btn-order').disabled = true;
     return;
   }
   subtotalVal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
@@ -279,12 +301,14 @@ function renderItems() {
     </div>`).join('');
   document.getElementById('item-badge').textContent = cartItems.length + ' sản phẩm';
   updateTotals();
+  checkFormValidity();
 }
 
 function updateTotals() {
   const total = subtotalVal - discountVal;
   document.getElementById('sum-subtotal').textContent = fmt(subtotalVal);
   document.getElementById('sum-total').textContent = fmt(total > 0 ? total : 0);
+  document.getElementById('discount_amount_input').value = discountVal;
   if (discountVal > 0) {
     document.getElementById('sum-discount-row').classList.remove('hidden');
     document.getElementById('sum-discount').textContent = '-' + fmt(discountVal);
@@ -294,13 +318,6 @@ function updateTotals() {
 }
 
 // ---- QR (Đã chuyển sang trang maQR) ----
-function updateQR(amount) {
-  if (!amount) return;
-  const orderId = 'DMP' + Date.now().toString(36).toUpperCase().slice(-6);
-  const url = `https://img.vietqr.io/image/${BANK.id}-${BANK.account}-compact2.png?amount=${amount}&addInfo=${orderId}&accountName=${encodeURIComponent(BANK.name)}`;
-  document.getElementById('qr-img').src = url;
-}
-
 // ---- PAYMENT METHOD ----
 function selectMethod(method) {
   currentMethod = method;
@@ -377,46 +394,183 @@ function applyDiscount() {
 
 // ---- FORM VALIDITY ----
 function checkFormValidity() {
-  const name = document.getElementById('inp-name').value.trim();
-  const phone = document.getElementById('inp-phone').value.trim();
-  const addr = document.getElementById('inp-address').value.trim();
-  const valid = name && phone && /^0[0-9]{8,9}$/.test(phone) && addr;
+  const nameInp = document.getElementById('inp-name');
+  const phoneInp = document.getElementById('inp-phone');
+  const addrInp = document.getElementById('inp-address');
+  const noteInp = document.getElementById('inp-note');
+
+  const name = nameInp ? nameInp.value : '';
+  const phone = phoneInp ? phoneInp.value : '';
+  const addr = addrInp ? addrInp.value : '';
+  const note = noteInp ? noteInp.value : '';
+
+  const errName = document.getElementById('err-name');
+  const errPhone = document.getElementById('err-phone');
+  const errAddr = document.getElementById('err-address');
+  const errNote = document.getElementById('err-note');
+
+  let nameValid = true;
+  let phoneValid = true;
+  let addrValid = true;
+  let noteValid = true;
+
+  // 1. Họ và tên validation
+  if (name.length > 0 && /\d/.test(name)) {
+    if (errName) {
+      errName.textContent = 'Nhập họ và tên bằng chữ';
+      errName.classList.remove('hidden');
+    }
+    nameValid = false;
+  } else if (name.trim().length > 0 && name.trim().length < 15) {
+    if (errName) {
+      errName.textContent = 'Họ và tên phải từ 15 ký tự trở lên';
+      errName.classList.remove('hidden');
+    }
+    nameValid = false;
+  } else {
+    if (errName) errName.classList.add('hidden');
+    if (name.trim().length === 0) nameValid = false;
+  }
+
+  // 2. Số điện thoại validation
+  if (/[a-zA-Z]/.test(phone)) {
+    if (errPhone) {
+      errPhone.textContent = 'Bạn chỉ nhập số';
+      errPhone.classList.remove('hidden');
+    }
+    phoneValid = false;
+  } else if (phone.length > 0 && !/^0[0-9]{8,9}$/.test(phone)) {
+    if (errPhone) {
+      errPhone.textContent = 'Số điện thoại phải từ 9-10 chữ số và bắt đầu bằng số 0';
+      errPhone.classList.remove('hidden');
+    }
+    phoneValid = false;
+  } else {
+    if (errPhone) errPhone.classList.add('hidden');
+    if (phone.length === 0) phoneValid = false;
+  }
+
+  // 3. Địa chỉ giao hàng validation
+  const addrLen = addr.length;
+  const counterAddr = document.getElementById('counter-address');
+  if (counterAddr) {
+    counterAddr.textContent = `${addrLen}/40`;
+  }
+  if (addrLen > 40) {
+    if (errAddr) {
+      errAddr.textContent = 'Địa chỉ giao hàng tối đa 40 ký tự';
+      errAddr.classList.remove('hidden');
+    }
+    addrValid = false;
+  } else {
+    if (errAddr) errAddr.classList.add('hidden');
+    if (addrLen === 0) addrValid = false;
+  }
+
+  // 4. Ghi chú validation
+  const noteLen = note.length;
+  const counterNote = document.getElementById('counter-note');
+  if (counterNote) {
+    counterNote.textContent = `${noteLen}/250`;
+  }
+  if (noteLen > 250) {
+    if (errNote) {
+      errNote.textContent = 'Ghi chú tối đa 250 ký tự';
+      errNote.classList.remove('hidden');
+    }
+    noteValid = false;
+  } else {
+    if (errNote) errNote.classList.add('hidden');
+  }
+
   const btn = document.getElementById('btn-order');
-  btn.disabled = !valid;
+  if (btn) {
+    btn.disabled = !(nameValid && phoneValid && addrValid && noteValid);
+  }
 }
 
-['inp-name','inp-phone','inp-address'].forEach(id => {
+['inp-name', 'inp-phone', 'inp-address', 'inp-note'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', checkFormValidity);
 });
 
 // ---- SUBMIT ----
-function submitOrder() {
+document.getElementById('checkout-form')?.addEventListener('submit', function (e) {
+  e.preventDefault();
+
   const name = document.getElementById('inp-name').value.trim();
   const phone = document.getElementById('inp-phone').value.trim();
   const addr = document.getElementById('inp-address').value.trim();
-  if (!name || !phone || !addr) return;
+  const note = document.getElementById('inp-note').value.trim();
+  const discountInp = document.getElementById('discount-code');
+  const discountCode = discountInp && discountInp.readOnly ? discountInp.value.trim().toUpperCase() : '';
+
+  const isNameInvalid = /\d/.test(name) || name.length < 15;
+  const isPhoneInvalid = /[a-zA-Z]/.test(phone) || !/^0[0-9]{8,9}$/.test(phone);
+  const isAddrInvalid = addr.length > 40 || addr.length === 0;
+  const isNoteInvalid = note.length > 250;
+
+  if (isNameInvalid || isPhoneInvalid || isAddrInvalid || isNoteInvalid) {
+    alert('Vui lòng kiểm tra lại thông tin nhập vào hợp lệ!');
+    return;
+  }
 
   const btn = document.getElementById('btn-order');
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang xử lý...';
   btn.disabled = true;
 
-  setTimeout(() => {
-    if (currentMethod === 'qr') {
-      const total = subtotalVal - discountVal;
-      sessionStorage.setItem('paymentTotal', total);
-      window.location.href = "{{ route('cart.qr') }}";
+  const data = {
+    name: name,
+    phone: phone,
+    address: addr,
+    note: note,
+    payment_method: currentMethod,
+    discount_code: discountCode
+  };
+
+  fetch('{{ route("cart.confirm") }}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(res => {
+    if (res.status === 'success') {
+      const badge = document.getElementById('headerCartBadge');
+      if (badge) {
+        fetch('{{ route("cart.count") }}')
+          .then(r => r.json())
+          .then(d => {
+             badge.innerText = d.cart_count;
+             if (d.cart_count === 0) badge.style.display = 'none';
+          });
+      }
+
+      if (currentMethod === 'qr') {
+        window.location.href = "{{ route('cart.qr') }}?order_id=" + res.order_id;
+      } else {
+        document.getElementById('success-overlay').classList.remove('hidden');
+      }
     } else {
-      sessionStorage.removeItem('checkoutItems');
-      sessionStorage.removeItem('paymentTotal');
-      document.getElementById('success-overlay').classList.remove('hidden');
+      alert(res.message || 'Đã xảy ra lỗi khi đặt hàng!');
+      btn.innerHTML = '<i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG';
+      btn.disabled = false;
     }
-  }, 1500);
-}
+  })
+  .catch(err => {
+    console.error(err);
+    alert('Đã xảy ra lỗi hệ thống!');
+    btn.innerHTML = '<i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG';
+    btn.disabled = false;
+  });
+});
 
 // ---- INIT ----
 document.addEventListener('DOMContentLoaded', () => {
   loadCart();
-  selectMethod('qr');
+  selectMethod('cod');
 });
 </script>
 @endpush

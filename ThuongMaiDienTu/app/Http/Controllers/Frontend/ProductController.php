@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\CrossSellService;
 use App\Services\FlashSaleService;
 use App\Services\ProductFilterService;
 use App\Models\Review;
@@ -16,7 +17,8 @@ class ProductController extends Controller
 {
     public function __construct(
         private readonly ProductFilterService $productFilterService,
-        private readonly FlashSaleService $flashSaleService
+        private readonly FlashSaleService     $flashSaleService,
+        private readonly CrossSellService     $crossSellService
     ) {
     }
 
@@ -49,7 +51,7 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        $product = Product::with(['category', 'productSpecifications', 'variants'])->findOrFail($id);
+        $product = Product::with(['category', 'productSpecifications', 'variants', 'comboProducts'])->findOrFail($id);
         $flashSaleProduct = $this->flashSaleService->getFlashSaleProductFor($product);
         $effectivePrice = $this->flashSaleService->getEffectivePrice($product);
 
@@ -78,6 +80,13 @@ class ProductController extends Controller
         $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->count();
         $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->avg('rating') ?: 5;
 
+        // Gợi ý bán chéo: FBT → Brand → Flash Sale → Category
+        $crossSellProducts = $this->crossSellService->getFullCrossSellList($product, 8);
+
+        // Lấy danh sách Combo sản phẩm được cấu hình riêng biệt
+        $comboProducts = $product->comboProducts;
+        $this->crossSellService->attachFlashSaleInfo($comboProducts);
+
         return view('frontend.products.show', compact(
             'product', 
             'relatedProducts', 
@@ -86,7 +95,9 @@ class ProductController extends Controller
             'effectivePrice',
             'reviews',
             'reviewCount',
-            'avgRating'
+            'avgRating',
+            'crossSellProducts',
+            'comboProducts'
         ));
     }
 }

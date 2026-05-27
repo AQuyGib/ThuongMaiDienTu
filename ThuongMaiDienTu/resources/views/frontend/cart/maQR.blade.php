@@ -214,26 +214,16 @@
 
     // QR & Data Initialization
     function initQR() {
-        let total = parseInt(sessionStorage.getItem('paymentTotal') || 0);
+        const order = {!! isset($order) ? json_encode($order) : "null" !!};
         
-        if (total === 0) {
-            // Check checkoutItems if paymentTotal is missing
-            const rawItems = sessionStorage.getItem('checkoutItems');
-            if (rawItems) {
-                const items = JSON.parse(rawItems);
-                total = items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-            }
-        }
-
-        // Fallback for demo
-        if (total === 0) total = 38970000;
-
-        const ref = 'DMP' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        let total = order ? order.final_amount : 0;
+        let ref = order ? 'DMP' + order.order_id : 'DMP' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        
         const fmt = new Intl.NumberFormat('vi-VN').format(total) + 'đ';
         
         document.getElementById('display-total').textContent = fmt;
         document.getElementById('qr-ref').textContent = ref;
-        document.getElementById('order-id-footer').textContent = 'Mã tham chiếu: ' + ref;
+        document.getElementById('order-id-footer').textContent = 'Mã đơn hàng: #' + (order ? order.order_id : 'ORD-99821');
 
         const qrUrl = `https://img.vietqr.io/image/${BANK_ID}-${ACCOUNT_NO}-compact2.png?amount=${total}&addInfo=${ref}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
         document.getElementById('qr-image').src = qrUrl;

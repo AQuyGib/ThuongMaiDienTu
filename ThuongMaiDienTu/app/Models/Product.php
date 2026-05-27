@@ -1,16 +1,72 @@
 <?php
 namespace App\Models;
+
+use App\Services\NotificationService;
+use App\Traits\BaseTranslationTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, BaseTranslationTrait;
+
     protected $primaryKey = 'product_id';
     public $timestamps = false;
     protected $guarded = [];
+
+    protected array $translatable = [
+        'name',
+        'description',
+        'seo_description',
+    ];
+
     protected $casts = [
     ];
+
+    protected static function booted()
+    {
+        static::created(function (Product $product) {
+            if ((float) ($product->discount_percent ?? 0) > 0) {
+                app(NotificationService::class)->notifyCustomers([
+                    'type' => 'promotion.product_discount',
+                    'title' => 'Sản phẩm mới có ưu đãi',
+                    'content' => 'Sản phẩm ' . $product->name . ' vừa có giá ưu đãi. Xem ngay để không bỏ lỡ.',
+                    'action_url' => url('/product/' . $product->product_id),
+                    'data' => [
+                        'product_id' => $product->product_id,
+                        'discount_percent' => $product->discount_percent,
+                        'base_price' => $product->base_price,
+                    ],
+                ]);
+            }
+        });
+
+        static::updated(function (Product $product) {
+            if (! $product->wasChanged(['base_price', 'discount_percent'])) {
+                return;
+            }
+
+            if ((float) ($product->discount_percent ?? 0) <= 0) {
+                return;
+            }
+
+            $headline = 'Sản phẩm giảm giá: ' . $product->name;
+            $content = 'Sản phẩm ' . $product->name . ' đang được giảm ' . $product->discount_percent . '%. Xem ngay để không bỏ lỡ ưu đãi.';
+
+            $service = app(NotificationService::class);
+            $service->notifyCustomers([
+                'type' => 'promotion.product_discount',
+                'title' => $headline,
+                'content' => $content,
+                'action_url' => url('/product/' . $product->product_id),
+                'data' => [
+                    'product_id' => $product->product_id,
+                    'discount_percent' => $product->discount_percent,
+                    'base_price' => $product->base_price,
+                ],
+            ]);
+        });
+    }
 
     public function category()
     {
@@ -95,5 +151,45 @@ class Product extends Model
             default:
                 return $query->orderBy('product_id', 'desc');
         }
+    }
+    /**
+     * Lấy tổng số lượng tồn kho thực tế (In_Stock) của tất cả biến thể
+     */
+    public function getInStockCountAttribute() {
+        return $this->variants->sum(fn($v) => $v->in_stock_count);
+    }
+
+    /**
+     * Kiểm tra xem sản phẩm có bị rơi vào tình trạng sắp hết hàng hay không
+     */
+    public function getIsLowStockAttribute() {
+        if ($this->variants->isEmpty()) {
+            return $this->in_stock_count <= ($this->safe_stock ?? 5);
+        }
+        
+        if ($this->in_stock_count <= ($this->safe_stock ?? 5)) {
+            return true;
+        }
+
+        return $this->variants->contains(fn($v) => $v->is_low_stock);
+    }
+
+    public function crossSells()
+    {
+        return $this->belongsToMany(Product::class, 'product_cross_sells', 'product_id', 'cross_sell_id')
+            ->withPivot('sort_order')
+            ->orderBy('product_cross_sells.sort_order', 'asc');
+    }
+
+    public function comboProducts()
+    {
+        return $this->belongsToMany(Product::class, 'product_combos', 'product_id', 'combo_product_id')
+            ->withPivot('sort_order', 'discount_type', 'discount_value')
+            ->orderBy('product_combos.sort_order', 'asc');
+    }
+
+    public function wishlistRecentlyViewed()
+    {
+        return $this->hasMany(WishlistRecentlyViewed::class, 'product_id', 'product_id');
     }
 }
