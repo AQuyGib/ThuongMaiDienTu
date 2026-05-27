@@ -45,6 +45,9 @@ class Video extends Model
     public function getThumbnailUrlAttribute()
     {
         if ($this->thumbnail_path) {
+            if (filter_var($this->thumbnail_path, FILTER_VALIDATE_URL)) {
+                return $this->thumbnail_path;
+            }
             return asset('storage/' . $this->thumbnail_path);
         }
 
