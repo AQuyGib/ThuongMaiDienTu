@@ -68,25 +68,35 @@
             <input id="inp-name" name="customer_name" type="text" required
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
               value="{{ Auth::check() ? Auth::user()->name : '' }}" placeholder="Nguyễn Văn A">
+            <p id="err-name" class="text-xs text-red-500 mt-1 hidden"></p>
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại *</label>
             <input id="inp-phone" name="customer_phone" type="tel" required
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
               value="{{ Auth::check() && Auth::user()->phone ? Auth::user()->phone : '' }}" placeholder="0901234567">
+            <p id="err-phone" class="text-xs text-red-500 mt-1 hidden"></p>
           </div>
         </div>
         <div class="mt-4">
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Địa chỉ giao hàng *</label>
-          <input id="inp-address" name="shipping_address" type="text" required
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-sm font-semibold text-gray-700">Địa chỉ giao hàng *</label>
+            <span id="counter-address" class="text-xs text-gray-400 font-medium">0/40</span>
+          </div>
+          <input id="inp-address" name="shipping_address" type="text" required maxlength="40"
             class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
             placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
+          <p id="err-address" class="text-xs text-red-500 mt-1 hidden"></p>
         </div>
         <div class="mt-4">
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Ghi chú (tùy chọn)</label>
-          <textarea id="inp-note" name="note" rows="2"
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-sm font-semibold text-gray-700">Ghi chú (tùy chọn)</label>
+            <span id="counter-note" class="text-xs text-gray-400 font-medium">0/250</span>
+          </div>
+          <textarea id="inp-note" name="note" rows="2" maxlength="250"
             class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm resize-none"
             placeholder="Giao giờ hành chính, gọi trước khi giao..."></textarea>
+          <p id="err-note" class="text-xs text-red-500 mt-1 hidden"></p>
         </div>
       </div>
 
@@ -384,15 +394,102 @@ function applyDiscount() {
 
 // ---- FORM VALIDITY ----
 function checkFormValidity() {
-  const name = document.getElementById('inp-name').value.trim();
-  const phone = document.getElementById('inp-phone').value.trim();
-  const addr = document.getElementById('inp-address').value.trim();
-  const valid = name && phone && /^0[0-9]{8,9}$/.test(phone) && addr;
+  const nameInp = document.getElementById('inp-name');
+  const phoneInp = document.getElementById('inp-phone');
+  const addrInp = document.getElementById('inp-address');
+  const noteInp = document.getElementById('inp-note');
+
+  const name = nameInp ? nameInp.value : '';
+  const phone = phoneInp ? phoneInp.value : '';
+  const addr = addrInp ? addrInp.value : '';
+  const note = noteInp ? noteInp.value : '';
+
+  const errName = document.getElementById('err-name');
+  const errPhone = document.getElementById('err-phone');
+  const errAddr = document.getElementById('err-address');
+  const errNote = document.getElementById('err-note');
+
+  let nameValid = true;
+  let phoneValid = true;
+  let addrValid = true;
+  let noteValid = true;
+
+  // 1. Họ và tên validation
+  if (name.length > 0 && /\d/.test(name)) {
+    if (errName) {
+      errName.textContent = 'Nhập họ và tên bằng chữ';
+      errName.classList.remove('hidden');
+    }
+    nameValid = false;
+  } else if (name.trim().length > 0 && name.trim().length < 15) {
+    if (errName) {
+      errName.textContent = 'Họ và tên phải từ 15 ký tự trở lên';
+      errName.classList.remove('hidden');
+    }
+    nameValid = false;
+  } else {
+    if (errName) errName.classList.add('hidden');
+    if (name.trim().length === 0) nameValid = false;
+  }
+
+  // 2. Số điện thoại validation
+  if (/[a-zA-Z]/.test(phone)) {
+    if (errPhone) {
+      errPhone.textContent = 'Bạn chỉ nhập số';
+      errPhone.classList.remove('hidden');
+    }
+    phoneValid = false;
+  } else if (phone.length > 0 && !/^0[0-9]{8,9}$/.test(phone)) {
+    if (errPhone) {
+      errPhone.textContent = 'Số điện thoại phải từ 9-10 chữ số và bắt đầu bằng số 0';
+      errPhone.classList.remove('hidden');
+    }
+    phoneValid = false;
+  } else {
+    if (errPhone) errPhone.classList.add('hidden');
+    if (phone.length === 0) phoneValid = false;
+  }
+
+  // 3. Địa chỉ giao hàng validation
+  const addrLen = addr.length;
+  const counterAddr = document.getElementById('counter-address');
+  if (counterAddr) {
+    counterAddr.textContent = `${addrLen}/40`;
+  }
+  if (addrLen > 40) {
+    if (errAddr) {
+      errAddr.textContent = 'Địa chỉ giao hàng tối đa 40 ký tự';
+      errAddr.classList.remove('hidden');
+    }
+    addrValid = false;
+  } else {
+    if (errAddr) errAddr.classList.add('hidden');
+    if (addrLen === 0) addrValid = false;
+  }
+
+  // 4. Ghi chú validation
+  const noteLen = note.length;
+  const counterNote = document.getElementById('counter-note');
+  if (counterNote) {
+    counterNote.textContent = `${noteLen}/250`;
+  }
+  if (noteLen > 250) {
+    if (errNote) {
+      errNote.textContent = 'Ghi chú tối đa 250 ký tự';
+      errNote.classList.remove('hidden');
+    }
+    noteValid = false;
+  } else {
+    if (errNote) errNote.classList.add('hidden');
+  }
+
   const btn = document.getElementById('btn-order');
-  btn.disabled = !valid;
+  if (btn) {
+    btn.disabled = !(nameValid && phoneValid && addrValid && noteValid);
+  }
 }
 
-['inp-name','inp-phone','inp-address'].forEach(id => {
+['inp-name', 'inp-phone', 'inp-address', 'inp-note'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', checkFormValidity);
 });
 
@@ -407,7 +504,15 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   const discountInp = document.getElementById('discount-code');
   const discountCode = discountInp && discountInp.readOnly ? discountInp.value.trim().toUpperCase() : '';
 
-  if (!name || !phone || !addr) return;
+  const isNameInvalid = /\d/.test(name) || name.length < 15;
+  const isPhoneInvalid = /[a-zA-Z]/.test(phone) || !/^0[0-9]{8,9}$/.test(phone);
+  const isAddrInvalid = addr.length > 40 || addr.length === 0;
+  const isNoteInvalid = note.length > 250;
+
+  if (isNameInvalid || isPhoneInvalid || isAddrInvalid || isNoteInvalid) {
+    alert('Vui lòng kiểm tra lại thông tin nhập vào hợp lệ!');
+    return;
+  }
 
   const btn = document.getElementById('btn-order');
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Đang xử lý...';
