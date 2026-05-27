@@ -25,39 +25,48 @@ class ProfileController extends Controller
         $totalOrders = $orders->count();
         $totalSpent = $orders->where('status', 'Delivered')->sum('final_amount');
         
-        // Logic tính hạng thành viên thực tế
-        $currentTier = 'Đồng';
-        $nextTier = 'Bạc';
-        $spendNeeded = 0;
+        // Lấy thông tin điểm từ PointsService
+        $pointsService = app(\App\Services\PointsService::class);
+        $pointsBalance = $pointsService->getBalance($user);
+        
+        $walletPoints = $pointsBalance['wallet_points'];
+        $rankPoints = $pointsBalance['rank_points'];
+        
+        // Sử dụng member_tier của user làm hạng hiện tại để đồng bộ với Admin Panel và database
+        $dbRank = $user->member_tier ?? $pointsBalance['current_rank']; // 'Dong', 'Bac', 'Vang', 'KimCuong'
 
-        if ($totalSpent < 5000000) {
-            $currentTier = 'Đồng';
+        $rankNames = [
+            'Dong' => 'Đồng',
+            'Bac' => 'Bạc',
+            'Vang' => 'Vàng',
+            'KimCuong' => 'Kim Cương',
+            'Bronze' => 'Đồng',
+            'Silver' => 'Bạc',
+            'Gold' => 'Vàng',
+            'Diamond' => 'Kim Cương',
+        ];
+        $currentTier = $rankNames[$dbRank] ?? 'Đồng';
+
+        // Logic tính hạng và tiến trình thăng hạng theo PointsService
+        if (in_array($dbRank, ['Dong', 'Bronze'])) {
             $nextTier = 'Bạc';
-            $spendNeeded = 5000000 - $totalSpent;
-        } elseif ($totalSpent < 20000000) {
-            $currentTier = 'Bạc';
+            $pointsNeeded = max(0, 1000 - $rankPoints);
+            $spendNeeded = $pointsNeeded * \App\Services\PointsService::EARN_RATE;
+            $tierProgress = min(100, max(0, ($rankPoints / 1000) * 100));
+        } elseif (in_array($dbRank, ['Bac', 'Silver'])) {
             $nextTier = 'Vàng';
-            $spendNeeded = 20000000 - $totalSpent;
-        } elseif ($totalSpent < 50000000) {
-            $currentTier = 'Vàng';
+            $pointsNeeded = max(0, 5000 - $rankPoints);
+            $spendNeeded = $pointsNeeded * \App\Services\PointsService::EARN_RATE;
+            $tierProgress = min(100, max(0, (($rankPoints - 1000) / 4000) * 100));
+        } elseif (in_array($dbRank, ['Vang', 'Gold'])) {
             $nextTier = 'Kim Cương';
-            $spendNeeded = 50000000 - $totalSpent;
+            $pointsNeeded = max(0, 10000 - $rankPoints);
+            $spendNeeded = $pointsNeeded * \App\Services\PointsService::EARN_RATE;
+            $tierProgress = min(100, max(0, (($rankPoints - 5000) / 5000) * 100));
         } else {
-            $currentTier = 'Kim Cương';
             $nextTier = 'Đã đạt cấp tối đa';
             $spendNeeded = 0;
-        }
-
-        // Tính % tiến trình cho thanh bar
-        $tierProgress = 0;
-        if ($currentTier == 'Kim Cương') {
             $tierProgress = 100;
-        } else {
-            // Mục tiêu là số tiền cần đạt để lên hạng tiếp theo
-            $targetAmount = $totalSpent + $spendNeeded;
-            if ($targetAmount > 0) {
-                $tierProgress = ($totalSpent / $targetAmount) * 100;
-            }
         }
 
         $wishlist = $user->wishlists()->where('type', 'Wishlist')->with('product')->get();
@@ -76,7 +85,24 @@ class ProfileController extends Controller
             ->latest('ticket_id')
             ->get();
 
-        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'wishlist', 'loginHistories', 'repairTickets'));
+        // Lấy danh sách ưu đãi đã đổi từ catalog và vòng quay
+        $redemptions = \DB::table('reward_redemptions')
+            ->where('user_id', $user->user_id)
+            ->orderBy('redemption_id', 'desc')
+            ->get();
+
+        $spins = \DB::table('lucky_wheel_spins')
+            ->where('user_id', $user->user_id)
+            ->orderBy('spin_id', 'desc')
+            ->get();
+
+        $pointTransactions = \DB::table('point_transactions')
+            ->where('user_id', $user->user_id)
+            ->orderBy('point_transaction_id', 'desc')
+            ->limit(30)
+            ->get();
+
+        return view('frontend.profile', compact('user', 'orders', 'totalOrders', 'totalSpent', 'currentTier', 'nextTier', 'spendNeeded', 'tierProgress', 'wishlist', 'loginHistories', 'repairTickets', 'walletPoints', 'rankPoints', 'redemptions', 'spins', 'pointTransactions'));
     }
 
     /**
