@@ -108,6 +108,104 @@
         max-height: calc(100vh - 2rem);
         overflow: auto;
     }
+
+    /* Styling select2 to look extremely modern and premium */
+    .select2-container {
+        width: 100% !important;
+    }
+    .select2-container--default .select2-selection--multiple {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 16px !important;
+        padding: 6px 12px !important;
+        min-height: 52px !important;
+        transition: all 0.2s ease !important;
+    }
+    .select2-container--default.select2-container--focus .select2-selection--multiple {
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+        padding: 0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        align-items: center !important;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        background-color: #f1f5f9 !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        padding: 5px 10px !important;
+        font-size: 0.8125rem !important;
+        font-weight: 600 !important;
+        color: #1e293b !important;
+        margin: 2px 0 !important;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        color: #64748b !important;
+        border: none !important;
+        background: none !important;
+        padding: 0 !important;
+        margin-right: 4px !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        order: 1;
+    }
+    .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #ef4444 !important;
+    }
+    .select2-container--default .select2-selection--multiple .select2-search--inline {
+        margin: 0 !important;
+    }
+    .select2-container--default .select2-selection--multiple .select2-search--inline .select2-search__field {
+        margin: 0 !important;
+        height: 32px !important;
+        font-family: inherit !important;
+        font-size: 0.875rem !important;
+    }
+    
+    /* Dropdown list styling */
+    .select2-dropdown {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+        overflow: hidden !important;
+        z-index: 99999 !important;
+    }
+    .select2-container--default .select2-results__option {
+        padding: 10px 14px !important;
+        font-size: 0.875rem !important;
+        color: #334155 !important;
+        transition: background-color 0.15s ease !important;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #4f46e5 !important;
+        color: #ffffff !important;
+    }
+    .select2-container--default .select2-results__option[aria-selected=true] {
+        background-color: #f1f5f9 !important;
+        color: #1e293b !important;
+        font-weight: 500 !important;
+    }
+    .select2-container .select2-search--dropdown {
+        padding: 8px !important;
+    }
+    .select2-container .select2-search--dropdown .select2-search__field {
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 10px !important;
+        padding: 8px 12px !important;
+        outline: none !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .select2-container .select2-search--dropdown .select2-search__field:focus {
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+    }
 </style>
 @endpush
 
@@ -202,38 +300,43 @@
                 </div>
             </div>
 
-            {{-- Sản phẩm bán kèm (Cross-sell) --}}
-            <div class="glass-card p-6">
+            {{-- Thẻ mở modal Cấu hình Cross-sell --}}
+            <button type="button" onclick="openModal('crossSellModal')" class="glass-card p-6 text-left border border-slate-100 hover:border-indigo-500 hover:shadow-indigo-50/50 hover:shadow-xl transition group duration-300">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-slate-900">
-                        <i class="fa-solid fa-cart-plus mr-2 text-indigo-600"></i>Sản Phẩm Bán Kèm (Cross-sell)
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-3 group-hover:text-indigo-600 transition">
+                        <span class="p-3 bg-indigo-50 rounded-2xl text-indigo-600 group-hover:bg-indigo-100 transition">
+                            <i class="fa-solid fa-cart-plus text-xl"></i>
+                        </span>
+                        Sản Phẩm Bán Kèm (Cross-sell)
                     </h2>
                     <span class="inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                        {{ $product->crossSells->count() }} đã chọn
+                        {{ $product->crossSells->count() }} đã cấu hình
                     </span>
                 </div>
-                <p class="text-sm text-slate-500 mb-4">Chọn các sản phẩm thường được mua kèm với sản phẩm này để gợi ý mua kèm.</p>
-                
-                <form action="{{ route('admin.products.cross-sells.sync', $product->product_id) }}" method="POST">
-                    @csrf
-                    <div class="mb-4">
-                        <label class="mb-2 block text-sm font-medium text-slate-700">Chọn sản phẩm gợi ý</label>
-                        <select name="cross_sell_ids[]" class="select2-crosssell w-full" multiple="multiple">
-                            @foreach($allProducts as $p)
-                                <option value="{{ $p->product_id }}" 
-                                    {{ $product->crossSells->contains('product_id', $p->product_id) ? 'selected' : '' }}>
-                                    {{ $p->name }} - ({{ number_format($p->base_price, 0, ',', '.') }}₫)
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="text-right">
-                        <button type="submit" class="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700">
-                            <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <p class="text-sm text-slate-500 mb-2">Quản lý các sản phẩm thường được mua kèm với sản phẩm này để gợi ý cho khách hàng.</p>
+                <span class="text-sm font-semibold text-indigo-600 flex items-center gap-1 mt-4">
+                    Cấu hình sản phẩm gợi ý <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+                </span>
+            </button>
+
+            {{-- Thẻ mở modal Cấu hình Combo --}}
+            <button type="button" onclick="openModal('comboConfigModal')" class="glass-card p-6 text-left border border-slate-100 hover:border-indigo-500 hover:shadow-indigo-50/50 hover:shadow-xl transition group duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-3 group-hover:text-indigo-600 transition">
+                        <span class="p-3 bg-indigo-50 rounded-2xl text-indigo-600 group-hover:bg-indigo-100 transition">
+                            <i class="fa-solid fa-boxes-packing text-xl"></i>
+                        </span>
+                        Combo Mua Kèm Tiết Kiệm
+                    </h2>
+                    <span class="inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700" id="comboCountBadge">
+                        {{ $product->comboProducts->count() }} phụ kiện combo
+                    </span>
+                </div>
+                <p class="text-sm text-slate-500 mb-2">Thiết lập các sản phẩm bán kèm với mức giảm giá đặc biệt để hiển thị dạng Combo mua kèm tiết kiệm.</p>
+                <span class="text-sm font-semibold text-indigo-600 flex items-center gap-1 mt-4">
+                    Thiết lập giảm giá Combo <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+                </span>
+            </button>
         </div>
 
         <div class="glass-card p-6">
@@ -344,6 +447,111 @@
                 </table>
             </div>
         </div>
+    </div>
+</div>
+
+{{-- Modal Cấu hình Cross-sell --}}
+<div id="crossSellModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 modal-backdrop-custom" onclick="closeModal('crossSellModal')"></div>
+    <div class="relative w-full max-w-3xl rounded-3xl bg-white shadow-2xl modal-panel max-h-[85vh] flex flex-col overflow-hidden">
+        <form action="{{ route('admin.products.cross-sells.sync', $product->product_id) }}" method="POST" class="flex flex-col h-full overflow-hidden m-0">
+            @csrf
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-4 border-b border-slate-100 p-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900">Cấu hình Sản Phẩm Bán Kèm (Cross-sell)</h3>
+                    <p class="mt-1 text-sm text-slate-500">Chọn các sản phẩm gợi ý bán kèm hiển thị ở trang chi tiết sản phẩm.</p>
+                </div>
+                <button type="button" class="icon-btn" onclick="closeModal('crossSellModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <!-- Content -->
+            <div class="p-6 overflow-y-auto flex-1">
+                <div class="mb-4">
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Chọn sản phẩm gợi ý</label>
+                    <select name="cross_sell_ids[]" class="select2-crosssell w-full" multiple="multiple">
+                        @foreach($allProducts as $p)
+                            <option value="{{ $p->product_id }}" 
+                                data-thumbnail="{{ $p->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=100' }}"
+                                {{ $product->crossSells->contains('product_id', $p->product_id) ? 'selected' : '' }}>
+                                {{ $p->name }} - ({{ number_format($p->base_price, 0, ',', '.') }}₫)
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="flex justify-end gap-3 border-t border-slate-100 p-6 bg-slate-50 rounded-b-3xl">
+                <button type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" onclick="closeModal('crossSellModal')">Hủy</button>
+                <button type="submit" class="rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">Lưu cấu hình</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Modal Cấu hình Combo --}}
+<div id="comboConfigModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4">
+    <div class="absolute inset-0 modal-backdrop-custom" onclick="closeModal('comboConfigModal')"></div>
+    <div class="relative w-full max-w-4xl rounded-3xl bg-white shadow-2xl modal-panel max-h-[85vh] flex flex-col overflow-hidden">
+        <form action="{{ route('admin.products.combos.sync', $product->product_id) }}" method="POST" class="flex flex-col h-full overflow-hidden m-0">
+            @csrf
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-4 border-b border-slate-100 p-6">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-boxes-packing text-indigo-600"></i> Cấu hình Combo Mua Kèm Tiết Kiệm
+                    </h3>
+                    <p class="mt-1 text-sm text-slate-500">Thiết lập các sản phẩm bán kèm với mức giảm giá đặc biệt để kích thích mua sắm.</p>
+                </div>
+                <button type="button" class="icon-btn" onclick="closeModal('comboConfigModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <!-- Content -->
+            <div class="p-6 overflow-y-auto flex-1">
+                <div class="mb-6">
+                    <label class="mb-2 block text-sm font-medium text-slate-700">Chọn sản phẩm trong combo</label>
+                    <select id="comboProductSelect" name="combo_product_ids[]" class="select2-combo w-full" multiple="multiple">
+                        @foreach($allProducts as $p)
+                            @php
+                                $comboPivot = $product->comboProducts->firstWhere('product_id', $p->product_id);
+                                $isSelected = !is_null($comboPivot);
+                                $discType = $isSelected ? $comboPivot->pivot->discount_type : 'fixed';
+                                $discValue = $isSelected ? $comboPivot->pivot->discount_value : 0;
+                            @endphp
+                            <option value="{{ $p->product_id }}" 
+                                data-thumbnail="{{ $p->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=100' }}"
+                                data-price="{{ $p->base_price }}"
+                                data-discount-type="{{ $discType }}"
+                                data-discount-value="{{ $discValue }}"
+                                {{ $isSelected ? 'selected' : '' }}>
+                                {{ $p->name }} - ({{ number_format($p->base_price, 0, ',', '.') }}₫)
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Bảng cấu hình giảm giá --}}
+                <div class="overflow-hidden rounded-2xl border border-slate-200" id="comboConfigTableContainer" style="display: none;">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Sản phẩm</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Giá gốc</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-32">Loại giảm giá</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-40">Mức giảm</th>
+                                <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider w-40">Giá sau giảm</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comboConfigTableBody" class="divide-y divide-slate-100 bg-white">
+                            {{-- Render bằng JS --}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="flex justify-end gap-3 border-t border-slate-100 p-6 bg-slate-50 rounded-b-3xl">
+                <button type="button" class="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50" onclick="closeModal('comboConfigModal')">Hủy</button>
+                <button type="submit" class="rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">Lưu cấu hình combo</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -468,10 +676,144 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
+        function formatProduct(state) {
+            if (!state.id) {
+                return state.text;
+            }
+            
+            var thumbnail = $(state.element).data('thumbnail');
+            if (!thumbnail) {
+                thumbnail = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=100';
+            }
+            
+            var $state = $(
+                '<span class="flex items-center gap-3 py-0.5">' +
+                    '<img src="' + thumbnail + '" class="w-8 h-8 object-contain rounded border bg-white flex-shrink-0" />' +
+                    '<span class="text-sm font-medium text-slate-800">' + state.text + '</span>' +
+                '</span>'
+            );
+            return $state;
+        }
+
+        function formatProductSelection(state) {
+            if (!state.id) {
+                return state.text;
+            }
+            
+            var thumbnail = $(state.element).data('thumbnail');
+            if (!thumbnail) {
+                thumbnail = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=100';
+            }
+            
+            var $state = $(
+                '<span class="inline-flex items-center gap-1.5">' +
+                    '<img src="' + thumbnail + '" class="w-5 h-5 object-contain rounded bg-white flex-shrink-0" />' +
+                    '<span class="text-xs font-semibold text-slate-700">' + state.text + '</span>' +
+                '</span>'
+            );
+            return $state;
+        }
+
         $('.select2-crosssell').select2({
             placeholder: "Tìm kiếm và chọn sản phẩm...",
-            allowClear: true
+            allowClear: true,
+            templateResult: formatProduct,
+            templateSelection: formatProductSelection,
+            dropdownParent: $('#crossSellModal'),
+            width: '100%'
         });
+        $('.select2-combo').select2({
+            placeholder: "Tìm kiếm và chọn sản phẩm cho combo...",
+            allowClear: true,
+            templateResult: formatProduct,
+            templateSelection: formatProductSelection,
+            dropdownParent: $('#comboConfigModal'),
+            width: '100%'
+        });
+
+        function renderComboTable() {
+            var selectedOptions = $('#comboProductSelect option:selected');
+            var tbody = $('#comboConfigTableBody');
+            var container = $('#comboConfigTableContainer');
+            
+            if (selectedOptions.length === 0) {
+                container.hide();
+                tbody.empty();
+                $('#comboCountBadge').text('0 đã chọn');
+                return;
+            }
+            
+            container.show();
+            $('#comboCountBadge').text(selectedOptions.length + ' đã chọn');
+            
+            var currentValues = {};
+            tbody.find('tr').each(function() {
+                var pid = $(this).data('product-id');
+                currentValues[pid] = {
+                    type: $(this).find('.discount-type-select').val(),
+                    val: $(this).find('.discount-value-input').val()
+                };
+            });
+            
+            tbody.empty();
+            
+            selectedOptions.each(function() {
+                var option = $(this);
+                var pid = option.val();
+                var name = option.text().split(' - (')[0];
+                var thumbnail = option.data('thumbnail');
+                var price = parseFloat(option.data('price')) || 0;
+                
+                var discType = currentValues[pid] ? currentValues[pid].type : option.data('discount-type');
+                var discVal = currentValues[pid] ? currentValues[pid].val : option.data('discount-value');
+                
+                var row = $('<tr data-product-id="' + pid + '" class="hover:bg-slate-50 transition">');
+                
+                var tdProduct = $('<td class="px-4 py-3">').append(
+                    $('<div class="flex items-center gap-3">').append(
+                        $('<img src="' + thumbnail + '" class="w-10 h-10 object-contain rounded border bg-white flex-shrink-0" />'),
+                        $('<div class="text-sm font-semibold text-slate-800">').text(name)
+                    )
+                );
+                
+                var tdPrice = $('<td class="px-4 py-3 text-sm text-slate-500 font-medium">').text(new Intl.NumberFormat('vi-VN').format(price) + '₫');
+                
+                var typeSelect = $('<select name="discount_types[' + pid + ']" class="discount-type-select rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm outline-none w-full bg-white">')
+                    .append($('<option value="fixed">đ</option>'))
+                    .append($('<option value="percentage">%</option>'));
+                typeSelect.val(discType);
+                var tdType = $('<td class="px-4 py-3">').append(typeSelect);
+                
+                var valInput = $('<input type="number" min="0" step="any" name="discount_values[' + pid + ']" class="discount-value-input rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none w-full" />');
+                valInput.val(discVal);
+                var tdVal = $('<td class="px-4 py-3">').append(valInput);
+                
+                var tdFinal = $('<td class="px-4 py-3 text-sm font-bold text-indigo-600 final-price-cell">');
+                
+                row.append(tdProduct, tdPrice, tdType, tdVal, tdFinal);
+                tbody.append(row);
+                
+                function updateFinalPrice() {
+                    var t = typeSelect.val();
+                    var v = parseFloat(valInput.val()) || 0;
+                    var finalPrice = price;
+                    if (t === 'percentage') {
+                        finalPrice = price * (1 - v / 100);
+                    } else {
+                        finalPrice = price - v;
+                    }
+                    if (finalPrice < 0) finalPrice = 0;
+                    tdFinal.text(new Intl.NumberFormat('vi-VN').format(finalPrice) + '₫');
+                }
+                
+                typeSelect.on('change', updateFinalPrice);
+                valInput.on('input change', updateFinalPrice);
+                updateFinalPrice();
+            });
+        }
+        
+        $('#comboProductSelect').on('change', renderComboTable);
+        renderComboTable();
     });
 
     const productId = {{ $product->product_id }};

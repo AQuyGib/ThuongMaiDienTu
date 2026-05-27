@@ -62,6 +62,27 @@ class CartController extends Controller
             $salePrice = (int) $flashSaleProduct->sale_price;
         }
 
+        // Kiểm tra xem sản phẩm có được mua kèm theo combo của sản phẩm chính không
+        $parentProductId = $request->input('parent_id');
+        if ($parentProductId) {
+            $parentProduct = Product::find($parentProductId);
+            if ($parentProduct) {
+                $comboRelation = $parentProduct->comboProducts()->where('product_combos.combo_product_id', $productId)->first();
+                if ($comboRelation) {
+                    $pivot = $comboRelation->pivot;
+                    $basePriceToDiscount = $salePrice ?? (int) $product->base_price;
+                    if ($pivot->discount_type === 'percentage') {
+                        $salePrice = (int) ($basePriceToDiscount * (1 - $pivot->discount_value / 100));
+                    } else {
+                        $salePrice = (int) ($basePriceToDiscount - $pivot->discount_value);
+                    }
+                    if ($salePrice < 0) {
+                        $salePrice = 0;
+                    }
+                }
+            }
+        }
+
         if (isset($cart[$productId])) {
             $cart[$productId]['quantity'] = $newQuantity;
             $cart[$productId]['price'] = $salePrice ?? (int) $product->base_price;

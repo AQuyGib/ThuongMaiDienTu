@@ -65,6 +65,22 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - [ ] Phát triển logic trong `CartService` và `InventoryService`.
 - [ ] Tối ưu hóa hiệu năng load video và caching lượt xem/likes để giảm tải cho DB.
 
+### 5. Cấu hình Giảm giá Combo Mua Kèm (Combo Discounts)
+- **Hạ tầng & Database:**
+  - Tạo migration bổ sung cột `discount_type` (mặc định 'fixed') và `discount_value` vào bảng `product_combos`.
+  - Cập nhật quan hệ `comboProducts()` trong model `Product` hỗ trợ `withPivot('discount_type', 'discount_value')`.
+  - Xây dựng `ProductComboSeeder.php` để tạo dữ liệu combo mẫu đa dạng cho các thiết bị như iPhone 15 Pro Max, Samsung Galaxy S24 Ultra và MacBook Air, đồng thời đăng ký vào `DatabaseSeeder.php`.
+- **Giao diện Admin (Quản trị Combo & Cross-sell):**
+  - Cải tiến màn hình `ProductDetail.blade.php`: Chuyển đổi hai hộp cấu hình trực tiếp (Cross-sell và Combo) thành hai thẻ mở Modal lớn, rộng rãi, thiết kế cao cấp.
+  - Tích hợp Select2 có thumbnail trực tiếp trong modal.
+  - Khi chọn sản phẩm phụ kiện trong combo, hệ thống tự động render bảng cấu hình chi tiết, cho phép chọn loại giảm giá (đ hoặc %) và nhập mức giảm kèm tính toán giá sau khi giảm trực tiếp bằng JS.
+  - Đồng bộ và lưu trữ cấu hình giảm giá qua hàm `syncCombos` trong `Admin\ProductController.php`.
+- **Logic Giỏ hàng & Frontend:**
+  - Cập nhật `_combo_bundle.blade.php` ngoài Frontend để hiển thị giá gốc bị gạch chéo, giá đã giảm kèm nhãn mức giảm (VD: -10% hoặc -50.000đ). Hiển thị tổng số tiền tiết kiệm được khi mua combo.
+  - Khi người dùng click thêm combo vào giỏ hàng, hệ thống gửi request `/cart/add` kèm theo tham số `parent_id` cho các sản phẩm phụ kiện.
+  - Cập nhật `add` method trong `CartController.php` để xử lý kiểm tra `parent_id` trên server-side, tự động lấy cấu hình giảm giá từ bảng trung gian và cập nhật giá giảm giá vào giỏ hàng một cách bảo mật (không lo bị sửa giá ở client).
+
 ## Ghi chú quan trọng
 - Sidebar Admin đã được tách biệt thành `resources/views/admin/partials/sidebar.blade.php` và `resources/js/components/AdminSidebar.tsx` để dễ quản lý.
 - Toàn bộ tính năng video đã được merge thành công từ branch `Hien/Video` vào `master`, không xảy ra xung đột mã nguồn.
+- Tính năng Combo giảm giá và cấu hình Modal đã được triển khai hoàn chỉnh cả Backend lẫn Frontend.

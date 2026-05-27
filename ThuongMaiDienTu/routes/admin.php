@@ -105,6 +105,7 @@ Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'
 Route::put('/products/{id}/variants/{variantId}', [ProductController::class, 'updateVariant'])->name('products.variants.update');
 Route::delete('/products/{id}/variants/{variantId}', [ProductController::class, 'destroyVariant'])->name('products.variants.destroy');
 Route::post('/products/{id}/cross-sells', [ProductController::class, 'syncCrossSells'])->name('products.cross-sells.sync');
+Route::post('/products/{id}/combos', [ProductController::class, 'syncCombos'])->name('products.combos.sync');
 
 // ===== Phiếu Nhập Kho =====
 Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
