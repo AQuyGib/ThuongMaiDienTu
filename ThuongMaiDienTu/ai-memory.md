@@ -372,3 +372,44 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - **`database/seeders/RepairTicketSeeder.php`** (Mới tạo): Sinh 19 phiếu sửa chữa với đầy đủ các trạng thái (`Received`, `Checking`, `Under_Repair`, `Waiting_Parts`, `Done`). Các phiếu trạng thái `Done` (hoàn thành) được chia làm 2 loại: một số chưa xuất hóa đơn, và một số đã liên kết trực tiếp với các hóa đơn tương ứng sinh ra từ `ServiceInvoiceSeeder` (đảm bảo đồng bộ 100% về thông tin khách hàng, số điện thoại, IMEI, tên dịch vụ và phí dịch vụ).
   - **`database/seeders/DatabaseSeeder.php`** (Chỉnh sửa): Đăng ký `ServiceInvoiceSeeder::class` và `RepairTicketSeeder::class` vào phương thức `run()` để tự động kích hoạt khi chạy lệnh seeding toàn cục.
 
+### 24. Nâng cấp toàn diện Dashboard Admin (Dashboard Comprehensive Upgrade)
+- **Controller (`app/Http/Controllers/Admin/DashboardController.php`):**
+  - Bổ sung import đầy đủ các Model: `RepairTicket`, `ServiceInvoice`, `Video`, `VideoComment`, `Review`, `Carbon`.
+  - Thêm thống kê Phiếu sửa chữa theo 5 trạng thái (`Received`, `Checking`, `Under_Repair`, `Waiting_Parts`, `Done`).
+  - Thêm thống kê Hóa đơn dịch vụ: tổng số, doanh thu (paid), số chờ xử lý (issued/draft).
+  - Thêm thống kê Video: tổng video, tổng lượt xem, tổng lượt thích.
+  - Thêm thống kê kiểm duyệt: đánh giá chờ duyệt, bình luận video chờ duyệt.
+  - Thêm phân bổ đơn hàng theo trạng thái (cho biểu đồ donut).
+  - Thêm xu hướng doanh thu 6 tháng gần nhất (thu nhập vs chi phí theo tháng).
+- **View (`resources/views/admin/dashboard.blade.php`):**
+  - Giữ nguyên 4 stat card tài chính & tổng quan (Thu nhập, Chi phí, Sản phẩm, Khách hàng).
+  - Thêm hàng stat card thứ 2: Đơn hàng (kèm badge trạng thái), Phiếu sửa chữa (breakdown), Hóa đơn dịch vụ (doanh thu + chờ xử lý), Video (views + likes).
+  - Thêm banner cảnh báo kiểm duyệt (hiển thị khi có nội dung chờ duyệt) kèm nút "Kiểm duyệt ngay".
+  - Mở rộng thanh thao tác nhanh: thêm link Sửa chữa, Hóa đơn DV.
+  - Thêm biểu đồ cột (Bar Chart) xu hướng doanh thu 6 tháng bằng Chart.js CDN.
+  - Thêm biểu đồ Donut đơn hàng theo trạng thái kèm legend bên dưới.
+  - Thêm thanh tiến trình (stacked bar) phiếu sửa chữa theo trạng thái với màu sắc phân biệt.
+  - Giữ nguyên bảng đơn hàng mới nhất, bổ sung thêm màu badge cho status `delivered`, `processing`, `shipped`.
+  - Thêm bảng **Top 5 sản phẩm bán chạy** (truy vấn `order_details` GROUP BY `product_name`, SUM quantity) với xếp hạng #1→#5 có màu medal và hiển thị doanh thu kèm theo.
+  - Thêm bảng **Cảnh báo tồn kho thấp** hiển thị 5 biến thể sản phẩm có ≤ 3 sản phẩm `In_Stock` trong kho, phân biệt màu đỏ (hết hàng) và cam (sắp hết).
+  - Thêm banner **Flash Sale đang diễn ra** (gradient rose→orange) hiển thị các chương trình Flash Sale đang active + chưa hết hạn, kèm số lượng sản phẩm và thời gian kết thúc.
+  - Thêm hàng 3 stat card phụ: Bài viết CMS, Đơn nhập kho, Tổng đánh giá.
+- **Controller (bổ sung thêm):**
+  - Import thêm: `Article`, `FlashSale`, `InventoryItem`, `OrderDetail`, `ProductVariant`, `PurchaseOrder`, `DB`.
+  - Query Top 5 sản phẩm bán chạy từ bảng `order_details` bằng `DB::table()` GROUP BY.
+  - Query cảnh báo tồn kho thấp bằng `selectSub` đếm `InventoryItem` có status `In_Stock` per variant, lọc `having <= 3`.
+  - Query Flash Sale đang active (`is_active = true`, `start_at <= now`, `end_at >= now`) kèm `withCount('products')`.
+  - Đếm tổng bài viết (`Article::count()`) và đơn nhập kho (`PurchaseOrder::count()`).
+- **Sắp xếp, Liên kết & Seeder (Sorting, Links & Seeders):**
+  - Đơn hàng mới nhất được hiển thị theo thứ tự mã từ nhỏ đến lớn (sử dụng `orderBy('order_id', 'asc')`).
+  - Liên kết "Xem tất cả →" bên cạnh Đơn hàng mới nhất đã được đổi từ `admin.cart.index` sang đúng route danh sách đơn hàng của admin: `admin.orders.index`.
+  - Chuyển liên kết & chỉ số **Đơn nhập kho** sang card **Cảnh báo tồn kho thấp** cho đúng ngữ cảnh và quản lý kho đồng bộ.
+  - Tinh giản card **Video & Nội dung** chỉ chứa các chỉ số media truyền thông, bổ sung liên kết trực tiếp "Xem video →" và "Xem bài viết →" để admin dễ quản lý.
+  - Tích hợp `ArticleSeeder::class`, `CashbookSeeder::class`, và `FlashSaleSeeder::class` vào danh sách chạy của `DatabaseSeeder.php`.
+  - Cập nhật code `CashbookSeeder.php` và `FlashSaleSeeder.php` sử dụng `updateOrCreate` để đảm bảo cơ chế seed chạy được nhiều lần một cách an toàn (idempotent).
+  - Thêm sinh ngẫu nhiên views/likes trong `VideoSeeder.php` để dashboard hiển thị đầy đủ dữ liệu trực quan sinh động thay vì bằng 0.
+- **Tài liệu & Comment code:**
+  - Viết chú thích (comments) chi tiết cho cả 12 khối logic truy vấn thống kê dữ liệu bên trong `DashboardController.php` để hỗ trợ phát triển và bảo trì.
+  - Cập nhật định dạng DocBlock chi tiết cho phương thức `index()` của `DashboardController.php`, mô tả tường tận nhiệm vụ của hàm, các luồng phân quyền bảo mật, 12 nhóm dữ liệu thống kê thu thập cùng các cấu trúc dữ liệu truyền ra view.
+  - Thêm đầy đủ comment trong file giao diện `dashboard.blade.php` giải thích cấu trúc layout Grid, Flexbox, các khối Blade dynamic components và phần vẽ biểu đồ bằng Javascript (Chart.js).
+

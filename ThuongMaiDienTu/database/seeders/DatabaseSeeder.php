@@ -30,6 +30,9 @@ class DatabaseSeeder extends Seeder
             CommentSeeder::class,
             ServiceInvoiceSeeder::class,
             RepairTicketSeeder::class,
+            ArticleSeeder::class,
+            CashbookSeeder::class,
+            FlashSaleSeeder::class,
         ]);
     }
 }
