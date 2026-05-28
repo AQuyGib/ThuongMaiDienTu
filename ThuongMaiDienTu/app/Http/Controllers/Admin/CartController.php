@@ -848,4 +848,94 @@ class CartController extends Controller
 
         return [$discount, 'Áp dụng mã thành công.'];
     }
+
+    public function searchOrder(Request $request)
+    {
+        $code = $request->query('code');
+        if (!$code) {
+            return response()->json(['success' => false, 'message' => 'Vui lòng nhập mã đơn hàng.'], 400);
+        }
+
+        // Tìm đơn hàng theo order_code hoặc order_id
+        $order = Order::with(['details.inventoryItem.variant.product'])
+            ->where('order_code', $code)
+            ->orWhere('order_id', $code)
+            ->first();
+
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Mã đơn hàng không tồn tại.'], 404);
+        }
+
+        // Áp dụng map trạng thái
+        $statusMap = [
+            'Pending'   => ['label' => 'CHỜ XỬ LÝ', 'color' => 'bg-yellow-100 text-yellow-700'],
+            'BaoCK'     => ['label' => 'BÁO CK CHỜ DUYỆT', 'color' => 'bg-blue-100 text-blue-700'],
+            'Shipping'  => ['label' => 'ĐANG GIAO HÀNG', 'color' => 'bg-emerald-100 text-emerald-700'],
+            'Delivered' => ['label' => 'HOÀN THÀNH', 'color' => 'bg-green-100 text-green-700'],
+            'Cancelled' => ['label' => 'ĐÃ HỦY', 'color' => 'bg-red-100 text-red-700'],
+        ];
+
+        $st = $statusMap[$order->status] ?? ['label' => strtoupper($order->status), 'color' => 'bg-slate-100 text-slate-600'];
+
+        $items = $order->details->map(function ($detail) {
+            $variant = $detail->inventoryItem->variant ?? null;
+            $product = $variant->product ?? null;
+
+            // Lấy ảnh sản phẩm (thumbnail)
+            $image = null;
+            if ($product && $product->images) {
+                $images = is_string($product->images) ? json_decode($product->images, true) : $product->images;
+                $image = is_array($images) && count($images) > 0 ? $images[0] : $product->thumbnail;
+            } else {
+                $image = $product->thumbnail ?? null;
+            }
+
+            $productName = $detail->product_name
+                ?? ($product->name ?? 'Sản phẩm không xác định');
+
+            if ($variant && $variant->label) {
+                $productName .= ' - ' . $variant->label;
+            }
+
+            return [
+                'product_name' => $productName,
+                'image' => $image,
+                'quantity' => 1,
+                'price' => (int) $detail->price,
+            ];
+        });
+
+        // Gom nhóm sản phẩm cùng tên + giá lại thành 1 dòng cộng dồn số lượng
+        $groupedItems = $items->groupBy(function ($item) {
+            return $item['product_name'] . '_' . $item['price'];
+        })->map(function ($group) {
+            $first = $group->first();
+            return [
+                'product_name' => $first['product_name'],
+                'image' => $first['image'],
+                'quantity' => $group->count(),
+                'price' => $first['price'],
+                'subtotal' => $first['price'] * $group->count(),
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'order_id' => $order->order_id,
+            'order_code' => $order->order_code,
+            'customer_name' => $order->customer_name ?? ($order->user->full_name ?? 'N/A'),
+            'customer_phone' => $order->customer_phone ?? ($order->user->phone_number ?? 'N/A'),
+            'shipping_address' => $order->shipping_address ?? ($order->user->address ?? 'N/A'),
+            'note' => $order->note,
+            'payment_method' => $order->payment_method,
+            'status' => $order->status,
+            'status_label' => $st['label'],
+            'status_color' => $st['color'],
+            'total_amount' => (int) $order->total_amount,
+            'shipping_fee' => (int) $order->shipping_fee,
+            'discount_amount' => (int) ($order->discount_amount ?? 0),
+            'final_amount' => (int) $order->final_amount,
+            'items' => $groupedItems,
+        ]);
+    }
 }

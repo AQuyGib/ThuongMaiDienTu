@@ -5,6 +5,19 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 
 ## Các file đã tạo / chỉnh sửa & Công việc hoàn thành
 
+### 23. Tính năng Tra cứu hành trình Đơn hàng (Order Tracking System)
+- **Hạ tầng & API:**
+  - Bổ sung phương thức `searchOrder` vào `CartController.php` để truy xuất dữ liệu đơn hàng thực tế từ database theo `order_code` hoặc `order_id`.
+  - Tự động gom nhóm các sản phẩm trùng lặp trong đơn hàng chi tiết (nếu có) và tính toán số lượng/đơn giá chính xác.
+  - Áp dụng ánh xạ trạng thái đơn hàng (`Pending`, `BaoCK`, `Shipping`, `Delivered`, `Cancelled`) sang các nhãn và badge màu CSS tương ứng.
+  - Định nghĩa route GET `/orders/search` phục vụ gọi AJAX tra cứu từ client trong `routes/web.php`.
+- **Giao diện Khách hàng (Frontend):**
+  - Cải tiến view `resources/views/frontend/cart/ordertracking.blade.php`.
+  - Sửa logic JS `doSearch` chuyển từ giả lập hardcode sang fetch API thật `/orders/search` để tải thông tin động.
+  - Bổ sung khối hiển thị danh sách sản phẩm đã đặt (ảnh đại diện, tên, số lượng, đơn giá) đẹp mắt.
+  - Viết lại logic `updateTimeline` tự động điều chỉnh các bước hoàn thành (`step-completed`) và bước hoạt động hiện tại (`step-active`) của Timeline hành trình đơn hàng dựa trên trạng thái đơn hàng thực tế.
+
+
 ### 1. Phân hệ Quản lý & Phát Video (Videos Management) - Mới hoàn thành từ branch `Hien/Video`
 - **Hạ tầng & Database:**
     - Đã **xóa** các file migration mặc định của Laravel (users, cache, jobs, etc.) để tránh xung đột.

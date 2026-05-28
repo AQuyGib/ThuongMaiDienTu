@@ -94,6 +94,7 @@ Route::post('/cart/cancel', [CartController::class, 'cancelOrder'])->name('cart.
 Route::post('/cart/timeout', [CartController::class, 'timeoutOrder'])->name('cart.timeout');
 Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
 Route::get('/orders', [CartController::class, 'tracking'])->name('cart.tracking');
+Route::get('/orders/search', [CartController::class, 'searchOrder'])->name('cart.orders.search');
 Route::get('/print-bill', [CartController::class, 'print'])->name('cart.print');
 Route::get('/cart/count', [CartController::class, 'getCartCount'])->name('cart.count');
 
