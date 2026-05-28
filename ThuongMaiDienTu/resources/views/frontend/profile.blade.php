@@ -263,6 +263,18 @@
         text-align: center;
         font-size: 16px;
     }
+    .profile-rewards-link {
+        display: block;
+        margin: 0 20px 12px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        box-shadow: 0 12px 30px rgba(79,70,229,.18);
+    }
+    .profile-rewards-link small { display:block; opacity:.85; font-weight:500; }
     .nav-divider {
         height: 1px;
         background: #eee;
@@ -800,6 +812,17 @@
                             <strong style="color: #0046ab;">{{ number_format($totalSpent, 0, ',', '.') }}đ</strong>
                         </div>
                     </div>
+
+                    <div class="stat-row" style="margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px; margin-bottom: 15px;">
+                        <div class="stat-item">
+                            <span>Điểm tiêu dùng hiện có</span>
+                            <strong><i class="fa-solid fa-coins" style="color: #eab308;"></i> {{ number_format($walletPoints) }}</strong>
+                        </div>
+                        <div class="stat-item" style="text-align: right; align-items: flex-end;">
+                            <span>Điểm tích lũy hạng</span>
+                            <strong style="color: #8b5cf6;"><i class="fa-solid fa-star" style="color: #8b5cf6;"></i> {{ number_format($rankPoints) }}</strong>
+                        </div>
+                    </div>
                     
                     <div class="stat-progress">
                         <div style="display: flex; justify-content: space-between;">
@@ -845,12 +868,24 @@
                 </div>
 
                 <div class="nav-divider"></div>
+                <a href="{{ route('rewards.index') }}" class="profile-rewards-link">
+                    Trang đổi thưởng
+                    <small>Mở catalog voucher, quà tặng và vòng quay may mắn</small>
+                </a>
                 <div class="profile-nav-item" onclick="switchTab('promo-tab', this)">
                     <i class="fa-solid fa-ticket"></i> Hạng thành viên & Ưu đãi
                 </div>
                 <div class="profile-nav-item" onclick="switchTab('login-history-tab', this)">
                     <i class="fa-solid fa-shield-halved"></i> Lịch sử đăng nhập
                 </div>
+                <div class="profile-nav-item">
+                    <a href="{{ route('rewards.history') }}" class="w-full flex items-center gap-4 text-inherit" style="text-decoration: none; color: inherit;">
+                        <i class="fa-solid fa-gift"></i> Lịch sử đổi thưởng
+                    </a>
+                </div>
+                <a href="{{ route('warranty.index') }}" class="profile-nav-item" style="text-decoration:none;">
+                    <i class="fa-solid fa-magnifying-glass"></i> Tra cứu bảo hành
+                </a>
                 <div class="nav-divider"></div>
                 <form action="{{ route('logout') ?? '/logout' }}" method="POST">
                     @csrf
@@ -1397,28 +1432,141 @@
                         </div>
                     </div>
 
-                    <!-- Vouchers -->
-                    <h4 style="font-size: 16px; margin: 40px 0 15px;">Mã giảm giá khả dụng</h4>
-                    <div class="voucher-grid">
-                        <div class="voucher-card">
-                            <div class="voucher-left"><i class="fa-solid fa-percent"></i></div>
-                            <div class="voucher-right">
-                                <span class="voucher-code">DIENMAYNEW</span>
-                                <button class="btn-copy-voucher" onclick="copyVoucher('DIENMAYNEW', this)">Sao chép</button>
-                                <div class="voucher-title">Giảm 50k cho đơn từ 500k</div>
-                                <div class="voucher-expiry">HSD: 31/12/2026</div>
-                            </div>
+                    <!-- Vouchers & Quà đã đổi -->
+                    <h4 style="font-size: 16px; margin: 40px 0 15px;"><i class="fa-solid fa-gift"></i> Ưu đãi & Quà tặng đã đổi của bạn</h4>
+                    @if($redemptions->count() > 0 || $spins->where('status', 'won')->whereNotNull('reward_id')->count() > 0)
+                        <div class="voucher-grid">
+                            {{-- Quà từ Catalog Đổi Thưởng --}}
+                            @foreach($redemptions as $redemption)
+                                @php
+                                    $reward = json_decode($redemption->reward_snapshot, true);
+                                    $isExpired = $redemption->expires_at ? \Carbon\Carbon::parse($redemption->expires_at)->isPast() : false;
+                                    $statusLabel = 'Khả dụng';
+                                    $statusColor = '#166534';
+                                    
+                                    if ($redemption->status === 'cancelled') {
+                                        $statusLabel = 'Đã hủy';
+                                        $statusColor = '#991b1b';
+                                    } elseif ($isExpired) {
+                                        $statusLabel = 'Hết hạn';
+                                        $statusColor = '#64748b';
+                                    } elseif ($redemption->status === 'pending') {
+                                        $statusLabel = 'Chờ duyệt';
+                                        $statusColor = '#d97706';
+                                    }
+                                @endphp
+                                <div class="voucher-card" style="{{ $redemption->status === 'cancelled' || $isExpired ? 'opacity: 0.6;' : '' }}">
+                                    <div class="voucher-left" style="background: {{ $redemption->status === 'cancelled' || $isExpired ? '#64748b' : '#0046ab' }};">
+                                        <i class="fa-solid fa-percent"></i>
+                                    </div>
+                                    <div class="voucher-right">
+                                        <span class="voucher-code">{{ $redemption->redemption_code }}</span>
+                                        <button class="btn-copy-voucher" onclick="copyVoucher('{{ $redemption->redemption_code }}', this)">Sao chép</button>
+                                        <div class="voucher-title" style="font-weight: 600; margin-bottom: 2px;">{{ $reward['name'] ?? 'Mã ưu đãi' }}</div>
+                                        <div style="font-size: 11px; margin-bottom: 5px;">
+                                            Trạng thái: <strong style="color: {{ $statusColor }};">{{ $statusLabel }}</strong>
+                                        </div>
+                                        <div class="voucher-expiry">HSD: {{ $redemption->expires_at ? \Carbon\Carbon::parse($redemption->expires_at)->format('d/m/Y') : 'Không giới hạn' }}</div>
+                                    </div>
+                                </div>
+                            @endforeach
+
+                            {{-- Quà trúng từ Vòng Quay May Mắn --}}
+                            @foreach($spins as $spin)
+                                @if($spin->status === 'won' && $spin->reward_id)
+                                    @php
+                                        $prize = json_decode($spin->result_snapshot, true);
+                                        $isExpired = $spin->expires_at ? \Carbon\Carbon::parse($spin->expires_at)->isPast() : false;
+                                        $statusLabel = 'Trúng thưởng';
+                                        $statusColor = '#166534';
+
+                                        if ($isExpired) {
+                                            $statusLabel = 'Hết hạn';
+                                            $statusColor = '#64748b';
+                                        }
+                                    @endphp
+                                    <div class="voucher-card" style="{{ $isExpired ? 'opacity: 0.6;' : '' }}">
+                                        <div class="voucher-left" style="background: {{ $isExpired ? '#64748b' : '#e21033' }};">
+                                            <i class="fa-solid fa-gift"></i>
+                                        </div>
+                                        <div class="voucher-right">
+                                            <span class="voucher-code">{{ $spin->spin_code }}</span>
+                                            <button class="btn-copy-voucher" onclick="copyVoucher('{{ $spin->spin_code }}', this)">Sao chép</button>
+                                            <div class="voucher-title" style="font-weight: 600; margin-bottom: 2px;">{{ $prize['name'] ?? 'Phần quà Vòng quay' }}</div>
+                                            <div style="font-size: 11px; margin-bottom: 5px;">
+                                                Nguồn: <strong style="color: {{ $statusColor }};">{{ $statusLabel }}</strong>
+                                            </div>
+                                            <div class="voucher-expiry">HSD: {{ $spin->expires_at ? \Carbon\Carbon::parse($spin->expires_at)->format('d/m/Y') : 'Không giới hạn' }}</div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
                         </div>
-                        <div class="voucher-card">
-                            <div class="voucher-left" style="background: #e21033;"><i class="fa-solid fa-truck"></i></div>
-                            <div class="voucher-right">
-                                <span class="voucher-code">FREESHIP26</span>
-                                <button class="btn-copy-voucher" onclick="copyVoucher('FREESHIP26', this)">Sao chép</button>
-                                <div class="voucher-title">Miễn phí vận chuyển toàn quốc</div>
-                                <div class="voucher-expiry">HSD: 01/06/2026</div>
-                            </div>
+                    @else
+                        <div class="dash-empty" style="padding: 30px 0; border: 1px dashed #eee; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                            <i class="fa-solid fa-gift" style="font-size: 40px; color: #ddd; margin-bottom: 10px;"></i>
+                            <p style="font-size: 13px; color: #666; margin: 0 0 10px 0;">Bạn chưa có ưu đãi nào được đổi.</p>
+                            <a href="{{ route('rewards.index') }}" class="btn-outline" style="margin: 0; padding: 6px 15px; font-size: 12px;">Đổi quà ngay</a>
                         </div>
-                    </div>
+                    @endif
+
+                    <!-- Lịch sử tích/tiêu điểm -->
+                    <h4 style="font-size: 16px; margin: 40px 0 15px;"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử biến động điểm</h4>
+                    @if($pointTransactions->count() > 0)
+                        <div style="overflow-x: auto;">
+                            <table class="order-table">
+                                <thead>
+                                    <tr>
+                                        <th>Thời Gian</th>
+                                        <th>Loại Điểm</th>
+                                        <th>Giao Dịch</th>
+                                        <th>Số Điểm</th>
+                                        <th>Nội Dung</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($pointTransactions as $trans)
+                                    <tr>
+                                        <td>{{ \Carbon\Carbon::parse($trans->created_at)->format('d/m/Y H:i') }}</td>
+                                        <td>
+                                            @if($trans->point_type === 'wallet')
+                                                <span class="status-badge" style="background: #fef3c7; color: #d97706; font-size: 11px;"><i class="fa-solid fa-coins"></i> Tiêu dùng</span>
+                                            @else
+                                                <span class="status-badge" style="background: #f5f3ff; color: #7c3aed; font-size: 11px;"><i class="fa-solid fa-star"></i> Tích lũy hạng</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($trans->action === 'earn')
+                                                <span style="color: #166534; font-weight: bold;">Cộng điểm</span>
+                                            @elseif($trans->action === 'use')
+                                                <span style="color: #991b1b; font-weight: bold;">Trừ điểm</span>
+                                            @elseif($trans->action === 'refund')
+                                                <span style="color: #0369a1; font-weight: bold;">Hoàn điểm</span>
+                                            @else
+                                                <span style="color: #555;">{{ $trans->action }}</span>
+                                            @endif
+                                        </td>
+                                        <td style="font-weight: bold; font-size: 14px;">
+                                            @if($trans->points > 0 && in_array($trans->action, ['earn', 'refund']))
+                                                <span style="color: #166534;">+{{ number_format($trans->points) }}</span>
+                                            @elseif($trans->points > 0 && $trans->action === 'use')
+                                                <span style="color: #b91c1c;">-{{ number_format($trans->points) }}</span>
+                                            @else
+                                                <span style="color: #555;">{{ ($trans->points > 0 ? '+' : '') . number_format($trans->points) }}</span>
+                                            @endif
+                                        </td>
+                                        <td style="font-size: 13px;">{{ $trans->description }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="dash-empty" style="padding: 20px 0; border: 1px dashed #eee; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                            <i class="fa-solid fa-list-check" style="font-size: 30px; color: #ddd; margin-bottom: 10px;"></i>
+                            <p style="font-size: 13px; color: #666; margin: 0;">Chưa có lịch sử biến động điểm.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -1604,12 +1752,12 @@
 
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Địa chỉ (Số nhà, tên đường) *</label>
-                    <input type="text" id="addrStreet" class="form-control" placeholder="Ví dụ: 123 Đường ABC" required style="padding: 10px 15px;">
+                    <input type="text" id="addrStreet" class="form-control" placeholder="Ví dụ: 123 Đường ABC" required style="padding: 10px 15px;" maxlength="150">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Tên gợi nhớ</label>
-                    <input type="text" id="addrName" class="form-control" placeholder="Nguyễn Văn A" style="padding: 10px 15px;">
+                    <input type="text" id="addrName" class="form-control" placeholder="Nguyễn Văn A" style="padding: 10px 15px;" maxlength="50">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 20px;">
@@ -1633,7 +1781,7 @@
             </form>
         </div>
         <div class="student-modal-footer">
-            <button type="button" class="btn-outline" style="margin-top: 0; border-color: #0046ab; color: #0046ab;" onclick="closeAddressModal()">Đóng</button>
+            <button type="button" class="btn-outline" style="margin-top: 0;" onclick="closeAddressModal()">Đóng</button>
             <button type="button" id="addressSubmitBtn" class="btn-update" style="margin-top: 0; padding: 8px 20px; background: #0046ab;" onclick="submitAddress()">Lưu địa chỉ</button>
         </div>
     </div>
@@ -1677,28 +1825,28 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label>Họ và tên *</label>
-                            <input type="text" name="customer_name" id="repCustomerName" class="form-control @error('customer_name') is-invalid @enderror" value="{{ old('customer_name', $user->full_name) }}" required>
+                            <input type="text" name="customer_name" id="repCustomerName" class="form-control @error('customer_name') is-invalid @enderror" value="{{ old('customer_name', $user->full_name) }}" required maxlength="50">
                             @error('customer_name')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label>Số điện thoại *</label>
-                            <input type="text" name="customer_phone" id="repCustomerPhone" class="form-control @error('customer_phone') is-invalid @enderror" value="{{ old('customer_phone', $user->phone_number) }}" placeholder="Ví dụ: 0392345678" required>
+                            <input type="text" name="customer_phone" id="repCustomerPhone" class="form-control @error('customer_phone') is-invalid @enderror" value="{{ old('customer_phone', $user->phone_number) }}" placeholder="Ví dụ: 0392345678" required maxlength="10">
                             @error('customer_phone')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label>Địa chỉ email</label>
-                            <input type="email" name="customer_email" id="repCustomerEmail" class="form-control @error('customer_email') is-invalid @enderror" value="{{ old('customer_email', $user->email) }}" placeholder="VD: customer@gmail.com">
+                            <input type="email" name="customer_email" id="repCustomerEmail" class="form-control @error('customer_email') is-invalid @enderror" value="{{ old('customer_email', $user->email) }}" placeholder="VD: customer@gmail.com" maxlength="100">
                             @error('customer_email')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Địa chỉ liên hệ</label>
-                            <input type="text" name="customer_address" id="repCustomerAddress" class="form-control @error('customer_address') is-invalid @enderror" value="{{ old('customer_address', $user->address) }}" placeholder="Nhập số nhà, tên đường, phường/xã...">
+                            <input type="text" name="customer_address" id="repCustomerAddress" class="form-control @error('customer_address') is-invalid @enderror" value="{{ old('customer_address', $user->address) }}" placeholder="Nhập số nhà, tên đường, phường/xã..." maxlength="150">
                             @error('customer_address')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
@@ -1712,7 +1860,7 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label>Số IMEI / Serial *</label>
-                            <input type="text" name="imei_serial" id="repImeiSerial" class="form-control @error('imei_serial') is-invalid @enderror" value="{{ old('imei_serial') }}" placeholder="Nhập số IMEI hoặc Serial máy" required>
+                            <input type="text" name="imei_serial" id="repImeiSerial" class="form-control @error('imei_serial') is-invalid @enderror" value="{{ old('imei_serial') }}" placeholder="Nhập số IMEI hoặc Serial máy" required maxlength="50">
                             @error('imei_serial')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
@@ -1726,7 +1874,7 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Mô tả tình trạng lỗi *</label>
-                            <textarea name="issue_desc" id="repIssueDesc" class="form-control @error('issue_desc') is-invalid @enderror" rows="4" placeholder="Mô tả chi tiết tình trạng máy lỗi và linh kiện cần thay thế..." style="resize: none;" required>{{ old('issue_desc') }}</textarea>
+                            <textarea name="issue_desc" id="repIssueDesc" class="form-control @error('issue_desc') is-invalid @enderror" rows="4" placeholder="Mô tả chi tiết tình trạng máy lỗi và linh kiện cần thay thế..." style="resize: none;" required maxlength="500">{{ old('issue_desc') }}</textarea>
                             @error('issue_desc')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
@@ -1739,7 +1887,7 @@
                 </div>
                 
                 <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-                    <button type="button" class="btn-outline" style="margin: 0; border-color: #0046ab; color: #0046ab;" onclick="closeRepairModal()">Hủy bỏ</button>
+                    <button type="button" class="btn-outline" style="margin: 0;" onclick="closeRepairModal()">Hủy bỏ</button>
                     <button type="submit" id="repairSubmitBtn" class="btn-update" style="margin: 0; background: #0046ab;">Đăng ký lịch hẹn</button>
                 </div>
             </form>
@@ -1751,17 +1899,17 @@
 <div id="trackingModal" class="student-modal-overlay">
     <div class="student-modal" style="max-width: 520px; width: 95%;">
         <div class="student-modal-header" style="background: #0046ab;">
-            <h3>Chi tiết tiến độ sửa chữa #RT-<span id="track-id"></span></h3>
+            <h3>{{ __('ui.repair_title', ['id' => '']) }}<span id="track-id"></span></h3>
             <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 18px;" onclick="closeTrackingModal()"></i>
         </div>
         <div class="student-modal-body" style="max-height: 75vh; overflow-y: auto;">
             <!-- Tóm tắt thông tin thiết bị -->
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
-                    <div><span style="color: #64748b;">IMEI/Serial:</span> <strong id="track-imei" style="font-family: monospace;">-</strong></div>
-                    <div><span id="track-date-label" style="color: #64748b;">Ngày hẹn mang tới:</span> <strong id="track-date">-</strong></div>
-                    <div style="grid-column: 1 / -1;"><span style="color: #64748b;">Mô tả lỗi:</span> <span id="track-desc">-</span></div>
-                    <div style="grid-column: 1 / -1;"><span style="color: #64748b;">Kỹ thuật viên phụ trách:</span> <strong id="track-tech" style="color: #0046ab;">Đang phân công</strong></div>
+                    <div><span style="color: #64748b;">{{ __('ui.repair_imei') }}</span> <strong id="track-imei" style="font-family: monospace;">-</strong></div>
+                    <div><span id="track-date-label" style="color: #64748b;">{{ __('ui.repair_date_received_label') }}</span> <strong id="track-date">-</strong></div>
+                    <div style="grid-column: 1 / -1;"><span style="color: #64748b;">{{ __('ui.repair_error_desc') }}</span> <span id="track-desc">-</span></div>
+                    <div style="grid-column: 1 / -1;"><span style="color: #64748b;">{{ __('ui.repair_technician') }}</span> <strong id="track-tech" style="color: #0046ab;">{{ __('ui.repair_tech_assigning') }}</strong></div>
                 </div>
             </div>
 
@@ -1773,9 +1921,9 @@
                         <i class="fa-solid fa-receipt"></i>
                     </div>
                     <div class="step-content">
-                        <h4 class="step-title">Đã tiếp nhận thiết bị</h4>
+                        <h4 class="step-title">{{ __('ui.repair_step_received') }}</h4>
                         <div class="step-desc" id="step-received-desc">
-                            Cửa hàng đã nhận máy và đang làm thủ tục bàn giao cho bộ phận kỹ thuật.
+                            {{ __('ui.repair_step_received_desc') }}
                         </div>
                     </div>
                 </div>
@@ -1786,9 +1934,9 @@
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </div>
                     <div class="step-content">
-                        <h4 class="step-title">Kiểm tra & báo giá</h4>
+                        <h4 class="step-title">{{ __('ui.repair_step_checking') }}</h4>
                         <div class="step-desc" id="step-checking-desc">
-                            Kỹ thuật viên đang kiểm tra lỗi và xác định chi phí sửa chữa.
+                            {{ __('ui.repair_step_checking_desc') }}
                         </div>
                     </div>
                 </div>
@@ -1799,9 +1947,9 @@
                         <i class="fa-solid fa-screwdriver-wrench"></i>
                     </div>
                     <div class="step-content">
-                        <h4 class="step-title">Đang sửa chữa</h4>
+                        <h4 class="step-title">{{ __('ui.repair_step_repairing') }}</h4>
                         <div class="step-desc" id="step-repairing-desc">
-                            Thiết bị đang được xử lý kỹ thuật hoặc chờ linh kiện thay thế.
+                            {{ __('ui.repair_step_repairing_desc') }}
                         </div>
                     </div>
                 </div>
@@ -1812,9 +1960,9 @@
                         <i class="fa-solid fa-circle-check"></i>
                     </div>
                     <div class="step-content">
-                        <h4 class="step-title">Sửa chữa hoàn tất</h4>
+                        <h4 class="step-title">{{ __('ui.repair_step_done') }}</h4>
                         <div class="step-desc" id="step-done-desc">
-                            Đã sửa chữa hoàn chỉnh, kiểm tra chất lượng và hoàn trả thiết bị cho khách hàng.
+                            {{ __('ui.repair_step_done_desc') }}
                         </div>
                     </div>
                 </div>
@@ -2037,11 +2185,26 @@
     }
 
     // --- Address Modal ---
+    const isEnglish = {{ App::getLocale() === 'en' ? 'true' : 'false' }};
+
     function openAddressModal() {
         document.getElementById('addressModal').classList.add('active');
         if (document.getElementById('addrCity').options.length <= 1) {
             fetchProvincesData();
         }
+    }
+
+    function closeAddressModal() {
+        document.getElementById('addressModal').classList.remove('active');
+        document.getElementById('addAddressForm').reset();
+        document.getElementById('addrId').value = '';
+        
+        // Reset selections
+        document.getElementById('addrCity').selectedIndex = 0;
+        document.getElementById('addrDistrict').innerHTML = '<option value="">Chọn Quận/Huyện</option>';
+        document.getElementById('addrDistrict').disabled = true;
+        document.getElementById('addrWard').innerHTML = '<option value="">Chọn Phường/Xã</option>';
+        document.getElementById('addrWard').disabled = true;
     }
 
     // Fetch API Data (Stable Version)
@@ -2056,15 +2219,33 @@
             .catch(err => console.error('Error fetching provinces:', err));
     }
 
+    // 34 allowed provinces from header (Nghị quyết 202/2025/QH15)
+    // We map esgoo IDs to the Vietnamese display names. Since these strings contain Vietnamese accented characters,
+    // they will be automatically translated into English by the TranslateHtmlResponse middleware when App::getLocale() is 'en'.
+    const provinceIdMap = {
+        '79': 'TP. Hồ Chí Minh', '01': 'TP. Hà Nội', '31': 'TP. Hải Phòng', '48': 'TP. Đà Nẵng', '92': 'TP. Cần Thơ', '46': 'TP. Huế',
+        '89': 'An Giang', '27': 'Bắc Ninh', '96': 'Cà Mau', '04': 'Cao Bằng',
+        '66': 'Đắk Lắk', '11': 'Điện Biên', '75': 'Đồng Nai', '87': 'Đồng Tháp',
+        '64': 'Gia Lai', '42': 'Hà Tĩnh', '33': 'Hưng Yên', '56': 'Khánh Hòa',
+        '12': 'Lai Châu', '68': 'Lâm Đồng', '20': 'Lạng Sơn', '10': 'Lào Cai',
+        '40': 'Nghệ An', '37': 'Ninh Bình', '25': 'Phú Thọ', '51': 'Quảng Ngãi',
+        '22': 'Quảng Ninh', '45': 'Quảng Trị', '14': 'Sơn La', '72': 'Tây Ninh',
+        '19': 'Thái Nguyên', '38': 'Thanh Hóa', '08': 'Tuyên Quang', '86': 'Vĩnh Long'
+    };
+
     function populateCities(data) {
         const citySelect = document.getElementById('addrCity');
         citySelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
         data.forEach(city => {
-            let option = document.createElement('option');
-            option.value = city.full_name;
-            option.dataset.code = city.id;
-            option.textContent = city.full_name;
-            citySelect.appendChild(option);
+            // Check if the province ID is in the allowed whitelist
+            if (provinceIdMap.hasOwnProperty(city.id)) {
+                let displayName = provinceIdMap[city.id];
+                let option = document.createElement('option');
+                option.value = displayName;
+                option.dataset.code = city.id;
+                option.textContent = displayName;
+                citySelect.appendChild(option);
+            }
         });
     }
 
@@ -2086,9 +2267,10 @@
                     if(data.error === 0 && data.data) {
                         data.data.forEach(dist => {
                             let option = document.createElement('option');
-                            option.value = dist.full_name;
+                            let displayName = (isEnglish && dist.full_name_en) ? dist.full_name_en : dist.full_name;
+                            option.value = displayName;
                             option.dataset.code = dist.id;
-                            option.textContent = dist.full_name;
+                            option.textContent = displayName;
                             districtSelect.appendChild(option);
                         });
                         districtSelect.disabled = false;
@@ -2117,8 +2299,9 @@
                     if(data.error === 0 && data.data) {
                         data.data.forEach(ward => {
                             let option = document.createElement('option');
-                            option.value = ward.full_name;
-                            option.textContent = ward.full_name;
+                            let displayName = (isEnglish && ward.full_name_en) ? ward.full_name_en : ward.full_name;
+                            option.value = displayName;
+                            option.textContent = displayName;
                             wardSelect.appendChild(option);
                         });
                         wardSelect.disabled = false;
@@ -2208,20 +2391,41 @@
 
         setTimeout(() => {
             const citySelect = document.getElementById('addrCity');
+            
+            // Helper function to normalize names for robust matching of old and new formats across languages
+            const normalize = (name) => {
+                if (!name) return "";
+                return name.toLowerCase()
+                           .replace(/^(tỉnh|thành\s+phố|tp\.)\s+/i, "")
+                           .replace(/^(quận|huyện|thị\s+xã)\s+/i, "")
+                           .replace(/^(phường|xã|thị\s+trấn)\s+/i, "")
+                           .replace(/thừa thiên huế/i, "huế")
+                           .replace(/\s+(city|province|district|town|ward|commune)$/i, "")
+                           .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Strip accents for cross-language compatibility
+                           .trim();
+            };
+
+            const normalizedCity = normalize(city);
+
             for(let i=0; i<citySelect.options.length; i++) {
-                if(citySelect.options[i].value === city) { citySelect.selectedIndex = i; break; }
+                if(normalize(citySelect.options[i].value) === normalizedCity) { 
+                    citySelect.selectedIndex = i; 
+                    break; 
+                }
             }
             citySelect.dispatchEvent(new Event('change'));
             setTimeout(() => {
                 const distSelect = document.getElementById('addrDistrict');
+                const normalizedDist = normalize(district);
                 for(let i=0; i<distSelect.options.length; i++) {
-                    if(distSelect.options[i].value === district) { distSelect.selectedIndex = i; break; }
+                    if(normalize(distSelect.options[i].value) === normalizedDist) { distSelect.selectedIndex = i; break; }
                 }
                 distSelect.dispatchEvent(new Event('change'));
                 setTimeout(() => {
                     const wardSelect = document.getElementById('addrWard');
+                    const normalizedWard = normalize(ward);
                     for(let i=0; i<wardSelect.options.length; i++) {
-                        if(wardSelect.options[i].value === ward) { wardSelect.selectedIndex = i; break; }
+                        if(normalize(wardSelect.options[i].value) === normalizedWard) { wardSelect.selectedIndex = i; break; }
                     }
                 }, 500);
             }, 500);
@@ -2262,9 +2466,9 @@
             if(data.status === 'success' || data.success) {
                 showToast('Thành công', data.message || 'Đã thêm sản phẩm vào giỏ hàng!', 'success');
                 const badge = document.getElementById('headerCartBadge');
-                if(badge) {
+                if(badge && data.cart_count !== undefined) {
                     badge.innerText = data.cart_count;
-                    badge.style.display = 'block';
+                    badge.style.display = data.cart_count > 0 ? 'block' : 'none';
                 }
             } else {
                 showToast('Lỗi', data.message || 'Không thể thêm vào giỏ hàng.', 'error');
@@ -2436,13 +2640,16 @@
         // Tự động thay đổi nhãn của ngày hẹn tùy theo trạng thái
         const dateLabel = document.getElementById('track-date-label');
         if (['Under_Repair', 'Waiting_Parts', 'Done'].includes(ticket.status)) {
-            dateLabel.innerText = 'Ngày hẹn trả máy:';
+            dateLabel.innerText = @json(__('ui.repair_date_return_label'));
         } else {
-            dateLabel.innerText = 'Ngày hẹn mang tới:';
+            dateLabel.innerText = @json(__('ui.repair_date_received_label'));
         }
         document.getElementById('track-date').innerText = formattedDate;
         
-        const techName = ticket.technician ? ticket.technician.full_name : 'Đang phân công';
+        let techName = ticket.technician ? ticket.technician.full_name : @json(__('ui.repair_tech_assigning'));
+        if (techName === 'Quản Trị Viên') {
+            techName = @json(app()->getLocale() === 'en' ? 'Administrator' : 'Quản Trị Viên');
+        }
         document.getElementById('track-tech').innerText = techName;
         
         // Reset class active/completed cho tất cả các bước trong stepper
@@ -2455,10 +2662,10 @@
         });
         
         // Reset nội dung mô tả mặc định của các bước trước khi gán dữ liệu mới
-        document.getElementById('step-received-desc').innerHTML = 'Cửa hàng đã nhận máy và đang làm thủ tục bàn giao cho bộ phận kỹ thuật.';
-        document.getElementById('step-checking-desc').innerHTML = 'Kỹ thuật viên đang kiểm tra lỗi và xác định chi phí sửa chữa.';
-        document.getElementById('step-repairing-desc').innerHTML = 'Thiết bị đang được xử lý kỹ thuật hoặc chờ linh kiện thay thế.';
-        document.getElementById('step-done-desc').innerHTML = 'Đã sửa chữa hoàn chỉnh, kiểm tra chất lượng và hoàn trả thiết bị cho khách hàng.';
+        document.getElementById('step-received-desc').innerHTML = @json(__('ui.repair_step_received_desc'));
+        document.getElementById('step-checking-desc').innerHTML = @json(__('ui.repair_step_checking_desc'));
+        document.getElementById('step-repairing-desc').innerHTML = @json(__('ui.repair_step_repairing_desc'));
+        document.getElementById('step-done-desc').innerHTML = @json(__('ui.repair_step_done_desc'));
         
         const status = ticket.status;
         if (status === 'Received') {
@@ -2469,18 +2676,18 @@
             
             // Nếu có chi phí dự kiến thì hiển thị thêm ở bước Kiểm tra & báo giá
             const costHtml = ticket.estimated_cost > 0 
-                ? `<div style="margin-top:5px; color:#0369a1; font-weight:600;"><i class="fa-solid fa-calculator"></i> Chi phí dự kiến: ${new Intl.NumberFormat('vi-VN').format(ticket.estimated_cost)} đ</div>`
+                ? `<div style="margin-top:5px; color:#0369a1; font-weight:600;"><i class="fa-solid fa-calculator"></i> ` + @json(__('ui.repair_step_checking_cost')) + ` ${new Intl.NumberFormat('vi-VN').format(ticket.estimated_cost)} đ</div>`
                 : '';
-            document.getElementById('step-checking-desc').innerHTML = 'Đang tiến hành kiểm tra tình trạng máy và đề xuất chi phí sửa chữa.' + costHtml;
+            document.getElementById('step-checking-desc').innerHTML = @json(__('ui.repair_step_checking_progress')) + costHtml;
         } else if (status === 'Under_Repair' || status === 'Waiting_Parts') {
             document.getElementById('step-received').classList.add('completed');
             document.getElementById('step-checking').classList.add('completed');
             document.getElementById('step-repairing').classList.add('active');
             
             if (status === 'Waiting_Parts') {
-                document.getElementById('step-repairing-desc').innerHTML = '<span style="color:#d97706; font-weight:600;"><i class="fa-solid fa-hourglass-half"></i> Chờ linh kiện:</span> Thiết bị tạm thời chưa sửa xong do đang chờ linh kiện thay thế.';
+                document.getElementById('step-repairing-desc').innerHTML = @json(__('ui.repair_step_repairing_waiting'));
             } else {
-                document.getElementById('step-repairing-desc').innerHTML = 'Thiết bị đang được xử lý kỹ thuật bởi kỹ thuật viên: <strong>' + techName + '</strong>';
+                document.getElementById('step-repairing-desc').innerHTML = @json(__('ui.repair_step_repairing_tech')).replace(':name', techName);
             }
         } else if (status === 'Done') {
             document.getElementById('step-received').classList.add('completed');
@@ -2490,15 +2697,15 @@
             
             let doneDetails = '';
             if (ticket.service_name) {
-                doneDetails += `<div style="margin-top: 5px; font-weight: 600; color: #1e293b;">Dịch vụ thực hiện: ${ticket.service_name}</div>`;
+                doneDetails += `<div style="margin-top: 5px; font-weight: 600; color: #1e293b;">` + @json(__('ui.repair_step_done_service')) + ` ${ticket.service_name}</div>`;
             }
             if (ticket.service_fee > 0) {
-                doneDetails += `<div style="margin-top: 2px; color: #166534; font-weight: 700;">Phí dịch vụ thực tế: ${new Intl.NumberFormat('vi-VN').format(ticket.service_fee)} đ</div>`;
+                doneDetails += `<div style="margin-top: 2px; color: #166534; font-weight: 700;">` + @json(__('ui.repair_step_done_fee')) + ` ${new Intl.NumberFormat('vi-VN').format(ticket.service_fee)} đ</div>`;
             }
             if (ticket.invoice_no) {
-                doneDetails += `<div style="margin-top: 2px; font-size:11px; color:#64748b;">Mã hóa đơn dịch vụ: ${ticket.invoice_no}</div>`;
+                doneDetails += `<div style="margin-top: 2px; font-size:11px; color:#64748b;">` + @json(__('ui.repair_step_done_invoice')) + ` ${ticket.invoice_no}</div>`;
             }
-            document.getElementById('step-done-desc').innerHTML = 'Quá trình sửa chữa hoàn tất. Thiết bị đã được bàn giao cho quý khách hàng.' + doneDetails;
+            document.getElementById('step-done-desc').innerHTML = @json(__('ui.repair_step_done_delivered')) + doneDetails;
         }
         
         document.getElementById('trackingModal').classList.add('active');
