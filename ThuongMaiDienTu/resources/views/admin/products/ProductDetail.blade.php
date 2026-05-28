@@ -670,11 +670,6 @@
     @method('DELETE')
 </form>
 
-<<<<<<< HEAD
-<script>
-    var productId = {{ $product->product_id }};
-    var baseUrl = "{{ url('admin/products') }}";
-=======
 @push('scripts')
 <!-- jQuery & Select2 JS -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -861,7 +856,6 @@
     // Các hằng số phục vụ định tuyến API và Modal
     const productId = {{ $product->product_id }};
     const baseUrl = "{{ url('admin/products') }}";
->>>>>>> master
 
     /**
      * Hàm: openModal
@@ -891,9 +885,6 @@
         if (el) { el.classList.add('hidden'); el.classList.remove('flex'); }
     }
 
-<<<<<<< HEAD
-    function openEditVariant(id, color, ram, rom, cpu, gpu, price, imageUrl, version) {
-=======
     /**
      * Hàm: openEditVariant
      * Công dụng: Đổ dữ liệu chi tiết của biến thể sản phẩm vào form và kích hoạt Modal chỉnh sửa biến thể.
@@ -906,9 +897,9 @@
      *   - gpu: Loại GPU.
      *   - price: Giá bán của biến thể.
      *   - imageUrl: Đường dẫn ảnh đại diện biến thể.
+     *   - version: Phiên bản tối ưu hóa đồng thời.
      */
-    function openEditVariant(id, color, ram, rom, cpu, gpu, price, imageUrl) {
->>>>>>> master
+    function openEditVariant(id, color, ram, rom, cpu, gpu, price, imageUrl, version) {
         document.getElementById('evColor').value = color || '';
         const evRam = document.getElementById('evRam');
         const evRom = document.getElementById('evRom');
@@ -949,4 +940,5 @@
         });
     }
 </script>
+@endpush
 @endsection

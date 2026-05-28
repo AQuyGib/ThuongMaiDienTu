@@ -198,10 +198,6 @@ document.addEventListener('click', (e) => {
     if (anchor && anchor.href && anchor.href.startsWith(window.location.origin + '/admin')) {
         // Skip if target is _blank
         if (anchor.target === '_blank') return;
-<<<<<<< HEAD
-        // Skip logout or special routes
-        if (anchor.href.includes('logout')) return;
-=======
         // Skip logout, export, pdf or download routes
         if (anchor.href.includes('logout') || anchor.href.includes('export') || anchor.href.includes('/pdf') || anchor.hasAttribute('download')) return;
 
@@ -219,7 +215,6 @@ document.addEventListener('click', (e) => {
             window.location.href = anchor.href;
             return;
         }
->>>>>>> master
         
         // If we are NOT in admin area, let the browser do a full reload to enter it
         if (!isInAdminArea) return;

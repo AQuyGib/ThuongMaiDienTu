@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 @extends('admin.layouts.master')
 
 @section('title', 'Quản lý danh mục')
@@ -248,13 +247,11 @@
                             <td class="px-5 py-4 font-semibold text-emerald-600">{{ $category->products_count ?? 0 }}</td>
                             <td class="px-5 py-4">
                                 <div class="flex items-center justify-center gap-2">
-=======
                                     <a href="{{ route('admin.categories.translation.edit', $category->category_id) }}"
                                        class="icon-btn"
                                        title="Edit EN Translation">
                                         <i class="fa-solid fa-language"></i>
                                     </a>
->>>>>>> master
                                     <button type="button" class="icon-btn js-edit-category"
                                             data-id="{{ $category->category_id }}"
                                             data-name="{{ e($category->name) }}"
@@ -269,7 +266,6 @@
                                             title="Xóa">
                                         <i class="fa-regular fa-trash-can"></i>
                                     </button>
-<<<<<<< HEAD
                                 </div>
                             </td>
                         </tr>
@@ -487,5 +483,3 @@
     }
 </script>
 @endsection
-=======
->>>>>>> master

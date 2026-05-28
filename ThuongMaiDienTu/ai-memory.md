@@ -330,3 +330,7 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - **Cải tiến logic tăng view:**
   - **Trước đây:** Mỗi khi người dùng bấm vào một video trong playlist (click phát video) hoặc tải trang, hệ thống ngay lập tức gọi API `/videos/{video}/view` để tăng 1 lượt xem (views).
   - **Hiện tại:** Loại bỏ hoàn toàn sự kiện tăng views tự động khi click chọn hoặc load trang. Bổ sung sự kiện lắng nghe `ended` trên thẻ phát HTML5 `<video id="main-video-player">`. Chỉ khi người dùng xem hết video, hàm `incrementViews(currentVideoId)` mới được kích hoạt để tăng lượt xem và hiển thị thông báo cảm ơn người dùng.
+
+### 20. Khắc phục hoàn toàn xung đột Git (Merge Conflicts Resolution)
+- **Danh mục (`Category.blade.php`):** Loại bỏ hoàn toàn các ký hiệu xung đột Git (`<<<<<<< HEAD`, `=======`, `>>>>>>> master`). Giữ nguyên cấu trúc giao diện quản trị mới và tích hợp thành công nút dịch thuật tiếng Anh (`admin.categories.translation.edit`) từ nhánh master.
+- **Chi tiết sản phẩm (`ProductDetail.blade.php`):** Giải quyết triệt để xung đột mã nguồn. Tích hợp thư viện Select2 cho tính năng Cross-sell và Combo Discount, giữ nguyên tham số `version` phục vụ tối ưu hóa đồng thời của hàm `openEditVariant`, loại bỏ mọi ký hiệu xung đột và bổ sung directive `@endpush` đóng gói script an toàn.
