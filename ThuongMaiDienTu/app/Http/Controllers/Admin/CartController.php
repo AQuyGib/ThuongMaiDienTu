@@ -9,6 +9,7 @@ use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\PurchaseOrder;
+use App\Models\CouponFlashSale;
 use Illuminate\Support\Str;
 use App\Services\PointsService;
 use App\Services\FlashSaleService;
@@ -387,6 +388,31 @@ class CartController extends Controller
         ]);
     }
 
+    public function validateVoucher(Request $request)
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:50'],
+            'subtotal' => ['required', 'integer', 'min:1'],
+        ]);
+
+        [$discount, $message] = $this->resolveVoucherDiscount((string) $data['code'], (int) $data['subtotal']);
+        if ($discount <= 0) {
+            session(['checkout_discount' => 0]);
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Mã không hợp lệ.',
+            ], 422);
+        }
+
+        session(['checkout_discount' => $discount]);
+
+        return response()->json([
+            'success' => true,
+            'discount' => $discount,
+            'message' => $message ?: 'Áp dụng mã giảm giá thành công.',
+        ]);
+    }
+
     public function placeOrder(Request $request, PointsService $pointsService)
     {
         $data = $request->validate([
@@ -486,10 +512,7 @@ class CartController extends Controller
 
         $totalAmount = collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
         
-        $discount = 0;
-        if ($request->input('discount_code') === 'PRO10') {
-            $discount = (int) round($totalAmount * 0.1);
-        }
+        [$discount] = $this->resolveVoucherDiscount((string) $request->input('discount_code', ''), (int) $totalAmount);
         $finalAmount = $totalAmount - $discount;
 
         $name = $request->input('name');
@@ -631,5 +654,43 @@ class CartController extends Controller
             $total += (int)($item['quantity'] ?? 0);
         }
         return $total;
+    }
+
+    private function resolveVoucherDiscount(string $rawCode, int $subtotal): array
+    {
+        $code = strtoupper(trim($rawCode));
+        if ($code === '' || $subtotal <= 0) {
+            return [0, 'Mã giảm giá không hợp lệ.'];
+        }
+
+        $voucher = CouponFlashSale::query()
+            ->where('promo_type', 'Coupon')
+            ->where('code', $code)
+            ->first();
+
+        if (!$voucher) {
+            return [0, 'Mã không tồn tại.'];
+        }
+
+        $now = now();
+        if ($voucher->start_time && $now->lt(\Carbon\Carbon::parse($voucher->start_time))) {
+            return [0, 'Mã chưa đến thời gian sử dụng.'];
+        }
+        if ($voucher->end_time && $now->gt(\Carbon\Carbon::parse($voucher->end_time))) {
+            return [0, 'Mã đã hết hạn.'];
+        }
+
+        $discountType = $voucher->discount_type ?? 'fixed';
+        $discountVal = (float) $voucher->discount_val;
+        $discount = $discountType === 'percent'
+            ? (int) round($subtotal * ($discountVal / 100))
+            : (int) round($discountVal);
+
+        $discount = max(0, min($discount, $subtotal));
+        if ($discount <= 0) {
+            return [0, 'Mã không tạo ra giảm giá hợp lệ.'];
+        }
+
+        return [$discount, 'Áp dụng mã thành công.'];
     }
 }

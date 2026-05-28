@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Admin\FlashSaleProductController;
+use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\CashbookController;
 use App\Http\Controllers\Admin\ThemeSettingController;
 use App\Http\Controllers\Admin\OrderController;
@@ -111,6 +112,9 @@ Route::put('/pages/{page}/translation/en', [\App\Http\Controllers\Admin\PageTran
 Route::resource('flash-sales', FlashSaleController::class)->except(['create', 'edit', 'show']);
 Route::post('flash-sales/{flash_sale}/products', [FlashSaleProductController::class, 'store'])->name('flash-sales.products.store');
 Route::delete('flash-sales/{flash_sale}/products/{flash_sale_product}', [FlashSaleProductController::class, 'destroy'])->name('flash-sales.products.destroy');
+
+// ===== Voucher =====
+Route::resource('vouchers', VoucherController::class)->except(['create', 'show', 'edit']);
 
 // ===== Quản lý Biến Thể & Bán Kèm =====
 Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'])->name('products.variants.store');

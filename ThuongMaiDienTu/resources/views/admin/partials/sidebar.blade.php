@@ -114,6 +114,13 @@
             'section' => $isEn ? 'Settings' : 'Thiết lập'
         ],
         [
+            'label' => $isEn ? 'Vouchers' : 'Voucher',
+            'route' => route('admin.vouchers.index'),
+            'icon' => 'fa-solid fa-ticket',
+            'active' => request()->routeIs('admin.vouchers.*'),
+            'section' => $isEn ? 'Settings' : 'Thiết lập'
+        ],
+        [
             'label' => $isEn ? 'Theme Customization' : 'Tùy biến Giao diện',
             'route' => route('admin.settings.theme'),
             'icon' => 'fa-solid fa-paint-brush',
