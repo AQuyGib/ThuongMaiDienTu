@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             VideoSeeder::class,
             ProductComboSeeder::class,
             InventoryMovementSeeder::class,
+            InventoryAuditSeeder::class,
         ]);
     }
 }
