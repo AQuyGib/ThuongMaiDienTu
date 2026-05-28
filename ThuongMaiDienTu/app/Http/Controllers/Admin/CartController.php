@@ -526,6 +526,13 @@ class CartController extends Controller
         }
         $finalAmount = $totalAmount - $discount;
 
+        $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
+            'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
+            'address' => ['required', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
+            'note' => ['nullable', 'string', 'max:250'],
+        ]);
+
         $name = $request->input('name');
         $phone = $request->input('phone');
         $address = $request->input('address');
@@ -537,9 +544,16 @@ class CartController extends Controller
             'order_type' => 'Online',
             'total_amount' => $totalAmount,
             'shipping_fee' => 0,
+            'discount_amount' => $discount,
+            'wallet_points_used' => 0,
             'final_amount' => $finalAmount > 0 ? $finalAmount : 0,
             'payment_method' => $paymentMethod,
             'status' => 'Pending',
+            'customer_name' => $name,
+            'customer_phone' => $phone,
+            'shipping_address' => $address,
+            'note' => $note,
+            'order_code' => 'ORD' . now()->format('YmdHis') . random_int(100, 999),
         ]);
 
         foreach ($selectedCart as $productId => $item) {
@@ -587,7 +601,11 @@ class CartController extends Controller
         $this->flashSaleService->confirmCartFlashSale($selectedCart);
 
         $remainingCart = collect($cart)->filter(fn($item) => !($item['selected'] ?? true))->toArray();
-        session()->put('cart', $remainingCart);
+        if (empty($remainingCart)) {
+            session()->forget('cart');
+        } else {
+            session()->put('cart', $remainingCart);
+        }
         session()->forget(['cart_locked', 'checkout_discount', 'applied_coupon_code']);
 
         return response()->json([
