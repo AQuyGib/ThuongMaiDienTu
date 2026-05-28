@@ -119,6 +119,12 @@
         .form-control::placeholder { color: #94a3b8; font-weight: 400; }
         .form-control:focus { outline: none; background: var(--bg-form); border-color: var(--tech-blue); box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
 
+        /* Ẩn con mắt mặc định của trình duyệt (Edge) để tránh 2 con mắt */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
         /* Thanh sức mạnh mật khẩu */
         .strength-bar { display: flex; gap: 4px; margin-top: 8px; }
         .strength-seg { flex: 1; height: 4px; border-radius: 4px; background: #e2e8f0; transition: background 0.3s; }

@@ -38,7 +38,8 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI'),
+        // Tự động ưu tiên 127.0.0.1 để tránh lỗi khi chuyển máy
+        'redirect' => env('GOOGLE_REDIRECT_URI') ?: (env('APP_URL', 'http://127.0.0.1:8000') . '/auth/google/callback'),
     ],
 
     'facebook' => [
@@ -47,4 +48,13 @@ return [
         'redirect' => env('FACEBOOK_REDIRECT_URI'),
     ],
 
+    'tinymce' => [
+        'key' => env('TINYMCE_API_KEY'),
+    ],
+
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+    ],
+
 ];
+

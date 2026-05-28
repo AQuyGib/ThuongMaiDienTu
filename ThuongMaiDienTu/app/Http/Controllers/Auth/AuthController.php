@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\CompareController;
 
 class AuthController extends Controller
 {
@@ -60,7 +61,10 @@ class AuthController extends Controller
 
             // Không có 2FA → đăng nhập bình thường
             Auth::login($user, $request->has('remember'));
+            $currentLocale = session('locale', 'vi');
             $request->session()->regenerate();
+            session(['locale' => $currentLocale]);
+            CompareController::migrateSessionToDb();
             return redirect()->route('home');
         }
 
@@ -91,12 +95,16 @@ class AuthController extends Controller
             'email' => $request->email,
             'password_hash' => Hash::make($request->password),
             'is_2fa_enabled' => 0,
-            'role_id' => 2, // 2 là Khách hàng
+            'role_id' => 3, // 3 là Khách hàng
             'status' => 'Active',
             'member_tier' => 'Dong'
         ]);
 
         Auth::login($user);
+        if (!session()->has('locale')) {
+            session(['locale' => 'vi']);
+        }
+        CompareController::migrateSessionToDb();
         return redirect()->route('home');
     }
 
@@ -105,9 +113,16 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        // Đăng xuất người dùng khỏi hệ thống
         Auth::logout();
+        
+        // Hủy bỏ và xóa sạch toàn bộ dữ liệu trong session hiện tại
         $request->session()->invalidate();
+        
+        // Làm mới (regenerate) CSRF token để ngăn chặn tấn công giả mạo yêu cầu
         $request->session()->regenerateToken();
+        
+        // Quay về trang chủ sau khi đã đăng xuất thành công
         return redirect()->route('home');
     }
 }

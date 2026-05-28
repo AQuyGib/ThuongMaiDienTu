@@ -7,10 +7,15 @@ use Illuminate\Http\Request;
 
 class ArticleFrontendController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $tag = $request->input('tag');
+
         // 3 bài viết mới nhất làm bài nổi bật (Featured)
         $featuredArticles = Article::where('status', 'approved')
+            ->when($tag, function ($query, $tag) {
+                $this->applyTagFilter($query, $tag);
+            })
             ->orderBy('created_at', 'desc')
             ->take(3)
             ->get();
@@ -29,11 +34,25 @@ class ArticleFrontendController extends Controller
                     });
                 }
             })
+            ->when($tag, function ($query, $tag) {
+                $this->applyTagFilter($query, $tag);
+            })
             ->whereNotIn('article_id', $featuredIds)
             ->orderBy('created_at', 'desc')
-            ->paginate(12);
+            ->paginate(12)
+            ->withQueryString();
             
-        return view('articles.index', compact('featuredArticles', 'latestArticles'));
+        return view('articles.index', compact('featuredArticles', 'latestArticles', 'tag'));
+    }
+
+    private function applyTagFilter($query, string $tag)
+    {
+        return match ($tag) {
+            'standard', 'lookbook', 'storytelling' => $query->where('format_type', $tag),
+            'dienmay-pro' => $query->where('author_type', 'admin'),
+            'lifestyle' => $query,
+            default => $query,
+        };
     }
 
     public function show($slug)
