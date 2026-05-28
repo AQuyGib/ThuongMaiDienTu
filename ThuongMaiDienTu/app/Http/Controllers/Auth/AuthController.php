@@ -61,7 +61,9 @@ class AuthController extends Controller
 
             // Không có 2FA → đăng nhập bình thường
             Auth::login($user, $request->has('remember'));
+            $currentLocale = session('locale', 'vi');
             $request->session()->regenerate();
+            session(['locale' => $currentLocale]);
             CompareController::migrateSessionToDb();
             return redirect()->route('home');
         }
@@ -99,6 +101,9 @@ class AuthController extends Controller
         ]);
 
         Auth::login($user);
+        if (!session()->has('locale')) {
+            session(['locale' => 'vi']);
+        }
         CompareController::migrateSessionToDb();
         return redirect()->route('home');
     }
