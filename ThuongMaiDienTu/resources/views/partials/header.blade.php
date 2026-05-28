@@ -294,17 +294,24 @@
             </a>
             <script>
                 document.addEventListener("DOMContentLoaded", function() {
-                    let userId = '{{ Auth::id() ?? "guest" }}';
-                    let savedCount = localStorage.getItem('cartCount_' + userId);
-                    if(savedCount && parseInt(savedCount) > 0) {
-                        let badge = document.getElementById('headerCartBadge');
-                        if(badge) {
-                            badge.innerText = savedCount;
-                            badge.style.display = 'block';
-                        }
-                    }
+                    // Fetch cart count dynamically from server
+                    fetch('{{ route("cart.count") }}')
+                        .then(response => response.json())
+                        .then(res => {
+                            let badge = document.getElementById('headerCartBadge');
+                            if(badge) {
+                                if (res.cart_count > 0) {
+                                    badge.innerText = res.cart_count;
+                                    badge.style.display = 'block';
+                                } else {
+                                    badge.style.display = 'none';
+                                }
+                            }
+                        })
+                        .catch(err => console.error(err));
 
-                    // AJAX Polling for Client Unread Notifications Count
+                    // Notification Polling and AJAX Handling from master
+                    let userId = '{{ Auth::id() ?? "guest" }}';
                     if (userId !== 'guest') {
                         const notifBadge = document.getElementById('notificationBadge');
                         const endpoint = '{{ route('notifications.unread-count') }}';

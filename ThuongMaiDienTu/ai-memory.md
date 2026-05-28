@@ -77,7 +77,6 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Bình luận Video: Hệ thống bình luận AJAX, hỗ trợ phân cấp bình luận gốc và các phản hồi (replies), tự động ẩn/hiện reply nếu có >2 phản hồi, hỗ trợ reply lồng sâu (tag mention @username), escape HTML chống XSS, cho phép người dùng/admin xóa bình luận của mình.
 - **Cấu hình Server:**
   - Nâng giới hạn upload file từ 10MB/20MB lên 100MB ở Laravel backend, frontend JS, file `.htaccess`, `.user.ini`, và cấu hình `php.ini` của XAMPP.
->>>>>>> 868cc549ac74a8fdf8ab553fd4b2a9d3bfbd2469
 
 ## TODO (Các việc cần làm tiếp theo)
 - [ ] Kết nối dự án Laravel với Database thật (sửa file `.env`).
@@ -86,6 +85,22 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - [ ] Hiển thị sản phẩm lên trang chủ khách hàng (Frontend).
 - [ ] Phát triển logic trong `CartService` và `InventoryService`.
 - [ ] Tối ưu hóa hiệu năng load video và caching lượt xem/likes để giảm tải cho DB.
+- [x] Nâng cấp hệ thống thông báo theo bản kế hoạch (sửa cache admin, sửa badge đếm chưa đọc của admin, đồng bộ form create, và tích hợp Laravel Queue).
+
+### 5. Cấu hình Giảm giá Combo Mua Kèm (Combo Discounts)
+- **Hạ tầng & Database:**
+  - Tạo migration bổ sung cột `discount_type` (mặc định 'fixed') và `discount_value` vào bảng `product_combos`.
+  - Cập nhật quan hệ `comboProducts()` trong model `Product` hỗ trợ `withPivot('discount_type', 'discount_value')`.
+  - Xây dựng `ProductComboSeeder.php` để tạo dữ liệu combo mẫu đa dạng cho các thiết bị như iPhone 15 Pro Max, Samsung Galaxy S24 Ultra và MacBook Air, đồng thời đăng ký vào `DatabaseSeeder.php`.
+- **Giao diện Admin (Quản trị Combo & Cross-sell):**
+  - Cải tiến màn hình `ProductDetail.blade.php`: Chuyển đổi hai hộp cấu hình trực tiếp (Cross-sell và Combo) thành hai thẻ mở Modal lớn, rộng rãi, thiết kế cao cấp.
+  - Tích hợp Select2 có thumbnail trực tiếp trong modal.
+  - Khi chọn sản phẩm phụ kiện trong combo, hệ thống tự động render bảng cấu hình chi tiết, cho phép chọn loại giảm giá (đ hoặc %) và nhập mức giảm kèm tính toán giá sau khi giảm trực tiếp bằng JS.
+  - Đồng bộ và lưu trữ cấu hình giảm giá qua hàm `syncCombos` trong `Admin\ProductController.php`.
+- **Logic Giỏ hàng & Frontend:**
+  - Cập nhật `_combo_bundle.blade.php` ngoài Frontend để hiển thị giá gốc bị gạch chéo, giá đã giảm kèm nhãn mức giảm (VD: -10% hoặc -50.000đ). Hiển thị tổng số tiền tiết kiệm được khi mua combo.
+  - Khi người dùng click thêm combo vào giỏ hàng, hệ thống gửi request `/cart/add` kèm theo tham số `parent_id` cho các sản phẩm phụ kiện.
+  - Cập nhật `add` method trong `CartController.php` để xử lý kiểm tra `parent_id` trên server-side, tự động lấy cấu hình giảm giá từ bảng trung gian và cập nhật giá giảm giá vào giỏ hàng một cách bảo mật (không lo bị sửa giá ở client).
 
 ## Ghi chú quan trọng
 - Sidebar Admin đã được tách biệt thành `resources/views/admin/partials/sidebar.blade.php` và `resources/js/components/AdminSidebar.tsx` để dễ quản lý.
@@ -94,139 +109,21 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - Liên kết nút "Trợ giúp trực tuyến" ở trang phát video với Trợ lý AI (gọi function `chatbotToggle()`).
 - Đã merge và push nhánh Hien/Video sạch sẽ lên remote master trước đó.
 - Khôi phục lại VideoSeeder của nhánh `Hien/Video` sử dụng 4 video cục bộ (bỏ YouTube link), đồng thời reset và chạy lại seeding dữ liệu database video cục bộ thành công theo yêu cầu của user.
+- Tính năng Combo giảm giá và cấu hình Modal đã được triển khai hoàn chỉnh cả Backend lẫn Frontend.
+- Đã gộp (merge) nhánh `master` vào nhánh `AnhQuy/ThongBao` sạch sẽ, không có xung đột.
 
-### 5. Phân hệ Đa Ngôn Ngữ (Dynamic Localization) – Branch `Hien/dangonngu`
-- **Hạ tầng dịch thuật:**
-  - `app/Services/TranslationService.php`: Dịch tự động qua Google Cloud API hoặc fallback Free Google Translate GTX API (miễn phí, không cần API key).
-  - `app/Traits/BaseTranslationTrait.php`: Trait gắn vào Model, tự động dịch khi `saved()`, intercept `getAttribute()` trả về bản dịch theo locale hiện tại.
-  - `app/Observers/BaseTranslationObserver.php`: Observer tách riêng vòng đời dịch.
-  - `app/Jobs/TranslateModelJob.php`: Job queue dịch bất đồng bộ (tùy config `translatable.observer.queue_if_available`).
-  - `config/translatable.php`: Cấu hình source_locale (vi), target_locale (en), supported_locales, auto_translate, observer settings.
-- **Database Translation Tables (Separate Translation Table pattern):**
-  - `product_translations`: migration `2026_05_27_000004`, model `ProductTranslation.php`.
-  - `category_translations`: migration `2026_05_27_000001`, model `CategoryTranslation.php`.
-  - `attribute_translations`: migration `2026_05_27_000002`, model `AttributeTranslation.php`.
-  - `page_translations`: migration `2026_05_27_000003`, model `PageTranslation.php`.
-  - Các bảng mới: `attributes` (migration `2026_05_26_000001`), `pages` (migration `2026_05_26_000002`).
-  - Bổ sung cột `description`, `seo_description`, `sort_order`, `is_active` vào bảng `categories` (migration `2026_05_27_000005`).
-- **API Đa Ngôn Ngữ:**
-  - `routes/api.php`: API v1 với middleware `ResolveApiLocale` hỗ trợ `?locale=en` hoặc header `X-Locale`.
-  - Controllers: `Api\ProductController`, `Api\CategoryController`, `Api\PageController`, `Api\AttributeController`.
-  - Resources: `ProductResource`, `CategoryResource`, `PageResource`, `AttributeResource` dùng trait `TranslatesResource`.
-  - `ApiWrapsResponse` trait bổ sung `locale` vào mọi API response.
-- **Batch Translation Command:**
-  - `app/Console/Commands/TranslateAllModels.php`: Lệnh `php artisan translate:all` dịch hàng loạt cho tất cả hoặc model cụ thể (`--model=Product`), hỗ trợ `--force` để dịch lại.
-  - Đã chạy thành công: 21 categories + 34 products đã được dịch tự động sang tiếng Anh.
-- **Language Switcher trên Frontend:**
-  - Đã thêm route `/locale/{locale}` đặt tại `routes/web.php` giúp lưu lựa chọn ngôn ngữ vào Session.
-  - `app/Http/Middleware/SetLocaleFromSession.php`: Middleware tự động kiểm tra và cấu hình ngôn ngữ `app()->setLocale()` dựa trên Session của mỗi Request. Đã đăng ký vào group `web` trong `bootstrap/app.php`.
-  - Đã tích hợp nút bấm và Menu thả xuống (Language Switcher dropdown) cực kỳ mượt mà, trực quan ngay góc trên bên phải của Top Bar tại `resources/views/partials/header.blade.php`, hỗ trợ lưu trạng thái cờ và ngôn ngữ được lựa chọn. Nút được thiết kế tinh giản chữ trơn màu trắng không viền, không nền để ăn nhập hoàn hảo với thanh Top Bar.
-  - **Sửa lỗi màu sắc Header:** Thiết lập màu nền của thanh **Top Bar** thành dải màu gradient chuyển từ Xanh dương sang Tím rồi tới Đỏ (`linear-gradient(90deg, #0046ab 0%, #6b21a8 50%, #d70018 100%)`).
-- **Dịch Text Tĩnh Giao Diện (Static UI Translation):**
-  - Tạo thư mục `lang/vi/ui.php` và `lang/en/ui.php` chứa toàn bộ chuỗi text tĩnh của giao diện (header, footer, mega menu, province modal).
-  - Đã cập nhật `resources/views/partials/header.blade.php`: Toàn bộ text tĩnh tiếng Việt (top bar, nút danh mục, thanh tìm kiếm, thông báo, giỏ hàng, đăng nhập/xuất, mega menu, province modal) đều dùng `__('ui.key')`.
-  - Đã cập nhật `resources/views/partials/footer.blade.php`: Toàn bộ text tĩnh (hotline, về công ty, chính sách, kết nối) đều dùng `__('ui.key')`.
-  - Khi chuyển ngôn ngữ sang EN, toàn bộ giao diện header + footer tự động hiển thị tiếng Anh.
-  - **Sửa Lỗi Icon Danh Mục Khi Dịch:** Khi dịch tên danh mục sang Tiếng Anh (`Smartphones`, `Laptops`...), map `$categoryIcons` và `$sidebarIcons`/`$quickLinkIcons` bị mất do key cũ là tiếng Việt. Đã bổ sung cả các key Tiếng Anh tương ứng vào các mảng này tại `resources/views/partials/header.blade.php` và `resources/views/home.blade.php` để giữ nguyên icon và ảnh đại diện cực kỳ chuẩn xác.
-  - **Tối Ưu Chống Giật Giao Diện (Layout Shift & Responsiveness):** Đã nâng cấp cơ chế chống giật sang dạng **co giãn mềm dẻo (Fluid responsive)** để vừa ngăn layout shift vừa không gây tràn/chồng chéo chữ trên mọi kích thước màn hình:
-    - Thiết lập `.logo` (`min-width: 160px`), `.header-category-btn` (`min-width: 110px`), `.header-province-btn` (`min-width: 120px`), `.action-item` (`min-width: 65px`), `.lang-switcher-btn` (`min-width: 60px`) kết hợp cùng padding mềm mại để các nút tự điều chỉnh theo độ dài chữ của từng ngôn ngữ mà không bị ép cứng chật chội.
-    - Khôi phục bản dịch tiếng Anh đầy đủ cho Top Bar (`lang/en/ui.php`) để khớp 100% ngữ nghĩa và số lượng cột của Tiếng Việt. Đồng thời thu gọn kích cỡ chữ Top Bar (`font-size: 11px`) để chứa trọn vẹn cả hai ngôn ngữ mà không bị lỗi hay lệch dòng.
-    - Loại bỏ thuộc tính `gap` (`gap: 0`) ở `.top-bar-left` và `.top-bar-right`, đồng thời thiết lập padding đồng đều `padding: 2px 8px` cho toàn bộ phần tử `span` và `.lang-switcher-btn`. Điều này giúp các vạch ngăn cách (divider border) được hiển thị đối xứng hoàn hảo, khoảng cách cực kỳ gọn gàng và tinh tế, không bị quá xa hay lệch.
-- **Provider Registration:**
-  - `bootstrap/providers.php`: Đã thêm `TranslationServiceProvider` và `TranslatableHelperServiceProvider`.
-  - **Fix:** Đã xóa key `providers` sai trong `config/app.php` (Laravel 11 dùng `bootstrap/providers.php` thay vì `config/app.php` để đăng ký providers).
-- **TranslationService Fallback (Free Google Translate):**
-  - Khi không có `GOOGLE_TRANSLATE_API_KEY` trong `.env`, hệ thống tự động fallback sang endpoint miễn phí: `https://translate.googleapis.com/translate_a/single?client=gtx`.
-  - Hỗ trợ `withoutVerifying()` khi `APP_ENV=local` để tránh lỗi SSL trên XAMPP.
-')`) thay vì danh mục chứa sản phẩm.
-- Liên kết nút "Trợ giúp trực tuyến" ở trang phát video với Trợ lý AI (gọi function `chatbotToggle()`).
-- Đã merge và push nhánh Hien/Video sạch sẽ lên remote master trước đó.
-- Khôi phục lại VideoSeeder của nhánh `Hien/Video` sử dụng 4 video cục bộ (bỏ YouTube link), đồng thời reset và chạy lại seeding dữ liệu database video cục bộ thành công theo yêu cầu của user.
-
-### 5. Phân hệ Đa Ngôn Ngữ (Dynamic Localization) – Branch `Hien/dangonngu`
-- **Hạ tầng dịch thuật:**
-  - `app/Services/TranslationService.php`: Dịch tự động qua Google Cloud API hoặc fallback Free Google Translate GTX API (miễn phí, không cần API key).
-  - `app/Traits/BaseTranslationTrait.php`: Trait gắn vào Model, tự động dịch khi `saved()`, intercept `getAttribute()` trả về bản dịch theo locale hiện tại.
-  - `app/Observers/BaseTranslationObserver.php`: Observer tách riêng vòng đời dịch.
-  - `app/Jobs/TranslateModelJob.php`: Job queue dịch bất đồng bộ (tùy config `translatable.observer.queue_if_available`).
-  - `config/translatable.php`: Cấu hình source_locale (vi), target_locale (en), supported_locales, auto_translate, observer settings.
-- **Database Translation Tables (Separate Translation Table pattern):**
-  - `product_translations`: migration `2026_05_27_000004`, model `ProductTranslation.php`.
-  - `category_translations`: migration `2026_05_27_000001`, model `CategoryTranslation.php`.
-  - `attribute_translations`: migration `2026_05_27_000002`, model `AttributeTranslation.php`.
-  - `page_translations`: migration `2026_05_27_000003`, model `PageTranslation.php`.
-  - Các bảng mới: `attributes` (migration `2026_05_26_000001`), `pages` (migration `2026_05_26_000002`).
-  - Bổ sung cột `description`, `seo_description`, `sort_order`, `is_active` vào bảng `categories` (migration `2026_05_27_000005`).
-- **API Đa Ngôn Ngữ:**
-  - `routes/api.php`: API v1 với middleware `ResolveApiLocale` hỗ trợ `?locale=en` hoặc header `X-Locale`.
-  - Controllers: `Api\ProductController`, `Api\CategoryController`, `Api\PageController`, `Api\AttributeController`.
-  - Resources: `ProductResource`, `CategoryResource`, `PageResource`, `AttributeResource` dùng trait `TranslatesResource`.
-  - `ApiWrapsResponse` trait bổ sung `locale` vào mọi API response.
-- **Batch Translation Command:**
-  - `app/Console/Commands/TranslateAllModels.php`: Lệnh `php artisan translate:all` dịch hàng loạt cho tất cả hoặc model cụ thể (`--model=Product`), hỗ trợ `--force` để dịch lại.
-  - Đã chạy thành công: 21 categories + 34 products đã được dịch tự động sang tiếng Anh.
-- **Provider Registration:**
-  - `bootstrap/providers.php`: Đã thêm `TranslationServiceProvider` và `TranslatableHelperServiceProvider`.
-  - **Fix:** Đã xóa key `providers` sai trong `config/app.php` (Laravel 11 dùng `bootstrap/providers.php` thay vì `config/app.php` để đăng ký providers).
-- **TranslationService Fallback (Free Google Translate):**
-  - Khi không có `GOOGLE_TRANSLATE_API_KEY` trong `.env`, hệ thống tự động fallback sang endpoint miễn phí: `https://translate.googleapis.com/translate_a/single?client=gtx`.
-- **TranslateHtmlResponse Middleware (Dịch tự động trang tĩnh):**
-  - Đã viết middleware `App\Http\Middleware\TranslateHtmlResponse` tự động bắt nội dung HTML phản hồi khi `locale = en`.
-  - Tách/trích xuất toàn bộ thẻ `<script>` và `<style>` ra ngoài trước khi dùng `DOMDocument` bằng các placeholder tạm thời, giúp bảo vệ mã nguồn JavaScript (bao gồm cả template literals chứa mã HTML) khỏi bị trình phân tích DOM biến đổi hay hiển thị nhầm ra ngoài màn hình. Sau khi dịch xong sẽ khôi phục lại nguyên vẹn.
-  - Sử dụng `DOMDocument` để lọc và duyệt qua các text node cũng như các thuộc tính tĩnh (`placeholder`, `title`, `alt`), dịch tự động từ tiếng Việt sang tiếng Anh qua `TranslationService` (endpoint miễn phí của Google GTX).
-  - Tối ưu hóa xử lý lỗi quá tải API/Timeout bằng cách gộp nhóm dịch hàng loạt (Batch translation theo từng cụm 15 từ) trong 1 cuộc gọi duy nhất thay vì gọi riêng rẽ cho mỗi từ, kèm theo cơ chế fallback chuẩn xác và nâng thời gian thực thi tối đa lên 120 giây.
-  - Tích hợp lưu cache trọn đời bằng `Cache::rememberForever` với key hash md5 của nội dung dịch để tối ưu hiệu năng và tránh bị giới hạn API Google.
-  - Đã đăng ký middleware vào group `web` trong `bootstrap/app.php` sau middleware `SetLocaleFromSession`.
-
-- **Căn chỉnh khoảng cách Top Bar:**
-  - Sửa `.top-bar .container` sang dùng `justify-content: center` kèm `gap: 40px` để thu hẹp khoảng trống lớn ở giữa nhóm bên trái và bên phải trên màn hình lớn.
-
-- **Đa ngôn ngữ cho Chatbot AI:**
-  - Đã dịch thuật toàn bộ giao diện Chatbot (`chatbot.blade.php`) gồm: tiêu đề, trạng thái hoạt động, placeholder ô nhập, tin nhắn chào mừng (greeting), tin nhắn lỗi/loading và các nút gợi ý nhanh.
-  - Sử dụng `@json` để xuất trực tiếp biến bản dịch của Laravel vào mã script JavaScript của Chatbot, giúp Chatbot hiển thị tiếng Anh chuẩn xác 100% khi người dùng đổi ngôn ngữ.
-  - Trí tuệ nhân tạo Gemini của Chatbot hoạt động theo cơ chế phát hiện ngôn ngữ tự động (khách hỏi tiếng Anh trả lời tiếng Anh, khách hỏi tiếng Việt trả lời tiếng Việt).
-
-- **Đa ngôn ngữ cho Modal Theo dõi Tiến độ Sửa chữa (Repair Progress):**
-  - Cập nhật middleware `TranslateHtmlResponse` để bỏ qua việc duyệt qua các thẻ con của `<textarea>` (tránh dịch dữ liệu người dùng nhập) nhưng vẫn dịch đầy đủ thuộc tính `placeholder` (như ô *"Mô tả chi tiết tình trạng máy lỗi và linh kiện cần thay thế..."*).
-  - Tích hợp hệ thống bản dịch vào script điều khiển Modal Theo dõi Tiến độ Sửa chữa ở trang cá nhân (`profile.blade.php`). Toàn bộ các dòng trạng thái tĩnh lẫn động được cập nhật qua JS (`step-received-desc`, `step-checking-desc`, `step-repairing-desc`, `step-done-desc`, `track-tech`) đã được đa ngôn ngữ hóa bằng `@json(__('ui.key'))`.
-  - Hỗ trợ dịch động tên Kỹ thuật viên phụ trách (Ví dụ: `Quản Trị Viên` thành `Administrator` khi chuyển sang ngôn ngữ tiếng Anh).
-
-- **Tự động dịch phản hồi JSON (AJAX/API Requests):**
-  - Nâng cấp middleware `TranslateHtmlResponse` để tự động phát hiện các phản hồi JSON (`JsonResponse` hoặc Content-Type `application/json`) từ controller hoặc API.
-  - Phân tích cú pháp JSON, duyệt đệ quy qua các giá trị chuỗi (values) và dịch tự động các chuỗi tiếng Việt sang tiếng Anh bằng `TranslationService` (vẫn tận dụng cache và dịch hàng loạt batch translation).
-  - Tối ưu hóa bộ lọc dịch `shouldTranslate` để bỏ qua các trường dữ liệu hệ thống như: URL (`http/https`), đường dẫn tương đối (`/storage`, `/assets`), tên tệp tin ảnh/assets nhằm đảm bảo giữ nguyên cấu trúc hệ thống.
-  - Hỗ trợ dịch tự động tất cả các thông báo lỗi AJAX động (như thông báo "Không tìm thấy thiết bị..." ở popup tra cứu bảo hành, hoặc các thông báo lỗi Validation Form).
-
-- **Tự động dịch thuộc tính JSON lồng trong HTML (React/Vue components props):**
-  - Mở rộng middleware `TranslateHtmlResponse` khi xử lý trang HTML để quét qua toàn bộ các thuộc tính HTML chứa chuỗi JSON (ví dụ các thẻ `<div id="joly-admin-sidebar" data-props="...">` hoặc các thuộc tính chứa từ khóa `props` hay `data-`).
-  - Giải mã tự động chuỗi JSON trong thuộc tính đó, dịch đệ quy các giá trị chuỗi tiếng Việt thành tiếng Anh, sau đó mã hóa ngược lại HTML-safe entity (`JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP`).
-  - Giúp toàn bộ giao diện Admin (bao gồm cả Sidebar và Topbar vốn được dựng bằng React và nạp dữ liệu qua `data-props`) tự động chuyển sang tiếng Anh hoàn chỉnh khi chuyển đổi ngôn ngữ, không cần phải sửa thủ công bất kỳ component React nào.
-
-- **Tự động dịch chuỗi văn bản cứng trong thẻ JavaScript (`<script>`):**
-  - Nâng cấp middleware `TranslateHtmlResponse` để tự động trích xuất, phát hiện các hằng số chuỗi (string literals trong dấu nháy đơn, nháy kép, nháy ngược backtick) nằm bên trong khối lệnh JS của các thẻ `<script>`.
-  - Thu thập tất cả các chuỗi có chứa ký tự tiếng Việt (như các câu thông báo Toast, SweetAlert2, các từ điển trạng thái động như `'Chưa kích hoạt'`, `'Còn bảo hành'`,...).
-  - Gộp chung vào đợt dịch hàng loạt (Batch translation) để giảm thiểu tối đa số cuộc gọi API, sau đó thay thế trực tiếp vào mã JS trước khi trả về cho client mà không làm thay đổi các biến hay cú pháp logic hệ thống.
-  - Xử lý triệt để toàn bộ các form ẩn, hộp thoại ẩn, cảnh báo động và popup trên toàn hệ thống (bao gồm cả trang tra cứu bảo hành, trang xem video, trang giỏ hàng,...).
-
-- **Tự động dịch thuộc tính `value` của nút bấm (`<input type="submit|button|reset">`):**
-  - Mở rộng phạm vi của `TranslateHtmlResponse` để tự động thu thập và dịch thuộc tính `value` của các thẻ `<input>` thuộc loại nút bấm.
-  - Đảm bảo các nút bấm như `<input type="submit" value="Lưu lại">` hoặc `<input type="button" value="Hủy">` được tự động chuyển ngữ sang tiếng Anh chính xác mà không dịch nhầm các ô nhập văn bản (text input).
-
-- **Từ điển ánh xạ dịch ưu tiên (Custom Translation Dictionary Overrides):**
-  - Tích hợp từ điển ưu tiên trong `TranslationService` để thay thế trực tiếp các thuật ngữ quản trị phổ biến thay vì dùng Google Translate API mặc định.
-  - Đảm bảo từ "Bảng điều khiển" luôn được dịch chuẩn xác là "Dashboard" (thay vì "Control panel" của Google Translate).
-  - Đồng thời chuẩn hóa dịch nhanh các mục menu khác của trang Admin như: "Sổ Quỹ & Thu chi" -> "Cashbook & Expenses", "Phiếu sửa chữa" -> "Repair Tickets", "Hóa đơn dịch vụ" -> "Service Invoices", "Điều chuyển kho" -> "Warehouse Transfer", "Đổi thưởng" -> "Rewards",...
-
-- **Đa ngôn ngữ hóa trang Thống kê KPI Nhân sự (admin/kpi):**
-  - Dịch tiêu đề trang và placeholder tải dữ liệu trong file blade `resources/views/admin/kpi/index.blade.php` dựa trên locale hiện tại (`app()->getLocale() === 'en'`).
-  - Hỗ trợ dịch thuật toàn diện các nhãn tĩnh, bộ lọc ngày tùy chỉnh, bảng vàng doanh thu của nhân viên kinh doanh & kỹ thuật trong component React `KPIDashboard.tsx` thông qua hàm `t(...)` có sẵn.
-  - Tối ưu hóa sidebar quản trị `AdminSidebar.tsx` và `sidebar.blade.php` để chuyển đổi toàn bộ nhãn menu (như "Bảng điều khiển" thành "Dashboard", "Thống kê KPI" thành "KPI Statistics", v.v.) và các tên danh mục quản trị theo locale hiện tại, đồng thời đảm bảo màu sắc icon hoạt động (`getActiveIconColor`) khớp chính xác bất kể nhãn là tiếng Anh hay tiếng Việt.
-  - Biên dịch thành công mã nguồn CSS/JS của Admin Dashboard và Sidebar bằng Vite (`npm run build`).
-
-- **Đa ngôn ngữ hóa Thanh công cụ Quản trị (AdminTopbar):**
-  - Khắc phục lỗi hiển thị thứ ngày bị cứng tiếng Việt bằng cách cấu hình phương thức `toLocaleDateString` và `toLocaleTimeString` trong component `AdminTopbar.tsx` sử dụng mã ngôn ngữ động dựa trên locale hiện tại (`isEn() ? 'en-US' : 'vi-VN'`).
-  - Thiết kế và triển khai menu thả xuống (Dropdown selector) được kích hoạt bởi biểu tượng quả địa cầu (Globe icon) kết hợp nhãn ngôn ngữ hiện tại (VI/EN) nằm ngay trước nút phóng to màn hình (fullscreen) trên `AdminTopbar.tsx`. Dropdown này hiện tại hỗ trợ lựa chọn Tiếng Việt (🇻🇳 Tiếng Việt) và English (🇺🇸 English), đồng thời được thiết kế theo dạng danh sách mở rộng (array config) để dễ dàng tích hợp thêm các ngôn ngữ khác trong tương lai.
-  - Tự động bắt sự kiện click-outside để đóng menu và biên dịch thành công mã nguồn với Vite.
+### 6. Nâng cấp hệ thống Thông báo (Notification System Upgrade)
+- **Sửa lỗi Cache thống kê Admin:** Thêm `Cache::forget('admin_notifications_index_stats_and_charts')` vào `store()`, `destroy()`, `bulkDestroy()`, `lowStockCheck()` trong `NotificationCampaignController.php`.
+- **Sửa lỗi Badge đếm thông báo Admin:** Lọc `unreadCount` theo `user_id` của Admin đang đăng nhập thay vì đếm toàn hệ thống (cả `NotificationCampaignController@unreadCount` và `topbar.blade.php`).
+- **Tích hợp Laravel Queue:** Tạo `SendNotificationCampaignJob.php` xử lý gửi thông báo hàng loạt chạy ngầm, tránh timeout. Controller `store()` gọi `SendNotificationCampaignJob::dispatch()` thay vì xử lý đồng bộ.
+- **Nâng cấp form tạo chiến dịch:** Viết lại `admin/notifications/create.blade.php` từ layout cũ (`layouts.app`) sang layout admin (`admin.layouts.master`), thêm multi-select AJAX cho sản phẩm (`product_ids[]`), khuyến mãi (`promo_ids[]`), và tìm chọn tài khoản cụ thể (`user_ids[]`) giống Modal ở trang Index.
+- Đã gộp (merge) nhánh `master` vào nhánh hiện tại `AnhQuy/ThongBao` sạch sẽ, không có xung đột.
+- Đã lập bản kế hoạch và triển khai nâng cấp thành công hệ thống thông báo:
+  - Sửa lỗi Stale Cache thống kê Dashboard Admin: Xóa cache `admin_notifications_index_stats_and_charts` khi tạo mới, xóa, xóa hàng loạt, hoặc quét tồn kho thấp.
+  - Sửa lỗi lọc Badge Admin (Admin Unread Count): Badge trên topbar Admin chỉ đếm số thông báo chưa đọc của chính Admin đang đăng nhập.
+  - Đồng bộ Form tạo mới chiến dịch: Merge tự động các input đơn lẻ `product_id` và `promo_id` thành các mảng `product_ids` và `promo_ids` ở controller để tương thích hoàn toàn với cả form tạo mới trang lẻ và modal index.
+  - Tích hợp hàng đợi Laravel Queue: Tạo `SendNotificationCampaignJob` để xử lý gửi thông báo chiến dịch hàng loạt dưới background, giảm thiểu rủi ro Timeout.
+  - Viết thêm Unit Test kiểm thử thành công cơ chế Dispatch Job và Xóa cache trong `tests/Feature/NotificationTest.php`.
 
 - **Tài liệu hóa & Comment chi tiết mã nguồn:**
   - Viết chú thích (comments) bằng tiếng Việt cực kỳ chi tiết cho các file cốt lõi của tính năng gồm:
@@ -237,11 +134,174 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - `resources/js/components/AdminTopbar.tsx`
   - Đảm bảo các kỹ sư tiếp quản dễ dàng nắm vững kiến trúc, các bước hoạt động (quét DOM, dịch gộp, bộ lọc dịch, cách intercept model, click-outside, v.v.).
 
+<<<<<<< HEAD
+### 7. Phân hệ Đa Ngôn Ngữ (Dynamic Localization) - Gộp nhánh thành công
+- **Khắc phục lỗi View Product list:**
+  - Đã khôi phục và đồng bộ chính xác file `ProductController.php` và `Product.blade.php` trên nhánh `Hien/dangonngu` trước khi merge vào `master`.
+  - Tích hợp eager loading bản dịch (`withTranslation()` và `category.translations`) cho danh sách sản phẩm giúp trang quản trị hiển thị mượt mà.
+  - Sau đó gộp (merge) sạch sẽ nhánh `Hien/dangonngu` vào `master`. Trang quản trị sản phẩm hiện tại hoạt động bình thường, không còn lỗi.
+
+### 10. Chức năng Lịch sử Biến động Kho (Inventory Movements Ledger) - Đăng Nguyên
+- **Hạ tầng & Model:**
+  - Tạo mới `app/Models/InventoryMovement.php` model.
+  - Tạo `database/seeders/InventoryMovementSeeder.php` sinh ngẫu nhiên lịch sử phong phú (sale, import, restock, return, adjustment) trong 30 ngày qua và đăng ký vào `database/seeders/DatabaseSeeder.php`.
+- **Giao diện & Logic:**
+  - Tạo `app/Http/Controllers/Admin/InventoryMovementController.php` xử lý bộ lọc (sản phẩm, loại biến động, ngày bắt đầu/kết thúc, từ khóa tìm kiếm) và phân trang.
+  - Tạo view `resources/views/admin/inventory/movements.blade.php` với bảng biến động kho hiển thị số lượng thay đổi trực quan, lý do và link đơn hàng.
+
+### 11. Chức năng Kiểm kê & Cân bằng Kho (Inventory Audit & Reconciliation) - Đăng Nguyên
+- **Hạ tầng & Model:**
+  - Tạo file migration khởi tạo bảng phiếu kiểm kê `inventory_audits` và chi tiết chênh lệch `inventory_audit_details`.
+  - Tạo các model `app/Models/InventoryAudit.php` và `app/Models/InventoryAuditDetail.php`.
+- **Giao diện & Logic:**
+  - Tạo `app/Http/Controllers/Admin/InventoryAuditController.php` quản lý danh sách, form tạo phiếu động bằng JS và xem chi tiết đối chiếu chênh lệch thừa/thiếu.
+  - Tích hợp logic **Cân bằng kho (Reconcile)**:
+    - Nếu **Thiếu** hàng: Cập nhật trạng thái các IMEI tương ứng thành `Defective` và gọi `InventoryService->deductStock()` để trừ tồn kho.
+    - Nếu **Thừa** hàng: Tự động sinh mã IMEI tạm thời `SYS-AUD-XXXX` và gọi `InventoryService->restoreStock()` để cộng thêm tồn kho.
+    - Khóa phiếu sang trạng thái `Completed`.
+  - Tạo các view: `resources/views/admin/inventory/audits/index.blade.php`, `resources/views/admin/inventory/audits/create.blade.php`, `resources/views/admin/inventory/audits/show.blade.php` kèm cảnh báo xác nhận qua SweetAlert2.
+  - Tích hợp 2 tab "Biến động kho" và "Kiểm kê kho" vào thanh tab điều hướng `resources/views/admin/partials/inventory-nav.blade.php`.
+
+### 12. Nâng cấp Xác thực & Giới hạn Đánh giá sản phẩm (Product Reviews Validation)
+- **Bảo mật & Phân quyền:**
+  - Bắt buộc đăng nhập mới được viết đánh giá (Backend kiểm tra qua `ReviewController@store` và trả về lỗi `401 Unauthorized` nếu chưa Login).
+  - Ẩn form viết đánh giá ngoài Frontend đối với khách vãng lai, thay bằng thông báo kèm nút dẫn đến trang Đăng nhập.
+  - Chỉ cho phép người dùng đã đăng nhập phản hồi (Reply) đánh giá (ẩn toàn bộ nút "Trả lời" và form Reply với khách vãng lai).
+- **Giới hạn số lượng ảnh/video & Hỗ trợ định dạng:**
+  - Bổ sung logic kiểm tra MimeType trên Backend để giới hạn tối đa chỉ cho phép upload 5 tệp tin hình ảnh cho mỗi đánh giá.
+  - Nâng giới hạn dung lượng tải video trong đánh giá sản phẩm lên **100MB** (ngang hàng với giới hạn đăng video ở trang quản lý của Admin), trong khi giữ giới hạn ảnh tối đa là **5MB**.
+  - Mở rộng danh sách định dạng ảnh hợp lệ tại Backend bao gồm cả `webp`, `gif`, và `jfif` nhằm tránh lỗi xác thực khi người dùng tải lên hình ảnh từ trình duyệt hiện đại hoặc screenshot.
+  - Việt hóa hoàn toàn các thông báo lỗi xác thực của Laravel để hiển thị thông tin rõ ràng và thân thiện.
+  - Đồng bộ nhãn chỉ dẫn tải tệp phía Frontend thành "Thêm ảnh / video (tối đa 5 ảnh, video < 100MB)".
+
+### 13. Trang quản lý Bình luận & Đánh giá trong Admin (Admin Comment Management)
+- **Bộ điều khiển (Controller):**
+  - Tạo mới `app/Http/Controllers/Admin/CommentManagementController.php` để xử lý kiểm duyệt đánh giá sản phẩm (`reviews`) và bình luận video (`video_comments`).
+  - Hỗ trợ phân trang độc lập, tìm kiếm theo từ khóa (tên người dùng, nội dung bình luận, tên sản phẩm/video), bộ lọc số sao (đối với đánh giá).
+  - Tích hợp tính năng xóa bình luận/đánh giá cha đồng thời tự động xóa (cascade) các phản hồi liên quan để giữ sạch dữ liệu.
+  - Tích hợp tính năng phản hồi (Reply) trực tiếp từ Admin.
+- **Định tuyến (Routes):**
+  - Đăng ký nhóm route `/admin/comments` cho phép xem danh sách, xóa và phản hồi cho cả 2 thực thể bình luận và đánh giá trong `routes/web.php`.
+- **Giao diện (Frontend & Sidebar):**
+  - Thêm menu điều hướng "Bình luận & Đánh giá" với icon `fa-comments` vào Sidebar Admin (`sidebar.blade.php`).
+  - Tạo view `resources/views/admin/comments/index.blade.php` sử dụng thiết kế dạng thẻ hiện đại, phân chia tab rõ ràng, hiển thị trực quan tệp đính kèm (ảnh/video với lightbox phóng to) và tích hợp các hộp thoại phản hồi/xác nhận xóa qua SweetAlert & Bootstrap Modal.
+
+### 14. Hệ thống kiểm duyệt Bình luận & Đánh giá (Comment Moderation & JS Fix)
+- **Hạ tầng & Database:**
+  - Tạo migration thêm cột `is_approved` (boolean, mặc định `true` cho các bản ghi cũ) vào bảng `reviews` và `video_comments` để giữ hiển thị cho dữ liệu lịch sử.
+  - Cấu hình fillable `is_approved` trong hai Model tương ứng.
+- **Quy trình Kiểm duyệt (Approval Flow):**
+  - Frontend: Khi người dùng bình thường đăng đánh giá sản phẩm hoặc bình luận góc video, giá trị `is_approved` mặc định lưu là `0` (Chờ duyệt). Trình duyệt sẽ nhận được thông báo phản hồi thân thiện về việc đang chờ duyệt. Đối với Admin/Manager (role 1, 2) hoặc các câu trả lời do Admin gửi, bình luận sẽ tự động duyệt ngay lập tức (`is_approved = 1`).
+  - Lọc hiển thị Frontend: Cập nhật `ProductController@show` và `VideoController@getComments` chỉ tải những đánh giá, bình luận gốc và các phản hồi con đã được kiểm duyệt (`where('is_approved', 1)`).
+- **Hành động trong Admin:**
+  - Thêm hai phương thức `approveReview` và `approveVideoComment` trong `CommentManagementController` và định nghĩa route tương ứng.
+  - Hiển thị cột "Trạng thái" dạng badge màu sắc trực quan (Đã duyệt / Chờ duyệt) ở trang danh sách admin. Bổ sung nút **Duyệt** màu xanh lá đối với các dòng đang chờ duyệt.
+  - Sửa lỗi nút **Xóa phản hồi** (Reply Delete) không hoạt động và lỗi JS liên quan đến Bootstrap modal khởi tạo thủ công bằng cách chuyển sang sử dụng hoàn toàn cơ chế kích hoạt khai báo qua các thuộc tính data-attributes HTML5 (`data-bs-toggle="modal"`, `data-bs-target`) và lắng nghe sự kiện Native Bootstrap (`show.bs.modal`, `hidden.bs.modal`), triệt tiêu hoàn toàn sự phụ thuộc trực tiếp vào biến toàn cục `bootstrap` trong Javascript.
+
+### 15. Hệ thống báo cáo vi phạm bình luận từ người dùng (User Comment Reporting & Auto-moderation)
+- **Cơ chế báo cáo vi phạm:**
+  - Người dùng có thể click nút "Báo cáo" cạnh mỗi đánh giá sản phẩm hoặc bình luận video.
+  - POST request gửi tới route `/reviews/{id}/report` hoặc `/videos/comments/{comment}/report` để tăng cột `report_count` lên 1.
+  - Ngưỡng tự động ẩn: Khi `report_count >= 3`, trạng thái `is_approved` tự động chuyển sang `0` (ẩn khỏi trang người dùng để chờ quản trị viên phê duyệt lại).
+- **Trang quản trị (Admin Panel):**
+  - Cột trạng thái hiển thị thêm badge báo động đỏ `Báo cáo: X` nếu `report_count > 0`.
+  - Nút hành động **Bỏ báo cáo** được tích hợp nhằm cho phép Admin xóa toàn bộ báo cáo vi phạm (`report_count = 0`), đồng thời tự động khôi phục và duyệt lại nội dung đó (`is_approved = 1`).
+- **Các file sửa đổi:**
+  - `routes/web.php`
+  - `app/Http/Controllers/ReviewController.php`
+  - `app/Http/Controllers/VideoController.php`
+  - `app/Http/Controllers/Admin/CommentManagementController.php`
+  - `resources/views/admin/comments/index.blade.php`
+  - `resources/views/frontend/products/partials/reviews.blade.php`
+  - `resources/views/videos/index.blade.php`
+- **Tích hợp Gemini AI:**
+  - Đã tích hợp Google Gemini AI (model `gemini-2.5-flash`) vào `CommentModerationService.php`.
+  - Tự động gọi API phân tích nội dung bình luận khi cấu hình `GEMINI_API_KEY` trong file `.env`.
+  - **Tối ưu hóa Fallback:** Nếu có API Key, hệ thống bỏ qua kiểm tra blacklist cục bộ. Nếu không cấu hình API Key, hệ thống sẽ sử dụng danh sách từ khóa đen tiếng Việt cục bộ (bao gồm các từ tục tĩu) và quét regex link spam để bảo vệ trang web.
+
+### 16. Hoàn thiện thông báo kiểm duyệt & Cơ chế Fallback an toàn (Comment Moderation Alert & Fallback Fixes)
+- **Cơ chế thông báo kiểm duyệt động & Cuộn mượt:**
+  - Cập nhật JavaScript frontend của đánh giá sản phẩm (`reviews.blade.php`) và bình luận video (`videos/index.blade.php`) để hiển thị thông báo phản hồi động từ server thay vì cố định thông báo "Đăng bình luận thành công" như trước.
+  - Tích hợp thêm kiểu dáng Warning cho Toast/Modal khi bình luận bị đánh dấu nhạy cảm và chờ duyệt để người dùng nắm rõ trạng thái.
+  - Thêm cơ chế tự động cuộn mượt (smooth scroll) về vị trí phần đánh giá (`#reviews-section`) sau khi trang tải lại để tránh tình trạng màn hình tự nhảy lên đầu trang.
+- **Tối ưu hóa Fallback kiểm duyệt:**
+  - Sửa lỗi trong `CommentModerationService.php`: Trong trường hợp có API Key nhưng cuộc gọi API Gemini gặp lỗi hoặc quá tải (trả về null), hệ thống sẽ tự động sử dụng danh sách từ khóa đen (blacklist) cục bộ làm phương án dự phòng thay vì tự động phê duyệt bình luận.
+- **Sửa quan hệ trong Eloquent:**
+  - Khắc phục quan hệ `user` trong Model `Review.php` bằng cách định nghĩa tường minh khóa ngoại và khóa chính (`user_id`, `user_id`) để tương thích với cấu trúc DB hiện tại.
+- **Các file sửa đổi:**
+  - `app/Services/CommentModerationService.php`
+  - `app/Models/Review.php`
+  - `resources/views/frontend/products/partials/reviews.blade.php`
+  - `resources/views/videos/index.blade.php`
+  - `app/Http/Controllers/Frontend/ProductController.php` (lọc các đánh giá và phản hồi chưa duyệt)
+  - `resources/views/admin/comments/index.blade.php` (sửa lỗi gửi POST nhầm sang admin/comments khi chạy dự án trong thư mục con)
+
+### 17. Xóa hàng loạt bình luận & Báo cáo comment phụ
+- **Xóa hàng loạt (Bulk Delete):**
+  - Thêm checkbox "Chọn tất cả" vào header bảng đánh giá và bảng bình luận video.
+  - Thêm checkbox từng dòng cho mỗi bình luận/đánh giá.
+  - Thanh hành động hàng loạt (bulk action bar) hiển thị khi có item được chọn, cho phép xóa nhiều bình luận cùng lúc với xác nhận SweetAlert.
+  - Backend: 2 route POST mới (`bulk-delete`) + 2 method mới trong `CommentManagementController`.
+- **Báo cáo comment phụ & Modal xác nhận báo cáo:**
+  - Thêm nút "Báo cáo" vào các reply (comment phụ) trong trang chi tiết sản phẩm (`reviews.blade.php`).
+  - Thay thế hộp thoại xác nhận báo cáo mặc định của trình duyệt (`confirm`) bằng Modal xác nhận tùy chỉnh (`showConfirm`) với thiết kế cảnh báo màu cam (`warning` theme) để tăng trải nghiệm người dùng đồng nhất.
+- **Các file sửa đổi:**
+  - `routes/web.php`
+  - `app/Http/Controllers/Admin/CommentManagementController.php`
+  - `resources/views/admin/comments/index.blade.php`
+  - `resources/views/frontend/products/partials/reviews.blade.php`
+
+- **Khắc phục hoàn toàn việc nhảy trang lên đầu sau khi reload (Submit Review/Reply/Report):**
+  - Tắt tính năng tự động khôi phục cuộn của trình duyệt (`history.scrollRestoration = 'manual'`) trước khi cuộn để tránh xung đột.
+  - Sử dụng cờ chuyên biệt `scroll_to_reviews` trong `sessionStorage` kết hợp với `setTimeout(..., 100/150)` nhằm đợi toàn bộ cấu trúc trang (DOM & Layout) ổn định rồi mới thực hiện cuộn mượt xuống đúng vị trí `#reviews-section`.
+  - Áp dụng đồng bộ cho cả 3 thao tác: Gửi đánh giá mới, Phản hồi (Reply) và Gửi báo cáo (Report).
+
+- **Tối giản hóa và tối ưu giao diện bảng quản lý Admin:**
+  - Ngăn chặn hoàn toàn việc vỡ chữ, xuống dòng đứng ở các tiêu đề bảng bằng cách thêm `white-space: nowrap !important;` cho `th` và định dạng khoảng cách cột hợp lý.
+  - Rút ngắn nhãn cột: "Nội dung đánh giá & Phản hồi" -> "Nội dung & Phản hồi", "Tệp đính kèm" -> "Đính kèm".
+  - Chuyển đổi các nút hành động (Duyệt, Bỏ báo cáo, Phản hồi, Xóa) sang dạng Icon-only nhỏ gọn, kèm Tooltip chi tiết để giải phóng diện tích hiển thị cho phần nội dung chính, tránh tình trạng bảng bị bóp nghẹt.
+
+- **Tính năng xử phạt thành viên vi phạm (Cấm bình luận):**
+  - Đã thêm cột `comment_banned_until` kiểu `timestamp` (cho phép NULL) vào bảng `users`.
+  - Tích hợp SweetAlert lựa chọn hình phạt trực quan khi Admin nhấn nút **Xóa** bình luận/đánh giá (Các tùy chọn: *Không cấm*, *Cấm bình luận 1 ngày*, *Cấm bình luận 3 ngày*, *Cấm bình luận vĩnh viễn*).
+  - Cập nhật hàm xóa trong `CommentManagementController` để đọc tham số `penalty` và áp đặt hạn cấm bình luận tương ứng lên tài khoản người viết.
+  - Cập nhật cả 2 cổng API gửi bình luận chính (`ReviewController@store` cho đánh giá sản phẩm và `VideoController@storeComment` cho bình luận Góc video) để kiểm tra cột hạn cấm và trả về thông báo lỗi chi tiết, chặn tuyệt đối hành vi lách luật.
+
+- **Tối ưu hóa Hệ thống thông báo Đánh giá & Xử phạt:**
+  - Tắt thông báo tự động "Đánh giá của bạn đã được ghi nhận" khi người dùng tạo đánh giá mới (xóa trong Event Booted của `Review` model).
+  - Tự động gửi thông báo vi phạm khi Admin xóa đánh giá hoặc bình luận video ("Đánh giá/Bình luận đã bị gỡ bỏ do vi phạm tiêu chuẩn cộng đồng").
+  - Tự động gửi thông báo cấm hoạt động ("Tài khoản bị hạn chế [Thời gian]") khi Admin áp đặt lệnh cấm.
+  - Tự động gửi thông báo khôi phục quyền bình luận khi Admin thực hiện thao tác gỡ cấm.
+
+- **Bổ sung Tải ảnh / video khi phản hồi (Reply):**
+  - Tích hợp nút upload chung ảnh/video cùng khung hiển thị preview bên trong form trả lời bình luận (`reply-form`) tại `reviews.blade.php`.
+  - Hỗ trợ append file tải lên (`media[]`) trong AJAX request của `submitReply`.
+  - Hiển thị danh sách file đính kèm dưới nội dung câu trả lời ở cả giao diện người dùng và trang quản trị Admin.
+
+- **Tối ưu hóa số thứ tự (STT) trong bảng quản trị:**
+  - Chuyển cột hiển thị mã `ID` của đánh giá/bình luận thành số thứ tự `STT` tăng dần liên tục từ 1 (đã tính toán theo trang hiện tại của dữ liệu phân trang).
+
+- **Sửa lỗi không hiển thị popup xác nhận xóa (SweetAlert):**
+  - Chuyển cơ chế lắng nghe sự kiện click của các nút xóa `.btn-action-trigger` sang Event Delegation (`document.addEventListener('click', ...)`) để hỗ trợ tốt nhất cho mọi phần tử trong DOM.
+  - Kiểm tra `document.readyState` để thực thi script ngay lập tức nếu DOM đã sẵn sàng (tránh lỗi timing khi script chạy ở chế độ async/defer).
+  - Cấu hình trong `resources/js/app.tsx` để bỏ qua Soft Navigation (SPA router) và ép trình duyệt tải lại toàn bộ trang (Full Page Reload) khi truy cập `/admin/comments` giúp các script đi kèm trang quản trị bình luận/đánh giá được khởi tạo hoàn chỉnh và chính xác ngay từ lần đầu truy cập.
+
+- **Bổ sung Seeder bình luận & đánh giá:**
+  - Tạo `CommentSeeder.php` để tự động tạo dữ liệu đánh giá sản phẩm (Review) với các mức điểm 1-5 sao, nội dung bình luận ngẫu nhiên, các phản hồi (reply) từ quản trị viên, đính kèm ảnh mẫu và một số đánh giá bị báo cáo vi phạm.
+  - Tự động tạo dữ liệu bình luận video (VideoComment) kèm phản hồi mẫu và trạng thái bị báo cáo.
+  - Đăng ký `CommentSeeder` vào danh sách chạy mặc định trong `DatabaseSeeder.php`.
+
+- **Thêm chú thích chi tiết (Inline Comments & PHPDoc) trong code:**
+  - **`CommentManagementController.php`**: PHPDoc giải thích rõ ràng tham số đầu vào, quy trình kiểm soát hình phạt cấm tài khoản, logic gửi thông báo đa trạng thái (xóa/cấm) và quy tắc xóa theo tầng (cascade) của `destroyReview`, `destroyVideoComment`, `unbanUser`.
+  - **`ReviewController.php` & `VideoController.php`**: PHPDoc mô tả chi tiết cơ chế cấm người dùng bằng trường `comment_banned_until` trong `store`/`storeComment` và logic đếm lượt báo cáo tự động ẩn khi đạt từ $\ge 3$ lượt báo cáo trong `report`/`reportComment`.
+  - **`index.blade.php` (Admin)**: Chú thích chi tiết kỹ thuật Event Delegation lắng nghe từ document gốc và cơ chế readyState kiểm tra trạng thái DOM tải bất đồng bộ/SPA router.
+  - **`reviews.blade.php` (Frontend)**: Chú thích chi tiết kỹ thuật gom tệp tải lên qua `FormData`, xử lý AJAX, kiểm tra HTTP Status 403 để đổi tiêu đề popup từ "Lỗi kết nối" thành "Vi phạm".
+
+### 20. Hệ thống đa ngôn ngữ cho giao diện Đăng nhập / Đăng ký & Bảo mật phiên làm việc
 - **Sửa lỗi tính năng thích/yêu thích bị đứng ở tiếng Anh (JSON control values translation bypass):**
   - Khắc phục triệt để lỗi khi người dùng chuyển sang tiếng Anh, việc bấm Thêm vào yêu thích (Wishlist) hoặc Like video bị đứng giao diện (không đổi trạng thái nút bấm). Nguyên nhân do Middleware `TranslateHtmlResponse` tự động dịch mọi chuỗi văn bản trong response JSON, vô tình dịch luôn các mã trạng thái điều khiển máy như `'added'` thành `'added. added'` (do API Google Translate dịch sai) hoặc các mã khác, làm sai lệch điều kiện so khớp JavaScript (`data.status === 'added'`).
   - Đã thiết kế phương thức lọc `isMachineKey` trong `TranslateHtmlResponse.php` để bỏ qua các key điều khiển hệ thống (`status`, `success`, `code`, `action`, `type`, `id`, `product_id`, `user_id`, v.v.) khi dịch JSON response, đảm bảo logic JavaScript frontend hoạt động chính xác 100% trong mọi ngôn ngữ.
-
-- **Hệ thống đa ngôn ngữ cho giao diện Đăng nhập / Đăng ký & Bảo mật phiên làm việc:**
+- **Hệ thống đa ngôn ngữ cho giao diện Đăng nhập / Đăng ký:**
   - Thiết kế và triển khai nút chuyển đổi ngôn ngữ (VI/EN) trực tiếp tại góc trên bên phải của `form-panel` trong file `resources/views/Auth/login_register.blade.php`, hỗ trợ dropdown mượt mà và tự động ẩn khi click ra ngoài.
   - Tách tĩnh và thêm toàn bộ các nhãn văn bản, nút bấm (bao gồm nút "Sign in with Google" / "Đăng nhập với Google", "Trang chủ" / "Home", các tabs Đăng nhập/Đăng ký, placeholder, và nhãn input) vào các file ngôn ngữ `lang/vi/ui.php` và `lang/en/ui.php`.
   - Thay đổi toàn bộ chuỗi hardcode tiếng Việt trong `login_register.blade.php` sang hàm helper dynamic localizations `{{ __('ui.key') }}` để đảm bảo dịch thuật 100% chính xác và nhanh chóng.
@@ -250,5 +310,36 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Cập nhật và biên dịch thành công mọi thay đổi.
 
 
+### 18. Cập nhật và Khôi phục tệp video mẫu mới cho VideoSeeder
+- **Bối cảnh:** Thư mục `public/uploads/video/` bị loại trừ trong `.gitignore` dẫn đến việc thiếu tệp video mẫu khi chạy thử nghiệm trên máy cục bộ hoặc khi checkout code.
+- **Giải pháp:**
+  - Nhận diện 4 tệp tin video mới do người dùng tải lên thư mục `public/uploads/video/` dưới dạng các tên tệp tải về từ Youtube (savetube).
+  - Thực hiện đổi tên và ghi đè chúng vào các đường dẫn cấu hình mặc định của `VideoSeeder`:
+    - `cap-nhat-gia-iphone-17-...mp4` -> `Iphone 17.mp4`
+    - `top-10-may-loc-nuoc-...mp4` -> `Top10maylocnc.mp4`
+    - `top-5-dieu-hoa-di-dong-...mp4` -> `dieuhoa.mp4`
+    - `top-10-may-lanh-ban-chay-...mp4` -> `maylanh.mp4`
+  - Thực hiện chạy lệnh `php artisan db:seed --class=VideoSeeder` thành công để đồng bộ thông tin dung lượng và định dạng video mới vào cơ sở dữ liệu.
+  - Thiết kế và cập nhật 4 tệp tin ảnh thumbnail chất lượng cao (premium studio mockups) tương thích hoàn toàn với các chủ đề video mới.
+- **Các file hiện tại trong thư mục `public/uploads/video/`:**
+  - `Iphone 17.mp4` (49.4 MB)
+  - `Top10maylocnc.mp4` (24.5 MB)
+  - `dieuhoa.mp4` (46.2 MB)
+  - `maylanh.mp4` (21.4 MB)
+  - `iphone17_thumb.png` (Ảnh thiết kế premium của iPhone 17)
+  - `maylocnuoc_thumb.png` (Ảnh thiết kế premium của Máy lọc nước)
+  - `dieuhoa_thumb.png` (Ảnh thiết kế premium của Điều hòa di động)
+  - `maylanh_thumb.png` (Ảnh thiết kế premium của Máy lạnh phòng ngủ)
 
-
+### 19. Cải tiến cơ chế đếm lượt xem video & thời lượng thực tế
+- **Cập nhật thời lượng thực tế:**
+  - Đo đạc chính xác thời lượng của 4 video mới trong thư mục `public/uploads/video/`.
+  - Cập nhật thời lượng thực tế của các video vào `VideoSeeder.php` thay cho các số liệu giả lập cũ:
+    - iPhone 17: `04:23`
+    - Máy lọc nước: `05:39`
+    - Điều hòa di động: `07:05`
+    - Máy lạnh: `05:22`
+  - Thực hiện chạy lại seeder để đồng bộ thời lượng thực tế lên UI.
+- **Cải tiến logic tăng view:**
+  - **Trước đây:** Mỗi khi người dùng bấm vào một video trong playlist (click phát video) hoặc tải trang, hệ thống ngay lập tức gọi API `/videos/{video}/view` để tăng 1 lượt xem (views).
+  - **Hiện tại:** Loại bỏ hoàn toàn sự kiện tăng views tự động khi click chọn hoặc load trang. Bổ sung sự kiện lắng nghe `ended` trên thẻ phát HTML5 `<video id="main-video-player">`. Chỉ khi người dùng xem hết video, hàm `incrementViews(currentVideoId)` mới được kích hoạt để tăng lượt xem và hiển thị thông báo cảm ơn người dùng.

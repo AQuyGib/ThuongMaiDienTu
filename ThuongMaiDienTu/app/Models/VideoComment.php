@@ -13,6 +13,8 @@ class VideoComment extends Model
         'parent_id',
         'user_id',
         'content',
+        'is_approved',
+        'report_count',
     ];
 
     public function video()

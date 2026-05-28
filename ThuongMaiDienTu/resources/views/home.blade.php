@@ -469,7 +469,7 @@
         }
 
         .section-sidebar-banner {
-            width: 230px;
+            width: 200px;
             flex-shrink: 0;
             border-radius: 20px;
             overflow: hidden;
@@ -477,6 +477,7 @@
             z-index: 1;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            align-self: stretch; /* Cao bằng nội dung bên phải */
         }
 
         .section-sidebar-banner:hover {
@@ -484,10 +485,18 @@
             box-shadow: 0 20px 45px rgba(0,0,0,0.15);
         }
 
+        .section-sidebar-banner a {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
         .section-sidebar-banner img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center top;
+            display: block;
             transition: transform 0.8s ease;
         }
 
@@ -1348,9 +1357,10 @@
                     toast: true,
                     position: 'top-end'
                 });
-                const cartCountElement = document.querySelector('.cart-count');
+                const cartCountElement = document.getElementById('headerCartBadge');
                 if (cartCountElement && data.cart_count !== undefined) {
                     cartCountElement.innerText = data.cart_count;
+                    cartCountElement.style.display = data.cart_count > 0 ? 'block' : 'none';
                 }
             } else {
                 Swal.fire('Thất bại', data.message || 'Lỗi khi thêm vào giỏ', 'error');

@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\InventoryMovementController;
+use App\Http\Controllers\Admin\InventoryAuditController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\PageController;
@@ -117,6 +119,7 @@ Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'
 Route::put('/products/{id}/variants/{variantId}', [ProductController::class, 'updateVariant'])->name('products.variants.update');
 Route::delete('/products/{id}/variants/{variantId}', [ProductController::class, 'destroyVariant'])->name('products.variants.destroy');
 Route::post('/products/{id}/cross-sells', [ProductController::class, 'syncCrossSells'])->name('products.cross-sells.sync');
+Route::post('/products/{id}/combos', [ProductController::class, 'syncCombos'])->name('products.combos.sync');
 
 // ===== Phiếu Nhập Kho =====
 Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
@@ -126,6 +129,7 @@ Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->n
 
 // ===== Quản lý IMEI & Cảnh báo tồn kho =====
 Route::get('/inventory/warnings', [InventoryController::class, 'warningList'])->name('inventory.warnings');
+Route::get('/inventory/movements', [InventoryMovementController::class, 'index'])->name('inventory.movements');
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 Route::put('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.updateStatus');
 
@@ -134,6 +138,10 @@ Route::get('/api/inventory-by-warehouse', [\App\Http\Controllers\Admin\Warehouse
 Route::post('/warehouse-transfers/{id}/complete', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'complete'])->name('warehouse-transfers.complete');
 Route::post('/warehouse-transfers/{id}/cancel', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'cancel'])->name('warehouse-transfers.cancel');
 Route::resource('warehouse-transfers', \App\Http\Controllers\Admin\WarehouseTransferController::class);
+
+// ===== Kiểm kê & Cân bằng kho =====
+Route::post('/inventory-audits/{id}/reconcile', [InventoryAuditController::class, 'reconcile'])->name('inventory-audits.reconcile');
+Route::resource('inventory-audits', InventoryAuditController::class);
 
 // ===== Quản lý Sổ Quỹ (Cashbook) =====
 Route::post('cashbooks/bulk-destroy', [CashbookController::class, 'bulkDestroy'])->name('cashbooks.bulkDestroy');

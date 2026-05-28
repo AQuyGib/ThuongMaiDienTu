@@ -22,7 +22,7 @@
         <div class="footer-col">
             <h4>{{ __('ui.footer_policies') }}</h4>
             <ul>
-                <li><a href="#">{{ __('ui.footer_vip_points') }}</a></li>
+                <li><a href="{{ route('rewards.index') }}">{{ __('ui.footer_vip_points') }}</a></li>
                 <li><a href="{{ route('policy.warranty') }}">{{ __('ui.footer_warranty_policy') }}</a></li>
                 <li><a href="{{ route('policy.return') }}">{{ __('ui.footer_return_policy') }}</a></li>
                 <li><a href="#">{{ __('ui.footer_privacy') }}</a></li>

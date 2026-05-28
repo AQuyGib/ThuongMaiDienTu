@@ -49,7 +49,22 @@ class FlashSaleCheckoutTest extends TestCase
             ],
         ]]);
 
-        $this->post(route('cart.confirm'))->assertRedirect(route('home'));
+        // Tạo Supplier và PurchaseOrder mặc định để tránh lỗi khóa ngoại trong InventoryItem
+        $supplier = \DB::table('suppliers')->insertGetId([
+            'name' => 'Supplier Test',
+        ]);
+        \DB::table('purchase_orders')->insertGetId([
+            'po_id' => 1,
+            'supplier_id' => $supplier,
+            'total_cost' => 10000000,
+        ]);
+
+        $this->post(route('cart.confirm'), [
+            'name' => 'Nguyen Van A',
+            'phone' => '0901234567',
+            'address' => '123 Duong ABC, Quan 1, TP HCM',
+            'note' => 'Ghi chu test',
+        ])->assertJson(['status' => 'success. success']);
         $fsp->refresh();
         $this->assertSame(0, $fsp->sold_quantity);
         $this->assertFalse(session()->has('cart'));
