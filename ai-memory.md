@@ -1,6 +1,10 @@
 # Project Memory
 
 ## Current State & Focus
+- **Chatbot Reversion & Optimization:**
+  - Reverted recent multilingual additions to `ChatbotController.php` and `chatbot.blade.php` to restore the original Vietnamese-first prompt behavior and simple, robust HTML rendering.
+  - Cleared out the `decodeHtml` helper from `chatbot.blade.php` that was stripping `<a>` tags and corrupting `<br>` tags during message parsing and history loading.
+  - Added store policy answering capabilities to `ChatbotController.php` prompt context, enabling the AI to accurately respond to questions about warranties, returns, installment options, and point rewards with proper internal links.
 - **Lucky Wheel Localization:**
   - Fully localized both Frontend and Admin interfaces for the Rewards & Lucky Wheel module (supporting Vietnamese & English).
   - Synchronized static texts, labels, alerts, validation helpers, and Canvas/draw rendering routines in JavaScript according to `app()->getLocale()`.
@@ -10,6 +14,7 @@
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
+  - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
   - Added tag-based filtering on the lifestyle listing page.
   - Fixed admin article filters so status buttons and search now work together.
@@ -124,6 +129,7 @@
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
+  - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
   - Added tag-based filtering on the lifestyle listing page.
   - Fixed admin article filters so status buttons and search now work together.
