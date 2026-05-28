@@ -494,31 +494,20 @@
     };
 
     /**
-     * Giải mã thực thể HTML (HTML Entities)
-     */
-    function decodeHtml(html) {
-        if (!html) return '';
-        const txt = document.createElement("textarea");
-        txt.innerHTML = html;
-        return txt.value;
-    }
-
-    /**
      * Thêm tin nhắn vào chat
      * @param {string} text - Nội dung tin nhắn
      * @param {string} role - 'user' hoặc 'ai'
      * @param {boolean} save - Có lưu vào LocalStorage hay không
      */
     function appendMsg(text, role, save = true) {
-        const decodedText = decodeHtml(text);
         const div = document.createElement('div');
         div.className = 'chatbot-msg ' + role;
-        div.innerHTML = decodedText;
+        div.innerHTML = text;
         chatMessages.appendChild(div);
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         if (save) {
-            messageList.push({ text: decodedText, role: role });
+            messageList.push({ text: text, role: role });
             saveHistory(messageList);
         }
     }
