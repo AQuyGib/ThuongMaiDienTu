@@ -85,6 +85,8 @@ Route::post('/pay/wallet-points', [CartController::class, 'applyWalletPoints'])-
 Route::post('/pay/place-order', [CartController::class, 'placeOrder'])->name('cart.place-order');
 Route::get('/order-confirmation/{orderId}', [CartController::class, 'confirmation'])->name('cart.confirmation');
 Route::post('/cart/confirm', [CartController::class, 'confirmOrder'])->name('cart.confirm');
+Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('cart.apply-coupon');
+Route::get('/pay/discount-code', [CartController::class, 'discountCodeView'])->name('cart.discount-code');
 Route::post('/cart/cancel', [CartController::class, 'cancelOrder'])->name('cart.cancel');
 Route::post('/cart/timeout', [CartController::class, 'timeoutOrder'])->name('cart.timeout');
 Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
@@ -93,8 +95,8 @@ Route::get('/print-bill', [CartController::class, 'print'])->name('cart.print');
 Route::get('/cart/count', [CartController::class, 'getCartCount'])->name('cart.count');
 
 Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');
-Route::get('/rewards/{reward}', [RewardsController::class, 'show'])->name('rewards.show');
 Route::get('/rewards/history', [RewardsHistoryController::class, 'index'])->name('rewards.history');
+Route::get('/rewards/{reward}', [RewardsController::class, 'show'])->name('rewards.show');
 Route::post('/rewards/redeem', [RewardsController::class, 'redeem'])->name('rewards.redeem');
 Route::post('/rewards/spin', [RewardsController::class, 'spin'])->name('rewards.spin');
 
@@ -160,8 +162,11 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::put('products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductController::class, 'updateVariant'])->name('admin.products.variants.update');
     Route::delete('products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductController::class, 'destroyVariant'])->name('admin.products.variants.destroy');
 
+    Route::get('rewards/history', [AdminRewardsController::class, 'history'])->name('admin.rewards.history');
     Route::get('rewards', [AdminRewardsController::class, 'index'])->name('admin.rewards.index');
     Route::post('rewards', [AdminRewardsController::class, 'store'])->name('admin.rewards.store');
+    Route::post('rewards/setting', [AdminRewardsController::class, 'updateSetting'])->name('admin.rewards.update-setting');
+    Route::post('rewards/wheels', [AdminRewardsController::class, 'updateLuckyWheels'])->name('admin.rewards.update-lucky-wheels');
     Route::put('rewards/{reward}', [AdminRewardsController::class, 'update'])->name('admin.rewards.update');
     Route::put('rewards/{reward}/image', [RewardImageController::class, 'update'])->name('admin.rewards.image.update');
     Route::delete('rewards/{reward}', [AdminRewardsController::class, 'destroy'])->name('admin.rewards.destroy');

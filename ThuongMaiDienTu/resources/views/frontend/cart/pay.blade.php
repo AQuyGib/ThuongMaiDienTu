@@ -177,10 +177,16 @@
 
         {{-- Mã giảm giá --}}
         <div class="mb-5 bg-gray-50 rounded-xl border border-gray-100 p-4">
-          <label class="block text-xs font-bold text-gray-600 mb-2 uppercase tracking-wide">Mã giảm giá</label>
+          <div class="flex justify-between items-center mb-2">
+            <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">Mã giảm giá</label>
+            <a href="{{ route('cart.discount-code') }}" class="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 transition">
+              <i class="fa-solid fa-ticket text-sm"></i> Chọn Voucher
+            </a>
+          </div>
           <div class="flex gap-2">
             <input id="discount-code" type="text"
               class="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-400 outline-none"
+              value="{{ session('applied_coupon_code') }}"
               placeholder="VD: PRO10">
             <button type="button" onclick="applyDiscount()" id="btn-discount"
               class="px-4 bg-gray-800 text-white text-sm rounded-lg font-semibold hover:bg-gray-900 transition whitespace-nowrap">
@@ -366,31 +372,59 @@ function applyDiscount() {
     if (!code) return;
     btn.textContent = '...';
     btn.disabled = true;
-    setTimeout(() => {
-      if (code === 'PRO10') {
-        discountVal = Math.round(subtotalVal * 0.1);
+
+    fetch('{{ route("cart.apply-coupon") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({ code: code })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        discountVal = res.discount;
         inp.readOnly = true;
         inp.classList.add('bg-green-50','border-green-400','text-green-700');
         btn.textContent = 'Xóa'; btn.disabled = false;
         btn.classList.replace('bg-gray-800','bg-red-500');
         msg.className = 'text-xs mt-2 font-medium text-green-600';
-        msg.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i>Giảm 10% thành công!';
+        msg.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i>${res.message}`;
       } else {
         btn.textContent = 'Áp dụng'; btn.disabled = false;
         msg.className = 'text-xs mt-2 font-medium text-red-500';
-        msg.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i>Mã không hợp lệ!';
+        msg.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i>${res.message}`;
       }
       msg.classList.remove('hidden');
       updateTotals();
-    }, 500);
+    })
+    .catch(err => {
+      console.error(err);
+      btn.textContent = 'Áp dụng'; btn.disabled = false;
+      msg.className = 'text-xs mt-2 font-medium text-red-500';
+      msg.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i>Lỗi hệ thống!';
+      msg.classList.remove('hidden');
+    });
   } else {
-    discountVal = 0;
-    inp.value = ''; inp.readOnly = false;
-    inp.classList.remove('bg-green-50','border-green-400','text-green-700');
-    btn.textContent = 'Áp dụng';
-    btn.classList.replace('bg-red-500','bg-gray-800');
-    msg.classList.add('hidden');
-    updateTotals();
+    fetch('{{ route("cart.apply-coupon") }}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+      },
+      body: JSON.stringify({ code: '' })
+    })
+    .then(r => r.json())
+    .then(res => {
+      discountVal = 0;
+      inp.value = ''; inp.readOnly = false;
+      inp.classList.remove('bg-green-50','border-green-400','text-green-700');
+      btn.textContent = 'Áp dụng';
+      btn.classList.replace('bg-red-500','bg-gray-800');
+      msg.classList.add('hidden');
+      updateTotals();
+    });
   }
 }
 
@@ -579,6 +613,11 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
 document.addEventListener('DOMContentLoaded', () => {
   loadCart();
   selectMethod('cod');
+  
+  const initialCode = document.getElementById('discount-code').value.trim();
+  if (initialCode) {
+    applyDiscount();
+  }
 });
 </script>
 @endpush
