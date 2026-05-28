@@ -11,7 +11,11 @@ class SetLocaleFromSession
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->session()->get('locale', config('app.locale', 'vi'));
+        if (!$request->session()->has('locale')) {
+            $request->session()->put('locale', 'vi');
+        }
+
+        $locale = $request->session()->get('locale', 'vi');
 
         $supported = array_keys(config('translatable.supported_locales', ['vi' => 'Tiếng Việt', 'en' => 'English']));
 

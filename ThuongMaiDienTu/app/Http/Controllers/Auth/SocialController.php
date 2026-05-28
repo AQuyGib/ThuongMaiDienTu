@@ -98,6 +98,7 @@ class SocialController extends Controller
         }
 
         Auth::login($user, true);
+        session(['locale' => 'vi']);
         
         \Illuminate\Support\Facades\Log::info("STEP 3: Login Success, Redirecting...");
 

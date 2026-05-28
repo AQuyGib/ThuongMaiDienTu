@@ -237,5 +237,14 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - `resources/js/components/AdminTopbar.tsx`
   - Đảm bảo các kỹ sư tiếp quản dễ dàng nắm vững kiến trúc, các bước hoạt động (quét DOM, dịch gộp, bộ lọc dịch, cách intercept model, click-outside, v.v.).
 
+- **Sửa lỗi tính năng thích/yêu thích bị đứng ở tiếng Anh (JSON control values translation bypass):**
+  - Khắc phục triệt để lỗi khi người dùng chuyển sang tiếng Anh, việc bấm Thêm vào yêu thích (Wishlist) hoặc Like video bị đứng giao diện (không đổi trạng thái nút bấm). Nguyên nhân do Middleware `TranslateHtmlResponse` tự động dịch mọi chuỗi văn bản trong response JSON, vô tình dịch luôn các mã trạng thái điều khiển máy như `'added'` thành `'added. added'` (do API Google Translate dịch sai) hoặc các mã khác, làm sai lệch điều kiện so khớp JavaScript (`data.status === 'added'`).
+  - Đã thiết kế phương thức lọc `isMachineKey` trong `TranslateHtmlResponse.php` để bỏ qua các key điều khiển hệ thống (`status`, `success`, `code`, `action`, `type`, `id`, `product_id`, `user_id`, v.v.) khi dịch JSON response, đảm bảo logic JavaScript frontend hoạt động chính xác 100% trong mọi ngôn ngữ.
+
+- **Cấu hình mặc định Tiếng Việt khi truy cập và đăng nhập:**
+  - Thay đổi cấu hình mặc định trong `.env` (`APP_LOCALE=vi`, `APP_FALLBACK_LOCALE=vi`, `APP_FAKER_LOCALE=vi_VN`) để đảm bảo hệ thống sử dụng Tiếng Việt làm ngôn ngữ gốc khi người dùng mới truy cập trang web lần đầu.
+  - Cải tiến middleware `SetLocaleFromSession.php` để kiểm tra và tự động khởi tạo giá trị `'locale' => 'vi'` vào session nếu chưa có dữ liệu ngôn ngữ.
+  - Cập nhật logic trong các controller đăng nhập và đăng ký (`AuthController.php`, `SocialController.php`, và `TwoFactorController.php`) để gán cứng ngôn ngữ về tiếng Việt (`session(['locale' => 'vi'])`) ngay khi người dùng hoàn tất quá trình xác thực và đăng nhập vào hệ thống thành công.
+
 
 

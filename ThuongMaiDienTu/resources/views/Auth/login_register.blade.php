@@ -309,9 +309,6 @@
 
         /* Nút quay lại trang chủ */
         .back-to-home {
-            position: absolute;
-            top: 25px;
-            right: 30px;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -326,7 +323,6 @@
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 14px;
-            z-index: 100;
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
         .back-to-home svg {
@@ -341,6 +337,85 @@
         }
         .back-to-home:hover svg {
             transform: translateX(-4px);
+        }
+
+        /* Language Switcher in Login Page */
+        .login-lang-switcher {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .login-lang-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 10px 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .login-lang-btn:hover {
+            color: var(--tech-blue);
+            background: #ffffff;
+            border-color: var(--tech-blue);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+        .login-lang-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.15);
+            overflow: hidden;
+            z-index: 1100;
+            min-width: 150px;
+        }
+        .login-lang-dropdown.show {
+            display: block;
+            animation: dropdownFade 0.3s ease;
+        }
+        @keyframes dropdownFade {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .login-lang-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            font-size: 13px;
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: background .15s;
+            font-weight: 600;
+        }
+        .login-lang-option:hover {
+            background: #f0f7ff;
+            color: var(--tech-blue);
+        }
+        .login-lang-option.active {
+            background: #f0f7ff;
+            color: var(--tech-blue);
+            font-weight: 700;
+        }
+        .login-lang-option .active-indicator {
+            margin-left: auto;
+            color: var(--tech-blue);
+            font-weight: bold;
+            font-size: 11px;
         }
 
     </style>
@@ -398,14 +473,42 @@
         <!-- FORM PANEL (Phải) -->
         <div class="form-panel" style="position: relative;">
             
-            <!-- Nút Quay lại Trang chủ -->
-            <a href="{{ route('home') }}" class="back-to-home">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                <span>Trang chủ</span>
-            </a>
+            <!-- Nút điều hướng & Ngôn ngữ -->
+            <div style="position: absolute; top: 25px; right: 30px; display: flex; align-items: center; gap: 10px; z-index: 100;">
+                <!-- Nút Quay lại Trang chủ -->
+                <a href="{{ route('home') }}" class="back-to-home">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Trang chủ</span>
+                </a>
+
+                <!-- Trình chọn ngôn ngữ -->
+                <div class="login-lang-switcher" id="loginLangSwitcher">
+                    <button class="login-lang-btn" id="loginLangToggleBtn">
+                        <span style="font-size: 14px; line-height: 1;">🌐</span>
+                        <span>{{ app()->getLocale() === 'en' ? 'EN' : 'VI' }}</span>
+                        <span style="font-size: 8px; margin-left: 2px;">▼</span>
+                    </button>
+                    <div class="login-lang-dropdown" id="loginLangDropdown">
+                        <a href="{{ route('locale.switch', 'vi') }}" class="login-lang-option {{ app()->getLocale() === 'vi' ? 'active' : '' }}">
+                            <span class="lang-flag">🇻🇳</span>
+                            <span>Tiếng Việt</span>
+                            @if(app()->getLocale() === 'vi')
+                                <span class="active-indicator">✓</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('locale.switch', 'en') }}" class="login-lang-option {{ app()->getLocale() === 'en' ? 'active' : '' }}">
+                            <span class="lang-flag">🇺🇸</span>
+                            <span>English</span>
+                            @if(app()->getLocale() === 'en')
+                                <span class="active-indicator">✓</span>
+                            @endif
+                        </a>
+                    </div>
+                </div>
+            </div>
 
             <!-- Đưa tên thương hiệu lên trên -->
             <div class="form-header">
@@ -652,6 +755,21 @@
             showRegister();
         } else {
             showLogin();
+        }
+
+        /* ===== LANGUAGE SWITCHER DROPDOWN ===== */
+        const loginLangBtn = document.getElementById('loginLangToggleBtn');
+        const loginLangDropdown = document.getElementById('loginLangDropdown');
+        if (loginLangBtn && loginLangDropdown) {
+            loginLangBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                loginLangDropdown.classList.toggle('show');
+            });
+            document.addEventListener('click', function(e) {
+                if (!loginLangBtn.contains(e.target) && !loginLangDropdown.contains(e.target)) {
+                    loginLangDropdown.classList.remove('show');
+                }
+            });
         }
     </script>
 </body>
