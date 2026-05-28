@@ -34,31 +34,57 @@ class UserSeeder extends Seeder
                 'password_hash' => Hash::make('manager123'),
                 'member_tier'   => 'Dong',
                 'status'        => 'Active',
+                'phone_number'  => '0987654321',
+            ]
+        );
+
+        // Kỹ thuật viên mẫu (Nhân viên)
+        User::updateOrCreate(
+            ['email' => 'technical.nam@dienmaypro.com.vn'],
+            [
+                'role_id'       => 4,
+                'full_name'     => 'Trần Kỹ Thuật Nam',
+                'password_hash' => Hash::make('staff123'),
+                'member_tier'   => 'Dong',
+                'status'        => 'Active',
+                'phone_number'  => '0912345678',
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'technical.hung@dienmaypro.com.vn'],
+            [
+                'role_id'       => 4,
+                'full_name'     => 'Phạm Kỹ Thuật Hùng',
+                'password_hash' => Hash::make('staff123'),
+                'member_tier'   => 'Dong',
+                'status'        => 'Active',
+                'phone_number'  => '0912345679',
             ]
         );
 
         // 20 Khách hàng mẫu
         $customers = [
-            ['full_name' => 'Trần Văn An',       'email' => 'an.tran@gmail.com',        'member_tier' => 'Dong'],
-            ['full_name' => 'Nguyễn Thị Bình',   'email' => 'binh.nguyen@gmail.com',    'member_tier' => 'Bac'],
-            ['full_name' => 'Lê Hoàng Cường',    'email' => 'cuong.le@gmail.com',       'member_tier' => 'Vang'],
-            ['full_name' => 'Phạm Minh Đức',     'email' => 'duc.pham@gmail.com',       'member_tier' => 'Dong'],
-            ['full_name' => 'Hoàng Thị Em',      'email' => 'em.hoang@gmail.com',       'member_tier' => 'Dong'],
-            ['full_name' => 'Võ Thanh Phong',     'email' => 'phong.vo@gmail.com',       'member_tier' => 'Bac'],
-            ['full_name' => 'Đặng Thị Giang',    'email' => 'giang.dang@gmail.com',     'member_tier' => 'Dong'],
-            ['full_name' => 'Bùi Quốc Hải',      'email' => 'hai.bui@gmail.com',        'member_tier' => 'Dong'],
-            ['full_name' => 'Trương Thị Ý',      'email' => 'y.truong@gmail.com',       'member_tier' => 'Vang'],
-            ['full_name' => 'Lý Minh Khang',     'email' => 'khang.ly@gmail.com',       'member_tier' => 'Dong'],
-            ['full_name' => 'Mai Anh Kiệt',      'email' => 'kiet.mai@gmail.com',       'member_tier' => 'Bac'],
-            ['full_name' => 'Ngô Bảo Lâm',       'email' => 'lam.ngo@gmail.com',        'member_tier' => 'Dong'],
-            ['full_name' => 'Đinh Thị Mỹ',       'email' => 'my.dinh@gmail.com',        'member_tier' => 'Dong'],
-            ['full_name' => 'Huỳnh Hữu Nam',     'email' => 'nam.huynh@gmail.com',      'member_tier' => 'Dong'],
-            ['full_name' => 'Cao Thị Oanh',      'email' => 'oanh.cao@gmail.com',       'member_tier' => 'Bac'],
-            ['full_name' => 'Tô Đình Phúc',      'email' => 'phuc.to@gmail.com',        'member_tier' => 'Dong'],
-            ['full_name' => 'Lưu Bích Quyên',    'email' => 'quyen.luu@gmail.com',      'member_tier' => 'Dong'],
-            ['full_name' => 'Phan Đức Sơn',      'email' => 'son.phan@gmail.com',       'member_tier' => 'Vang'],
-            ['full_name' => 'Vương Thị Trang',   'email' => 'trang.vuong@gmail.com',    'member_tier' => 'Dong'],
-            ['full_name' => 'Đỗ Quang Uy',       'email' => 'uy.do@gmail.com',          'member_tier' => 'Dong'],
+            ['full_name' => 'Trần Văn An',       'email' => 'an.tran@gmail.com',        'member_tier' => 'Dong', 'phone_number' => '0901234501'],
+            ['full_name' => 'Nguyễn Thị Bình',   'email' => 'binh.nguyen@gmail.com',    'member_tier' => 'Bac',  'phone_number' => '0901234502'],
+            ['full_name' => 'Lê Hoàng Cường',    'email' => 'cuong.le@gmail.com',       'member_tier' => 'Vang', 'phone_number' => '0901234503'],
+            ['full_name' => 'Phạm Minh Đức',     'email' => 'duc.pham@gmail.com',       'member_tier' => 'Dong', 'phone_number' => '0901234504'],
+            ['full_name' => 'Hoàng Thị Em',      'email' => 'em.hoang@gmail.com',       'member_tier' => 'Dong', 'phone_number' => '0901234505'],
+            ['full_name' => 'Võ Thanh Phong',     'email' => 'phong.vo@gmail.com',       'member_tier' => 'Bac',  'phone_number' => '0901234506'],
+            ['full_name' => 'Đặng Thị Giang',    'email' => 'giang.dang@gmail.com',     'member_tier' => 'Dong', 'phone_number' => '0901234507'],
+            ['full_name' => 'Bùi Quốc Hải',      'email' => 'hai.bui@gmail.com',        'member_tier' => 'Dong', 'phone_number' => '0901234508'],
+            ['full_name' => 'Trương Thị Ý',      'email' => 'y.truong@gmail.com',       'member_tier' => 'Vang', 'phone_number' => '0901234509'],
+            ['full_name' => 'Lý Minh Khang',     'email' => 'khang.ly@gmail.com',       'member_tier' => 'Dong', 'phone_number' => '0901234510'],
+            ['full_name' => 'Mai Anh Kiệt',      'email' => 'kiet.mai@gmail.com',       'member_tier' => 'Bac',  'phone_number' => '0901234511'],
+            ['full_name' => 'Ngô Bảo Lâm',       'email' => 'lam.ngo@gmail.com',        'member_tier' => 'Dong', 'phone_number' => '0901234512'],
+            ['full_name' => 'Đinh Thị Mỹ',       'email' => 'my.dinh@gmail.com',        'member_tier' => 'Dong', 'phone_number' => '0901234513'],
+            ['full_name' => 'Huỳnh Hữu Nam',     'email' => 'nam.huynh@gmail.com',      'member_tier' => 'Dong', 'phone_number' => '0901234514'],
+            ['full_name' => 'Cao Thị Oanh',      'email' => 'oanh.cao@gmail.com',       'member_tier' => 'Bac',  'phone_number' => '0901234515'],
+            ['full_name' => 'Tô Đình Phúc',      'email' => 'phuc.to@gmail.com',        'member_tier' => 'Dong', 'phone_number' => '0901234516'],
+            ['full_name' => 'Lưu Bích Quyên',    'email' => 'quyen.luu@gmail.com',      'member_tier' => 'Dong', 'phone_number' => '0901234517'],
+            ['full_name' => 'Phan Đức Sơn',      'email' => 'son.phan@gmail.com',       'member_tier' => 'Vang', 'phone_number' => '0901234518'],
+            ['full_name' => 'Vương Thị Trang',   'email' => 'trang.vuong@gmail.com',    'member_tier' => 'Dong', 'phone_number' => '0901234519'],
+            ['full_name' => 'Đỗ Quang Uy',       'email' => 'uy.do@gmail.com',          'member_tier' => 'Dong', 'phone_number' => '0901234520'],
         ];
 
         foreach ($customers as $customer) {
@@ -70,6 +96,7 @@ class UserSeeder extends Seeder
                     'password_hash' => Hash::make('123456'),
                     'member_tier'   => $customer['member_tier'],
                     'status'        => 'Active',
+                    'phone_number'  => $customer['phone_number'],
                 ]
             );
         }
