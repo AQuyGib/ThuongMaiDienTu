@@ -1174,7 +1174,6 @@
 
         currentVideoId = id;
         updateLikeButtonUI(id);
-        incrementViews(id);
 
         const mp4Player = document.getElementById('main-video-player');
         const ytPlayer = document.getElementById('main-youtube-player');
@@ -1658,11 +1657,9 @@
             if (videoExists && urlVideoId != currentVideoId) {
                 playVideo(urlVideoId, true);
             } else if (videoExists && urlVideoId == currentVideoId) {
-                incrementViews(currentVideoId);
                 loadComments(currentVideoId);
             }
         } else if (currentVideoId) {
-            incrementViews(currentVideoId);
             loadComments(currentVideoId);
         }
 
@@ -1713,6 +1710,14 @@
                     // Đúp chuột bên phải: tua tiến 10s
                     mp4Player.currentTime = Math.min(mp4Player.duration || 0, mp4Player.currentTime + 10);
                     showToast('Tua nhanh 10 giây', 'info');
+                }
+            });
+
+            // Lắng nghe sự kiện xem xong video (ended) để tăng lượt xem
+            mp4Player.addEventListener('ended', () => {
+                if (currentVideoId) {
+                    incrementViews(currentVideoId);
+                    showToast('Cảm ơn bạn đã xem hết video! Lượt xem đã được ghi nhận.', 'success');
                 }
             });
         }
