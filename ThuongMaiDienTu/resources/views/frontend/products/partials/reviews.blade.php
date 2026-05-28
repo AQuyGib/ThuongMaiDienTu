@@ -242,9 +242,23 @@
 
                     <div class="reply-form" id="replyForm-{{ $r->id }}">
                         <textarea id="replyText-{{ $r->id }}" placeholder="Nhập câu trả lời..." class="reply-textarea"></textarea>
-                        <div class="reply-actions">
-                            <button type="button" onclick="toggleReplyForm({{ $r->id }})" class="btn-cancel">Hủy</button>
-                            <button type="button" onclick="submitReply({{ $r->id }})" class="btn-submit-reply">Gửi trả lời</button>
+                        
+                        {{-- Preview grid for reply uploads --}}
+                        <div class="media-preview-grid" id="replyMediaPreviewGrid-{{ $r->id }}" style="margin-bottom: 10px;"></div>
+                        
+                        <div class="reply-actions" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;">
+                            {{-- Upload button --}}
+                            <div>
+                                <label class="media-upload-label" for="replyMediaInput-{{ $r->id }}" style="margin: 0; padding: 6px 12px; font-size: 12px;">
+                                    <i class="fa-solid fa-photo-film"></i> Thêm ảnh/video
+                                </label>
+                                <input type="file" id="replyMediaInput-{{ $r->id }}" multiple accept="image/*,video/*" style="display:none;" onchange="previewReplyMediaFiles({{ $r->id }}, this)">
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" onclick="toggleReplyForm({{ $r->id }})" class="btn-cancel">Hủy</button>
+                                <button type="button" onclick="submitReply({{ $r->id }})" class="btn-submit-reply">Gửi trả lời</button>
+                            </div>
                         </div>
                     </div>
                     @endif
@@ -287,6 +301,23 @@
                                     </div>
                                 </div>
                                 <div class="review-content-replied" style="margin-left:44px; font-size:14px;">{{ $reply->content }}</div>
+                                
+                                @if(!empty($reply->media))
+                                <div class="review-media-display" style="margin-left: 44px; margin-top: 8px;">
+                                    @foreach($reply->media as $mediaUrl)
+                                        @php $isVideo = preg_match('/\.(mp4|mov|avi|mkv)$/i', $mediaUrl); @endphp
+                                        <div class="review-media-thumb" style="width: 70px; height: 70px;" onclick="openMediaLightbox('{{ $mediaUrl }}', {{ $isVideo ? 'true' : 'false' }})">
+                                            @if($isVideo)
+                                                <video src="{{ $mediaUrl }}"></video>
+                                                <div class="play-icon" style="font-size: 18px;"><i class="fa-solid fa-play"></i></div>
+                                            @else
+                                                <img src="{{ $mediaUrl }}" loading="lazy">
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @endif
+                                
                                 @if(auth()->check())
                                 <div style="display: flex; gap: 15px; margin-top: 5px; margin-left: 44px;">
                                     <button class="reply-btn-nested" style="margin-left:0;" onclick="replyToUser({{ $r->id }}, '{{ addslashes($replyName) }}', {{ $reply->id }})"><i class="fa-solid fa-reply"></i> Trả lời</button>
@@ -355,6 +386,7 @@
 <script>
 let currentRating = 5;
 let selectedMediaFiles = [];
+let replyMediaFiles = {};
 
 document.addEventListener('DOMContentLoaded', function() {
     // Kiểm tra thông báo từ sessionStorage sau khi reload trang
@@ -373,8 +405,27 @@ document.addEventListener('DOMContentLoaded', function() {
         // Cuộn mượt xuống phần đánh giá để tránh nhảy lên đầu trang
         const reviewsSec = document.getElementById('reviews-section');
         if (reviewsSec) {
-            reviewsSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if ('scrollRestoration' in history) {
+                history.scrollRestoration = 'manual';
+            }
+            setTimeout(() => {
+                reviewsSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
         }
+    }
+
+    // Luôn kiểm tra cờ cuộn chuyên biệt
+    if (sessionStorage.getItem('scroll_to_reviews') === 'true') {
+        sessionStorage.removeItem('scroll_to_reviews');
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        setTimeout(() => {
+            const reviewsSec = document.getElementById('reviews-section');
+            if (reviewsSec) {
+                reviewsSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 150);
     }
 
     const stars = document.querySelectorAll('.star-rating');
@@ -456,6 +507,86 @@ function removeMediaFile(index) {
     selectedMediaFiles[index] = null;
 }
 
+function previewReplyMediaFiles(parentId, input) {
+    const grid = document.getElementById('replyMediaPreviewGrid-' + parentId);
+    const files = Array.from(input.files);
+    
+    if (!replyMediaFiles[parentId]) {
+        replyMediaFiles[parentId] = [];
+    }
+    
+    files.forEach(file => {
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+        
+        if (!isImage && !isVideo) {
+            showAlert('Định dạng không hợp lệ', `Tệp "${file.name}" không phải ảnh hoặc video.`);
+            return;
+        }
+
+        // Kiểm tra dung lượng (tối đa 5MB cho ảnh, 100MB cho video)
+        const limitSize = isVideo ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
+        if (file.size > limitSize) {
+            const limitLabel = isVideo ? '100MB' : '5MB';
+            showAlert('Tệp quá lớn', `Tệp "${file.name}" vượt quá giới hạn ${limitLabel}. Vui lòng chọn tệp nhỏ hơn.`);
+            return;
+        }
+
+        // Giới hạn video: chỉ 1 video
+        if (isVideo) {
+            const hasVideo = replyMediaFiles[parentId].some(f => f && f.type.startsWith('video/'));
+            if (hasVideo) {
+                showAlert('Giới hạn video', 'Bạn chỉ có thể tải lên tối đa 1 video.');
+                return;
+            }
+        }
+
+        // Giới hạn tổng số lượng file
+        const nonNullCount = replyMediaFiles[parentId].filter(Boolean).length;
+        if (nonNullCount >= 5) {
+            showAlert('Giới hạn tải lên', 'Bạn chỉ được tải lên tối đa 5 hình ảnh hoặc video.');
+            return;
+        }
+
+        const index = replyMediaFiles[parentId].length;
+        replyMediaFiles[parentId].push(file);
+        
+        const preview = document.createElement('div');
+        preview.className = 'media-preview-item';
+        preview.id = `reply-media-${parentId}-${index}`;
+        
+        if (isVideo) {
+            const video = document.createElement('video');
+            video.src = URL.createObjectURL(file);
+            preview.appendChild(video);
+        } else {
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            preview.appendChild(img);
+        }
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'media-preview-remove';
+        removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        removeBtn.onclick = function() {
+            preview.remove();
+            replyMediaFiles[parentId][index] = null;
+        };
+        preview.appendChild(removeBtn);
+        grid.appendChild(preview);
+    });
+    
+    input.value = '';
+}
+
+/**
+ * Gửi đánh giá sản phẩm chính lên server qua AJAX.
+ * - Kiểm tra tính hợp lệ của nội dung và thông tin người dùng.
+ * - Đóng gói dữ liệu đánh giá và mảng file đa phương tiện (ảnh/video) vào FormData.
+ * - Thực hiện fetch POST, xử lý phản hồi HTTP 403 đặc biệt khi người dùng bị cấm bình luận.
+ * - Lưu trạng thái thông báo và vị trí scroll để hiển thị sau khi reload trang.
+ */
 function submitReview() {
     const textarea = document.getElementById('reviewText');
     const content = textarea.value.trim();
@@ -471,6 +602,7 @@ function submitReview() {
     formData.append('content', content);
     if(authorName) formData.append('author_name', authorName);
     
+    // Đưa các tệp đa phương tiện đã chọn vào FormData
     selectedMediaFiles.filter(Boolean).forEach(file => {
         formData.append('media[]', file);
     });
@@ -492,16 +624,22 @@ function submitReview() {
     .then(async response => {
         const data = await response.json();
         if (!response.ok) {
-            throw new Error(data.message || `Lỗi hệ thống (${response.status})`);
+            // Ném lỗi kèm mã status để xử lý phân biệt lỗi vi phạm (403) và lỗi kết nối/máy chủ
+            const errObj = new Error(data.message || `Lỗi hệ thống (${response.status})`);
+            errObj.status = response.status;
+            throw errObj;
         }
         return data;
     })
     .then(data => {
         if(data.success) {
+            // Lưu thông báo thành công vào sessionStorage để hiển thị dạng toast sau khi reload
             sessionStorage.setItem('review_toast', JSON.stringify({
                 msg: data.message || 'DienMayPro cảm ơn quý khách đã gửi bình luận!',
                 isCenter: true
             }));
+            // Lưu cờ scroll_to_reviews để tự động cuộn màn hình đến phần đánh giá sau khi tải lại
+            sessionStorage.setItem('scroll_to_reviews', 'true');
             location.reload(); 
         } else {
             if(btn) { 
@@ -517,7 +655,10 @@ function submitReview() {
             btn.innerHTML = 'Gửi đánh giá'; 
         }
         console.error('Submit review error:', error);
-        showAlert('Không thể gửi', 'Đã có lỗi xảy ra: ' + error.message);
+        // Hiển thị thông báo thích hợp dựa trên mã HTTP status (403: Bị cấm/Vi phạm)
+        const title = error.status === 403 ? 'Vi phạm' : 'Không thể gửi';
+        const msg = error.status === 403 ? error.message : ('Đã có lỗi xảy ra: ' + error.message);
+        showAlert(title, msg);
     });
 }
 
@@ -566,6 +707,14 @@ function showAllReplies(reviewId, btn) {
     btn.remove();
 }
 
+/**
+ * Gửi phản hồi (reply) cho một đánh giá cụ thể qua AJAX.
+ * - Đóng gói nội dung, ID cha (parent_id), tên tác giả và các tệp đính kèm đi kèm reply.
+ * - Thực hiện fetch POST đến route lưu đánh giá.
+ * - Bắt mã HTTP 403 để xử lý trường hợp người dùng bị cấm bình luận/đánh giá.
+ * 
+ * @param {number} parentId ID của đánh giá cha được phản hồi.
+ */
 function submitReply(parentId) {
     const textarea = document.getElementById('replyText-' + parentId);
     const text = textarea.value.trim();
@@ -578,8 +727,15 @@ function submitReply(parentId) {
     formData.append('product_id', '{{ $product->product_id }}');
     formData.append('parent_id', parentId);
     formData.append('content', text);
-    formData.append('rating', 5);
+    formData.append('rating', 5); // Tự động chấm 5 sao cho câu trả lời
     if(authorName) formData.append('author_name', authorName);
+
+    // Lấy các file đính kèm riêng cho khung phản hồi hiện tại (parentId)
+    if (replyMediaFiles[parentId]) {
+        replyMediaFiles[parentId].filter(Boolean).forEach(file => {
+            formData.append('media[]', file);
+        });
+    }
 
     const btn = document.querySelector(`#replyForm-${parentId} .btn-submit-reply`);
     if(btn) { 
@@ -598,7 +754,10 @@ function submitReply(parentId) {
     .then(async response => {
         const data = await response.json();
         if (!response.ok) {
-            throw new Error(data.message || `Lỗi hệ thống (${response.status})`);
+            // Ném lỗi kèm status code
+            const errObj = new Error(data.message || `Lỗi hệ thống (${response.status})`);
+            errObj.status = response.status;
+            throw errObj;
         }
         return data;
     })
@@ -608,6 +767,7 @@ function submitReply(parentId) {
                 msg: data.message || 'DienMayPro cảm ơn quý khách đã gửi bình luận!',
                 isCenter: true
             }));
+            sessionStorage.setItem('scroll_to_reviews', 'true');
             location.reload();
         } else {
             if(btn) { 
@@ -622,7 +782,10 @@ function submitReply(parentId) {
             btn.disabled = false; 
             btn.innerHTML = 'Gửi trả lời'; 
         }
-        showToastReview('Lỗi kết nối', 'Đã xảy ra lỗi: ' + err.message, 'error');
+        // Xử lý thông báo khi lỗi (phân biệt lỗi 403: cấm bình luận, và các lỗi kết nối thông thường)
+        const title = err.status === 403 ? 'Vi phạm' : 'Lỗi kết nối';
+        const msg = err.status === 403 ? err.message : ('Đã xảy ra lỗi: ' + err.message);
+        showToastReview(title, msg, 'error');
     });
 }
 
@@ -708,16 +871,42 @@ function showToastReview(title, message, type = 'success') {
 
 /* ===== Custom Confirmation System ===== */
 let confirmCallback = null;
-function showConfirm(title, message, callback) {
+function showConfirm(title, message, callback, btnText = 'Xác nhận xóa', theme = 'danger') {
     document.getElementById('confirmTitle').innerText = title;
     document.getElementById('confirmMessage').innerText = message;
+    
+    const iconContainer = document.querySelector('#confirmModal .confirm-icon');
+    const btn = document.getElementById('btnDoConfirm');
+    
+    if (theme === 'warning') {
+        if (iconContainer) {
+            iconContainer.style.background = '#fef3c7';
+            iconContainer.style.color = '#f59e0b';
+            iconContainer.innerHTML = '<i class="fa-solid fa-flag"></i>';
+        }
+        if (btn) {
+            btn.style.background = '#f59e0b';
+            btn.style.borderColor = '#f59e0b';
+        }
+    } else {
+        if (iconContainer) {
+            iconContainer.style.background = '#fee2e2';
+            iconContainer.style.color = '#e21033';
+            iconContainer.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        }
+        if (btn) {
+            btn.style.background = '#e21033';
+            btn.style.borderColor = '#e21033';
+        }
+    }
+
     document.getElementById('confirmModal').classList.add('active');
     confirmCallback = callback;
     
-    // Reset button state
-    const btn = document.getElementById('btnDoConfirm');
-    btn.disabled = false;
-    btn.innerHTML = 'Xác nhận xóa';
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = btnText;
+    }
 }
 
 function closeConfirmModal() {
@@ -803,33 +992,46 @@ function closeMediaLightbox() {
 }
 
 function reportReview(id) {
-    if (!confirm('Bạn có chắc chắn muốn báo cáo đánh giá vi phạm này?')) {
-        return;
-    }
+    showConfirm(
+        'Xác nhận báo cáo',
+        'Bạn có chắc chắn muốn báo cáo đánh giá vi phạm này không?',
+        function() {
+            const btn = document.getElementById('btnDoConfirm');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> Đang gửi...';
+            }
 
-    fetch(`/reviews/${id}/report`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json'
-        }
-    })
-    .then(async response => {
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.message || `Lỗi hệ thống (${response.status})`);
-        }
-        return data;
-    })
-    .then(data => {
-        showToastReview('Báo cáo thành công', data.message, 'success');
-        setTimeout(() => {
-            location.reload();
-        }, 1500);
-    })
-    .catch(error => {
-        showToastReview('Không thể báo cáo', error.message, 'error');
-    });
+            fetch(`/reviews/${id}/report`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || `Lỗi hệ thống (${response.status})`);
+                }
+                return data;
+            })
+            .then(data => {
+                showToastReview('Báo cáo thành công', data.message, 'success');
+                closeConfirmModal();
+                sessionStorage.setItem('scroll_to_reviews', 'true');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            })
+            .catch(error => {
+                showToastReview('Không thể báo cáo', error.message, 'error');
+                closeConfirmModal();
+            });
+        },
+        'Gửi báo cáo',
+        'warning'
+    );
 }
 </script>
 @endpush

@@ -92,8 +92,38 @@ class VideoController extends Controller
         ]);
     }
 
+    /**
+     * Tạo một bình luận mới cho Video.
+     * 
+     * @param Request $request Dữ liệu đầu vào của bình luận (content, parent_id).
+     * @param Video $video Thực thể Video liên kết.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function storeComment(Request $request, Video $video)
     {
+        // Kiểm tra đăng nhập
+        if (!auth()->check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập để gửi bình luận!'
+            ], 401);
+        }
+
+        // KIỂM TRA HÌNH PHẠT CẤM HOẠT ĐỘNG:
+        // - Xem người dùng hiện tại có bị khóa bình luận không (comment_banned_until).
+        // - Nếu còn thời hạn khóa, chặn hành động và trả về thông báo kèm thời hạn mở khóa cụ thể.
+        $user = auth()->user();
+        if ($user->comment_banned_until && $user->comment_banned_until > now()) {
+            $isPermanent = \Carbon\Carbon::parse($user->comment_banned_until)->year > now()->year + 10;
+            $msg = $isPermanent 
+                ? "Tài khoản của bạn đã bị cấm bình luận/đánh giá vĩnh viễn do vi phạm chính sách cộng đồng."
+                : "Tài khoản của bạn đã bị khóa tính năng bình luận/đánh giá đến " . \Carbon\Carbon::parse($user->comment_banned_until)->format('d/m/Y H:i') . " do vi phạm chính sách cộng đồng.";
+            return response()->json([
+                'success' => false,
+                'message' => $msg
+            ], 403);
+        }
+
         $request->validate([
             'content' => 'required|string|max:1000',
             'parent_id' => 'nullable|exists:video_comments,id',
@@ -150,10 +180,17 @@ class VideoController extends Controller
 
     /**
      * Báo cáo bình luận video vi phạm.
+     * - Khi nhận được báo cáo từ người dùng, tăng số lượt báo cáo `report_count`.
+     * - Nếu tổng số báo cáo của bình luận đạt ngưỡng >= 3, bình luận sẽ tự động bị ẩn (is_approved = 0) chờ kiểm duyệt của Admin.
+     * 
+     * @param int $id ID của bình luận video cần báo cáo.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function reportComment($id)
     {
         $comment = \App\Models\VideoComment::findOrFail($id);
+        
+        // Tăng bộ đếm lượt báo cáo vi phạm
         $comment->increment('report_count');
 
         // Ngưỡng ẩn tự động khi đạt từ 3 báo cáo trở lên

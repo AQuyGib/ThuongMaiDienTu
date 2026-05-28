@@ -150,6 +150,21 @@
     .bulk-action-bar .btn-bulk-delete:hover { box-shadow: 0 6px 16px rgba(220,38,38,.3); transform: translateY(-1px); }
     .bulk-action-bar .btn-bulk-cancel { background: none; border: 1px solid #d1d5db; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; color: #64748b; font-weight: 600; }
     .comment-checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: #0046ab; }
+    
+    .table th {
+        white-space: nowrap !important;
+        background-color: #f8fafc !important;
+        color: #475569 !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        padding: 14px 10px !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+    }
+    .table td {
+        padding: 14px 10px !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        vertical-align: middle !important;
+    }
 </style>
 @endpush
 
@@ -228,32 +243,45 @@
             <table class="table align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 45px; padding-left: 20px;"><input type="checkbox" class="comment-checkbox" id="selectAllReviews" onchange="toggleSelectAll('reviews')"></th>
-                        <th style="width: 70px;">ID</th>
-                        <th style="width: 180px;">Người đánh giá</th>
-                        <th style="width: 150px;">Sản phẩm</th>
-                        <th style="width: 100px;">Điểm</th>
-                        <th style="width: 120px;">Trạng thái</th>
-                        <th>Nội dung đánh giá & Phản hồi</th>
-                        <th style="width: 150px;">Tệp đính kèm</th>
-                        <th style="width: 140px;">Ngày gửi</th>
-                        <th class="text-end" style="padding-right: 20px;">Hành động</th>
+                        <th style="width: 40px; padding-left: 20px;"><input type="checkbox" class="comment-checkbox" id="selectAllReviews" onchange="toggleSelectAll('reviews')"></th>
+                        <th style="width: 60px;">STT</th>
+                        <th style="width: 160px;">Người đánh giá</th>
+                        <th style="width: 140px;">Sản phẩm</th>
+                        <th style="width: 90px;">Điểm</th>
+                        <th style="width: 110px;">Trạng thái</th>
+                        <th style="min-width: 250px;">Nội dung & Phản hồi</th>
+                        <th style="width: 100px;">Đính kèm</th>
+                        <th style="width: 120px;">Ngày gửi</th>
+                        <th class="text-end" style="width: 120px; padding-right: 20px;">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($reviews as $item)
                         <tr>
                             <td style="padding-left: 20px;"><input type="checkbox" class="comment-checkbox review-checkbox" value="{{ $item->id }}" onchange="updateBulkBar('reviews')"></td>
-                            <td class="fw-bold text-slate-500">#{{ $item->id }}</td>
+                            <td class="fw-bold text-slate-500">{{ ($reviews->currentPage() - 1) * $reviews->perPage() + $loop->iteration }}</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="avatar-circle {{ $item->user && $item->user->role_id == 1 ? 'avatar-admin' : 'avatar-user' }}">
                                         {{ mb_substr($item->author_name ?? ($item->user ? $item->user->full_name : 'K'), 0, 1) }}
                                     </div>
                                     <div>
-                                        <div class="fw-bold text-slate-900">{{ $item->author_name ?? ($item->user ? $item->user->full_name : 'Khách hàng') }}</div>
-                                        <div class="text-slate-500 small" style="font-size: 11px;">
-                                            {{ $item->user ? $item->user->email : 'Khách vãng lai' }}
+                                        <div class="fw-bold text-slate-900">
+                                            {{ $item->author_name ?? ($item->user ? $item->user->full_name : 'Khách hàng') }}
+                                            @if($item->user && $item->user->comment_banned_until && $item->user->comment_banned_until > now())
+                                                <span class="badge bg-danger text-white ms-1" style="font-size: 9px;" title="Bị cấm đến {{ \Carbon\Carbon::parse($item->user->comment_banned_until)->format('d/m/Y H:i') }}"><i class="fa-solid fa-ban"></i> Bị cấm</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-slate-500 small d-flex align-items-center gap-2" style="font-size: 11px;">
+                                            <span>{{ $item->user ? $item->user->email : 'Khách vãng lai' }}</span>
+                                            @if($item->user && $item->user->comment_banned_until && $item->user->comment_banned_until > now())
+                                                <form action="{{ route('admin.comments.users.unban', $item->user->user_id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-link p-0 text-success fw-bold text-decoration-none" style="font-size: 10px; line-height: 1;" title="Gỡ cấm bình luận cho tài khoản này">
+                                                        <i class="fa-solid fa-unlock"></i> Gỡ cấm
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -312,6 +340,26 @@
                                                 </div>
                                             </div>
                                             <div class="text-slate-700">{{ $reply->content }}</div>
+                                            @if(!empty($reply->media))
+                                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                                    @foreach($reply->media as $url)
+                                                        @php $isVideo = preg_match('/\.(mp4|mov|avi|mkv)$/i', $url); @endphp
+                                                        <div class="media-container" 
+                                                             data-bs-toggle="modal" 
+                                                             data-bs-target="#mediaPreviewModal"
+                                                             data-url="{{ $url }}"
+                                                             data-is-video="{{ $isVideo ? 'true' : 'false' }}"
+                                                             style="width: 35px; height: 35px; border-radius: 4px; overflow: hidden; border: 1px solid #ddd; cursor: pointer; position: relative;">
+                                                            @if($isVideo)
+                                                                <video src="{{ $url }}" style="width: 100%; height: 100%; object-fit: cover;"></video>
+                                                                <span class="position-absolute top-50 start-50 translate-middle text-white" style="font-size: 8px; pointer-events: none;"><i class="fa-solid fa-play"></i></span>
+                                                            @else
+                                                                <img src="{{ $url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </div>
                                     @endforeach
                                 @endif
@@ -341,38 +389,38 @@
                             </td>
                             <td class="text-slate-500 small">{{ $item->created_at->format('d/m/Y H:i') }}</td>
                             <td class="text-end" style="padding-right: 20px;">
-                                <div class="btn-group gap-2">
+                                <div class="d-flex align-items-center justify-content-end gap-1">
                                     @if($item->report_count > 0)
                                         <form action="{{ route('admin.comments.reviews.clear-reports', $item->id) }}" method="POST" class="d-inline">
                                             @csrf
-                                            <button type="submit" class="btn btn-outline-warning btn-sm rounded-3" title="Gỡ bỏ báo cáo vi phạm">
-                                                <i class="fa-solid fa-shield-halved"></i> Bỏ báo cáo
+                                            <button type="submit" class="btn btn-outline-warning btn-sm px-2" title="Bỏ báo cáo">
+                                                <i class="fa-solid fa-shield-halved"></i>
                                             </button>
                                         </form>
                                     @endif
                                     @if(!$item->is_approved)
                                         <form action="{{ route('admin.comments.reviews.approve', $item->id) }}" method="POST" class="d-inline">
                                             @csrf
-                                            <button type="submit" class="btn btn-success btn-sm rounded-3">
-                                                <i class="fa-solid fa-check"></i> Duyệt
+                                            <button type="submit" class="btn btn-success btn-sm px-2" title="Duyệt">
+                                                <i class="fa-solid fa-check"></i>
                                             </button>
                                         </form>
                                     @endif
                                     <button type="button" 
-                                            class="btn btn-outline-primary btn-sm rounded-3 btn-reply-trigger" 
+                                            class="btn btn-outline-primary btn-sm px-2 btn-reply-trigger" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#adminReplyModal"
                                             data-id="{{ $item->id }}" 
                                             data-type="review" 
                                             data-author="{{ $item->author_name ?? ($item->user ? $item->user->full_name : 'Khách hàng') }}" data-reply-url="{{ route('admin.comments.reviews.reply', $item->id) }}" 
                                             title="Phản hồi">
-                                        <i class="fa-solid fa-reply"></i> Phản hồi
+                                        <i class="fa-solid fa-reply"></i>
                                     </button>
                                     <form action="{{ route('admin.comments.reviews.destroy', $item->id) }}" method="POST" class="d-inline action-confirm-form" data-message="Bạn có chắc chắn muốn xóa đánh giá này? Tất cả các câu trả lời liên quan cũng sẽ bị xóa.">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" class="btn btn-danger btn-sm rounded-3 btn-action-trigger" title="Xóa đánh giá">
-                                            <i class="fa-solid fa-trash"></i> Xóa
+                                        <button type="button" class="btn btn-danger btn-sm px-2 btn-action-trigger" title="Xóa">
+                                            <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -403,30 +451,43 @@
             <table class="table align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th style="width: 45px; padding-left: 20px;"><input type="checkbox" class="comment-checkbox" id="selectAllVideoComments" onchange="toggleSelectAll('video-comments')"></th>
-                        <th style="width: 70px;">ID</th>
-                        <th style="width: 200px;">Người bình luận</th>
-                        <th style="width: 180px;">Video</th>
-                        <th style="width: 120px;">Trạng thái</th>
-                        <th>Nội dung bình luận & Phản hồi</th>
-                        <th style="width: 140px;">Ngày gửi</th>
-                        <th class="text-end" style="padding-right: 20px;">Hành động</th>
+                        <th style="width: 40px; padding-left: 20px;"><input type="checkbox" class="comment-checkbox" id="selectAllVideoComments" onchange="toggleSelectAll('video-comments')"></th>
+                        <th style="width: 60px;">STT</th>
+                        <th style="width: 180px;">Người bình luận</th>
+                        <th style="width: 160px;">Video</th>
+                        <th style="width: 110px;">Trạng thái</th>
+                        <th style="min-width: 250px;">Nội dung & Phản hồi</th>
+                        <th style="width: 120px;">Ngày gửi</th>
+                        <th class="text-end" style="width: 120px; padding-right: 20px;">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($videoComments as $item)
                         <tr>
                             <td style="padding-left: 20px;"><input type="checkbox" class="comment-checkbox vc-checkbox" value="{{ $item->id }}" onchange="updateBulkBar('video-comments')"></td>
-                            <td class="fw-bold text-slate-500">#{{ $item->id }}</td>
+                            <td class="fw-bold text-slate-500">{{ ($videoComments->currentPage() - 1) * $videoComments->perPage() + $loop->iteration }}</td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="avatar-circle {{ $item->user && $item->user->role_id == 1 ? 'avatar-admin' : 'avatar-user' }}">
                                         {{ mb_substr($item->user ? $item->user->full_name : 'K', 0, 1) }}
                                     </div>
                                     <div>
-                                        <div class="fw-bold text-slate-900">{{ $item->user ? $item->user->full_name : 'Khách hàng' }}</div>
-                                        <div class="text-slate-500 small" style="font-size: 11px;">
-                                            {{ $item->user ? $item->user->email : '' }}
+                                        <div class="fw-bold text-slate-900">
+                                            {{ $item->user ? $item->user->full_name : 'Khách hàng' }}
+                                            @if($item->user && $item->user->comment_banned_until && $item->user->comment_banned_until > now())
+                                                <span class="badge bg-danger text-white ms-1" style="font-size: 9px;" title="Bị cấm đến {{ \Carbon\Carbon::parse($item->user->comment_banned_until)->format('d/m/Y H:i') }}"><i class="fa-solid fa-ban"></i> Bị cấm</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-slate-500 small d-flex align-items-center gap-2" style="font-size: 11px;">
+                                            <span>{{ $item->user ? $item->user->email : '' }}</span>
+                                            @if($item->user && $item->user->comment_banned_until && $item->user->comment_banned_until > now())
+                                                <form action="{{ route('admin.comments.users.unban', $item->user->user_id) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-link p-0 text-success fw-bold text-decoration-none" style="font-size: 10px; line-height: 1;" title="Gỡ cấm bình luận cho tài khoản này">
+                                                        <i class="fa-solid fa-unlock"></i> Gỡ cấm
+                                                    </button>
+                                                </form>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -484,38 +545,38 @@
                             </td>
                             <td class="text-slate-500 small">{{ $item->created_at->format('d/m/Y H:i') }}</td>
                             <td class="text-end" style="padding-right: 20px;">
-                                <div class="btn-group gap-2">
+                                <div class="d-flex align-items-center justify-content-end gap-1">
                                     @if($item->report_count > 0)
                                         <form action="{{ route('admin.comments.video-comments.clear-reports', $item->id) }}" method="POST" class="d-inline">
                                             @csrf
-                                            <button type="submit" class="btn btn-outline-warning btn-sm rounded-3" title="Gỡ bỏ báo cáo vi phạm">
-                                                <i class="fa-solid fa-shield-halved"></i> Bỏ báo cáo
+                                            <button type="submit" class="btn btn-outline-warning btn-sm px-2" title="Bỏ báo cáo">
+                                                <i class="fa-solid fa-shield-halved"></i>
                                             </button>
                                         </form>
                                     @endif
                                     @if(!$item->is_approved)
                                         <form action="{{ route('admin.comments.video-comments.approve', $item->id) }}" method="POST" class="d-inline">
                                             @csrf
-                                            <button type="submit" class="btn btn-success btn-sm rounded-3">
-                                                <i class="fa-solid fa-check"></i> Duyệt
+                                            <button type="submit" class="btn btn-success btn-sm px-2" title="Duyệt">
+                                                <i class="fa-solid fa-check"></i>
                                             </button>
                                         </form>
                                     @endif
                                     <button type="button" 
-                                            class="btn btn-outline-primary btn-sm rounded-3 btn-reply-trigger" 
+                                            class="btn btn-outline-primary btn-sm px-2 btn-reply-trigger" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#adminReplyModal"
                                             data-id="{{ $item->id }}" 
                                             data-type="video-comment" 
                                             data-author="{{ $item->user ? $item->user->full_name : 'Khách hàng' }}" data-reply-url="{{ route('admin.comments.video-comments.reply', $item->id) }}" 
                                             title="Phản hồi">
-                                        <i class="fa-solid fa-reply"></i> Phản hồi
+                                        <i class="fa-solid fa-reply"></i>
                                     </button>
                                     <form action="{{ route('admin.comments.video-comments.destroy', $item->id) }}" method="POST" class="d-inline action-confirm-form" data-message="Bạn có chắc chắn muốn xóa bình luận này? Tất cả các câu trả lời liên quan cũng sẽ bị xóa.">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" class="btn btn-danger btn-sm rounded-3 btn-action-trigger" title="Xóa bình luận">
-                                            <i class="fa-solid fa-trash"></i> Xóa
+                                        <button type="button" class="btn btn-danger btn-sm px-2 btn-action-trigger" title="Xóa">
+                                            <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </form>
                                 </div>
@@ -588,28 +649,78 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Xử lý xác nhận xóa qua SweetAlert
-    document.querySelectorAll('.btn-action-trigger').forEach(button => {
-        button.addEventListener('click', function (e) {
-            e.preventDefault();
-            const form = this.closest('form');
-            const message = form.getAttribute('data-message') || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+function initCommentManagement() {
+    /**
+     * XỬ LÝ XÁC NHẬN XÓA QUA SWEETALERT BẰNG EVENT DELEGATION:
+     * - Sử dụng Event Delegation (lắng nghe trên toàn bộ `document`) để bắt sự kiện click cho các nút `.btn-action-trigger`.
+     * - Điều này giải quyết triệt để lỗi khi người dùng click vào thẻ icon <i> nằm trong nút (được bắt qua `.closest()`).
+     * - Đồng thời đảm bảo các nút được tải động hoặc thay đổi trạng thái sau này vẫn hoạt động bình thường.
+     */
+    document.addEventListener('click', function (e) {
+        const button = e.target.closest('.btn-action-trigger');
+        if (!button) return;
 
-            Swal.fire({
-                title: 'Xác nhận xóa?',
-                text: message,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'Đồng ý xóa',
-                cancelButtonText: 'Hủy'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-            });
+        e.preventDefault();
+        const form = button.closest('form');
+        if (!form) return;
+
+        const message = form.getAttribute('data-message') || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+
+        // Hiển thị hộp thoại xác nhận SweetAlert2 kèm lựa chọn hình phạt (Ban)
+        Swal.fire({
+            title: 'Xác nhận xóa?',
+            html: `
+                <div class="text-start fs-6" style="font-family: inherit;">
+                    <p class="mb-3 text-secondary">${message}</p>
+                    <div class="card p-3 border-danger shadow-sm" style="background-color: #fff5f5; border-radius: 10px;">
+                        <div class="fw-bold mb-2 text-danger" style="font-size: 14px;"><i class="fa-solid fa-gavel me-1"></i> Thiết lập hình phạt cho người dùng:</div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="swal-penalty" id="penalty-none" value="none" checked>
+                            <label class="form-check-label text-dark" for="penalty-none" style="cursor: pointer; font-size: 13px;">
+                                Không cấm (Chỉ xóa nội dung)
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="swal-penalty" id="penalty-1d" value="1">
+                            <label class="form-check-label text-dark" for="penalty-1d" style="cursor: pointer; font-size: 13px;">
+                                Cấm bình luận/đánh giá 1 ngày
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="swal-penalty" id="penalty-3d" value="3">
+                            <label class="form-check-label text-dark" for="penalty-3d" style="cursor: pointer; font-size: 13px;">
+                                Cấm bình luận/đánh giá 3 ngày
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="swal-penalty" id="penalty-permanent" value="permanent">
+                            <label class="form-check-label text-dark" for="penalty-permanent" style="cursor: pointer; font-size: 13px;">
+                                Cấm bình luận/đánh giá vĩnh viễn
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Đồng ý xóa & áp dụng',
+            cancelButtonText: 'Hủy',
+            preConfirm: () => {
+                const selectedRadio = document.querySelector('input[name="swal-penalty"]:checked');
+                return selectedRadio ? selectedRadio.value : 'none';
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Tạo một input ẩn chứa giá trị hình phạt gửi lên server cùng form xóa
+                const penaltyInput = document.createElement('input');
+                penaltyInput.type = 'hidden';
+                penaltyInput.name = 'penalty';
+                penaltyInput.value = result.value;
+                form.appendChild(penaltyInput);
+                form.submit();
+            }
         });
     });
 
@@ -675,7 +786,19 @@ document.addEventListener('DOMContentLoaded', function () {
             vid.src = '';
         });
     }
-});
+}
+
+/**
+ * KHỞI TẠO SỰ KIỆN AN TOÀN THEO READYSTATE:
+ * - Nếu trình duyệt đang tải (loading), đăng ký lắng nghe sự kiện DOMContentLoaded.
+ * - Nếu tài liệu đã được phân tích xong (interactive/complete) do chạy bất đồng bộ (defer/async) 
+ *   hoặc nạp qua cơ chế chuyển trang mượt (SPA), khởi chạy hàm thiết lập ngay lập tức để tránh bỏ lỡ sự kiện.
+ */
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCommentManagement);
+} else {
+    initCommentManagement();
+}
 
 // === Bulk Delete Functions ===
 function toggleSelectAll(type) {

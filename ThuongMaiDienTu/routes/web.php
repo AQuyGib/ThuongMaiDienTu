@@ -181,6 +181,7 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::post('comments/video-comments/{id}/approve', [CommentManagementController::class, 'approveVideoComment'])->name('admin.comments.video-comments.approve');
     Route::post('comments/reviews/{id}/clear-reports', [CommentManagementController::class, 'clearReviewReports'])->name('admin.comments.reviews.clear-reports');
     Route::post('comments/video-comments/{id}/clear-reports', [CommentManagementController::class, 'clearVideoCommentReports'])->name('admin.comments.video-comments.clear-reports');
+    Route::post('comments/users/{id}/unban', [CommentManagementController::class, 'unbanUser'])->name('admin.comments.users.unban');
 });
 
 Route::middleware('auth')->group(function () {

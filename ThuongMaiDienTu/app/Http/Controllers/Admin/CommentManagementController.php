@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Review;
 use App\Models\VideoComment;
+use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -79,30 +81,164 @@ class CommentManagementController extends Controller
         ));
     }
 
-    public function destroyReview($id)
+    /**
+     * Xóa đánh giá sản phẩm (Review) và áp dụng hình phạt cho người dùng (nếu có).
+     * 
+     * @param Request $request Chứa tham số 'penalty' thiết lập thời gian cấm hoạt động.
+     * @param int $id ID của đánh giá sản phẩm cần xóa.
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroyReview(Request $request, $id)
     {
+        // Tìm bản ghi đánh giá hoặc trả về 404
         $review = Review::findOrFail($id);
         
-        // Xóa các reply con trước
+        $penalty = $request->input('penalty');
+        $durationText = null;
+        
+        // Kiểm tra xem có yêu cầu cấm người dùng và người dùng có tồn tại không
+        if ($penalty && $penalty !== 'none' && $review->user_id) {
+            $user = User::find($review->user_id);
+            if ($user) {
+                $bannedUntil = null;
+                // Áp dụng khoảng thời gian cấm dựa trên lựa chọn từ SweetAlert
+                if ($penalty === '1') {
+                    $bannedUntil = now()->addDay();
+                    $durationText = '1 ngày';
+                } elseif ($penalty === '3') {
+                    $bannedUntil = now()->addDays(3);
+                    $durationText = '3 ngày';
+                } elseif ($penalty === 'permanent') {
+                    $bannedUntil = now()->addYears(100);
+                    $durationText = 'vĩnh viễn';
+                }
+                
+                // Lưu thời hạn cấm vào cơ sở dữ liệu
+                if ($bannedUntil) {
+                    $user->update(['comment_banned_until' => $bannedUntil]);
+                }
+            }
+        }
+        
+        // Gửi thông báo vi phạm đánh giá và thông báo cấm tài khoản (nếu có) đến người dùng
+        if ($review->user) {
+            // Thông báo nội dung bị xóa do vi phạm tiêu chuẩn cộng đồng
+            app(NotificationService::class)->createForUser($review->user, [
+                'type' => 'review.deleted',
+                'title' => 'Đánh giá đã bị gỡ bỏ',
+                'content' => 'Đánh giá của bạn cho sản phẩm #' . $review->product_id . ' đã bị xóa do vi phạm tiêu chuẩn cộng đồng.',
+                'action_url' => '#',
+                'data' => [
+                    'product_id' => $review->product_id,
+                ],
+            ]);
+            
+            // Gửi thêm thông báo cấm nếu có áp dụng hình phạt
+            if ($durationText && isset($bannedUntil)) {
+                app(NotificationService::class)->createForUser($review->user, [
+                    'type' => 'user.banned',
+                    'title' => 'Tài khoản bị hạn chế',
+                    'content' => 'Tài khoản của bạn đã bị cấm bình luận/đánh giá ' . $durationText . ' do vi phạm chính sách cộng đồng.',
+                    'action_url' => '#',
+                    'data' => [
+                        'banned_until' => $bannedUntil->toIso8601String(),
+                    ],
+                ]);
+            }
+        }
+
+        // Xóa các câu trả lời (reply) con liên kết với đánh giá cha này trước
         Review::where('parent_id', $review->id)->delete();
         
-        // Xóa đánh giá cha
+        // Xóa bản ghi đánh giá cha
         $review->delete();
 
-        return back()->with('success', 'Đã xóa đánh giá thành công.');
+        $msg = 'Đã xóa đánh giá thành công.';
+        if ($durationText) {
+            $msg .= ' Đồng thời đã cấm tài khoản viết bình luận này ' . $durationText . '.';
+        }
+
+        return back()->with('success', $msg);
     }
 
-    public function destroyVideoComment($id)
+    /**
+     * Xóa bình luận video (VideoComment) và áp dụng hình phạt cho người dùng (nếu có).
+     * 
+     * @param Request $request Chứa tham số 'penalty' thiết lập thời gian cấm hoạt động.
+     * @param int $id ID của bình luận video cần xóa.
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function destroyVideoComment(Request $request, $id)
     {
+        // Tìm bản ghi bình luận video hoặc trả về 404
         $comment = VideoComment::findOrFail($id);
 
-        // Xóa các reply con trước
+        $penalty = $request->input('penalty');
+        $durationText = null;
+        
+        // Kiểm tra xem có yêu cầu cấm người dùng và người dùng có tồn tại không
+        if ($penalty && $penalty !== 'none' && $comment->user_id) {
+            $user = User::find($comment->user_id);
+            if ($user) {
+                $bannedUntil = null;
+                // Áp dụng khoảng thời gian cấm dựa trên lựa chọn từ SweetAlert
+                if ($penalty === '1') {
+                    $bannedUntil = now()->addDay();
+                    $durationText = '1 ngày';
+                } elseif ($penalty === '3') {
+                    $bannedUntil = now()->addDays(3);
+                    $durationText = '3 ngày';
+                } elseif ($penalty === 'permanent') {
+                    $bannedUntil = now()->addYears(100);
+                    $durationText = 'vĩnh viễn';
+                }
+                
+                // Lưu thời hạn cấm vào cơ sở dữ liệu
+                if ($bannedUntil) {
+                    $user->update(['comment_banned_until' => $bannedUntil]);
+                }
+            }
+        }
+
+        // Gửi thông báo vi phạm bình luận video và thông báo cấm tài khoản (nếu có) đến người dùng
+        if ($comment->user) {
+            // Thông báo nội dung bị xóa do vi phạm tiêu chuẩn cộng đồng
+            app(NotificationService::class)->createForUser($comment->user, [
+                'type' => 'comment.deleted',
+                'title' => 'Bình luận đã bị gỡ bỏ',
+                'content' => 'Bình luận của bạn trên video đã bị xóa do vi phạm tiêu chuẩn cộng đồng.',
+                'action_url' => '#',
+                'data' => [
+                    'video_id' => $comment->video_id,
+                ],
+            ]);
+            
+            // Gửi thêm thông báo cấm nếu có áp dụng hình phạt
+            if ($durationText && isset($bannedUntil)) {
+                app(NotificationService::class)->createForUser($comment->user, [
+                    'type' => 'user.banned',
+                    'title' => 'Tài khoản bị hạn chế',
+                    'content' => 'Tài khoản của bạn đã bị cấm bình luận/đánh giá ' . $durationText . ' do vi phạm chính sách cộng đồng.',
+                    'action_url' => '#',
+                    'data' => [
+                        'banned_until' => $bannedUntil->toIso8601String(),
+                    ],
+                ]);
+            }
+        }
+
+        // Xóa các bình luận (reply) con liên kết với bình luận cha này trước
         VideoComment::where('parent_id', $comment->id)->delete();
 
-        // Xóa bình luận cha
+        // Xóa bản ghi bình luận cha
         $comment->delete();
 
-        return back()->with('success', 'Đã xóa bình luận video thành công.');
+        $msg = 'Đã xóa bình luận video thành công.';
+        if ($durationText) {
+            $msg .= ' Đồng thời đã cấm tài khoản viết bình luận này ' . $durationText . '.';
+        }
+
+        return back()->with('success', $msg);
     }
 
     public function replyReview(Request $request, $id)
@@ -207,5 +343,31 @@ class CommentManagementController extends Controller
         VideoComment::whereIn('id', $ids)->delete();
 
         return back()->with('success', 'Đã xóa ' . count($ids) . ' bình luận thành công.');
+    }
+
+    /**
+     * Gỡ bỏ hình phạt cấm bình luận/đánh giá cho người dùng.
+     * 
+     * @param int $id ID của người dùng cần gỡ cấm.
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function unbanUser($id)
+    {
+        // Tìm người dùng hoặc trả về lỗi 404
+        $user = User::findOrFail($id);
+        
+        // Reset thời hạn cấm về null
+        $user->update(['comment_banned_until' => null]);
+        
+        // Gửi thông báo khôi phục quyền hoạt động cho người dùng
+        app(NotificationService::class)->createForUser($user, [
+            'type' => 'user.unbanned',
+            'title' => 'Khôi phục quyền bình luận',
+            'content' => 'Quyền bình luận và đánh giá của bạn đã được khôi phục.',
+            'action_url' => '#',
+            'data' => [],
+        ]);
+        
+        return back()->with('success', 'Đã gỡ cấm bình luận cho người dùng ' . ($user->full_name ?? $user->name) . ' thành công.');
     }
 }

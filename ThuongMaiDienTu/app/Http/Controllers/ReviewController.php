@@ -9,15 +9,34 @@ use Illuminate\Support\Facades\Auth;
 class ReviewController extends Controller
 {
     /**
-     * Store a newly created review in storage.
+     * Gửi đánh giá hoặc phản hồi mới cho sản phẩm.
+     * 
+     * @param Request $request Dữ liệu đánh giá (product_id, rating, content, parent_id, media)
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
+        // Yêu cầu đăng nhập trước khi viết đánh giá/phản hồi
         if (!Auth::check()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Vui lòng đăng nhập để gửi đánh giá!'
             ], 401);
+        }
+
+        // KIỂM TRA HÌNH PHẠT CẤM HOẠT ĐỘNG:
+        // - Xem người dùng hiện tại có bị cấm bình luận/đánh giá không (dựa trên cột comment_banned_until).
+        // - Nếu còn trong thời hạn cấm, trả về thông báo lỗi kèm thời gian mở khóa.
+        $user = Auth::user();
+        if ($user->comment_banned_until && $user->comment_banned_until > now()) {
+            $isPermanent = \Carbon\Carbon::parse($user->comment_banned_until)->year > now()->year + 10;
+            $msg = $isPermanent 
+                ? "Tài khoản của bạn đã bị cấm bình luận/đánh giá vĩnh viễn do vi phạm chính sách cộng đồng."
+                : "Tài khoản của bạn đã bị khóa tính năng bình luận/đánh giá đến " . \Carbon\Carbon::parse($user->comment_banned_until)->format('d/m/Y H:i') . " do vi phạm chính sách cộng đồng.";
+            return response()->json([
+                'success' => false,
+                'message' => $msg
+            ], 403);
         }
 
         $request->validate([
@@ -127,13 +146,21 @@ class ReviewController extends Controller
 
     /**
      * Báo cáo đánh giá sản phẩm vi phạm.
+     * - Khi nhận được báo cáo từ người dùng, tăng số lượt báo cáo `report_count`.
+     * - Nếu tổng số báo cáo của đánh giá này đạt ngưỡng >= 3, đánh giá sẽ tự động bị ẩn (đặt `is_approved` về 0) chờ kiểm duyệt của Admin.
+     * 
+     * @param Request $request
+     * @param int $id ID của đánh giá cần báo cáo.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function report(Request $request, $id)
     {
         $review = Review::findOrFail($id);
+        
+        // Tăng bộ đếm lượt báo cáo vi phạm
         $review->increment('report_count');
 
-        // Ngưỡng ẩn tự động khi đạt 3 báo cáo trở lên
+        // Ngưỡng ẩn tự động khi đạt từ 3 báo cáo trở lên
         if ($review->report_count >= 3) {
             $review->update(['is_approved' => 0]);
         }

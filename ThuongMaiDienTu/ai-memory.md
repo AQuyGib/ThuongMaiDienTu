@@ -247,11 +247,57 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Thêm checkbox từng dòng cho mỗi bình luận/đánh giá.
   - Thanh hành động hàng loạt (bulk action bar) hiển thị khi có item được chọn, cho phép xóa nhiều bình luận cùng lúc với xác nhận SweetAlert.
   - Backend: 2 route POST mới (`bulk-delete`) + 2 method mới trong `CommentManagementController`.
-- **Báo cáo comment phụ:**
+- **Báo cáo comment phụ & Modal xác nhận báo cáo:**
   - Thêm nút "Báo cáo" vào các reply (comment phụ) trong trang chi tiết sản phẩm (`reviews.blade.php`).
+  - Thay thế hộp thoại xác nhận báo cáo mặc định của trình duyệt (`confirm`) bằng Modal xác nhận tùy chỉnh (`showConfirm`) với thiết kế cảnh báo màu cam (`warning` theme) để tăng trải nghiệm người dùng đồng nhất.
 - **Các file sửa đổi:**
   - `routes/web.php`
   - `app/Http/Controllers/Admin/CommentManagementController.php`
   - `resources/views/admin/comments/index.blade.php`
   - `resources/views/frontend/products/partials/reviews.blade.php`
 
+- **Khắc phục hoàn toàn việc nhảy trang lên đầu sau khi reload (Submit Review/Reply/Report):**
+  - Tắt tính năng tự động khôi phục cuộn của trình duyệt (`history.scrollRestoration = 'manual'`) trước khi cuộn để tránh xung đột.
+  - Sử dụng cờ chuyên biệt `scroll_to_reviews` trong `sessionStorage` kết hợp với `setTimeout(..., 100/150)` nhằm đợi toàn bộ cấu trúc trang (DOM & Layout) ổn định rồi mới thực hiện cuộn mượt xuống đúng vị trí `#reviews-section`.
+  - Áp dụng đồng bộ cho cả 3 thao tác: Gửi đánh giá mới, Phản hồi (Reply) và Gửi báo cáo (Report).
+
+- **Tối giản hóa và tối ưu giao diện bảng quản lý Admin:**
+  - Ngăn chặn hoàn toàn việc vỡ chữ, xuống dòng đứng ở các tiêu đề bảng bằng cách thêm `white-space: nowrap !important;` cho `th` và định dạng khoảng cách cột hợp lý.
+  - Rút ngắn nhãn cột: "Nội dung đánh giá & Phản hồi" -> "Nội dung & Phản hồi", "Tệp đính kèm" -> "Đính kèm".
+  - Chuyển đổi các nút hành động (Duyệt, Bỏ báo cáo, Phản hồi, Xóa) sang dạng Icon-only nhỏ gọn, kèm Tooltip chi tiết để giải phóng diện tích hiển thị cho phần nội dung chính, tránh tình trạng bảng bị bóp nghẹt.
+
+- **Tính năng xử phạt thành viên vi phạm (Cấm bình luận):**
+  - Đã thêm cột `comment_banned_until` kiểu `timestamp` (cho phép NULL) vào bảng `users`.
+  - Tích hợp SweetAlert lựa chọn hình phạt trực quan khi Admin nhấn nút **Xóa** bình luận/đánh giá (Các tùy chọn: *Không cấm*, *Cấm bình luận 1 ngày*, *Cấm bình luận 3 ngày*, *Cấm bình luận vĩnh viễn*).
+  - Cập nhật hàm xóa trong `CommentManagementController` để đọc tham số `penalty` và áp đặt hạn cấm bình luận tương ứng lên tài khoản người viết.
+  - Cập nhật cả 2 cổng API gửi bình luận chính (`ReviewController@store` cho đánh giá sản phẩm và `VideoController@storeComment` cho bình luận Góc video) để kiểm tra cột hạn cấm và trả về thông báo lỗi chi tiết, chặn tuyệt đối hành vi lách luật.
+
+- **Tối ưu hóa Hệ thống thông báo Đánh giá & Xử phạt:**
+  - Tắt thông báo tự động "Đánh giá của bạn đã được ghi nhận" khi người dùng tạo đánh giá mới (xóa trong Event Booted của `Review` model).
+  - Tự động gửi thông báo vi phạm khi Admin xóa đánh giá hoặc bình luận video ("Đánh giá/Bình luận đã bị gỡ bỏ do vi phạm tiêu chuẩn cộng đồng").
+  - Tự động gửi thông báo cấm hoạt động ("Tài khoản bị hạn chế [Thời gian]") khi Admin áp đặt lệnh cấm.
+  - Tự động gửi thông báo khôi phục quyền bình luận khi Admin thực hiện thao tác gỡ cấm.
+
+- **Bổ sung Tải ảnh / video khi phản hồi (Reply):**
+  - Tích hợp nút upload chung ảnh/video cùng khung hiển thị preview bên trong form trả lời bình luận (`reply-form`) tại `reviews.blade.php`.
+  - Hỗ trợ append file tải lên (`media[]`) trong AJAX request của `submitReply`.
+  - Hiển thị danh sách file đính kèm dưới nội dung câu trả lời ở cả giao diện người dùng và trang quản trị Admin.
+
+- **Tối ưu hóa số thứ tự (STT) trong bảng quản trị:**
+  - Chuyển cột hiển thị mã `ID` của đánh giá/bình luận thành số thứ tự `STT` tăng dần liên tục từ 1 (đã tính toán theo trang hiện tại của dữ liệu phân trang).
+
+- **Sửa lỗi không hiển thị popup xác nhận xóa (SweetAlert):**
+  - Chuyển cơ chế lắng nghe sự kiện click của các nút xóa `.btn-action-trigger` sang Event Delegation (`document.addEventListener('click', ...)`) để hỗ trợ tốt nhất cho mọi phần tử trong DOM.
+  - Kiểm tra `document.readyState` để thực thi script ngay lập tức nếu DOM đã sẵn sàng (tránh lỗi timing khi script chạy ở chế độ async/defer).
+  - Cấu hình trong `resources/js/app.tsx` để bỏ qua Soft Navigation (SPA router) và ép trình duyệt tải lại toàn bộ trang (Full Page Reload) khi truy cập `/admin/comments` giúp các script đi kèm trang quản trị bình luận/đánh giá được khởi tạo hoàn chỉnh và chính xác ngay từ lần đầu truy cập.
+
+- **Bổ sung Seeder bình luận & đánh giá:**
+  - Tạo `CommentSeeder.php` để tự động tạo dữ liệu đánh giá sản phẩm (Review) với các mức điểm 1-5 sao, nội dung bình luận ngẫu nhiên, các phản hồi (reply) từ quản trị viên, đính kèm ảnh mẫu và một số đánh giá bị báo cáo vi phạm.
+  - Tự động tạo dữ liệu bình luận video (VideoComment) kèm phản hồi mẫu và trạng thái bị báo cáo.
+  - Đăng ký `CommentSeeder` vào danh sách chạy mặc định trong `DatabaseSeeder.php`.
+
+- **Thêm chú thích chi tiết (Inline Comments & PHPDoc) trong code:**
+  - **`CommentManagementController.php`**: PHPDoc giải thích rõ ràng tham số đầu vào, quy trình kiểm soát hình phạt cấm tài khoản, logic gửi thông báo đa trạng thái (xóa/cấm) và quy tắc xóa theo tầng (cascade) của `destroyReview`, `destroyVideoComment`, `unbanUser`.
+  - **`ReviewController.php` & `VideoController.php`**: PHPDoc mô tả chi tiết cơ chế cấm người dùng bằng trường `comment_banned_until` trong `store`/`storeComment` và logic đếm lượt báo cáo tự động ẩn khi đạt từ $\ge 3$ lượt báo cáo trong `report`/`reportComment`.
+  - **`index.blade.php` (Admin)**: Chú thích chi tiết kỹ thuật Event Delegation lắng nghe từ document gốc và cơ chế readyState kiểm tra trạng thái DOM tải bất đồng bộ/SPA router.
+  - **`reviews.blade.php` (Frontend)**: Chú thích chi tiết kỹ thuật gom tệp tải lên qua `FormData`, xử lý AJAX, kiểm tra HTTP Status 403 để đổi tiêu đề popup từ "Lỗi kết nối" thành "Vi phạm".
