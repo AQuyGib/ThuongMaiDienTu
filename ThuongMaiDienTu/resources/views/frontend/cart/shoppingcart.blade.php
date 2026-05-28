@@ -484,7 +484,11 @@
     window.proceedToCheckout = () => {
         const selectedItems = window.cartData.filter(i => i.selected);
         if (selectedItems.length > 0) {
-            window.location.href = `{{ url('/pay') }}`;
+            @auth
+                window.location.href = `{{ route('cart.pay') }}`;
+            @else
+                window.location.href = `{{ route('login_register') }}`;
+            @endauth
         }
     };
 
