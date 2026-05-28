@@ -263,6 +263,11 @@
     - Cấu hình chuẩn hóa các thuộc tính `wheel_prize_type`, `wheel_type`, `winning_rate` và `min_rank` bên trong cột `metadata` của bảng `reward_catalog`.
     - Sử dụng `Schema::disableForeignKeyConstraints()` và `Schema::enableForeignKeyConstraints()` để cho phép truncate dữ liệu cũ một cách an toàn mà không bị chặn bởi khóa ngoại.
     - Thực thi thành công lệnh `php artisan db:seed --class=RewardSeeder`.
+  - **Bổ sung bình luận chi tiết bằng tiếng Việt cho mã nguồn hệ thống Phần thưởng (Rewards & Lucky Wheel)**:
+    - Viết comment mô tả chức năng chi tiết cho tất cả các hàm và khối logic bên trong `Admin\RewardsController.php` (quản trị, validation, image upload, cấu hình vòng quay, lọc lịch sử).
+    - Viết comment cho `RewardsController.php` (frontend endpoint phục vụ xem quà, redeem AJAX, và quay thưởng AJAX).
+    - Viết comment giải thích logic nghiệp vụ của `RewardsService.php` (các giao dịch DB, tính toán random trúng giải theo trọng số, trừ điểm ví, kiểm tra hạng thành viên, kiểm tra tồn kho).
+    - Viết comment cho các file Seeder dữ liệu giả lập (`RewardSeeder.php`, `RewardHistorySeeder.php`).
 
 ## TODOs & Follow-up Work
 - **Lucky Wheel & Rewards:**
