@@ -343,3 +343,24 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - **Cải tiến logic tăng view:**
   - **Trước đây:** Mỗi khi người dùng bấm vào một video trong playlist (click phát video) hoặc tải trang, hệ thống ngay lập tức gọi API `/videos/{video}/view` để tăng 1 lượt xem (views).
   - **Hiện tại:** Loại bỏ hoàn toàn sự kiện tăng views tự động khi click chọn hoặc load trang. Bổ sung sự kiện lắng nghe `ended` trên thẻ phát HTML5 `<video id="main-video-player">`. Chỉ khi người dùng xem hết video, hàm `incrementViews(currentVideoId)` mới được kích hoạt để tăng lượt xem và hiển thị thông báo cảm ơn người dùng.
+
+### 21. Sửa lỗi chatbot đa ngôn ngữ (Multilingual Chatbot & RAG Fix)
+- **Bypass Dịch Thuật Middleware:** 
+  - Thêm `'response'` vào `$blacklist` của `isMachineKey` trong `TranslateHtmlResponse.php` để ngăn chặn middleware tự dịch kết quả chatbot JSON từ Gemini sang tiếng Anh.
+  - Bổ sung cơ chế **bypass hoàn toàn** route chatbot (`/chatbot`) tại đầu phương thức `handle` trong `TranslateHtmlResponse.php` để đảm bảo middleware không can thiệp, biến đổi cấu trúc JSON hoặc mã hóa/dịch thuật bất kỳ dữ liệu phản hồi nào từ AI.
+- **Giải mã thực thể HTML ở Frontend (Client-side HTML Entity Decoding):**
+  - Thêm hàm helper `decodeHtml(html)` trong `resources/views/partials/chatbot.blade.php` sử dụng thẻ `textarea` tạm thời để giải mã toàn bộ các thực thể HTML (như `&lt;br&gt;`, `&lt;a ...&gt;`) về dạng thẻ HTML thuần trước khi gán vào `innerHTML`.
+  - Giúp bảo vệ giao diện, đảm bảo các thẻ xuống dòng `<br>`, in đậm `<b>` và link sản phẩm `<a class="chatbot-product-link">` luôn hiển thị chính xác dưới dạng các phần tử giao diện thay vì hiển thị dưới dạng văn bản thô (plain text).
+- **Prompt Chatbot Bản Địa Hóa (Locale-Aware Prompt):** 
+  - Trong `ChatbotController.php`, kiểm tra locale hiện tại `App::getLocale() === 'en'`. Nếu đang ở phiên bản tiếng Anh, hệ thống sẽ sử dụng bộ System Prompt viết hoàn toàn bằng tiếng Anh để chỉ dẫn Gemini AI, yêu cầu nó phản hồi 100% bằng tiếng Anh.
+  - Sửa đổi phương thức `searchProducts` sử dụng Eloquent `Product` model thay vì query builder `DB::table` để kích hoạt `BaseTranslationTrait`, giúp tự động lấy tên sản phẩm tiếng Anh tương ứng từ bảng `product_translations`.
+  - Hỗ trợ tìm kiếm khớp từ khóa cả ở bảng chính `products` và bảng dịch `product_translations` thông qua mối quan hệ `translations` bằng `orWhereHas('translations')`.
+  - Chuyển ngữ các nhãn văn bản của kho dữ liệu gửi kèm (Inventory Context) và thông báo lỗi phản hồi API chatbot sang tiếng Anh một cách mượt mà.
+
+### 22. Hóa giải lỗi dịch thuật hệ thống lọc sản phẩm (Bilingual Product Filter Page)
+- **Sửa lỗi hiển thị chữ tiếng Việt ở giao diện tiếng Anh:**
+  - **Khắc phục Text Node có ký tự xuống dòng:** Trong `index.blade.php`, các văn bản tĩnh `Gợi ý nhanh:`, `Kinh tế tuần hoàn:`, và `Bỏ chọn tất cả` ban đầu được viết xuống dòng thụt lề làm Middleware dịch thuật không khớp từ khóa hoặc bị lỗi dịch khoảng trắng. Đã thu gọn chúng thành dòng đơn không ngắt dòng để Middleware khớp dịch thành công.
+  - **Hỗ trợ Đa Ngôn Ngữ động trong JavaScript (`product-filter.js`):**
+    - Do các thẻ lọc (active filter tags như `Danh mục: Sound`, `Hãng: Asus`, `Nhu cầu: Chơi mượt Genshin`, v.v.) và popup chọn giá được tạo động bằng JavaScript ở Client-side nên Middleware backend không can thiệp được.
+    - Đã thêm biến `isEn` phát hiện ngôn ngữ của trang (`document.documentElement.lang === 'en'`).
+    - Bản địa hóa toàn bộ nhãn tĩnh được chèn động bởi JS như: tiêu đề popup `Filter` / `Bộ lọc`, nút `Close` / `Đóng`, nút `Apply` / `Xem kết quả`, các tag lọc (`Category`, `Price`, `Usage needs`, `Manufacturer`, `Color`, `Easy to repair`, `Environmentally friendly`), cũng như thông báo lỗi tải sản phẩm.

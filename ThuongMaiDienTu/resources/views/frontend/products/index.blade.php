@@ -61,8 +61,7 @@
                         <!-- DienMay Pro Special Filters (Nhu cầu, Kinh tế tuần hoàn) -->
                         <div
                             class="flex flex-nowrap md:flex-wrap gap-2 items-center overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-                            <span class="text-xs font-bold text-gray-400 uppercase mr-2 whitespace-nowrap">Gợi ý
-                                nhanh:</span>
+                            <span class="text-xs font-bold text-gray-400 uppercase mr-2 whitespace-nowrap">Gợi ý nhanh:</span>
                             <button type="button"
                                 class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 rounded-xl font-medium text-sm hover:shadow-sm transition-all duration-200 whitespace-nowrap"
                                 data-name="needs" data-value="gaming">🎮 Chơi mượt Genshin</button>
@@ -71,8 +70,7 @@
                                 data-name="needs" data-value="student">🎓 Học Web Dev</button>
 
                             <span
-                                class="text-xs font-bold text-gray-400 uppercase ml-4 mr-2 whitespace-nowrap hidden md:inline">Kinh
-                                tế tuần hoàn:</span>
+                                class="text-xs font-bold text-gray-400 uppercase ml-4 mr-2 whitespace-nowrap hidden md:inline">Kinh tế tuần hoàn:</span>
                             <button type="button"
                                 class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 rounded-xl font-medium text-sm hover:shadow-sm transition-all duration-200 whitespace-nowrap"
                                 data-name="high_repairability" data-value="1">🔧 Dễ sửa chữa (9-10đ)</button>
@@ -86,8 +84,7 @@
                 <!-- Active Filters Tags -->
                 <div id="active-filters" class="flex flex-wrap items-center gap-2 py-3">
                     <button type="button" id="clear-all-filters"
-                        class="text-xs font-medium text-gray-400 hover:text-red-600 transition-colors underline ml-2 hidden">Bỏ
-                        chọn tất cả</button>
+                        class="text-xs font-medium text-gray-400 hover:text-red-600 transition-colors underline ml-2 hidden">Bỏ chọn tất cả</button>
                 </div>
 
                 <!-- Sorting Buttons -->

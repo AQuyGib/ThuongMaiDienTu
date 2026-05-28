@@ -31,6 +31,11 @@ class TranslateHtmlResponse
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
+
+        // Bỏ qua route chatbot hoàn toàn để tránh can thiệp vào dữ liệu AI tự sinh
+        if ($request->is('chatbot') || $request->is('*/chatbot')) {
+            return $response;
+        }
  
         // CHỈ thực hiện dịch khi ngôn ngữ hiện tại của ứng dụng được chọn là Tiếng Anh ('en')
         if (App::getLocale() !== 'en') {
@@ -474,7 +479,7 @@ class TranslateHtmlResponse
             'file', 'mime_type', 'extension', 'url', 'redirect', 'route', 'key',
             'field', 'slug', 'locale', 'lang', 'created_at', 'updated_at',
             'deleted_at', 'date', 'time', 'size', 'file_size', 'avatar', 'icon',
-            'color', 'rom', 'rom_capacity', 'extra_price'
+            'color', 'rom', 'rom_capacity', 'extra_price', 'response'
         ];
 
         return in_array($keyLower, $blacklist);
