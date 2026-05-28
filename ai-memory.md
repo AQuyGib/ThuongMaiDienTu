@@ -260,8 +260,14 @@
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/RewardsController.php`
   - `ThuongMaiDienTu/app/Services/RewardsService.php`
   - `ThuongMaiDienTu/resources/views/frontend/cart/apply-discount-code.blade.php`
+- **Database Seeders Fix:**
+  - `ThuongMaiDienTu/database/seeders/DatabaseSeeder.php`
+  - `ThuongMaiDienTu/database/seeders/InventoryMovementSeeder.php`
 
 ## Important Logic & Behavior Changes
+- **Sửa lỗi ràng buộc khóa ngoại (Integrity Constraint Violation) khi chạy Seeder:**
+  - Di chuyển `OrderSeeder::class` lên trước `InventoryMovementSeeder::class` trong `DatabaseSeeder.php` để đảm bảo bảng `orders` đã có dữ liệu mẫu trước khi bảng biến động kho `inventory_movements` tham chiếu đến.
+  - Sửa đổi `InventoryMovementSeeder.php` thay vì gán ngẫu nhiên `$orderId = rand(1, 50);` (có thể gây ra ID không tồn tại hoặc lỗi khóa ngoại khi bảng orders trống), chuyển sang truy vấn ngẫu nhiên các bản ghi `Order` thực tế trong database để lấy `order_id` và `order_code` thực tế.
 - **Đồng bộ hóa Validation & Khắc phục toàn bộ các Test Case Checkout (Flash Sale):**
   - Khắc phục lỗi Integrity Constraint Violation trong môi trường testing bằng cách tự động mock dữ liệu cho `suppliers` và `purchase_orders` trước khi chạy các test case thanh toán Flash Sale.
   - Sửa đổi các phương thức test từ mong đợi redirect `assertRedirect(route('home'))` thành mong đợi JSON trả về `assertJson(['status' => 'success. success'])` phù hợp hoàn toàn với logic API JSON của `CartController@confirmOrder` và hệ thống chuyển ngữ động của Laravel.
