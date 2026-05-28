@@ -364,3 +364,11 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - Do các thẻ lọc (active filter tags như `Danh mục: Sound`, `Hãng: Asus`, `Nhu cầu: Chơi mượt Genshin`, v.v.) và popup chọn giá được tạo động bằng JavaScript ở Client-side nên Middleware backend không can thiệp được.
     - Đã thêm biến `isEn` phát hiện ngôn ngữ của trang (`document.documentElement.lang === 'en'`).
     - Bản địa hóa toàn bộ nhãn tĩnh được chèn động bởi JS như: tiêu đề popup `Filter` / `Bộ lọc`, nút `Close` / `Đóng`, nút `Apply` / `Xem kết quả`, các tag lọc (`Category`, `Price`, `Usage needs`, `Manufacturer`, `Color`, `Easy to repair`, `Environmentally friendly`), cũng như thông báo lỗi tải sản phẩm.
+
+### 23. Thêm Seeder cho Hóa đơn dịch vụ và Phiếu sửa chữa
+- **Hạ tầng & Seeders:**
+  - **`database/seeders/UserSeeder.php`** (Chỉnh sửa): Cập nhật thông tin `phone_number` cho 20 khách hàng ảo để phục vụ cơ chế tự động điền / tìm kiếm theo số điện thoại khi tạo phiếu sửa chữa và hóa đơn. Đồng thời thêm 2 tài khoản Kỹ thuật viên mẫu (role 4 - Nhân viên) là `technical.nam@dienmaypro.com.vn` và `technical.hung@dienmaypro.com.vn`.
+  - **`database/seeders/ServiceInvoiceSeeder.php`** (Mới tạo): Sinh dữ liệu hóa đơn dịch vụ ngẫu nhiên với nhiều trạng thái (`paid`, `issued`, `draft`, `cancelled`), tự động tính toán thuế VAT (8% hoặc 10%), giảm giá và tổng tiền từ các mẫu dịch vụ thực tế.
+  - **`database/seeders/RepairTicketSeeder.php`** (Mới tạo): Sinh 19 phiếu sửa chữa với đầy đủ các trạng thái (`Received`, `Checking`, `Under_Repair`, `Waiting_Parts`, `Done`). Các phiếu trạng thái `Done` (hoàn thành) được chia làm 2 loại: một số chưa xuất hóa đơn, và một số đã liên kết trực tiếp với các hóa đơn tương ứng sinh ra từ `ServiceInvoiceSeeder` (đảm bảo đồng bộ 100% về thông tin khách hàng, số điện thoại, IMEI, tên dịch vụ và phí dịch vụ).
+  - **`database/seeders/DatabaseSeeder.php`** (Chỉnh sửa): Đăng ký `ServiceInvoiceSeeder::class` và `RepairTicketSeeder::class` vào phương thức `run()` để tự động kích hoạt khi chạy lệnh seeding toàn cục.
+
