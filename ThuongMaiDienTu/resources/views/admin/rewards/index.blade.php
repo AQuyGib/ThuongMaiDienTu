@@ -243,7 +243,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{{ $locale === 'en' ? 'Reward Code' : 'Mã Reward' }}</label>
-                    <input name="code" placeholder="{{ $locale === 'en' ? 'Code (E.g. VOUCHER20K)' : 'Mã (Ví dụ: VOUCHER20K)' }}" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 uppercase font-bold text-slate-700" pattern="[A-Z0-9_\-]+" title="Chỉ dùng A-Z, 0-9, _ hoặc -">
+                    <input name="code" placeholder="{{ $locale === 'en' ? 'Code (E.g. VOUCHER20K)' : 'Mã (Ví dụ: VOUCHER20K)' }}" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm outline-none transition bg-slate-50/50 uppercase font-bold text-slate-700" pattern="[A-Z0-9_\-]+" title="Chỉ dùng A-Z, 0-9, _ hoặc -" maxlength="50">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">{{ $locale === 'en' ? 'Reward Name' : 'Tên Reward' }}</label>

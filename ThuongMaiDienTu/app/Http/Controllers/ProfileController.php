@@ -115,11 +115,20 @@ class ProfileController extends Controller
         }
 
         $request->validate([
-            'full_name' => 'required|string|max:255',
-            'phone_number' => 'nullable|string|max:20',
+            'full_name' => 'required|string|min:2|max:50|regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u',
+            'phone_number' => 'nullable|string|regex:/^0[0-9]{8,9}$/',
             'gender' => 'nullable|string|max:20',
             'dob' => 'nullable|date',
-            'address' => 'nullable|string|max:255',
+            'address' => 'nullable|string|min:10|max:150|regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u',
+        ], [
+            'full_name.required' => 'Họ và tên là bắt buộc.',
+            'full_name.min' => 'Họ và tên phải từ 2 ký tự trở lên.',
+            'full_name.max' => 'Họ và tên tối đa 50 ký tự.',
+            'full_name.regex' => 'Họ và tên không được chứa số hoặc ký tự đặc biệt.',
+            'phone_number.regex' => 'Số điện thoại không hợp lệ (phải từ 9-10 số và bắt đầu bằng số 0).',
+            'address.min' => 'Địa chỉ phải từ 10 ký tự trở lên.',
+            'address.max' => 'Địa chỉ tối đa 150 ký tự.',
+            'address.regex' => 'Địa chỉ không được chứa ký tự đặc biệt lạ.',
         ]);
 
         $user = Auth::user();
@@ -168,10 +177,17 @@ class ProfileController extends Controller
             'city' => 'required|string',
             'district' => 'required|string',
             'ward' => 'required|string',
-            'street' => 'required|string',
-            'name' => 'nullable|string',
+            'street' => 'required|string|min:10|max:150|regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u',
+            'name' => 'nullable|string|max:50|regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u',
             'type' => 'required|string|in:Nhà,Văn phòng',
             'is_default' => 'boolean'
+        ], [
+            'street.required' => 'Địa chỉ số nhà, tên đường là bắt buộc.',
+            'street.min' => 'Địa chỉ phải từ 10 ký tự trở lên.',
+            'street.max' => 'Địa chỉ tối đa 150 ký tự.',
+            'street.regex' => 'Địa chỉ không được chứa ký tự đặc biệt lạ.',
+            'name.max' => 'Tên gợi nhớ tối đa 50 ký tự.',
+            'name.regex' => 'Tên gợi nhớ không được chứa số hoặc ký tự đặc biệt.',
         ]);
 
         $user = Auth::user();
@@ -217,10 +233,17 @@ class ProfileController extends Controller
             'city' => 'required|string',
             'district' => 'required|string',
             'ward' => 'required|string',
-            'street' => 'required|string',
-            'name' => 'nullable|string',
+            'street' => 'required|string|min:10|max:150|regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u',
+            'name' => 'nullable|string|max:50|regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u',
             'type' => 'required|string|in:Nhà,Văn phòng',
             'is_default' => 'boolean'
+        ], [
+            'street.required' => 'Địa chỉ số nhà, tên đường là bắt buộc.',
+            'street.min' => 'Địa chỉ phải từ 10 ký tự trở lên.',
+            'street.max' => 'Địa chỉ tối đa 150 ký tự.',
+            'street.regex' => 'Địa chỉ không được chứa ký tự đặc biệt lạ.',
+            'name.max' => 'Tên gợi nhớ tối đa 50 ký tự.',
+            'name.regex' => 'Tên gợi nhớ không được chứa số hoặc ký tự đặc biệt.',
         ]);
 
         $isDefault = $request->is_default ?? false;
@@ -386,21 +409,32 @@ class ProfileController extends Controller
 
         // Bước 2: Thiết lập bộ quy tắc xác thực dữ liệu đầu vào
         $request->validate([
-            'customer_name' => ['required', 'string', 'max:255'],
-            'customer_phone' => ['required', 'string', 'regex:/^[0-9]{10}$/'],
-            'customer_email' => ['nullable', 'email', 'max:255'],
-            'customer_address' => ['nullable', 'string', 'max:255'],
-            'imei_serial' => ['required', 'string', 'max:100', 'unique:repair_tickets,imei_serial'], // Đảm bảo IMEI duy nhất
-            'issue_desc' => ['required', 'string'],
+            'customer_name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
+            'customer_phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
+            'customer_email' => ['nullable', 'email', 'max:100'],
+            'customer_address' => ['nullable', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
+            'imei_serial' => ['required', 'string', 'min:5', 'max:50', 'unique:repair_tickets,imei_serial'], // Đảm bảo IMEI duy nhất
+            'issue_desc' => ['required', 'string', 'min:10', 'max:500'],
             'schedule_date' => ['required', 'date', 'after_or_equal:today'], // Ngày hẹn mang tới phải >= ngày hiện tại
         ], [
             'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
+            'customer_name.min' => 'Họ và tên khách hàng phải từ 2 ký tự trở lên.',
+            'customer_name.max' => 'Họ và tên khách hàng tối đa 50 ký tự.',
+            'customer_name.regex' => 'Họ và tên không chứa số hoặc ký tự đặc biệt.',
             'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
-            'customer_phone.regex' => 'Số điện thoại liên hệ phải có đúng 10 chữ số.',
+            'customer_phone.regex' => 'Số điện thoại phải gồm 9-10 số và bắt đầu bằng số 0.',
             'customer_email.email' => 'Địa chỉ email không hợp lệ.',
+            'customer_email.max' => 'Email tối đa 100 ký tự.',
+            'customer_address.min' => 'Địa chỉ liên hệ phải từ 10 ký tự trở lên.',
+            'customer_address.max' => 'Địa chỉ liên hệ tối đa 150 ký tự.',
+            'customer_address.regex' => 'Địa chỉ không chứa ký tự đặc biệt lạ.',
             'imei_serial.required' => 'Vui lòng nhập mã IMEI / Serial.',
+            'imei_serial.min' => 'Mã IMEI / Serial phải từ 5 ký tự trở lên.',
+            'imei_serial.max' => 'Mã IMEI / Serial tối đa 50 ký tự.',
             'imei_serial.unique' => 'Mã IMEI / Serial này đã tồn tại trong hệ thống.',
             'issue_desc.required' => 'Vui lòng nhập mô tả lỗi.',
+            'issue_desc.min' => 'Mô tả lỗi phải từ 10 ký tự trở lên.',
+            'issue_desc.max' => 'Mô tả lỗi tối đa 500 ký tự.',
             'schedule_date.required' => 'Vui lòng chọn ngày hẹn mang máy tới.',
             'schedule_date.after_or_equal' => 'Ngày hẹn mang máy tới phải từ hôm nay trở đi.',
         ]);

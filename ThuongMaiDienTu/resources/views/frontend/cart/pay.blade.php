@@ -65,14 +65,14 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Họ và tên *</label>
-            <input id="inp-name" name="customer_name" type="text" required maxlength="30"
+            <input id="inp-name" name="customer_name" type="text" required maxlength="50"
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
               value="{{ Auth::check() ? Auth::user()->name : '' }}" placeholder="Nguyễn Văn A">
             <p id="err-name" class="text-xs text-red-500 mt-1 hidden"></p>
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại *</label>
-            <input id="inp-phone" name="customer_phone" type="tel" required
+            <input id="inp-phone" name="customer_phone" type="tel" required maxlength="10"
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
               value="{{ Auth::check() && Auth::user()->phone ? Auth::user()->phone : '' }}" placeholder="0901234567">
             <p id="err-phone" class="text-xs text-red-500 mt-1 hidden"></p>
@@ -81,9 +81,9 @@
         <div class="mt-4">
           <div class="flex justify-between items-center mb-1">
             <label class="block text-sm font-semibold text-gray-700">Địa chỉ giao hàng *</label>
-            <span id="counter-address" class="text-xs text-gray-400 font-medium">0/40</span>
+            <span id="counter-address" class="text-xs text-gray-400 font-medium">0/150</span>
           </div>
-          <input id="inp-address" name="shipping_address" type="text" required maxlength="40"
+          <input id="inp-address" name="shipping_address" type="text" required maxlength="150"
             class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
             placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
           <p id="err-address" class="text-xs text-red-500 mt-1 hidden"></p>
@@ -266,8 +266,6 @@
 <script>
 // ---- CONFIG ----
 const BANK = { id: 'MB', account: '123456789', name: 'DIENMAYPRO' };
-const VIETNAMESE_NAME_REGEX = /^[a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s]+$/;
-const VIETNAMESE_ADDRESS_REGEX = /^[a-zA-Z0-9ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠ-ỹ\s/,\.\-_]+$/;
 
 // ---- STATE ----
 let cartItems = [];
@@ -451,15 +449,27 @@ function checkFormValidity() {
   let noteValid = true;
 
   // 1. Họ và tên validation
-  if (name.trim().length > 0 && !VIETNAMESE_NAME_REGEX.test(name)) {
+  if (name.length > 0 && /\d/.test(name)) {
     if (errName) {
-      errName.textContent = 'Họ và tên chỉ nhập chữ không nhập số và ký tự đặc biệt';
+      errName.textContent = 'Nhập họ và tên bằng chữ';
       errName.classList.remove('hidden');
     }
     nameValid = false;
-  } else if (name.trim().length > 30) {
+  } else if (name.length > 0 && /[!@#$%^&*()_+=\[\]{}|\\:;"'<>,.?\/~`]/.test(name)) {
     if (errName) {
-      errName.textContent = 'Họ và tên tối đa 30 ký tự';
+      errName.textContent = 'Họ và tên không được chứa ký tự đặc biệt';
+      errName.classList.remove('hidden');
+    }
+    nameValid = false;
+  } else if (name.trim().length > 0 && name.trim().length < 2) {
+    if (errName) {
+      errName.textContent = 'Họ và tên phải từ 2 ký tự trở lên';
+      errName.classList.remove('hidden');
+    }
+    nameValid = false;
+  } else if (name.trim().length > 50) {
+    if (errName) {
+      errName.textContent = 'Họ và tên tối đa 50 ký tự';
       errName.classList.remove('hidden');
     }
     nameValid = false;
@@ -490,17 +500,23 @@ function checkFormValidity() {
   const addrLen = addr.length;
   const counterAddr = document.getElementById('counter-address');
   if (counterAddr) {
-    counterAddr.textContent = `${addrLen}/40`;
+    counterAddr.textContent = `${addrLen}/150`;
   }
-  if (addrLen > 0 && !VIETNAMESE_ADDRESS_REGEX.test(addr)) {
+  if (addrLen > 0 && addrLen < 10) {
     if (errAddr) {
-      errAddr.textContent = 'Địa chỉ giao hàng không được chứa ký tự đặc biệt';
+      errAddr.textContent = 'Địa chỉ giao hàng phải từ 10 ký tự trở lên';
       errAddr.classList.remove('hidden');
     }
     addrValid = false;
-  } else if (addrLen > 40) {
+  } else if (addrLen > 150) {
     if (errAddr) {
-      errAddr.textContent = 'Địa chỉ giao hàng tối đa 40 ký tự';
+      errAddr.textContent = 'Địa chỉ giao hàng tối đa 150 ký tự';
+      errAddr.classList.remove('hidden');
+    }
+    addrValid = false;
+  } else if (addrLen > 0 && /[!@#$%^&*()_+=\[\]{}|\\:;"'<>?~`]/.test(addr)) {
+    if (errAddr) {
+      errAddr.textContent = 'Địa chỉ không chứa ký tự đặc biệt (ngoại trừ , . - /)';
       errAddr.classList.remove('hidden');
     }
     addrValid = false;
@@ -546,9 +562,9 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   const discountInp = document.getElementById('discount-code');
   const discountCode = discountInp && discountInp.readOnly ? discountInp.value.trim().toUpperCase() : '';
 
-  const isNameInvalid = !VIETNAMESE_NAME_REGEX.test(name) || name.length > 30 || name.length === 0;
+  const isNameInvalid = /\d/.test(name) || /[!@#$%^&*()_+=\[\]{}|\\:;"'<>,.?\/~`]/.test(name) || name.length < 2 || name.length > 50;
   const isPhoneInvalid = /[a-zA-Z]/.test(phone) || !/^0[0-9]{8,9}$/.test(phone);
-  const isAddrInvalid = !VIETNAMESE_ADDRESS_REGEX.test(addr) || addr.length > 40 || addr.length === 0;
+  const isAddrInvalid = addr.length < 10 || addr.length > 150 || /[!@#$%^&*()_+=\[\]{}|\\:;"'<>?~`]/.test(addr);
   const isNoteInvalid = note.length > 250;
 
   if (isNameInvalid || isPhoneInvalid || isAddrInvalid || isNoteInvalid) {

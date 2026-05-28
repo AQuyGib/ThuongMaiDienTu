@@ -1752,12 +1752,12 @@
 
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Địa chỉ (Số nhà, tên đường) *</label>
-                    <input type="text" id="addrStreet" class="form-control" placeholder="Ví dụ: 123 Đường ABC" required style="padding: 10px 15px;">
+                    <input type="text" id="addrStreet" class="form-control" placeholder="Ví dụ: 123 Đường ABC" required style="padding: 10px 15px;" maxlength="150">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 15px;">
                     <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Tên gợi nhớ</label>
-                    <input type="text" id="addrName" class="form-control" placeholder="Nguyễn Văn A" style="padding: 10px 15px;">
+                    <input type="text" id="addrName" class="form-control" placeholder="Nguyễn Văn A" style="padding: 10px 15px;" maxlength="50">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 20px;">
@@ -1825,28 +1825,28 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label>Họ và tên *</label>
-                            <input type="text" name="customer_name" id="repCustomerName" class="form-control @error('customer_name') is-invalid @enderror" value="{{ old('customer_name', $user->full_name) }}" required>
+                            <input type="text" name="customer_name" id="repCustomerName" class="form-control @error('customer_name') is-invalid @enderror" value="{{ old('customer_name', $user->full_name) }}" required maxlength="50">
                             @error('customer_name')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label>Số điện thoại *</label>
-                            <input type="text" name="customer_phone" id="repCustomerPhone" class="form-control @error('customer_phone') is-invalid @enderror" value="{{ old('customer_phone', $user->phone_number) }}" placeholder="Ví dụ: 0392345678" required>
+                            <input type="text" name="customer_phone" id="repCustomerPhone" class="form-control @error('customer_phone') is-invalid @enderror" value="{{ old('customer_phone', $user->phone_number) }}" placeholder="Ví dụ: 0392345678" required maxlength="10">
                             @error('customer_phone')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label>Địa chỉ email</label>
-                            <input type="email" name="customer_email" id="repCustomerEmail" class="form-control @error('customer_email') is-invalid @enderror" value="{{ old('customer_email', $user->email) }}" placeholder="VD: customer@gmail.com">
+                            <input type="email" name="customer_email" id="repCustomerEmail" class="form-control @error('customer_email') is-invalid @enderror" value="{{ old('customer_email', $user->email) }}" placeholder="VD: customer@gmail.com" maxlength="100">
                             @error('customer_email')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Địa chỉ liên hệ</label>
-                            <input type="text" name="customer_address" id="repCustomerAddress" class="form-control @error('customer_address') is-invalid @enderror" value="{{ old('customer_address', $user->address) }}" placeholder="Nhập số nhà, tên đường, phường/xã...">
+                            <input type="text" name="customer_address" id="repCustomerAddress" class="form-control @error('customer_address') is-invalid @enderror" value="{{ old('customer_address', $user->address) }}" placeholder="Nhập số nhà, tên đường, phường/xã..." maxlength="150">
                             @error('customer_address')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
@@ -1860,7 +1860,7 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label>Số IMEI / Serial *</label>
-                            <input type="text" name="imei_serial" id="repImeiSerial" class="form-control @error('imei_serial') is-invalid @enderror" value="{{ old('imei_serial') }}" placeholder="Nhập số IMEI hoặc Serial máy" required>
+                            <input type="text" name="imei_serial" id="repImeiSerial" class="form-control @error('imei_serial') is-invalid @enderror" value="{{ old('imei_serial') }}" placeholder="Nhập số IMEI hoặc Serial máy" required maxlength="50">
                             @error('imei_serial')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
@@ -1874,7 +1874,7 @@
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Mô tả tình trạng lỗi *</label>
-                            <textarea name="issue_desc" id="repIssueDesc" class="form-control @error('issue_desc') is-invalid @enderror" rows="4" placeholder="Mô tả chi tiết tình trạng máy lỗi và linh kiện cần thay thế..." style="resize: none;" required>{{ old('issue_desc') }}</textarea>
+                            <textarea name="issue_desc" id="repIssueDesc" class="form-control @error('issue_desc') is-invalid @enderror" rows="4" placeholder="Mô tả chi tiết tình trạng máy lỗi và linh kiện cần thay thế..." style="resize: none;" required maxlength="500">{{ old('issue_desc') }}</textarea>
                             @error('issue_desc')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
