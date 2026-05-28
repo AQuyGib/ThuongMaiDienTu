@@ -241,10 +241,14 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Khắc phục triệt để lỗi khi người dùng chuyển sang tiếng Anh, việc bấm Thêm vào yêu thích (Wishlist) hoặc Like video bị đứng giao diện (không đổi trạng thái nút bấm). Nguyên nhân do Middleware `TranslateHtmlResponse` tự động dịch mọi chuỗi văn bản trong response JSON, vô tình dịch luôn các mã trạng thái điều khiển máy như `'added'` thành `'added. added'` (do API Google Translate dịch sai) hoặc các mã khác, làm sai lệch điều kiện so khớp JavaScript (`data.status === 'added'`).
   - Đã thiết kế phương thức lọc `isMachineKey` trong `TranslateHtmlResponse.php` để bỏ qua các key điều khiển hệ thống (`status`, `success`, `code`, `action`, `type`, `id`, `product_id`, `user_id`, v.v.) khi dịch JSON response, đảm bảo logic JavaScript frontend hoạt động chính xác 100% trong mọi ngôn ngữ.
 
-- **Cấu hình mặc định Tiếng Việt khi truy cập và đăng nhập:**
-  - Thay đổi cấu hình mặc định trong `.env` (`APP_LOCALE=vi`, `APP_FALLBACK_LOCALE=vi`, `APP_FAKER_LOCALE=vi_VN`) để đảm bảo hệ thống sử dụng Tiếng Việt làm ngôn ngữ gốc khi người dùng mới truy cập trang web lần đầu.
-  - Cải tiến middleware `SetLocaleFromSession.php` để kiểm tra và tự động khởi tạo giá trị `'locale' => 'vi'` vào session nếu chưa có dữ liệu ngôn ngữ.
-  - Cập nhật logic trong các controller đăng nhập và đăng ký (`AuthController.php`, `SocialController.php`, và `TwoFactorController.php`) để gán cứng ngôn ngữ về tiếng Việt (`session(['locale' => 'vi'])`) ngay khi người dùng hoàn tất quá trình xác thực và đăng nhập vào hệ thống thành công.
+- **Hệ thống đa ngôn ngữ cho giao diện Đăng nhập / Đăng ký & Bảo mật phiên làm việc:**
+  - Thiết kế và triển khai nút chuyển đổi ngôn ngữ (VI/EN) trực tiếp tại góc trên bên phải của `form-panel` trong file `resources/views/Auth/login_register.blade.php`, hỗ trợ dropdown mượt mà và tự động ẩn khi click ra ngoài.
+  - Tách tĩnh và thêm toàn bộ các nhãn văn bản, nút bấm (bao gồm nút "Sign in with Google" / "Đăng nhập với Google", "Trang chủ" / "Home", các tabs Đăng nhập/Đăng ký, placeholder, và nhãn input) vào các file ngôn ngữ `lang/vi/ui.php` và `lang/en/ui.php`.
+  - Thay đổi toàn bộ chuỗi hardcode tiếng Việt trong `login_register.blade.php` sang hàm helper dynamic localizations `{{ __('ui.key') }}` để đảm bảo dịch thuật 100% chính xác và nhanh chóng.
+  - Sửa đổi logic gán cứng `'vi'` sau khi xác thực thành công trong các Controller: `AuthController.php` (login & register), `SocialController.php` (Google/Social Login), và `TwoFactorController.php` (xác thực mã OTP 2FA). Thiết lập cơ chế tự động giữ nguyên và tiếp tục duy trì ngôn ngữ hiện tại của session (`session('locale')`) qua quá trình đăng nhập và đăng ký mà không bị ghi đè hay reset về tiếng Việt.
+  - Đặt ngôn ngữ mặc định của thẻ `<html>` là `{{ app()->getLocale() }}` để tối ưu SEO.
+  - Cập nhật và biên dịch thành công mọi thay đổi.
+
 
 
 
