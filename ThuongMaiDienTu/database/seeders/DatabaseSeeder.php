@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             InventoryMovementSeeder::class,
             InventoryAuditSeeder::class,
             OrderSeeder::class,
+            CommentSeeder::class,
         ]);
     }
 }
