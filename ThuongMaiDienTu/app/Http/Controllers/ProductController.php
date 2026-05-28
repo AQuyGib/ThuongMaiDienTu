@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Models\Order;
 use App\Models\WishlistRecentlyViewed;
+use App\Services\CrossSellService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -57,12 +58,15 @@ class ProductController extends Controller
         // Lấy danh sách đánh giá (chỉ lấy review gốc, không phải reply)
         $reviews = Review::where('product_id', $id)
             ->whereNull('parent_id')
-            ->with(['user', 'replies'])
+            ->where('is_approved', 1)
+            ->with(['user', 'replies' => function ($query) {
+                $query->where('is_approved', 1);
+            }])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->count();
-        $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->avg('rating') ?: 5;
+        $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->where('is_approved', 1)->count();
+        $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->where('is_approved', 1)->avg('rating') ?: 5;
 
         // Kiểm tra user đã mua hàng chưa (cho chức năng đánh giá)
         $hasPurchased = false;
@@ -74,6 +78,10 @@ class ProductController extends Controller
                 ->exists();
         }
 
+        // Gợi ý bán chéo (Cross-selling): FBT → Brand → Flash Sale
+        $crossSellProducts = app(CrossSellService::class)
+            ->getFullCrossSellList($product, 8);
+
         return view('frontend.products.show', compact(
             'product',
             'discountPercent',
@@ -82,7 +90,8 @@ class ProductController extends Controller
             'reviews',
             'reviewCount',
             'avgRating',
-            'hasPurchased'
+            'hasPurchased',
+            'crossSellProducts'
         ));
     }
 }

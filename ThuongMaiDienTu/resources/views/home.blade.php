@@ -906,6 +906,7 @@
 @php
     // Map icon cho từng danh mục trong sidebar dọc
     $sidebarIcons = [
+        // Tiếng Việt
         'Điện thoại'          => 'fa-mobile-screen-button',
         'Laptop'              => 'fa-laptop',
         'Tablet'              => 'fa-tablet-screen-button',
@@ -914,9 +915,20 @@
         'Phụ kiện'            => 'fa-keyboard',
         'Tivi, Màn hình'      => 'fa-tv',
         'Gia dụng, Smarthome' => 'fa-plug',
+
+        // English
+        'Smartphones'         => 'fa-mobile-screen-button',
+        'Laptops'             => 'fa-laptop',
+        'Tablets'             => 'fa-tablet-screen-button',
+        'Sound'               => 'fa-headphones',
+        'Smart watch'         => 'fa-clock',
+        'Accessory'           => 'fa-keyboard',
+        'TV, Monitor'         => 'fa-tv',
+        'Household appliances, Smarthome' => 'fa-plug',
     ];
 
     $quickLinkIcons = [
+        // Tiếng Việt
         'Điện thoại'          => 'https://cdn-icons-png.flaticon.com/512/3616/3616856.png',
         'Laptop'              => 'https://cdn-icons-png.flaticon.com/512/428/428001.png',
         'Tablet'              => 'https://cdn-icons-png.flaticon.com/512/3616/3616874.png',
@@ -925,6 +937,16 @@
         'Gia dụng, Smarthome' => 'https://cdn-icons-png.flaticon.com/512/2585/2585175.png',
         'Phụ kiện'            => 'https://cdn-icons-png.flaticon.com/512/1865/1865273.png',
         'Tivi, Màn hình'      => 'https://cdn-icons-png.flaticon.com/512/716/716429.png',
+
+        // English
+        'Smartphones'         => 'https://cdn-icons-png.flaticon.com/512/3616/3616856.png',
+        'Laptops'             => 'https://cdn-icons-png.flaticon.com/512/428/428001.png',
+        'Tablets'             => 'https://cdn-icons-png.flaticon.com/512/3616/3616874.png',
+        'Smart watch'         => 'https://cdn-icons-png.flaticon.com/512/2972/2972185.png',
+        'Sound'               => 'https://cdn-icons-png.flaticon.com/512/3659/3659899.png',
+        'Household appliances, Smarthome' => 'https://cdn-icons-png.flaticon.com/512/2585/2585175.png',
+        'Accessory'           => 'https://cdn-icons-png.flaticon.com/512/1865/1865273.png',
+        'TV, Monitor'         => 'https://cdn-icons-png.flaticon.com/512/716/716429.png',
     ];
 @endphp
 
@@ -941,9 +963,9 @@
                                 <div class="menu-icon">
                                     <i class="fa-solid {{ $sidebarIcons[$cat->name] ?? 'fa-tag' }} main-icon"></i>
                                     {{ $cat->name }}
-                                    @if(in_array($cat->name, ['Điện thoại', 'Laptop']))
+                                    @if(in_array($cat->name, ['Điện thoại', 'Laptop', 'Smartphones', 'Laptops']))
                                         <span class="menu-badge-hot">HOT</span>
-                                    @elseif($cat->name == 'Đồng hồ thông minh')
+                                    @elseif(in_array($cat->name, ['Đồng hồ thông minh', 'Smart watch']))
                                         <span class="menu-badge-new">NEW</span>
                                     @endif
                                 </div>
@@ -954,7 +976,7 @@
                             <div class="sidebar-mega-panel">
                                 <div class="mega-panel-content">
                                     <div class="mega-section">
-                                        <h3 class="sidebar-mega-title">DÒNG SẢN PHẨM {{ mb_strtoupper($cat->name) }}</h3>
+                                        <h3 class="sidebar-mega-title">{{ mb_strtoupper(__('ui.product_lines', ['name' => $cat->name])) }}</h3>
                                         <div class="sidebar-mega-tags">
                                             @foreach($cat->children as $child)
                                                 <a href="{{ route('products.category', $child->slug) }}" class="sidebar-mega-tag">
@@ -962,14 +984,14 @@
                                                 </a>
                                             @endforeach
                                             <a href="{{ route('products.category', $cat->slug) }}" class="sidebar-mega-tag see-all">
-                                                Xem tất cả {{ $cat->name }}
+                                                {{ __('ui.view_all_cat', ['name' => $cat->name]) }}
                                             </a>
                                         </div>
                                     </div>
 
                                     {{-- Mockup cho Hãng và Nhu cầu để giao diện đẹp như hình mẫu --}}
                                     <div class="mega-section mt-6">
-                                        <h3 class="sidebar-mega-title">HÃNG SẢN XUẤT PHỔ BIẾN</h3>
+                                        <h3 class="sidebar-mega-title">{{ mb_strtoupper(__('ui.popular_brands')) }}</h3>
                                         <div class="sidebar-mega-tags">
                                             @php
                                                 $brands = ['Apple', 'Samsung', 'Asus', 'HP', 'Dell', 'Lenovo', 'MSI', 'Acer'];
@@ -981,17 +1003,17 @@
                                     </div>
 
                                     <div class="mega-section mt-6">
-                                        <h3 class="sidebar-mega-title">CHỌN THEO NHU CẦU</h3>
+                                        <h3 class="sidebar-mega-title">{{ mb_strtoupper(__('ui.choose_by_need')) }}</h3>
                                         <div class="sidebar-mega-tags">
-                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-gamepad mr-1"></i> Chơi game/Đồ họa</a>
-                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-graduation-cap mr-1"></i> Học tập/Văn phòng</a>
-                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-leaf mr-1"></i> Thân thiện môi trường</a>
+                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-gamepad mr-1"></i> {{ __('ui.need_gaming') }}</a>
+                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-graduation-cap mr-1"></i> {{ __('ui.need_student') }}</a>
+                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-leaf mr-1"></i> {{ __('ui.need_eco') }}</a>
                                         </div>
                                     </div>
                                     
                                     <hr class="my-6 border-gray-100">
                                     <a href="{{ route('products.category', $cat->slug) }}" class="flex items-center font-bold text-blue-800 hover:underline">
-                                        <i class="fa-solid fa-arrow-right mr-2"></i> Xem tất cả {{ $cat->name }}
+                                        <i class="fa-solid fa-arrow-right mr-2"></i> {{ __('ui.view_all_cat', ['name' => $cat->name]) }}
                                     </a>
                                 </div>
                             </div>
@@ -1001,7 +1023,7 @@
                     <li>
                         <a href="#">
                             <div class="menu-icon">
-                                <i class="fa-solid fa-gamepad main-icon"></i> Thu cũ đổi mới
+                                <i class="fa-solid fa-gamepad main-icon"></i> {{ __('ui.trade_in_renew') }}
                             </div>
                             <i class="fa-solid fa-angle-right text-xs text-gray-400"></i>
                         </a>
@@ -1009,7 +1031,7 @@
                     <li>
                         <a href="{{ route('articles.index') }}">
                             <div class="menu-icon">
-                                <i class="fa-solid fa-newspaper main-icon"></i> Tin công nghệ
+                                <i class="fa-solid fa-newspaper main-icon"></i> {{ __('ui.tech_news') }}
                             </div>
                             <i class="fa-solid fa-angle-right text-xs text-gray-400"></i>
                         </a>
@@ -1326,9 +1348,10 @@
                     toast: true,
                     position: 'top-end'
                 });
-                const cartCountElement = document.querySelector('.cart-count');
+                const cartCountElement = document.getElementById('headerCartBadge');
                 if (cartCountElement && data.cart_count !== undefined) {
                     cartCountElement.innerText = data.cart_count;
+                    cartCountElement.style.display = data.cart_count > 0 ? 'block' : 'none';
                 }
             } else {
                 Swal.fire('Thất bại', data.message || 'Lỗi khi thêm vào giỏ', 'error');

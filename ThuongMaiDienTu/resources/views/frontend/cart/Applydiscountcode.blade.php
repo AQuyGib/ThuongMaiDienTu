@@ -64,88 +64,69 @@
                 </div>
             </div>
 
-            <!-- Cột phải: Danh sách Voucher -->
+            <!-- Cột phải: Danh sách Voucher của bạn -->
             <div class="md:col-span-2 space-y-6">
                 
-                <!-- Tab filter (Demo) -->
-                <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    <button class="px-5 py-2 bg-[#0046ab] text-white font-bold rounded-full text-sm whitespace-nowrap">Tất cả</button>
-                    <button class="px-5 py-2 bg-white border border-gray-200 text-gray-600 font-bold rounded-full text-sm hover:bg-gray-50 whitespace-nowrap">Điện thoại</button>
-                    <button class="px-5 py-2 bg-white border border-gray-200 text-gray-600 font-bold rounded-full text-sm hover:bg-gray-50 whitespace-nowrap">Laptop</button>
-                    <button class="px-5 py-2 bg-white border border-gray-200 text-gray-600 font-bold rounded-full text-sm hover:bg-gray-50 whitespace-nowrap">Phụ kiện</button>
+                <div class="bg-[#0046ab] text-white p-4 rounded-xl shadow-sm flex items-center justify-between">
+                    <span class="font-bold text-sm"><i class="fa-solid fa-wallet mr-1"></i> Ví điểm tích lũy:</span>
+                    <span class="font-black text-lg">{{ number_format($balance->wallet_points ?? 0) }} điểm</span>
                 </div>
 
                 <!-- Danh sách Voucher -->
                 <div class="space-y-4">
-                    
-                    <!-- Voucher Freeship -->
-                    <div class="bg-white rounded-xl shadow-sm flex overflow-hidden border border-gray-100 voucher-card voucher-freeship">
-                        <div class="bg-emerald-50 w-28 flex flex-col items-center justify-center p-4 border-r border-dashed border-gray-200">
-                            <i class="fa-solid fa-truck-fast text-3xl text-emerald-500 mb-2"></i>
-                            <span class="text-xs font-bold text-emerald-600 text-center">Freeship</span>
-                        </div>
-                        <div class="p-4 flex-1 flex flex-col justify-between relative">
-                            <div>
-                                <h3 class="font-bold text-gray-800 text-lg">Miễn phí vận chuyển</h3>
-                                <p class="text-sm text-gray-500">Giảm tối đa 30k cho đơn từ 500k</p>
+                    @forelse($myVouchers as $redemption)
+                        @php
+                            $reward = $redemption->reward;
+                            $isFreeship = $reward && $reward->reward_type === 'shipping';
+                            $discountText = '';
+                            if ($reward) {
+                                if ($reward->reward_type === 'shipping') {
+                                    $discountText = 'Freeship ' . number_format($reward->shipping_discount_amount) . 'đ';
+                                } else {
+                                    $discountText = 'Giảm ' . number_format($reward->discount_amount) . 'đ';
+                                }
+                            }
+                        @endphp
+                        <div class="bg-white rounded-xl shadow-sm flex overflow-hidden border border-gray-100 voucher-card {{ $isFreeship ? 'voucher-freeship' : 'voucher-hot' }} relative">
+                            <div class="{{ $isFreeship ? 'bg-emerald-50' : 'bg-red-50' }} w-28 flex flex-col items-center justify-center p-4 border-r border-dashed border-gray-200 shrink-0">
+                                @if($isFreeship)
+                                    <i class="fa-solid fa-truck-fast text-3xl text-emerald-500 mb-2"></i>
+                                @else
+                                    <i class="fa-solid fa-fire text-3xl text-red-500 mb-2"></i>
+                                @endif
+                                <span class="text-xs font-bold {{ $isFreeship ? 'text-emerald-600' : 'text-red-600' }} text-center leading-tight">{{ $discountText }}</span>
                             </div>
-                            <div class="flex justify-between items-end mt-4">
-                                <span class="text-xs text-red-500 font-medium"><i class="fa-regular fa-clock mr-1"></i>Hết hạn: 31/05/2026</span>
-                                <button onclick="selectVoucher('FREESHIP30', this)" class="px-4 py-1.5 bg-emerald-500 text-white font-bold text-sm rounded-lg hover:bg-emerald-600 transition-colors">
-                                    Dùng ngay
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Voucher Hot -->
-                    <div class="bg-white rounded-xl shadow-sm flex overflow-hidden border border-gray-100 voucher-card voucher-hot relative">
-                        <!-- Badge -->
-                        <div class="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10">SẮP HẾT</div>
-                        
-                        <div class="bg-red-50 w-28 flex flex-col items-center justify-center p-4 border-r border-dashed border-gray-200">
-                            <i class="fa-solid fa-fire text-3xl text-red-500 mb-2"></i>
-                            <span class="text-xs font-bold text-red-600 text-center">Giảm 5%</span>
-                        </div>
-                        <div class="p-4 flex-1 flex flex-col justify-between relative">
-                            <div>
-                                <h3 class="font-bold text-gray-800 text-lg">Giảm 5% Điện thoại iPhone</h3>
-                                <p class="text-sm text-gray-500">Giảm tối đa 500.000đ. Đơn tối thiểu 10Tr.</p>
-                                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-3">
-                                  <div class="bg-red-500 h-1.5 rounded-full" style="width: 85%"></div>
+                            <div class="p-4 flex-1 flex flex-col justify-between relative">
+                                <div>
+                                    <h3 class="font-bold text-gray-800 text-base leading-snug">{{ $reward?->name ?? 'Mã đổi thưởng' }}</h3>
+                                    <div class="mt-1 flex items-center gap-2">
+                                        <span class="text-[10px] font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">Mã: {{ $redemption->redemption_code }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-2">{{ $reward?->description ?? 'Dùng để giảm giá trực tiếp khi thanh toán.' }}</p>
                                 </div>
-                                <span class="text-[10px] text-gray-400 mt-1 block">Đã dùng 85%</span>
-                            </div>
-                            <div class="flex justify-between items-end mt-2">
-                                <span class="text-xs text-gray-400 font-medium">HSD: 15/05/2026</span>
-                                <button onclick="selectVoucher('IPHONE5', this)" class="px-4 py-1.5 bg-[#0046ab] text-white font-bold text-sm rounded-lg hover:bg-blue-800 transition-colors">
-                                    Dùng ngay
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Voucher Normal -->
-                    <div class="bg-white rounded-xl shadow-sm flex overflow-hidden border border-gray-100 voucher-card">
-                        <div class="bg-blue-50 w-28 flex flex-col items-center justify-center p-4 border-r border-dashed border-gray-200">
-                            <i class="fa-solid fa-laptop text-3xl text-[#0046ab] mb-2"></i>
-                            <span class="text-xs font-bold text-[#0046ab] text-center">Giảm 200K</span>
-                        </div>
-                        <div class="p-4 flex-1 flex flex-col justify-between relative">
-                            <div>
-                                <h3 class="font-bold text-gray-800 text-lg">Ưu đãi Laptop tựu trường</h3>
-                                <p class="text-sm text-gray-500">Áp dụng cho tất cả Laptop trên 15 triệu.</p>
-                            </div>
-                            <div class="flex justify-between items-end mt-4">
-                                <span class="text-xs text-gray-400 font-medium">HSD: 30/06/2026</span>
-                                <button onclick="selectVoucher('LAPTOP200', this)" class="px-4 py-1.5 border-2 border-[#0046ab] text-[#0046ab] font-bold text-sm rounded-lg hover:bg-blue-50 transition-colors">
-                                    Dùng ngay
-                                </button>
+                                <div class="flex justify-between items-end mt-4">
+                                    <span class="text-[11px] text-gray-400 font-medium">
+                                        @if($redemption->expires_at)
+                                            HSD: {{ $redemption->expires_at->format('d/m/Y') }}
+                                        @else
+                                            HSD: Vĩnh viễn
+                                        @endif
+                                    </span>
+                                    <button onclick="selectVoucher('{{ $redemption->redemption_code }}', this)" class="px-4 py-1.5 {{ $isFreeship ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-[#0046ab] hover:bg-blue-800' }} text-white font-bold text-xs rounded-lg transition-colors">
+                                        Dùng ngay
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
+                    @empty
+                        <div class="bg-white p-8 rounded-2xl border border-gray-100 text-center text-gray-500">
+                            <i class="fa-solid fa-ticket-simple text-4xl text-gray-300 mb-3 block"></i>
+                            <p class="font-bold text-gray-700">Không tìm thấy voucher khả dụng.</p>
+                            <p class="text-xs text-gray-400 mt-1">Hãy đổi điểm tích lũy lấy voucher tại trang <a href="{{ route('rewards.index') }}" class="text-blue-600 font-bold hover:underline">Đổi thưởng</a>.</p>
+                        </div>
+                    @endforelse
                 </div>
+            </div>
             </div>
         </div>
     </div>
@@ -158,13 +139,11 @@
         
         // Tạo hiệu ứng feedback
         const originalText = btnElement.innerHTML;
-        btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Đã chọn';
-        btnElement.classList.add('bg-gray-200', 'text-gray-600', 'border-gray-200');
-        btnElement.classList.remove('bg-[#0046ab]', 'text-white', 'border-[#0046ab]', 'bg-emerald-500');
+        btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
         
         setTimeout(() => {
             document.getElementById('applyCouponForm').dispatchEvent(new Event('submit'));
-        }, 500);
+        }, 200);
     }
 
     // Xử lý submit form
@@ -182,31 +161,42 @@
 
         // Loading
         const originalBtnText = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang kiểm tra...';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang áp dụng...';
         btn.disabled = true;
 
-        // Simulate API call
-        setTimeout(() => {
+        fetch('{{ route("cart.apply-coupon") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ code: input })
+        })
+        .then(r => r.json())
+        .then(res => {
             btn.innerHTML = originalBtnText;
             btn.disabled = false;
 
-            const validCodes = ['FREESHIP30', 'IPHONE5', 'LAPTOP200', 'DIENMAYPRO10'];
-            
-            if (validCodes.includes(input)) {
-                msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> Áp dụng mã <strong>' + input + '</strong> thành công!';
+            if (res.success) {
+                msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + res.message;
                 msg.className = 'mt-3 text-sm font-medium p-3 rounded-lg bg-emerald-50 text-emerald-600 block border border-emerald-100';
                 
-                // Tự động chuyển về trang giỏ hàng/thanh toán sau 1.5s
+                // Tự động chuyển về trang thanh toán sau 1.2s
                 setTimeout(() => {
-                    // Cập nhật session storage hoặc params để qua trang thanh toán biết
-                    sessionStorage.setItem('applied_coupon', input);
-                    window.location.href = '/pay';
-                }, 1500);
+                    window.location.href = '{{ route("cart.pay") }}';
+                }, 1200);
             } else {
-                msg.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Mã giảm giá không hợp lệ hoặc đã hết hạn!';
+                msg.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> ' + res.message;
                 msg.className = 'mt-3 text-sm font-medium p-3 rounded-lg bg-red-50 text-red-600 block border border-red-100';
             }
-        }, 800);
+        })
+        .catch(err => {
+            console.error(err);
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
+            msg.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Lỗi hệ thống!';
+            msg.className = 'mt-3 text-sm font-medium p-3 rounded-lg bg-red-50 text-red-600 block border border-red-100';
+        });
     });
 </script>
 @endsection

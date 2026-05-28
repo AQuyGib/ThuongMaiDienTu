@@ -2,6 +2,22 @@
 
 @section('content')
     <div class="container mx-auto px-4 py-8">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-sm md:text-base text-gray-600 mt-3 md:mt-5 mb-4 font-medium">
+            <a href="{{ route('home') }}" class="flex items-center gap-1.5 hover:text-red-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 md:h-5 md:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Trang chủ
+            </a>
+            <span class="text-gray-300 font-normal">/</span>
+            @if($currentCategory)
+                <span class="text-gray-800 font-semibold">{{ $currentCategory->name }}</span>
+            @else
+                <span class="text-gray-800 font-semibold">Tất cả sản phẩm</span>
+            @endif
+        </nav>
+
         <!-- Horizontal Filter Bar Section -->
         <div class="mb-8 space-y-6">
             <!-- Filter Container -->
@@ -11,7 +27,7 @@
                     <div
                         class="flex flex-nowrap md:flex-wrap gap-2 items-center overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                         <button type="button"
-                            class="filter-trigger px-4 py-2 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-red-200 active:scale-95 whitespace-nowrap"
+                            class="filter-trigger px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-blue-200 active:scale-95 whitespace-nowrap"
                             data-filter="filter">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -48,20 +64,20 @@
                             <span class="text-xs font-bold text-gray-400 uppercase mr-2 whitespace-nowrap">Gợi ý
                                 nhanh:</span>
                             <button type="button"
-                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium text-sm hover:bg-blue-100 border border-blue-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap"
+                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 rounded-xl font-medium text-sm hover:shadow-sm transition-all duration-200 whitespace-nowrap"
                                 data-name="needs" data-value="gaming">🎮 Chơi mượt Genshin</button>
                             <button type="button"
-                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium text-sm hover:bg-blue-100 border border-blue-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap"
+                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 rounded-xl font-medium text-sm hover:shadow-sm transition-all duration-200 whitespace-nowrap"
                                 data-name="needs" data-value="student">🎓 Học Web Dev</button>
 
                             <span
                                 class="text-xs font-bold text-gray-400 uppercase ml-4 mr-2 whitespace-nowrap hidden md:inline">Kinh
                                 tế tuần hoàn:</span>
                             <button type="button"
-                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium text-sm hover:bg-blue-100 border border-blue-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap"
+                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 rounded-xl font-medium text-sm hover:shadow-sm transition-all duration-200 whitespace-nowrap"
                                 data-name="high_repairability" data-value="1">🔧 Dễ sửa chữa (9-10đ)</button>
                             <button type="button"
-                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-medium text-sm hover:bg-blue-100 border border-blue-200 hover:shadow-sm transition-all duration-200 whitespace-nowrap"
+                                class="quick-filter-btn px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:text-blue-800 rounded-xl font-medium text-sm hover:shadow-sm transition-all duration-200 whitespace-nowrap"
                                 data-name="eco_friendly" data-value="1">🌱 Thân thiện môi trường</button>
                         </div>
                     </div>
@@ -127,9 +143,6 @@
                                     Hiển thị <span id="product-count" class="text-red-600">{{ $products->total() }}</span> sản phẩm
                                 @endif
                             </h1>
-                            <div class="mt-1 inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600 border border-red-100">
-                                Flash Sale phase 1: nền dữ liệu + service đã sẵn sàng
-                            </div>
                         </div>
                     </div>
                     <div

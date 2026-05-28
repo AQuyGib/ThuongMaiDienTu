@@ -20,6 +20,78 @@ interface AdminSidebarProps {
     csrfToken: string;
 }
 
+const getActiveIconColor = (label: string): string => {
+    const l = label.toLowerCase();
+    switch (l) {
+        case 'bảng điều khiển':
+        case 'dashboard':
+            return 'text-emerald-400';
+        case 'thống kê kpi':
+        case 'kpi statistics':
+            return 'text-cyan-300';
+        case 'đơn hàng':
+        case 'orders':
+            return 'text-orange-400';
+        case 'khách hàng':
+        case 'customers':
+            return 'text-sky-300';
+        case 'sổ quỹ & thu chi':
+        case 'cashbook & expenses':
+            return 'text-green-300';
+        case 'hóa đơn dịch vụ':
+        case 'service invoices':
+            return 'text-teal-300';
+        case 'phiếu sửa chữa':
+        case 'repair tickets':
+            return 'text-amber-400';
+        case 'flash sale':
+            return 'text-red-400';
+        case 'sản phẩm':
+        case 'products':
+            return 'text-indigo-300';
+        case 'bài viết & cms':
+        case 'articles & cms':
+            return 'text-fuchsia-300';
+        case 'quản lý kho':
+        case 'inventory management':
+            return 'text-blue-300';
+        case 'video':
+        case 'videos':
+            return 'text-yellow-300';
+        case 'điều chuyển kho':
+        case 'warehouse transfer':
+            return 'text-violet-400';
+        case 'nhà cung cấp':
+        case 'suppliers':
+            return 'text-pink-400';
+        case 'danh mục':
+        case 'categories':
+            return 'text-lime-300';
+        case 'đổi thưởng':
+        case 'rewards':
+            return 'text-rose-400';
+        case 'tùy biến giao diện':
+        case 'theme customization':
+            return 'text-purple-300';
+        case 'thông báo':
+        case 'notifications':
+            return 'text-amber-300';
+        case 'quản lý trang chủ':
+        case 'home management':
+            return 'text-teal-400';
+        case 'tài khoản':
+        case 'accounts':
+            return 'text-violet-300';
+        case 'cài đặt hệ thống':
+        case 'system settings':
+            return 'text-slate-300';
+        case 'nhật ký hoạt động':
+        case 'activity logs':
+            return 'text-orange-300';
+        default: return 'text-yellow-300';
+    }
+};
+
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logoutRoute, csrfToken }) => {
     const [collapsed, setCollapsed] = useState(false);
 
@@ -27,6 +99,27 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
         const handleToggle = () => setCollapsed(prev => !prev);
         window.addEventListener('admin-sidebar-toggle', handleToggle);
         return () => window.removeEventListener('admin-sidebar-toggle', handleToggle);
+    }, []);
+
+    useEffect(() => {
+        const navEl = document.getElementById('admin-sidebar-nav');
+        if (navEl) {
+            const savedPosition = localStorage.getItem('sidebar-scroll-position');
+            if (savedPosition) {
+                setTimeout(() => {
+                    navEl.scrollTop = parseInt(savedPosition, 10);
+                }, 50);
+            }
+            
+            const handleScroll = () => {
+                localStorage.setItem('sidebar-scroll-position', navEl.scrollTop.toString());
+            };
+            
+            navEl.addEventListener('scroll', handleScroll);
+            return () => {
+                navEl.removeEventListener('scroll', handleScroll);
+            };
+        }
     }, []);
 
     if (!menu || !user) return <div className="p-4 text-white bg-rose-600">MISSING PROPS</div>;
@@ -52,7 +145,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                 </div>
             </div>
 
-            <nav className={`flex-1 space-y-6 overflow-y-auto premium-scrollbar transition-all ${collapsed ? 'p-2 px-3' : 'p-4'}`}>
+            <nav id="admin-sidebar-nav" className={`flex-1 space-y-6 overflow-y-auto premium-scrollbar transition-all ${collapsed ? 'p-2 px-3' : 'p-4'}`}>
                 {(() => {
                     const sections: { [key: string]: MenuItem[] } = {};
                     menu.forEach(item => {
@@ -68,17 +161,23 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{sectionName}</p>
                                 </div>
                             )}
-                            {items.map((item, idx) => (
+                            {items.map((item, idx) => {
+                                return (
                                 <a
                                     key={idx}
                                     href={item.route}
                                     title={collapsed ? item.label : ''}
-                                    className={`flex items-center rounded-xl transition-all duration-300 ${collapsed ? 'justify-center py-4 px-0' : 'gap-4 px-4 py-3'} ${item.active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                                    className={`group flex items-center rounded-xl transition-all duration-300 ${collapsed ? 'justify-center py-4 px-0' : 'gap-4 px-4 py-3'} ${item.active ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg shadow-indigo-600/25 ring-1 ring-white/10' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
                                 >
-                                    <i className={`${item.icon} ${collapsed ? 'text-lg' : 'w-5 text-center'}`}></i>
-                                    {!collapsed && <span className="font-bold text-sm truncate">{item.label}</span>}
+                                    <i className={`${item.icon} ${collapsed ? 'text-lg' : 'w-5 text-center'} ${item.active ? `${getActiveIconColor(item.label)} drop-shadow` : ''}`}></i>
+                                    {!collapsed && (
+                                        <span className="flex items-center gap-2 min-w-0">
+                                            <span className="font-bold text-sm truncate">{item.label}</span>
+                                        </span>
+                                    )}
                                 </a>
-                            ))}
+                                );
+                            })}
                             {collapsed && <div className="h-px bg-slate-800/50 my-4 mx-2" />}
                         </div>
                     ));

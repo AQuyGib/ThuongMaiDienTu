@@ -1,11 +1,23 @@
 <?php
+
 namespace App\Models;
+
+use App\Traits\BaseTranslationTrait;
 use Illuminate\Database\Eloquent\Model;
 
-class Category extends Model {
+class Category extends Model
+{
+    use BaseTranslationTrait;
+
     protected $primaryKey = 'category_id';
     public $timestamps = false;
     protected $guarded = [];
+
+    protected array $translatable = [
+        'name',
+        'description',
+        'seo_description',
+    ];
 
     protected $casts = [
         'filter_config' => 'array',
@@ -20,16 +32,22 @@ class Category extends Model {
         });
     }
 
-    public function parent() {
+    public function parent()
+    {
         return $this->belongsTo(Category::class, 'parent_id');
     }
-    public function children() {
+
+    public function children()
+    {
         return $this->hasMany(Category::class, 'parent_id');
     }
-    public function products() {
+
+    public function products()
+    {
         return $this->hasMany(Product::class, 'category_id');
     }
 
+<<<<<<< HEAD
     /**
      * Kiểm tra xem một danh mục con (childId) có phải là con cháu của danh mục cha (parentId) hay không
      */
@@ -48,14 +66,23 @@ class Category extends Model {
     }
 
     public function getRootCategoryId() {
+=======
+    public function getRootCategoryId()
+    {
+>>>>>>> master
         $rootId = $this->category_id;
         $current = $this;
+
         while ($current->parent_id) {
             $parent = Category::find($current->parent_id);
-            if (!$parent) break;
+            if (! $parent) {
+                break;
+            }
+
             $current = $parent;
             $rootId = $current->category_id;
         }
+
         return $rootId;
     }
 }
