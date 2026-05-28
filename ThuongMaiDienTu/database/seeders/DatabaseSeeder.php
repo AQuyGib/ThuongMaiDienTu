@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             RewardHistorySeeder::class,
             VideoSeeder::class,
             ProductComboSeeder::class,
+            InventoryMovementSeeder::class,
         ]);
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\InventoryMovementController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\PageController;
@@ -127,6 +128,7 @@ Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->n
 
 // ===== Quản lý IMEI & Cảnh báo tồn kho =====
 Route::get('/inventory/warnings', [InventoryController::class, 'warningList'])->name('inventory.warnings');
+Route::get('/inventory/movements', [InventoryMovementController::class, 'index'])->name('inventory.movements');
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 Route::put('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.updateStatus');
 
