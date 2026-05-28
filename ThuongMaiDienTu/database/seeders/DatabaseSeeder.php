@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             RewardHistorySeeder::class,
             VideoSeeder::class,
             ProductComboSeeder::class,
+            HomeSectionSeeder::class,
             OrderSeeder::class,
             InventoryMovementSeeder::class,
             InventoryAuditSeeder::class,

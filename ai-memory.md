@@ -263,8 +263,25 @@
 - **Database Seeders Fix:**
   - `ThuongMaiDienTu/database/seeders/DatabaseSeeder.php`
   - `ThuongMaiDienTu/database/seeders/InventoryMovementSeeder.php`
+- **Home Section Seeder & Banner:**
+  - `ThuongMaiDienTu/database/seeders/HomeSectionSeeder.php` (mới)
+  - `ThuongMaiDienTu/public/uploads/banners/` (7 file banner PNG)
+- **Storefront Navigation & UI Fix:**
+  - `ThuongMaiDienTu/resources/views/partials/footer.blade.php`
+  - `ThuongMaiDienTu/resources/views/home.blade.php` (CSS sidebar banner)
 
 ## Important Logic & Behavior Changes
+- **HomeSectionSeeder — Tạo 7 khung sản phẩm trang chủ với banner:**
+  - Tạo seeder cho bảng `home_sections` và `home_section_products` với 7 khung mẫu: Điện thoại (category), Laptop (category), Tablet (category), Phụ kiện (category), Sản phẩm mới nhất (latest), Lựa chọn biên tập viên (manual + 10 SP ngẫu nhiên), Gia dụng & Smarthome (category).
+  - Sinh 7 hình banner PNG chất lượng cao bằng AI, lưu vào `public/uploads/banners/` và gắn đường dẫn `sidebar_banner` + `sidebar_link` tương ứng cho từng section.
+  - Đăng ký `HomeSectionSeeder::class` vào `DatabaseSeeder` (sau `ProductComboSeeder`).
+- **CSS Sidebar Banner Fix — Sửa vỡ hình ảnh banner:**
+  - Giảm `width` từ 230px xuống 200px để cân đối hơn với lưới sản phẩm.
+  - Thêm `align-self: stretch` để container banner cao bằng nội dung sản phẩm bên phải.
+  - Thêm rule `a { display: block; width: 100%; height: 100% }` để link bao phủ toàn bộ banner.
+  - Thêm `object-position: center top` và `display: block` cho `img` để ảnh hiển thị từ trên xuống, vừa khít không bị vỡ layout.
+- **Liên kết Tích điểm Quà tặng VIP với trang rewards:**
+  - Thay đổi đường dẫn tĩnh `href="#"` thành `href="{{ route('rewards.index') }}"` cho mục "Tích điểm Quà tặng VIP" (khóa ngôn ngữ `ui.footer_vip_points`) trong footer của trang để dẫn thẳng đến trang danh sách phần thưởng `/rewards`.
 - **Sửa lỗi ràng buộc khóa ngoại (Integrity Constraint Violation) khi chạy Seeder:**
   - Di chuyển `OrderSeeder::class` lên trước `InventoryMovementSeeder::class` trong `DatabaseSeeder.php` để đảm bảo bảng `orders` đã có dữ liệu mẫu trước khi bảng biến động kho `inventory_movements` tham chiếu đến.
   - Sửa đổi `InventoryMovementSeeder.php` thay vì gán ngẫu nhiên `$orderId = rand(1, 50);` (có thể gây ra ID không tồn tại hoặc lỗi khóa ngoại khi bảng orders trống), chuyển sang truy vấn ngẫu nhiên các bản ghi `Order` thực tế trong database để lấy `order_id` và `order_code` thực tế.
