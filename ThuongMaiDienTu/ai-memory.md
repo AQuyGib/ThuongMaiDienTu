@@ -168,23 +168,23 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 
 ### 10. Chức năng Lịch sử Biến động Kho (Inventory Movements Ledger) - Đăng Nguyên
 - **Hạ tầng & Model:**
-  - Tạo mới [InventoryMovement.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/InventoryMovement.php) model.
-  - Tạo [InventoryMovementSeeder.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/database/seeders/InventoryMovementSeeder.php) sinh ngẫu nhiên lịch sử phong phú (sale, import, restock, return, adjustment) trong 30 ngày qua và đăng ký vào [DatabaseSeeder.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/database/seeders/DatabaseSeeder.php).
+  - Tạo mới `app/Models/InventoryMovement.php` model.
+  - Tạo `database/seeders/InventoryMovementSeeder.php` sinh ngẫu nhiên lịch sử phong phú (sale, import, restock, return, adjustment) trong 30 ngày qua và đăng ký vào `database/seeders/DatabaseSeeder.php`.
 - **Giao diện & Logic:**
-  - Tạo [InventoryMovementController.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/InventoryMovementController.php) xử lý bộ lọc (sản phẩm, loại biến động, ngày bắt đầu/kết thúc, từ khóa tìm kiếm) và phân trang.
-  - Tạo view [movements.blade.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/inventory/movements.blade.php) với bảng biến động kho hiển thị số lượng thay đổi trực quan, lý do và link đơn hàng.
+  - Tạo `app/Http/Controllers/Admin/InventoryMovementController.php` xử lý bộ lọc (sản phẩm, loại biến động, ngày bắt đầu/kết thúc, từ khóa tìm kiếm) và phân trang.
+  - Tạo view `resources/views/admin/inventory/movements.blade.php` với bảng biến động kho hiển thị số lượng thay đổi trực quan, lý do và link đơn hàng.
 
 ### 11. Chức năng Kiểm kê & Cân bằng Kho (Inventory Audit & Reconciliation) - Đăng Nguyên
 - **Hạ tầng & Model:**
   - Tạo file migration khởi tạo bảng phiếu kiểm kê `inventory_audits` và chi tiết chênh lệch `inventory_audit_details`.
-  - Tạo các model [InventoryAudit.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/InventoryAudit.php) và [InventoryAuditDetail.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/InventoryAuditDetail.php).
+  - Tạo các model `app/Models/InventoryAudit.php` và `app/Models/InventoryAuditDetail.php`.
 - **Giao diện & Logic:**
-  - Tạo [InventoryAuditController.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/InventoryAuditController.php) quản lý danh sách, form tạo phiếu động bằng JS và xem chi tiết đối chiếu chênh lệch thừa/thiếu.
+  - Tạo `app/Http/Controllers/Admin/InventoryAuditController.php` quản lý danh sách, form tạo phiếu động bằng JS và xem chi tiết đối chiếu chênh lệch thừa/thiếu.
   - Tích hợp logic **Cân bằng kho (Reconcile)**:
     - Nếu **Thiếu** hàng: Cập nhật trạng thái các IMEI tương ứng thành `Defective` và gọi `InventoryService->deductStock()` để trừ tồn kho.
     - Nếu **Thừa** hàng: Tự động sinh mã IMEI tạm thời `SYS-AUD-XXXX` và gọi `InventoryService->restoreStock()` để cộng thêm tồn kho.
     - Khóa phiếu sang trạng thái `Completed`.
-  - Tạo các view: [index.blade.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/inventory/audits/index.blade.php), [create.blade.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/inventory/audits/create.blade.php), [show.blade.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/inventory/audits/show.blade.php) kèm cảnh báo xác nhận qua SweetAlert2.
-  - Tích hợp 2 tab "Biến động kho" và "Kiểm kê kho" vào thanh tab điều hướng [inventory-nav.blade.php](file:///c:/Users/Asus/Downloads/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/partials/inventory-nav.blade.php).
+  - Tạo các view: `resources/views/admin/inventory/audits/index.blade.php`, `resources/views/admin/inventory/audits/create.blade.php`, `resources/views/admin/inventory/audits/show.blade.php` kèm cảnh báo xác nhận qua SweetAlert2.
+  - Tích hợp 2 tab "Biến động kho" và "Kiểm kê kho" vào thanh tab điều hướng `resources/views/admin/partials/inventory-nav.blade.php`.
 
 
