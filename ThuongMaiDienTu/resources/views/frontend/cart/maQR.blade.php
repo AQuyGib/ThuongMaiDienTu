@@ -132,6 +132,14 @@
 
                 <!-- Action Buttons -->
                 <div class="flex flex-col gap-4" id="action-buttons">
+
+                    <!-- Nút báo đã chuyển khoản - nổi bật nhất -->
+                    <button onclick="showTransferredModal()" id="btn-transferred"
+                        class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-5 px-8 rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 text-lg animate-pulse-slow border-2 border-green-400">
+                        <i class="fa-solid fa-paper-plane text-xl"></i>
+                        Tôi đã chuyển khoản
+                    </button>
+
                     <div class="flex flex-col sm:flex-row gap-4">
                         <button onclick="confirmPayment()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-2xl shadow-lg transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
                             <i class="fa-solid fa-check-circle"></i>
@@ -167,6 +175,31 @@
                                 </button>
                                 <button onclick="hideCancelConfirmation()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl transition-all active:scale-95">
                                     Không
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal: Báo đã chuyển khoản -->
+                <div id="transferred-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black bg-opacity-50 backdrop-blur-sm">
+                    <div class="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl">
+                        <div class="text-center">
+                            <!-- Icon -->
+                            <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5">
+                                <i class="fa-solid fa-paper-plane text-4xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-2">Bạn đã chuyển khoản thành công?</h3>
+                            <p class="text-gray-500 text-sm mb-6 leading-relaxed">
+                                Sau khi xác nhận, hệ thống sẽ đối soát giao dịch và Admin sẽ duyệt đơn hàng của bạn trong thời gian sớm nhất.
+                            </p>
+                            <!-- Buttons -->
+                            <div class="flex gap-4">
+                                <button onclick="confirmTransferred()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-check"></i> Đã chuyển rồi
+                                </button>
+                                <button onclick="closeTransferredModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 px-6 rounded-xl transition-all active:scale-95">
+                                    Chưa chuyển
                                 </button>
                             </div>
                         </div>
@@ -386,6 +419,19 @@
             sessionStorage.removeItem('paymentTotal');
             localStorage.removeItem('pending_payment_order_id');
         }, 4500);
+    }
+
+    function showTransferredModal() {
+        document.getElementById('transferred-modal')?.classList.remove('hidden');
+    }
+
+    function closeTransferredModal() {
+        document.getElementById('transferred-modal')?.classList.add('hidden');
+    }
+
+    function confirmTransferred() {
+        closeTransferredModal();
+        confirmPayment();
     }
 
     function showCancelConfirmation() {

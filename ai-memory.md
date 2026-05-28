@@ -10,6 +10,11 @@
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
+  - Merged `master` into branch `Vinhem/QuetMaQR` (already up to date).
+- **QR Payment Page (`Vinhem/QuetMaQR`):**
+  - Thêm nút **"Tôi đã chuyển khoản"** (màu xanh lá, `animate-pulse-slow`, icon paper-plane) phía trên các nút hiện có trong `action-buttons` tại `maQR.blade.php`.
+  - Thêm modal xác nhận `#transferred-modal` với 2 lựa chọn: "Đã chuyển rồi" (gọi `confirmPayment()`) và "Chưa chuyển" (đóng modal).
+  - Thêm 3 hàm JS: `showTransferredModal()`, `closeTransferredModal()`, `confirmTransferred()`.
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
   - Added tag-based filtering on the lifestyle listing page.
   - Fixed admin article filters so status buttons and search now work together.
