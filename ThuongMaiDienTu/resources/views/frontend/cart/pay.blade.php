@@ -187,7 +187,7 @@
             <input id="discount-code" type="text"
               class="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-400 outline-none"
               value="{{ session('applied_coupon_code') }}"
-              placeholder="VD: PRO10">
+              placeholder="VD: SUMMER30">
             <button type="button" onclick="applyDiscount()" id="btn-discount"
               class="px-4 bg-gray-800 text-white text-sm rounded-lg font-semibold hover:bg-gray-900 transition whitespace-nowrap">
               Áp dụng
@@ -379,30 +379,31 @@ function applyDiscount() {
       },
       body: JSON.stringify({ code: code })
     })
-    .then(r => r.json())
-    .then(res => {
-      if (res.success) {
-        discountVal = res.discount;
-        inp.readOnly = true;
-        inp.classList.add('bg-green-50','border-green-400','text-green-700');
-        btn.textContent = 'Xóa'; btn.disabled = false;
-        btn.classList.replace('bg-gray-800','bg-red-500');
-        msg.className = 'text-xs mt-2 font-medium text-green-600';
-        msg.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i>${res.message}`;
-      } else {
-        btn.textContent = 'Áp dụng'; btn.disabled = false;
-        msg.className = 'text-xs mt-2 font-medium text-red-500';
-        msg.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i>${res.message}`;
+    .then(async (response) => {
+      const payload = await response.json();
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.message || 'Mã không hợp lệ!');
       }
+      return payload;
+    })
+    .then((payload) => {
+      discountVal = Number(payload.discount || 0);
+      inp.readOnly = true;
+      inp.classList.add('bg-green-50','border-green-400','text-green-700');
+      btn.textContent = 'Xóa'; btn.disabled = false;
+      btn.classList.replace('bg-gray-800','bg-red-500');
+      msg.className = 'text-xs mt-2 font-medium text-green-600';
+      msg.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i>${payload.message || 'Áp dụng mã thành công!'}`;
       msg.classList.remove('hidden');
       updateTotals();
     })
-    .catch(err => {
-      console.error(err);
+    .catch((error) => {
+      discountVal = 0;
       btn.textContent = 'Áp dụng'; btn.disabled = false;
       msg.className = 'text-xs mt-2 font-medium text-red-500';
-      msg.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i>Lỗi hệ thống!';
+      msg.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i>${error.message}`;
       msg.classList.remove('hidden');
+      updateTotals();
     });
   } else {
     fetch('{{ route("cart.apply-coupon") }}', {
