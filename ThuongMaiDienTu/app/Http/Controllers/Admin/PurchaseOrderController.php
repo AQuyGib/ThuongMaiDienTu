@@ -52,15 +52,17 @@ class PurchaseOrderController extends Controller
             'supplier_id' => 'required|exists:suppliers,supplier_id',
             'items'       => 'required|array|min:1',
             'items.*.variant_id'    => 'required|exists:product_variants,variant_id',
-            'items.*.imei_serial'   => 'required|string|max:30|distinct',
-            'items.*.cost_price'    => 'required|numeric|min:0',
+            'items.*.imei_serial'   => 'required|string|max:30|distinct|regex:/^[a-zA-Z0-9\-]+$/',
+            'items.*.cost_price'    => 'required|numeric|min:0|max:999999999',
             'items.*.warehouse_loc' => 'nullable|string|max:50',
         ], [
             'supplier_id.required' => 'Vui lòng chọn nhà cung cấp.',
             'items.required'       => 'Vui lòng thêm ít nhất 1 sản phẩm.',
             'items.*.imei_serial.required' => 'Vui lòng nhập IMEI/Serial.',
             'items.*.imei_serial.distinct' => 'IMEI/Serial không được trùng nhau.',
+            'items.*.imei_serial.regex' => 'IMEI/Serial chỉ được chứa chữ cái, số và dấu gạch ngang.',
             'items.*.cost_price.required'  => 'Vui lòng nhập giá nhập.',
+            'items.*.cost_price.max'  => 'Giá nhập không được vượt quá 999.999.999 đ.',
         ]);
 
         // Kiểm tra IMEI trùng trong DB

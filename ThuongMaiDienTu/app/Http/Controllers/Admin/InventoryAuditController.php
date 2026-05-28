@@ -77,12 +77,13 @@ class InventoryAuditController extends Controller
             'warehouse_loc' => 'required|string|max:100',
             'items'         => 'required|array|min:1',
             'items.*.variant_id' => 'required|exists:product_variants,variant_id',
-            'items.*.actual_qty' => 'required|integer|min:0',
+            'items.*.actual_qty' => 'required|integer|min:0|max:1000000',
             'notes'         => 'nullable|string|max:255',
         ], [
             'warehouse_loc.required' => 'Vui lòng chọn địa điểm kho cần kiểm kê.',
             'items.required'         => 'Vui lòng thêm ít nhất một sản phẩm để kiểm kê.',
             'items.*.actual_qty.required' => 'Vui lòng nhập số lượng thực tế kiểm đếm.',
+            'items.*.actual_qty.max'      => 'Số lượng thực tế kiểm đếm không được vượt quá 1.000.000.',
         ]);
 
         DB::beginTransaction();

@@ -101,6 +101,13 @@ class ProductController extends Controller
      */
     public function syncCrossSells(Request $request, $id)
     {
+        $request->validate([
+            'cross_sell_ids' => 'nullable|array',
+            'cross_sell_ids.*' => 'required|integer|exists:products,product_id',
+        ], [
+            'cross_sell_ids.*.exists' => 'Sản phẩm bán kèm chọn không tồn tại.',
+        ]);
+
         $product = Product::findOrFail($id);
         
         // Sync các product_id được chọn vào bảng trung gian
@@ -122,6 +129,19 @@ class ProductController extends Controller
      */
     public function syncCombos(Request $request, $id)
     {
+        $request->validate([
+            'combo_product_ids' => 'nullable|array',
+            'combo_product_ids.*' => 'required|integer|exists:products,product_id',
+            'discount_types' => 'nullable|array',
+            'discount_types.*' => 'required|string|in:fixed,percentage',
+            'discount_values' => 'nullable|array',
+            'discount_values.*' => 'required|numeric|min:0|max:999999999',
+        ], [
+            'combo_product_ids.*.exists' => 'Sản phẩm mua kèm chọn không tồn tại.',
+            'discount_types.*.in' => 'Loại giảm giá không hợp lệ.',
+            'discount_values.*.min' => 'Giá trị giảm giá không được âm.',
+        ]);
+
         $product = Product::findOrFail($id);
         
         $syncData = [];
@@ -156,8 +176,11 @@ class ProductController extends Controller
             'category_id' => 'required|integer|exists:categories,category_id',
             'base_price' => 'required|numeric|min:0|max:999999999',
             'seo_description' => 'nullable|string|max:255',
+            'safe_stock' => 'nullable|integer|min:0|max:1000000',
         ], [
             'base_price.max' => 'Giá bán không được vượt quá 999.999.999 đ.',
+            'safe_stock.integer' => 'Tồn kho an toàn phải là số nguyên.',
+            'safe_stock.min' => 'Tồn kho an toàn không được âm.',
         ]);
 
         Product::create([
@@ -165,7 +188,7 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'base_price' => $request->base_price,
             'seo_description' => $request->seo_description ?: null,
-            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
+            'safe_stock' => $request->safe_stock !== null ? (int)$request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.index')
@@ -179,11 +202,14 @@ class ProductController extends Controller
             'category_id' => 'required|integer|exists:categories,category_id',
             'base_price' => 'required|numeric|min:0|max:999999999',
             'seo_description' => 'nullable|string|max:255',
+            'safe_stock' => 'nullable|integer|min:0|max:1000000',
             'version' => 'required|integer',
         ], [
             'base_price.max' => 'Giá bán không được vượt quá 999.999.999 đ.',
             'version.required' => 'Thiếu thông tin phiên bản sản phẩm.',
             'version.integer' => 'Phiên bản sản phẩm không hợp lệ.',
+            'safe_stock.integer' => 'Tồn kho an toàn phải là số nguyên.',
+            'safe_stock.min' => 'Tồn kho an toàn không được âm.',
         ]);
 
         $product = Product::findOrFail($id);
@@ -198,7 +224,7 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'base_price' => $request->base_price,
             'seo_description' => $request->seo_description ?: null,
-            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
+            'safe_stock' => $request->safe_stock !== null ? (int)$request->safe_stock : 5,
             'version' => $product->version + 1,
         ]);
 
@@ -229,8 +255,11 @@ class ProductController extends Controller
             'gpu_chip' => 'nullable|string|max:100',
             'extra_price' => 'required|numeric|min:0|max:999999999',
             'image_url' => 'nullable|string|max:500',
+            'safe_stock' => 'nullable|integer|min:0|max:1000000',
         ], [
             'extra_price.max' => 'Giá cộng thêm không được vượt quá 999.999.999 đ.',
+            'safe_stock.integer' => 'Tồn kho an toàn phải là số nguyên.',
+            'safe_stock.min' => 'Tồn kho an toàn không được âm.',
         ]);
 
         ProductVariant::create([
@@ -242,7 +271,7 @@ class ProductController extends Controller
             'gpu_chip' => $request->gpu_chip ?: null,
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
-            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
+            'safe_stock' => $request->safe_stock !== null ? (int)$request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.show', $productId)
@@ -261,11 +290,14 @@ class ProductController extends Controller
             'gpu_chip' => 'nullable|string|max:100',
             'extra_price' => 'required|numeric|min:0|max:999999999',
             'image_url' => 'nullable|string|max:500',
+            'safe_stock' => 'nullable|integer|min:0|max:1000000',
             'version' => 'required|integer',
         ], [
             'extra_price.max' => 'Giá cộng thêm không được vượt quá 999.999.999 đ.',
             'version.required' => 'Thiếu thông tin phiên bản biến thể.',
             'version.integer' => 'Phiên bản biến thể không hợp lệ.',
+            'safe_stock.integer' => 'Tồn kho an toàn phải là số nguyên.',
+            'safe_stock.min' => 'Tồn kho an toàn không được âm.',
         ]);
 
         $variant = ProductVariant::where('variant_id', $variantId)
@@ -285,7 +317,7 @@ class ProductController extends Controller
             'gpu_chip' => $request->gpu_chip ?: null,
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
-            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
+            'safe_stock' => $request->safe_stock !== null ? (int)$request->safe_stock : 5,
             'version' => $variant->version + 1,
         ]);
 

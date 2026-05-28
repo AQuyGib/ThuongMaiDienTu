@@ -34,12 +34,13 @@ class SupplierController extends Controller
     {
         $request->validate([
             'name'    => 'required|string|max:100',
-            'phone'   => 'nullable|string|max:20',
+            'phone'   => 'nullable|string|max:20|regex:/^[0-9+\s\-()]+$/',
             'email'   => 'nullable|email|max:100',
             'address' => 'nullable|string|max:255',
         ], [
             'name.required' => 'Vui lòng nhập tên nhà cung cấp.',
             'name.max'      => 'Tên nhà cung cấp không được vượt quá 100 ký tự.',
+            'phone.regex'   => 'Số điện thoại không đúng định dạng.',
             'email.email'   => 'Email không đúng định dạng.',
         ]);
 
@@ -61,13 +62,14 @@ class SupplierController extends Controller
     {
         $request->validate([
             'name'    => 'required|string|max:100',
-            'phone'   => 'nullable|string|max:20',
+            'phone'   => 'nullable|string|max:20|regex:/^[0-9+\s\-()]+$/',
             'email'   => 'nullable|email|max:100',
             'address' => 'nullable|string|max:255',
             'version' => 'required|integer',
         ], [
             'name.required' => 'Vui lòng nhập tên nhà cung cấp.',
             'name.max'      => 'Tên nhà cung cấp không được vượt quá 100 ký tự.',
+            'phone.regex'   => 'Số điện thoại không đúng định dạng.',
             'email.email'   => 'Email không đúng định dạng.',
             'version.required' => 'Thiếu thông tin phiên bản nhà cung cấp.',
             'version.integer' => 'Phiên bản nhà cung cấp không hợp lệ.',
