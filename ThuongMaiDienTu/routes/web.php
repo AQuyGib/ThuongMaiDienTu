@@ -82,7 +82,7 @@ Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear')
 Route::post('/cart/toggle-select', [CartController::class, 'toggleSelect'])->name('cart.toggleSelect');
 Route::post('/cart/toggle-all', [CartController::class, 'toggleAll'])->name('cart.toggleAll');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
-Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
+Route::get('/pay', [CartController::class, 'pay'])->middleware('auth')->name('cart.pay');
 Route::post('/pay/wallet-points', [CartController::class, 'applyWalletPoints'])->name('cart.pay.wallet-points');
 Route::post('/cart/validate-voucher', [CartController::class, 'validateVoucher'])->name('cart.voucher.validate');
 Route::post('/pay/place-order', [CartController::class, 'placeOrder'])->name('cart.place-order');
