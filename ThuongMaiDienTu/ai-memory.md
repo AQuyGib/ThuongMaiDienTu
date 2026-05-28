@@ -166,3 +166,48 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Bổ sung bảng hiển thị **Lịch sử biến động điểm** chi tiết (từ `point_transactions`) hiển thị đầy đủ thông tin thời gian, loại điểm (tiêu dùng/rank), hình thức (cộng/trừ/hoàn) và số điểm thay đổi kèm nội dung mô tả cụ thể.
   - Các chuỗi mô tả tiếng Việt mới đều tương thích hoàn toàn với middleware tự động dịch thuật sang tiếng Anh (`TranslateHtmlResponse`).
 
+### 10. Hệ thống Đa Vòng Quay May Mắn (Multi-Wheel Lucky System)
+- **Tách biệt 3 Vòng quay cùng lúc:** 
+  - Hỗ trợ 3 cấp độ vòng quay: Thường (tiêu tốn 10 điểm), Bạc (20 điểm), Vàng (50 điểm).
+  - Phía trên đĩa Canvas tại frontend hiển thị bộ tab chuyển đổi linh hoạt. Canvas đĩa quay tự động vẽ các ô quà thuộc vòng quay được lọc dựa trên metadata `wheel_type` (`standard`, `silver`, `gold`).
+- **Nâng cấp Giao diện & Trải nghiệm (UI/UX):**
+  - Tăng kích thước Canvas đĩa quay lên **360px** thiết kế sang trọng dạng 3D với 24 bóng LED nhấp nháy liên tục, kim chỉ đỉnh 3D và nút SPIN trung tâm nổi bật.
+  - Hiển thị Ví điểm mặc định nằm cố định ở góc trên bên phải Header của trang đổi thưởng giúp dễ theo dõi điểm số. Tự động đồng bộ số dư điểm trên cả Ví góc Header và Ví ở Banner sau khi đĩa dừng quay.
+- **Xử lý Backend & Xác suất (Weighted Random Selection):**
+  - Hàm `spinWheel` trong `RewardsService.php` lọc quà theo `wheel_type` được chọn, trừ điểm tương ứng (10/20/50 điểm) và trả về kết quả trúng thưởng chính xác dựa theo xác suất trọng số (`winning_rate`).
+
+### 11. Cấu hình Admin & Xem trước Vòng quay (Admin Settings & Live Preview)
+- **Modal Thiết lập Vòng quay nâng cấp:**
+  - Thiết kế tab chuyển đổi trực quan (Vòng Thường, Vòng Bạc, Vòng Vàng) trong Modal để Admin quản lý danh sách quà tặng của từng vòng quay riêng biệt.
+  - Cột trái hiển thị Canvas đĩa quay mô phỏng thực tế tương ứng với quà của vòng quay được chọn, tích hợp nút **TEST** cho phép admin quay thử hiệu ứng xoay 3D offline trực tiếp.
+  - Cột phải hiển thị bảng danh sách các ô quà kèm tỷ lệ trúng và chức năng sửa nhanh.
+- **Cấu hình động:**
+  - Bổ sung trường nhập liệu **Thuộc vòng quay** (`wheel_type`) và **Tỷ lệ trúng vòng quay (%)** (`winning_rate`) lưu trực tiếp vào JSON `metadata` của bảng `reward_catalog`.
+  - Tích hợp tính năng **Thêm nhanh ô quà** tự động gán loại quà vòng quay (`wheel_prize`), danh mục (`wheel`), chi phí (`0`) và `wheel_type` theo tab đang mở.
+  - **Ràng buộc hiển thị Rank Points:** Trường nhập "Rank points tối thiểu" tự động ẩn hiện bằng JS dựa trên select "Ràng buộc hạng thành viên" giúp form gọn gàng hơn.
+
+### 12. Sửa lỗi & Bật/Tắt Hiển thị Vòng quay may mắn (Bug Fix & Wheel Visibility toggle)
+- **Sửa lỗi nút Thiết lập Vòng quay không hoạt động:**
+  - Khắc phục lỗi `Uncaught ReferenceError: locale is not defined` do thiếu việc khai báo biến JavaScript `locale` trong thẻ `<script>` của trang Admin `index.blade.php`.
+  - Khai báo biến `const locale = '{{ $locale }}';` ở đầu script để khắc phục triệt để.
+- **Bật/Tắt hiển thị Vòng quay ở Frontend:**
+  - Tích hợp cấu hình `show_lucky_wheel` lưu trữ trong bảng `settings` thông qua model `Setting`.
+  - Thêm block Toggle Switch đẹp mắt trong mục **Cài đặt nhanh** (Cột phải) của trang Admin Quản lý đổi thưởng, sử dụng AJAX gửi yêu cầu POST đến route `admin.rewards.update-setting` để lưu trạng thái bật tắt tức thì không cần tải lại trang.
+  - Phía Frontend: Bọc khu vực Vòng quay may mắn (Hero Section) bằng điều kiện `@if ($showWheel === '1')` dựa trên giá trị cấu hình trong database.
+
+### 13. Hệ thống Đa Vòng Quay May Mắn Động (Dynamic Multi-Wheel Lucky System)
+- **Cấu hình động hoàn toàn qua Settings:**
+  - Chuyển từ việc mã hóa cứng (hardcode) các loại vòng quay (`standard`, `silver`, `gold`) sang lưu cấu hình động dưới dạng JSON trong bảng `settings` với key `lucky_wheels_config` (bao gồm: định danh `key`, tên hiển thị `name`, tên tiếng Anh `name_en`, chi phí điểm `points_cost`).
+- **Backend & Logic xử lý:**
+  - `RewardsService.php`: Cập nhật hàm `spinWheel` để lấy chi phí quay (`points_cost`) dựa trên dữ liệu cấu hình động từ database thay vì dùng `if-else` cố định.
+  - `Admin\RewardsController.php`: Thêm phương thức `updateLuckyWheels` để Admin có thể cập nhật cấu hình danh sách các vòng quay (thêm/sửa/xóa).
+  - `RewardsController.php` (Frontend): Truyền biến `$wheels` động sang frontend view.
+  - Thêm route POST `/admin/rewards/wheels` để lưu cấu hình vòng quay thông qua AJAX từ Admin Dashboard.
+- **Quản lý danh sách Vòng quay ở Admin (UI/UX):**
+  - Thêm nút "Quản lý Vòng quay" vào Header của Modal Thiết lập Vòng quay. Khi click sẽ mở Modal "Quản lý danh sách Vòng quay" (`lucky-wheels-manager-modal`) cho phép Admin thêm mới, chỉnh sửa Mã định danh, Tên (Tiếng Việt/Tiếng Anh) và Số điểm quy định, hoặc xóa các cấp độ vòng quay.
+  - Sử dụng AJAX POST gửi cấu hình lên server để lưu vào database, tự động vẽ lại các Tab vòng quay admin và cập nhật lựa chọn "Thuộc vòng quay" trong form thêm/sửa quà tặng mà không cần load lại trang.
+- **Đồng bộ giao diện Frontend:**
+  - Đọc động danh sách vòng quay từ biến `$wheels` truyền xuống, vẽ các Tab vòng quay và Badge chi phí điểm động theo database.
+  - Tự động thay đổi chi phí điểm hiển thị trên nút "QUAY NGAY" khi chuyển đổi giữa các tab.
+  - Thêm cơ chế kiểm tra điểm tích lũy của khách hàng ở Client trước khi thực hiện quay (nếu không đủ điểm của vòng quay đó sẽ chặn và thông báo lỗi ngay lập tức).
+

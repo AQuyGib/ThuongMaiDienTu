@@ -112,26 +112,111 @@ class RewardsService
         });
     }
 
-    public function spinWheel(User $user): array
+    public function spinWheel(User $user, string $wheelType = 'standard'): array
     {
-        return DB::transaction(function () use ($user) {
+        return DB::transaction(function () use ($user, $wheelType) {
+            $luckyWheelsSetting = DB::table('settings')->where('setting_key', 'lucky_wheels_config')->value('setting_value');
+            $wheels = json_decode($luckyWheelsSetting ?? '[]', true);
+            if (empty($wheels)) {
+                $wheels = [
+                    ['key' => 'standard', 'name' => 'Vòng Thường', 'name_en' => 'Standard Wheel', 'points_cost' => 10],
+                    ['key' => 'silver', 'name' => 'Vòng Bạc', 'name_en' => 'Silver Wheel', 'points_cost' => 20],
+                    ['key' => 'gold', 'name' => 'Vòng Vàng', 'name_en' => 'Gold Wheel', 'points_cost' => 50]
+                ];
+            }
+
             $spinCost = 10;
+            $minRank = 'none';
+            foreach ($wheels as $w) {
+                if ($w['key'] === $wheelType) {
+                    $spinCost = (int)$w['points_cost'];
+                    $minRank = $w['min_rank'] ?? 'none';
+                    break;
+                }
+            }
+
+            // Kiểm tra hạng thành viên tối thiểu để quay vòng quay này
+            $rankOrder = [
+                'none' => 0,
+                'Dong' => 1,
+                'Bronze' => 1,
+                'Bac' => 2,
+                'Silver' => 2,
+                'Vang' => 3,
+                'Gold' => 3,
+                'KimCuong' => 4,
+                'Diamond' => 4,
+            ];
+
+            $userRank = $user->member_tier ?: 'Dong';
+            $userRankVal = $rankOrder[$userRank] ?? 1;
+            $minRankVal = $rankOrder[$minRank] ?? 0;
+
+            if ($userRankVal < $minRankVal) {
+                $rankNames = [
+                    'Dong' => 'Đồng',
+                    'Bac' => 'Bạc',
+                    'Vang' => 'Vàng',
+                    'KimCuong' => 'Kim Cương',
+                ];
+                $requiredRankName = $rankNames[$minRank] ?? $minRank;
+                throw new \RuntimeException("Bạn cần đạt hạng từ {$requiredRankName} trở lên mới có thể quay vòng quay này.");
+            }
+
             $wallet = DB::table('user_points')->where('user_id', $user->user_id)->lockForUpdate()->first();
             if (! $wallet) {
                 throw new RuntimeException('Người dùng chưa có ví điểm.');
             }
             if ((int) $wallet->wallet_points < $spinCost) {
-                throw new RuntimeException('Không đủ điểm để quay vòng may mắn.');
+                throw new RuntimeException('Không đủ điểm để quay vòng may mắn này.');
             }
 
-            $reward = DB::table('reward_catalog')
+            $allRewards = DB::table('reward_catalog')
                 ->where('reward_type', 'wheel_prize')
                 ->where('is_active', true)
-                ->inRandomOrder()
-                ->first();
+                ->get();
+
+            $rewards = $allRewards->filter(function ($item) use ($wheelType) {
+                $meta = json_decode($item->metadata ?? '{}', true);
+                $itemWheelType = $meta['wheel_type'] ?? 'standard';
+                return $itemWheelType === $wheelType;
+            });
+
+            if ($rewards->isEmpty()) {
+                throw new RuntimeException('Chưa có phần thưởng vòng quay khả dụng cho loại vòng quay này.');
+            }
+
+            // Tính toán quà trúng thưởng theo tỷ lệ trọng số (winning_rate trong metadata)
+            $weightedRewards = [];
+            $totalWeight = 0;
+
+            foreach ($rewards as $item) {
+                $meta = json_decode($item->metadata ?? '{}', true);
+                $weight = (int) ($meta['winning_rate'] ?? 10); // Mặc định là 10 nếu không cấu hình
+                if ($weight < 1) {
+                    $weight = 1;
+                }
+                $weightedRewards[] = [
+                    'item' => $item,
+                    'weight' => $weight
+                ];
+                $totalWeight += $weight;
+            }
+
+            $rand = rand(1, $totalWeight);
+            $currentSum = 0;
+            $reward = null;
+
+            foreach ($weightedRewards as $wr) {
+                $currentSum += $wr['weight'];
+                if ($rand <= $currentSum) {
+                    $reward = $wr['item'];
+                    break;
+                }
+            }
 
             if (! $reward) {
-                throw new RuntimeException('Chưa có phần thưởng vòng quay khả dụng.');
+                $reward = $rewards->first();
             }
 
             $newBalance = (int) $wallet->wallet_points - $spinCost;
@@ -148,6 +233,7 @@ class RewardsService
                 'reward_name' => $reward->name,
                 'reward_type' => $reward->reward_type,
                 'points_cost' => $spinCost,
+                'wheel_type' => $wheelType,
             ];
 
             $spinId = DB::table('lucky_wheel_spins')->insertGetId([
@@ -170,7 +256,7 @@ class RewardsService
                 'points' => $spinCost,
                 'reference_type' => 'lucky_wheel_spins',
                 'reference_id' => $spinId,
-                'description' => 'Quay vòng may mắn: ' . $reward->name,
+                'description' => 'Quay ' . ($wheelType === 'silver' ? 'vòng Bạc' : ($wheelType === 'gold' ? 'vòng Vàng' : 'vòng Thường')) . ': ' . $reward->name,
                 'metadata' => json_encode($snapshot, JSON_UNESCAPED_UNICODE),
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -207,11 +293,35 @@ class RewardsService
             return;
         }
 
-        $rankPoints = (int) (DB::table('user_points')->where('user_id', $user->user_id)->value('rank_points') ?? 0);
-        $minRankPoints = (int) ($reward->min_rank_points ?? 0);
+        $meta = json_decode($reward->metadata ?? '{}', true);
+        $minRank = $meta['min_rank'] ?? 'none';
 
-        if ($rankPoints < $minRankPoints) {
-            throw new RuntimeException('Phần thưởng này yêu cầu điểm rank tối thiểu ' . number_format($minRankPoints) . '.');
+        $rankOrder = [
+            'none' => 0,
+            'Dong' => 1,
+            'Bronze' => 1,
+            'Bac' => 2,
+            'Silver' => 2,
+            'Vang' => 3,
+            'Gold' => 3,
+            'KimCuong' => 4,
+            'Diamond' => 4,
+        ];
+
+        $userRank = $user->member_tier ?: 'Dong';
+        $userRankVal = $rankOrder[$userRank] ?? 1;
+        $minRankVal = $rankOrder[$minRank] ?? 0;
+
+        if ($userRankVal < $minRankVal) {
+            $rankNames = [
+                'none' => 'Thành viên',
+                'Dong' => 'Đồng',
+                'Bac' => 'Bạc',
+                'Vang' => 'Vàng',
+                'KimCuong' => 'Kim Cương',
+            ];
+            $requiredRankName = $rankNames[$minRank] ?? $minRank;
+            throw new RuntimeException("Bạn cần đạt hạng từ {$requiredRankName} trở lên mới có thể đổi phần thưởng này.");
         }
     }
 }

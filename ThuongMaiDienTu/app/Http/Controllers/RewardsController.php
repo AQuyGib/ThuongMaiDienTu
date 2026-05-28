@@ -15,7 +15,17 @@ class RewardsController extends Controller
         $balance = $user ? $rewardsService->getWalletBalance($user) : 0;
         $catalog = $rewardsService->getCatalog(['active_only' => true]);
 
-        return view('frontend.rewards.index', compact('balance', 'catalog'));
+        $luckyWheelsSetting = \App\Models\Setting::where('setting_key', 'lucky_wheels_config')->value('setting_value');
+        $wheels = json_decode($luckyWheelsSetting ?? '[]', true);
+        if (empty($wheels)) {
+            $wheels = [
+                ['key' => 'standard', 'name' => 'Vòng Thường', 'name_en' => 'Standard Wheel', 'points_cost' => 10],
+                ['key' => 'silver', 'name' => 'Vòng Bạc', 'name_en' => 'Silver Wheel', 'points_cost' => 20],
+                ['key' => 'gold', 'name' => 'Vòng Vàng', 'name_en' => 'Gold Wheel', 'points_cost' => 50]
+            ];
+        }
+
+        return view('frontend.rewards.index', compact('balance', 'catalog', 'wheels'));
     }
 
     public function show(RewardCatalog $reward)
@@ -48,8 +58,10 @@ class RewardsController extends Controller
             return response()->json(['success' => false, 'message' => 'Vui lòng đăng nhập.'], 401);
         }
 
+        $wheelType = $request->input('wheel_type', 'standard');
+
         try {
-            $result = $rewardsService->spinWheel(Auth::user());
+            $result = $rewardsService->spinWheel(Auth::user(), $wheelType);
 
             return response()->json(['success' => true, 'data' => $result]);
         } catch (\Throwable $e) {
