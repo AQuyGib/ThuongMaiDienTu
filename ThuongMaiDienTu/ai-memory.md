@@ -134,6 +134,7 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - `resources/js/components/AdminTopbar.tsx`
   - Đảm bảo các kỹ sư tiếp quản dễ dàng nắm vững kiến trúc, các bước hoạt động (quét DOM, dịch gộp, bộ lọc dịch, cách intercept model, click-outside, v.v.).
 
+<<<<<<< HEAD
 ### 7. Phân hệ Đa Ngôn Ngữ (Dynamic Localization) - Gộp nhánh thành công
 - **Khắc phục lỗi View Product list:**
   - Đã khôi phục và đồng bộ chính xác file `ProductController.php` và `Product.blade.php` trên nhánh `Hien/dangonngu` trước khi merge vào `master`.
@@ -296,6 +297,18 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - **`index.blade.php` (Admin)**: Chú thích chi tiết kỹ thuật Event Delegation lắng nghe từ document gốc và cơ chế readyState kiểm tra trạng thái DOM tải bất đồng bộ/SPA router.
   - **`reviews.blade.php` (Frontend)**: Chú thích chi tiết kỹ thuật gom tệp tải lên qua `FormData`, xử lý AJAX, kiểm tra HTTP Status 403 để đổi tiêu đề popup từ "Lỗi kết nối" thành "Vi phạm".
 
+### 20. Hệ thống đa ngôn ngữ cho giao diện Đăng nhập / Đăng ký & Bảo mật phiên làm việc
+- **Sửa lỗi tính năng thích/yêu thích bị đứng ở tiếng Anh (JSON control values translation bypass):**
+  - Khắc phục triệt để lỗi khi người dùng chuyển sang tiếng Anh, việc bấm Thêm vào yêu thích (Wishlist) hoặc Like video bị đứng giao diện (không đổi trạng thái nút bấm). Nguyên nhân do Middleware `TranslateHtmlResponse` tự động dịch mọi chuỗi văn bản trong response JSON, vô tình dịch luôn các mã trạng thái điều khiển máy như `'added'` thành `'added. added'` (do API Google Translate dịch sai) hoặc các mã khác, làm sai lệch điều kiện so khớp JavaScript (`data.status === 'added'`).
+  - Đã thiết kế phương thức lọc `isMachineKey` trong `TranslateHtmlResponse.php` để bỏ qua các key điều khiển hệ thống (`status`, `success`, `code`, `action`, `type`, `id`, `product_id`, `user_id`, v.v.) khi dịch JSON response, đảm bảo logic JavaScript frontend hoạt động chính xác 100% trong mọi ngôn ngữ.
+- **Hệ thống đa ngôn ngữ cho giao diện Đăng nhập / Đăng ký:**
+  - Thiết kế và triển khai nút chuyển đổi ngôn ngữ (VI/EN) trực tiếp tại góc trên bên phải của `form-panel` trong file `resources/views/Auth/login_register.blade.php`, hỗ trợ dropdown mượt mà và tự động ẩn khi click ra ngoài.
+  - Tách tĩnh và thêm toàn bộ các nhãn văn bản, nút bấm (bao gồm nút "Sign in with Google" / "Đăng nhập với Google", "Trang chủ" / "Home", các tabs Đăng nhập/Đăng ký, placeholder, và nhãn input) vào các file ngôn ngữ `lang/vi/ui.php` và `lang/en/ui.php`.
+  - Thay đổi toàn bộ chuỗi hardcode tiếng Việt trong `login_register.blade.php` sang hàm helper dynamic localizations `{{ __('ui.key') }}` để đảm bảo dịch thuật 100% chính xác và nhanh chóng.
+  - Sửa đổi logic gán cứng `'vi'` sau khi xác thực thành công trong các Controller: `AuthController.php` (login & register), `SocialController.php` (Google/Social Login), và `TwoFactorController.php` (xác thực mã OTP 2FA). Thiết lập cơ chế tự động giữ nguyên và tiếp tục duy trì ngôn ngữ hiện tại của session (`session('locale')`) qua quá trình đăng nhập và đăng ký mà không bị ghi đè hay reset về tiếng Việt.
+  - Đặt ngôn ngữ mặc định của thẻ `<html>` là `{{ app()->getLocale() }}` để tối ưu SEO.
+  - Cập nhật và biên dịch thành công mọi thay đổi.
+
 
 ### 18. Cập nhật và Khôi phục tệp video mẫu mới cho VideoSeeder
 - **Bối cảnh:** Thư mục `public/uploads/video/` bị loại trừ trong `.gitignore` dẫn đến việc thiếu tệp video mẫu khi chạy thử nghiệm trên máy cục bộ hoặc khi checkout code.
@@ -331,6 +344,78 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - **Trước đây:** Mỗi khi người dùng bấm vào một video trong playlist (click phát video) hoặc tải trang, hệ thống ngay lập tức gọi API `/videos/{video}/view` để tăng 1 lượt xem (views).
   - **Hiện tại:** Loại bỏ hoàn toàn sự kiện tăng views tự động khi click chọn hoặc load trang. Bổ sung sự kiện lắng nghe `ended` trên thẻ phát HTML5 `<video id="main-video-player">`. Chỉ khi người dùng xem hết video, hàm `incrementViews(currentVideoId)` mới được kích hoạt để tăng lượt xem và hiển thị thông báo cảm ơn người dùng.
 
+<<<<<<< HEAD
 ### 20. Khắc phục hoàn toàn xung đột Git (Merge Conflicts Resolution)
 - **Danh mục (`Category.blade.php`):** Loại bỏ hoàn toàn các ký hiệu xung đột Git (`<<<<<<< HEAD`, `=======`, `>>>>>>> master`). Giữ nguyên cấu trúc giao diện quản trị mới và tích hợp thành công nút dịch thuật tiếng Anh (`admin.categories.translation.edit`) từ nhánh master.
 - **Chi tiết sản phẩm (`ProductDetail.blade.php`):** Giải quyết triệt để xung đột mã nguồn. Tích hợp thư viện Select2 cho tính năng Cross-sell và Combo Discount, giữ nguyên tham số `version` phục vụ tối ưu hóa đồng thời của hàm `openEditVariant`, loại bỏ mọi ký hiệu xung đột và bổ sung directive `@endpush` đóng gói script an toàn.
+=======
+### 21. Sửa lỗi chatbot đa ngôn ngữ (Multilingual Chatbot & RAG Fix)
+- **Bypass Dịch Thuật Middleware:** 
+  - Thêm `'response'` vào `$blacklist` của `isMachineKey` trong `TranslateHtmlResponse.php` để ngăn chặn middleware tự dịch kết quả chatbot JSON từ Gemini sang tiếng Anh.
+  - Bổ sung cơ chế **bypass hoàn toàn** route chatbot (`/chatbot`) tại đầu phương thức `handle` trong `TranslateHtmlResponse.php` để đảm bảo middleware không can thiệp, biến đổi cấu trúc JSON hoặc mã hóa/dịch thuật bất kỳ dữ liệu phản hồi nào từ AI.
+- **Giải mã thực thể HTML ở Frontend (Client-side HTML Entity Decoding):**
+  - Thêm hàm helper `decodeHtml(html)` trong `resources/views/partials/chatbot.blade.php` sử dụng thẻ `textarea` tạm thời để giải mã toàn bộ các thực thể HTML (như `&lt;br&gt;`, `&lt;a ...&gt;`) về dạng thẻ HTML thuần trước khi gán vào `innerHTML`.
+  - Giúp bảo vệ giao diện, đảm bảo các thẻ xuống dòng `<br>`, in đậm `<b>` và link sản phẩm `<a class="chatbot-product-link">` luôn hiển thị chính xác dưới dạng các phần tử giao diện thay vì hiển thị dưới dạng văn bản thô (plain text).
+- **Prompt Chatbot Bản Địa Hóa (Locale-Aware Prompt):** 
+  - Trong `ChatbotController.php`, kiểm tra locale hiện tại `App::getLocale() === 'en'`. Nếu đang ở phiên bản tiếng Anh, hệ thống sẽ sử dụng bộ System Prompt viết hoàn toàn bằng tiếng Anh để chỉ dẫn Gemini AI, yêu cầu nó phản hồi 100% bằng tiếng Anh.
+  - Sửa đổi phương thức `searchProducts` sử dụng Eloquent `Product` model thay vì query builder `DB::table` để kích hoạt `BaseTranslationTrait`, giúp tự động lấy tên sản phẩm tiếng Anh tương ứng từ bảng `product_translations`.
+  - Hỗ trợ tìm kiếm khớp từ khóa cả ở bảng chính `products` và bảng dịch `product_translations` thông qua mối quan hệ `translations` bằng `orWhereHas('translations')`.
+  - Chuyển ngữ các nhãn văn bản của kho dữ liệu gửi kèm (Inventory Context) và thông báo lỗi phản hồi API chatbot sang tiếng Anh một cách mượt mà.
+
+### 22. Hóa giải lỗi dịch thuật hệ thống lọc sản phẩm (Bilingual Product Filter Page)
+- **Sửa lỗi hiển thị chữ tiếng Việt ở giao diện tiếng Anh:**
+  - **Khắc phục Text Node có ký tự xuống dòng:** Trong `index.blade.php`, các văn bản tĩnh `Gợi ý nhanh:`, `Kinh tế tuần hoàn:`, và `Bỏ chọn tất cả` ban đầu được viết xuống dòng thụt lề làm Middleware dịch thuật không khớp từ khóa hoặc bị lỗi dịch khoảng trắng. Đã thu gọn chúng thành dòng đơn không ngắt dòng để Middleware khớp dịch thành công.
+  - **Hỗ trợ Đa Ngôn Ngữ động trong JavaScript (`product-filter.js`):**
+    - Do các thẻ lọc (active filter tags như `Danh mục: Sound`, `Hãng: Asus`, `Nhu cầu: Chơi mượt Genshin`, v.v.) và popup chọn giá được tạo động bằng JavaScript ở Client-side nên Middleware backend không can thiệp được.
+    - Đã thêm biến `isEn` phát hiện ngôn ngữ của trang (`document.documentElement.lang === 'en'`).
+    - Bản địa hóa toàn bộ nhãn tĩnh được chèn động bởi JS như: tiêu đề popup `Filter` / `Bộ lọc`, nút `Close` / `Đóng`, nút `Apply` / `Xem kết quả`, các tag lọc (`Category`, `Price`, `Usage needs`, `Manufacturer`, `Color`, `Easy to repair`, `Environmentally friendly`), cũng như thông báo lỗi tải sản phẩm.
+
+### 23. Thêm Seeder cho Hóa đơn dịch vụ và Phiếu sửa chữa
+- **Hạ tầng & Seeders:**
+  - **`database/seeders/UserSeeder.php`** (Chỉnh sửa): Cập nhật thông tin `phone_number` cho 20 khách hàng ảo để phục vụ cơ chế tự động điền / tìm kiếm theo số điện thoại khi tạo phiếu sửa chữa và hóa đơn. Đồng thời thêm 2 tài khoản Kỹ thuật viên mẫu (role 4 - Nhân viên) là `technical.nam@dienmaypro.com.vn` và `technical.hung@dienmaypro.com.vn`.
+  - **`database/seeders/ServiceInvoiceSeeder.php`** (Mới tạo): Sinh dữ liệu hóa đơn dịch vụ ngẫu nhiên với nhiều trạng thái (`paid`, `issued`, `draft`, `cancelled`), tự động tính toán thuế VAT (8% hoặc 10%), giảm giá và tổng tiền từ các mẫu dịch vụ thực tế.
+  - **`database/seeders/RepairTicketSeeder.php`** (Mới tạo): Sinh 19 phiếu sửa chữa với đầy đủ các trạng thái (`Received`, `Checking`, `Under_Repair`, `Waiting_Parts`, `Done`). Các phiếu trạng thái `Done` (hoàn thành) được chia làm 2 loại: một số chưa xuất hóa đơn, và một số đã liên kết trực tiếp với các hóa đơn tương ứng sinh ra từ `ServiceInvoiceSeeder` (đảm bảo đồng bộ 100% về thông tin khách hàng, số điện thoại, IMEI, tên dịch vụ và phí dịch vụ).
+  - **`database/seeders/DatabaseSeeder.php`** (Chỉnh sửa): Đăng ký `ServiceInvoiceSeeder::class` và `RepairTicketSeeder::class` vào phương thức `run()` để tự động kích hoạt khi chạy lệnh seeding toàn cục.
+
+### 24. Nâng cấp toàn diện Dashboard Admin (Dashboard Comprehensive Upgrade)
+- **Controller (`app/Http/Controllers/Admin/DashboardController.php`):**
+  - Bổ sung import đầy đủ các Model: `RepairTicket`, `ServiceInvoice`, `Video`, `VideoComment`, `Review`, `Carbon`.
+  - Thêm thống kê Phiếu sửa chữa theo 5 trạng thái (`Received`, `Checking`, `Under_Repair`, `Waiting_Parts`, `Done`).
+  - Thêm thống kê Hóa đơn dịch vụ: tổng số, doanh thu (paid), số chờ xử lý (issued/draft).
+  - Thêm thống kê Video: tổng video, tổng lượt xem, tổng lượt thích.
+  - Thêm thống kê kiểm duyệt: đánh giá chờ duyệt, bình luận video chờ duyệt.
+  - Thêm phân bổ đơn hàng theo trạng thái (cho biểu đồ donut).
+  - Thêm xu hướng doanh thu 6 tháng gần nhất (thu nhập vs chi phí theo tháng).
+- **View (`resources/views/admin/dashboard.blade.php`):**
+  - Giữ nguyên 4 stat card tài chính & tổng quan (Thu nhập, Chi phí, Sản phẩm, Khách hàng).
+  - Thêm hàng stat card thứ 2: Đơn hàng (kèm badge trạng thái), Phiếu sửa chữa (breakdown), Hóa đơn dịch vụ (doanh thu + chờ xử lý), Video (views + likes).
+  - Thêm banner cảnh báo kiểm duyệt (hiển thị khi có nội dung chờ duyệt) kèm nút "Kiểm duyệt ngay".
+  - Mở rộng thanh thao tác nhanh: thêm link Sửa chữa, Hóa đơn DV.
+  - Thêm biểu đồ cột (Bar Chart) xu hướng doanh thu 6 tháng bằng Chart.js CDN.
+  - Thêm biểu đồ Donut đơn hàng theo trạng thái kèm legend bên dưới.
+  - Thêm thanh tiến trình (stacked bar) phiếu sửa chữa theo trạng thái với màu sắc phân biệt.
+  - Giữ nguyên bảng đơn hàng mới nhất, bổ sung thêm màu badge cho status `delivered`, `processing`, `shipped`.
+  - Thêm bảng **Top 5 sản phẩm bán chạy** (truy vấn `order_details` GROUP BY `product_name`, SUM quantity) với xếp hạng #1→#5 có màu medal và hiển thị doanh thu kèm theo.
+  - Thêm bảng **Cảnh báo tồn kho thấp** hiển thị 5 biến thể sản phẩm có ≤ 3 sản phẩm `In_Stock` trong kho, phân biệt màu đỏ (hết hàng) và cam (sắp hết).
+  - Thêm banner **Flash Sale đang diễn ra** (gradient rose→orange) hiển thị các chương trình Flash Sale đang active + chưa hết hạn, kèm số lượng sản phẩm và thời gian kết thúc.
+  - Thêm hàng 3 stat card phụ: Bài viết CMS, Đơn nhập kho, Tổng đánh giá.
+- **Controller (bổ sung thêm):**
+  - Import thêm: `Article`, `FlashSale`, `InventoryItem`, `OrderDetail`, `ProductVariant`, `PurchaseOrder`, `DB`.
+  - Query Top 5 sản phẩm bán chạy từ bảng `order_details` bằng `DB::table()` GROUP BY.
+  - Query cảnh báo tồn kho thấp bằng `selectSub` đếm `InventoryItem` có status `In_Stock` per variant, lọc `having <= 3`.
+  - Query Flash Sale đang active (`is_active = true`, `start_at <= now`, `end_at >= now`) kèm `withCount('products')`.
+  - Đếm tổng bài viết (`Article::count()`) và đơn nhập kho (`PurchaseOrder::count()`).
+- **Sắp xếp, Liên kết & Seeder (Sorting, Links & Seeders):**
+  - Đơn hàng mới nhất được hiển thị theo thứ tự mã từ nhỏ đến lớn (sử dụng `orderBy('order_id', 'asc')`).
+  - Liên kết "Xem tất cả →" bên cạnh Đơn hàng mới nhất đã được đổi từ `admin.cart.index` sang đúng route danh sách đơn hàng của admin: `admin.orders.index`.
+  - Chuyển liên kết & chỉ số **Đơn nhập kho** sang card **Cảnh báo tồn kho thấp** cho đúng ngữ cảnh và quản lý kho đồng bộ.
+  - Tinh giản card **Video & Nội dung** chỉ chứa các chỉ số media truyền thông, bổ sung liên kết trực tiếp "Xem video →" và "Xem bài viết →" để admin dễ quản lý.
+  - Tích hợp `ArticleSeeder::class`, `CashbookSeeder::class`, và `FlashSaleSeeder::class` vào danh sách chạy của `DatabaseSeeder.php`.
+  - Cập nhật code `CashbookSeeder.php` và `FlashSaleSeeder.php` sử dụng `updateOrCreate` để đảm bảo cơ chế seed chạy được nhiều lần một cách an toàn (idempotent).
+  - Thêm sinh ngẫu nhiên views/likes trong `VideoSeeder.php` để dashboard hiển thị đầy đủ dữ liệu trực quan sinh động thay vì bằng 0.
+- **Tài liệu & Comment code:**
+  - Viết chú thích (comments) chi tiết cho cả 12 khối logic truy vấn thống kê dữ liệu bên trong `DashboardController.php` để hỗ trợ phát triển và bảo trì.
+  - Cập nhật định dạng DocBlock chi tiết cho phương thức `index()` của `DashboardController.php`, mô tả tường tận nhiệm vụ của hàm, các luồng phân quyền bảo mật, 12 nhóm dữ liệu thống kê thu thập cùng các cấu trúc dữ liệu truyền ra view.
+  - Thêm đầy đủ comment trong file giao diện `dashboard.blade.php` giải thích cấu trúc layout Grid, Flexbox, các khối Blade dynamic components và phần vẽ biểu đồ bằng Javascript (Chart.js).
+
+>>>>>>> master

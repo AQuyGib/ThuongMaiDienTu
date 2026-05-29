@@ -25,7 +25,6 @@ class ChatbotController extends Controller
         'gemini-3.5-flash',
         'gemini-3-flash-preview',
         'gemini-2.5-flash',
-        'gemini-2.5-flash-lite',
     ];
 
     /**
@@ -74,6 +73,12 @@ class ChatbotController extends Controller
 NGỮ CẢNH KHO HÀNG (Dữ liệu từ Database):
 {$productKnowledge}
 
+NGỮ CẢNH CHÍNH SÁCH CỬA HÀNG (Dịch vụ, Bảo hành, Đổi trả, Trả góp, Tích điểm):
+- BẢO HÀNH: Bảo hành chính hãng từ 12 - 24 tháng tùy dòng máy. Khách hàng kiểm tra thời hạn bảo hành trực tiếp tại: <a href=\"/warranty\" class=\"chatbot-product-link\">Tra cứu bảo hành</a> hoặc quy định chi tiết tại <a href=\"/chinh-sach-bao-hanh\" class=\"chatbot-product-link\">Chính sách bảo hành</a>.
+- ĐỔI TRẢ & HOÀN TIỀN: Hỗ trợ 1 đổi 1 hoặc hoàn tiền miễn phí trong vòng 30 ngày nếu phát sinh lỗi từ nhà sản xuất. Chi tiết tại <a href=\"/chinh-sach-doi-tra\" class=\"chatbot-product-link\">Chính sách đổi trả</a>.
+- TRẢ GÓP: Hỗ trợ trả góp 0% lãi suất qua thẻ tín dụng (Visa, MasterCard, JCB qua cổng OnePay không phí chuyển đổi) hoặc qua Kredivo. Ngoài ra có trả góp qua các công ty tài chính với mức trả trước từ 30%. Khách hàng đăng ký trực tiếp bằng cách nhấn nút \"Trả góp 0%\" tại trang chi tiết sản phẩm.
+- TÍCH ĐIỂM & ĐỔI THƯỞNG: Mua sắm tích lũy điểm để nâng hạng thành viên (Đồng, Bạc, Vàng, Kim Cương). Điểm dùng đổi Voucher giảm giá, Voucher vận chuyển hoặc quà tặng thật, hoặc tham gia Vòng quay may mắn tại: <a href=\"/rewards\" class=\"chatbot-product-link\">Cửa hàng đổi thưởng</a>.
+
 QUY TẮC PHẢN HỒI (CỰC KỲ QUAN TRỌNG):
 1. PHẢI TRẢ LỜI CHI TIẾT, GIÀU THÔNG TIN VÀ CÓ PHÂN TÍCH SÂU: 
    - Ví dụ khi khách hỏi laptop cho sinh viên, phải phân tích chi tiết theo nhu cầu học tập/văn phòng nhẹ nhàng (Acer, Asus, Lenovo, HP) và nhu cầu kỹ thuật/gaming/đồ họa nặng (Dell, MacBook, laptop gaming, laptop đồ họa).
@@ -82,6 +87,7 @@ QUY TẮC PHẢN HỒI (CỰC KỲ QUAN TRỌNG):
 2. QUY TẮC CHÈN LINK (KHÔNG ĐƯỢC ĐỂ HỎNG LINK):
    - Để chèn link xem chi tiết cho THƯƠNG HIỆU, DANH MỤC hoặc PHÂN LOẠI SẢN PHẨM, bạn PHẢI sử dụng link tìm kiếm với định dạng: <a href=\"/search?q=từ_khóa\" class=\"chatbot-product-link\">Xem chi tiết</a> hoặc <a href=\"/search?q=từ_khóa\" class=\"chatbot-product-link\">tên_từ_khóa</a> (Ví dụ: /search?q=Asus, /search?q=Dell, /search?q=MacBook, /search?q=laptop+gaming, /search?q=laptop+van+phong).
    - Đối với sản phẩm CỤ THỂ có trong NGỮ CẢNH KHO HÀNG ở trên: sử dụng đúng link /san-pham/ID (Ví dụ: <a href=\"/san-pham/12\" class=\"chatbot-product-link\">Tên sản phẩm</a>).
+   - Đối với các câu hỏi về chính sách bảo hành, đổi trả, trả góp hoặc đổi thưởng, bạn PHẢI sử dụng đúng các đường link được cung cấp sẵn ở phần NGỮ CẢNH CHÍNH SÁCH CỬA HÀNG ở trên.
    - TUYỆT ĐỐI KHÔNG tự bịa link dạng /san-pham/tên-thương-hiệu hay /san-pham/tên-danh-mục. Tất cả các danh mục và thương hiệu bắt buộc phải qua link /search?q=từ_khóa.
 
 3. TUYỆT ĐỐI KHÔNG DÙNG MARKDOWN: Không dùng các ký tự **, -, #, * hay bất kỳ cú pháp Markdown nào trong câu trả lời.

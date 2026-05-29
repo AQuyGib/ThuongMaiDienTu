@@ -25,13 +25,15 @@ document.addEventListener('DOMContentLoaded', function () {
         activePopup: null,
     };
 
+    const isEn = document.documentElement.lang === 'en';
+
     let filterConfigs = {
         price: {
-            label: 'Xem theo giá',
+            label: isEn ? 'Filter by price' : 'Xem theo giá',
             type: 'range',
             fields: [
-                { label: 'Từ', name: 'min_price', placeholder: '0' },
-                { label: 'Đến', name: 'max_price', placeholder: '∞' },
+                { label: isEn ? 'From' : 'Từ', name: 'min_price', placeholder: '0' },
+                { label: isEn ? 'To' : 'Đến', name: 'max_price', placeholder: '∞' },
             ],
         },
     };
@@ -157,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
         popup.style.top = `${rect.bottom + window.scrollY + 8}px`;
         popup.style.left = `${rect.left}px`;
 
-        let label = 'Bộ lọc';
+        let label = isEn ? 'Filter' : 'Bộ lọc';
         if (type !== 'filter' && filterConfigs[type]) {
             label = filterConfigs[type].label || type;
         }
@@ -171,10 +173,10 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (filterConfigs[type] && Array.isArray(filterConfigs[type].options)) {
             html += renderPills(type, filterConfigs[type]);
         } else {
-            html += '<div class="text-sm text-gray-500 py-4 text-center italic">Tính năng này đang được cập nhật...</div>';
+            html += `<div class="text-sm text-gray-500 py-4 text-center italic">${isEn ? 'This feature is being updated...' : 'Tính năng này đang được cập nhật...'}</div>`;
         }
 
-        html += '<div class="flex gap-3 mt-5 pt-4 border-t border-gray-100"><button type="button" class="close-popup flex-1 px-4 py-2.5 text-sm font-medium text-gray-500 bg-gray-50 rounded-xl">Đóng</button><button type="button" class="apply-filter flex-1 px-4 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl">Xem kết quả</button></div>';
+        html += `<div class="flex gap-3 mt-5 pt-4 border-t border-gray-100"><button type="button" class="close-popup flex-1 px-4 py-2.5 text-sm font-medium text-gray-500 bg-gray-50 rounded-xl">${isEn ? 'Close' : 'Đóng'}</button><button type="button" class="apply-filter flex-1 px-4 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl">${isEn ? 'Apply' : 'Xem kết quả'}</button></div>`;
         popup.innerHTML = html;
         popupsContainer.appendChild(popup);
 
@@ -315,17 +317,20 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!activeFiltersContainer) return;
         activeFiltersContainer.innerHTML = '';
         const active = [];
-        if (state.filters.category_id) active.push(['Danh mục', window.__INITIAL_CATEGORY_NAME || state.filters.category_id, 'category_id']);
-        if (state.filters.min_price || state.filters.max_price) active.push(['Giá', `${state.filters.min_price || 0}đ - ${state.filters.max_price || '∞'}đ`, 'price']);
+        if (state.filters.category_id) active.push([isEn ? 'Category' : 'Danh mục', window.__INITIAL_CATEGORY_NAME || state.filters.category_id, 'category_id']);
+        if (state.filters.min_price || state.filters.max_price) active.push([isEn ? 'Price' : 'Giá', `${state.filters.min_price || 0}đ - ${state.filters.max_price || '∞'}đ`, 'price']);
 
-        const labels = { gaming: 'Chơi mượt Genshin', student: 'Học Web Dev' };
-        state.filters.needs.forEach(v => active.push(['Nhu cầu', labels[v] || v, 'needs', v]));
-        state.filters.brand.forEach(v => active.push(['Hãng', v, 'brand', v]));
+        const labels = isEn 
+            ? { gaming: 'Play Genshin smoothly', student: 'Learn Web Dev' }
+            : { gaming: 'Chơi mượt Genshin', student: 'Học Web Dev' };
+            
+        state.filters.needs.forEach(v => active.push([isEn ? 'Usage needs' : 'Nhu cầu', labels[v] || v, 'needs', v]));
+        state.filters.brand.forEach(v => active.push([isEn ? 'Manufacturer' : 'Hãng', v, 'brand', v]));
         state.filters.ram.forEach(v => active.push(['RAM', v, 'ram', v]));
-        state.filters.color.forEach(v => active.push(['Màu', v, 'color', v]));
+        state.filters.color.forEach(v => active.push([isEn ? 'Color' : 'Màu', v, 'color', v]));
         state.filters.size.forEach(v => active.push(['Size', v, 'size', v]));
-        if (state.filters.high_repairability) active.push(['Eco', 'Dễ sửa chữa', 'high_repairability']);
-        if (state.filters.eco_friendly) active.push(['Eco', 'Thân thiện môi trường', 'eco_friendly']);
+        if (state.filters.high_repairability) active.push(['Eco', isEn ? 'Easy to repair' : 'Dễ sửa chữa', 'high_repairability']);
+        if (state.filters.eco_friendly) active.push(['Eco', isEn ? 'Environmentally friendly' : 'Thân thiện môi trường', 'eco_friendly']);
 
         active.forEach(item => {
             const tag = document.createElement('span');
@@ -427,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(() => {
                 if (productListContainer) {
-                    productListContainer.innerHTML = '<p class="text-red-500 text-center py-10">Có lỗi xảy ra khi tải sản phẩm. Vui lòng thử lại.</p>';
+                    productListContainer.innerHTML = `<p class="text-red-500 text-center py-10">${isEn ? 'An error occurred while loading products. Please try again.' : 'Có lỗi xảy ra khi tải sản phẩm. Vui lòng thử lại.'}</p>`;
                 }
             });
     }

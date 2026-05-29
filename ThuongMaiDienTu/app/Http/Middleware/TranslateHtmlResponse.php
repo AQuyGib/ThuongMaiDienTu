@@ -31,6 +31,11 @@ class TranslateHtmlResponse
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
+
+        // Bỏ qua route chatbot hoàn toàn để tránh can thiệp vào dữ liệu AI tự sinh
+        if ($request->is('chatbot') || $request->is('*/chatbot')) {
+            return $response;
+        }
  
         // CHỈ thực hiện dịch khi ngôn ngữ hiện tại của ứng dụng được chọn là Tiếng Anh ('en')
         if (App::getLocale() !== 'en') {
@@ -420,6 +425,9 @@ class TranslateHtmlResponse
     protected function collectUntranslatedJsonStrings(array $array, array &$untranslated): void
     {
         foreach ($array as $key => $value) {
+            if (is_string($key) && $this->isMachineKey($key)) {
+                continue;
+            }
             if (is_array($value)) {
                 $this->collectUntranslatedJsonStrings($value, $untranslated);
             } elseif (is_string($value)) {
@@ -439,6 +447,9 @@ class TranslateHtmlResponse
     protected function translateJsonArrayValues(array $array): array
     {
         foreach ($array as $key => $value) {
+            if (is_string($key) && $this->isMachineKey($key)) {
+                continue;
+            }
             if (is_array($value)) {
                 $array[$key] = $this->translateJsonArrayValues($value);
             } elseif (is_string($value)) {
@@ -448,6 +459,30 @@ class TranslateHtmlResponse
             }
         }
         return $array;
+    }
+
+    /**
+     * Kiểm tra xem một key JSON có phải là trường máy tính (machine key) không cần dịch hay không.
+     */
+    protected function isMachineKey(string $key): bool
+    {
+        $keyLower = strtolower($key);
+        
+        // Các key kết thúc bằng _id hoặc bắt đầu bằng is_
+        if (preg_match('/_id$/', $keyLower) || preg_match('/^is_/', $keyLower)) {
+            return true;
+        }
+
+        $blacklist = [
+            'status', 'success', 'code', 'error_code', 'action', 'type', 'id',
+            'role', 'email', 'username', 'phone', 'thumbnail', 'image', 'path',
+            'file', 'mime_type', 'extension', 'url', 'redirect', 'route', 'key',
+            'field', 'slug', 'locale', 'lang', 'created_at', 'updated_at',
+            'deleted_at', 'date', 'time', 'size', 'file_size', 'avatar', 'icon',
+            'color', 'rom', 'rom_capacity', 'extra_price', 'response'
+        ];
+
+        return in_array($keyLower, $blacklist);
     }
 
     /**

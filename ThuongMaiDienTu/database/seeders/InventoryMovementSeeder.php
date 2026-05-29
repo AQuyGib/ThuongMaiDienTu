@@ -6,6 +6,7 @@ namespace Database\Seeders;
 use App\Models\InventoryMovement;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Models\Order;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 
@@ -17,6 +18,7 @@ class InventoryMovementSeeder extends Seeder
         $variants = ProductVariant::with('product')->get();
         $admin = User::where('role_id', 1)->first();
         $adminId = $admin ? $admin->user_id : 1;
+        $orders = Order::all();
 
         if ($variants->isEmpty()) {
             return;
@@ -64,8 +66,14 @@ class InventoryMovementSeeder extends Seeder
                             $qtyChange = rand(10, 20);
                             $note = 'Nhập bổ sung hàng hóa bán chạy từ nhà cung cấp';
                         } else {
-                            $orderId = rand(1, 50); // mã đơn hàng giả lập
-                            $note = "Xuất kho bán lẻ theo Đơn hàng #100" . str_pad($orderId, 3, '0', STR_PAD_LEFT);
+                            if ($orders->isEmpty()) {
+                                $orderId = null;
+                                $note = 'Xuất kho bán lẻ theo Đơn hàng';
+                            } else {
+                                $order = $orders->random();
+                                $orderId = $order->order_id;
+                                $note = "Xuất kho bán lẻ theo Đơn hàng #" . $order->order_code;
+                            }
                         }
                         break;
 
