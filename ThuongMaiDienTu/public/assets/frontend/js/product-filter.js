@@ -20,7 +20,9 @@ document.addEventListener('DOMContentLoaded', function () {
             color: [],
             size: [],
             high_repairability: '',
-            eco_friendly: ''
+            eco_friendly: '',
+            in_stock: '',
+            new_arrival: ''
         },
         activePopup: null,
     };
@@ -34,6 +36,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 { label: 'Đến', name: 'max_price', placeholder: '∞' },
             ],
         },
+        usage: {
+            label: 'Nhu cầu sử dụng',
+            type: 'checkbox',
+            inputName: 'needs',
+            options: [
+                { label: '🎮 Chơi game', value: 'gaming' },
+                { label: '🎓 Học tập / Văn phòng', value: 'student' },
+            ],
+        },
     };
 
     function init() {
@@ -45,6 +56,8 @@ document.addEventListener('DOMContentLoaded', function () {
         state.filters.q = params.get('q') || '';
         state.filters.high_repairability = params.get('high_repairability') || '';
         state.filters.eco_friendly = params.get('eco_friendly') || '';
+        state.filters.in_stock = params.get('in_stock') || '';
+        state.filters.new_arrival = params.get('new_arrival') || '';
         state.filters.needs = readArrayParam(params, 'needs');
         state.filters.brand = readArrayParam(params, 'brand');
         state.filters.ram = readArrayParam(params, 'ram');
@@ -96,7 +109,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function bindEvents() {
         document.querySelectorAll('.filter-trigger').forEach(btn => {
-            btn.addEventListener('click', e => openPopup(e.currentTarget.dataset.filter));
+            const filterType = btn.dataset.filter;
+            // stock và new là toggle, không mở popup
+            if (filterType === 'stock') {
+                btn.addEventListener('click', () => toggleQuickFilter('in_stock', '1'));
+            } else if (filterType === 'new') {
+                btn.addEventListener('click', () => toggleQuickFilter('new_arrival', '1'));
+            } else if (filterType === 'usage') {
+                btn.addEventListener('click', () => openPopup('usage'));
+            } else {
+                btn.addEventListener('click', e => openPopup(e.currentTarget.dataset.filter));
+            }
         });
 
         document.querySelectorAll('.sort-btn').forEach(btn => {
@@ -226,16 +249,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderPillsInline(key, config) {
+        const stateKey = config.inputName || key;
         return `<div class="flex flex-wrap gap-1.5">
             ${(config.options || []).map(opt => {
                 const label = typeof opt === 'object' ? opt.label : opt;
                 const value = typeof opt === 'object' ? opt.value : opt;
-                const selected = Array.isArray(state.filters[key]) ? state.filters[key].includes(value) : state.filters[key] === value;
+                const selected = Array.isArray(state.filters[stateKey]) ? state.filters[stateKey].includes(value) : state.filters[stateKey] === value;
                 return `<button type="button" class="filter-pill px-3 py-1.5 rounded-lg border text-xs transition-all duration-150 ${
                     selected 
                         ? 'border-blue-500 bg-blue-50 text-blue-600 font-semibold shadow-sm' 
                         : 'border-gray-200 bg-white text-gray-600 hover:border-blue-300 hover:bg-blue-50/30'
-                }" data-key="${key}" data-value="${value}">${label}</button>`;
+                }" data-key="${stateKey}" data-value="${value}">${label}</button>`;
             }).join('')}
         </div>`;
     }
@@ -257,15 +281,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderPills(key, config) {
+        const stateKey = config.inputName || key;
         return `<div class="flex flex-wrap gap-2">${(config.options || []).map(opt => {
             const label = typeof opt === 'object' ? opt.label : opt;
             const value = typeof opt === 'object' ? opt.value : opt;
-            const selected = Array.isArray(state.filters[key]) ? state.filters[key].includes(value) : state.filters[key] === value;
+            const selected = Array.isArray(state.filters[stateKey]) ? state.filters[stateKey].includes(value) : state.filters[stateKey] === value;
             return `<button type="button" class="filter-pill px-4 py-2 rounded-lg border text-sm ${
                 selected 
                     ? 'border-blue-500 bg-blue-50 text-blue-600 font-semibold' 
                     : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50/30'
-            }" data-key="${key}" data-value="${value}">${label}</button>`;
+            }" data-key="${stateKey}" data-value="${value}">${label}</button>`;
         }).join('')}</div>`;
     }
 
@@ -297,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ['brand', 'ram', 'color', 'size', 'needs'].forEach(key => {
             (state.filters[key] || []).forEach(v => appendHidden(`${key}[]`, v));
         });
-        ['high_repairability', 'eco_friendly'].forEach(key => {
+        ['high_repairability', 'eco_friendly', 'in_stock', 'new_arrival'].forEach(key => {
             if (state.filters[key]) appendHidden(key, state.filters[key]);
         });
     }
@@ -315,7 +340,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!activeFiltersContainer) return;
         activeFiltersContainer.innerHTML = '';
         const active = [];
-        if (state.filters.category_id) active.push(['Danh mục', window.__INITIAL_CATEGORY_NAME || state.filters.category_id, 'category_id']);
+        // Chỉ hiển thị tag danh mục nếu nó không phải là danh mục mặc định của trang (danh mục cố định)
+        if (state.filters.category_id && !window.__INITIAL_CATEGORY_ID) active.push(['Danh mục', window.__INITIAL_CATEGORY_NAME || state.filters.category_id, 'category_id']);
         if (state.filters.min_price || state.filters.max_price) active.push(['Giá', `${state.filters.min_price || 0}đ - ${state.filters.max_price || '∞'}đ`, 'price']);
 
         const labels = { gaming: 'Chơi mượt Genshin', student: 'Học Web Dev' };
@@ -324,6 +350,8 @@ document.addEventListener('DOMContentLoaded', function () {
         state.filters.ram.forEach(v => active.push(['RAM', v, 'ram', v]));
         state.filters.color.forEach(v => active.push(['Màu', v, 'color', v]));
         state.filters.size.forEach(v => active.push(['Size', v, 'size', v]));
+        if (state.filters.in_stock) active.push(['Kho', 'Sẵn hàng', 'in_stock']);
+        if (state.filters.new_arrival) active.push(['Mới', 'Hàng mới về', 'new_arrival']);
         if (state.filters.high_repairability) active.push(['Eco', 'Dễ sửa chữa', 'high_repairability']);
         if (state.filters.eco_friendly) active.push(['Eco', 'Thân thiện môi trường', 'eco_friendly']);
 
@@ -375,6 +403,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 btn.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200', 'hover:bg-blue-100', 'hover:text-blue-800');
             }
         });
+
+        // Đồng bộ trạng thái cho nút toggle (Sẵn hàng, Hàng mới về)
+        const toggleMap = { stock: 'in_stock', new: 'new_arrival' };
+        Object.entries(toggleMap).forEach(([filterKey, stateKey]) => {
+            const btn = document.querySelector(`.filter-trigger[data-filter="${filterKey}"]`);
+            if (!btn) return;
+            if (state.filters[stateKey]) {
+                btn.classList.remove('bg-gray-50', 'text-gray-600', 'border-transparent');
+                btn.classList.add('bg-green-600', 'text-white', 'border-green-600', 'shadow-md');
+            } else {
+                btn.classList.remove('bg-green-600', 'text-white', 'border-green-600', 'shadow-md');
+                btn.classList.add('bg-gray-50', 'text-gray-600', 'border-transparent');
+            }
+        });
     }
 
     function clearAll() {
@@ -390,7 +432,9 @@ document.addEventListener('DOMContentLoaded', function () {
             color: [],
             size: [],
             high_repairability: '',
-            eco_friendly: ''
+            eco_friendly: '',
+            in_stock: '',
+            new_arrival: ''
         };
         syncFormWithState();
         updateActiveFilters();
