@@ -15,6 +15,7 @@
 - **Merge Activities:**
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
   - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
+  - Merged `master` into branch `Vinhem/Tinhphivanchuyen` successfully to keep the branch up to date with the latest features and changes.
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
   - Added tag-based filtering on the lifestyle listing page.
   - Fixed admin article filters so status buttons and search now work together.
