@@ -1,14 +1,18 @@
 {{-- =====================================================
      COMBO BUNDLE SECTION: "Mua kèm tiết kiệm"
+     Giao diện hiển thị danh sách các phụ kiện hoặc sản phẩm mua kèm được cấu hình giảm giá đặc biệt.
+     Khách hàng có thể tích chọn các phụ kiện đi kèm để tự cấu thành gói combo với giá ưu đãi riêng.
      ===================================================== --}}
 
 @if(isset($comboProducts) && $comboProducts->isNotEmpty())
 @php
+    // Gán danh sách sản phẩm combo và tính toán giá của sản phẩm chính hiện tại (ưu tiên giá khuyến mãi nếu có)
     $bundleItems = $comboProducts;
     $mainProductPrice = $effectivePrice ?? $product->base_price;
 @endphp
 
 @push('styles')
+<!-- CSS TÙY CHỈNH CHO PHÂN HỆ MUA COMBO PHỤ KIỆN TIẾT KIỆM (SOFT DESIGN) -->
 <style>
 .combo-section {
     background: #fff;
@@ -37,6 +41,7 @@
     color: #d70018;
 }
 
+/* Khung bọc lưới các sản phẩm combo */
 .combo-wrapper {
     display: flex;
     align-items: center;
@@ -44,6 +49,7 @@
     flex-wrap: wrap;
 }
 
+/* Thẻ của từng mặt hàng con trong combo */
 .combo-item {
     display: flex;
     flex-direction: column;
@@ -70,12 +76,14 @@
     object-fit: contain;
 }
 
+/* Biểu tượng dấu cộng nối giữa các sản phẩm */
 .combo-plus {
     font-size: 20px;
     color: #888;
     font-weight: bold;
 }
 
+/* Checkbox cho phép chọn/bỏ chọn sản phẩm mua kèm */
 .combo-checkbox {
     position: absolute;
     top: -5px;
@@ -105,12 +113,14 @@
     margin-top: 4px;
 }
 
+/* Biểu tượng dấu bằng nối đến cột tổng tiền */
 .combo-equal {
     font-size: 24px;
     color: #888;
     margin: 0 10px;
 }
 
+/* Thẻ tổng kết chi tiết giá và nút Mua hàng nhanh */
 .combo-summary {
     flex: 1;
     min-width: 250px;
@@ -133,6 +143,7 @@
     margin-bottom: 15px;
 }
 
+/* Nút bấm Đặt hàng combo (Sequential AJAX requests) */
 .btn-combo-buy {
     width: 100%;
     padding: 14px;
@@ -165,7 +176,7 @@
     margin-top: 5px;
 }
 
-/* Mobile responsive */
+/* Giao diện tương thích thiết bị di động (Responsive) */
 @media (max-width: 768px) {
     .combo-wrapper { justify-content: center; }
     .combo-summary { width: 100%; margin-top: 15px; }
@@ -184,7 +195,7 @@
     </div>
 
     <div class="combo-wrapper">
-        {{-- Sản phẩm chính --}}
+        <!-- 1. SẢN PHẨM CHÍNH (BẮT BUỘC CHỌN VÀ DISABLED VÌ LÀ TRANG CHI TIẾT SẢN PHẨM NÀY) -->
         <div class="combo-item">
             <input type="checkbox" checked disabled class="combo-checkbox">
             <div class="combo-img-wrap">
@@ -194,12 +205,16 @@
             <div class="combo-price">{{ number_format($mainProductPrice, 0, ',', '.') }}đ</div>
         </div>
 
+        <!-- 2. VÒNG LẶP DUYỆT QUA CÁC SẢN PHẨM MUA KÈM (ACCESSORIES) -->
         @foreach($bundleItems as $item)
             @php
+                // Xác định giá gốc của phụ kiện (ưu tiên giá Flash Sale nếu đang trong chương trình)
                 $basePrice = $item->flash_sale_price ?? $item->base_price;
                 $pivot = $item->pivot;
                 $discountedPrice = $basePrice;
                 $savedAmount = 0;
+                
+                // Tính toán phần trăm chiết khấu hoặc số tiền giảm trực tiếp cấu hình trên mối quan hệ (pivot)
                 if ($pivot) {
                     if ($pivot->discount_type === 'percentage') {
                         $savedAmount = $basePrice * ($pivot->discount_value / 100);
@@ -208,15 +223,19 @@
                         $savedAmount = $pivot->discount_value;
                         $discountedPrice = $basePrice - $savedAmount;
                     }
+                    // Đảm bảo giá sau giảm không bị âm dưới 0đ
                     if ($discountedPrice < 0) {
                         $discountedPrice = 0;
                         $savedAmount = $basePrice;
                     }
                 }
             @endphp
+            <!-- Icon dấu cộng nối tiếp -->
             <div class="combo-plus"><i class="fa-solid fa-plus"></i></div>
 
+            <!-- Thẻ sản phẩm phụ kiện mua kèm -->
             <div class="combo-item">
+                <!-- Checkbox đính kèm thuộc tính data để Javascript tính toán động tổng tiền khi chọn/bỏ chọn -->
                 <input type="checkbox" 
                        checked 
                        class="combo-checkbox accessory-check" 
@@ -230,6 +249,7 @@
                 <div class="combo-name">{{ $item->name }}</div>
                 <div class="combo-price">
                     {{ number_format($discountedPrice, 0, ',', '.') }}đ
+                    <!-- Hiển thị giá gốc gạch ngang và số lượng giảm giá chi tiết (Nếu có ưu đãi) -->
                     @if($savedAmount > 0)
                         <div style="font-size: 11px; text-decoration: line-through; color: #94a3b8; font-weight: normal; margin-top: 2px;">
                             {{ number_format($basePrice, 0, ',', '.') }}đ
@@ -242,15 +262,19 @@
             </div>
         @endforeach
 
+        <!-- Icon dấu bằng liên kết đến thẻ tổng quan chi phí -->
         <div class="combo-equal"><i class="fa-solid fa-equals"></i></div>
 
+        <!-- 3. HỘP TỔNG KẾT COMBO (SUMMARY CARD) -->
         <div class="combo-summary">
             <div class="combo-total-label">Tổng cộng <span id="comboCount">3</span> sản phẩm:</div>
             <div class="combo-total-price" id="comboTotalPrice">0đ</div>
+            <!-- Khối hiển thị số tiền tiết kiệm được (Chỉ hiển thị khi tổng tiền tiết kiệm lớn hơn 0) -->
             <div id="comboTotalSavingContainer" style="margin-bottom: 12px; display: none;">
                 <span style="font-size: 13px; color: #16a34a; font-weight: 600;">Tiết kiệm thêm: </span>
                 <span id="comboTotalSaving" style="font-size: 14px; color: #16a34a; font-weight: 800;">0đ</span>
             </div>
+            <!-- Nút bấm thêm toàn bộ combo đã chọn vào giỏ hàng -->
             <button class="btn-combo-buy" onclick="buyCombo()">
                 <i class="fa-solid fa-cart-shopping"></i> THÊM COMBO VÀO GIỎ
             </button>
@@ -313,19 +337,22 @@ async function buyCombo() {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
     btn.disabled = true;
 
+    // Sản phẩm chính
     const itemsToAdd = [
         { product_id: {{ $product->product_id }}, quantity: 1 }
     ];
 
+    // Duyệt qua và thêm các phụ kiện được tích chọn
     document.querySelectorAll('.accessory-check:checked').forEach(cb => {
         itemsToAdd.push({ 
             product_id: cb.dataset.id, 
             quantity: 1,
-            parent_id: {{ $product->product_id }}
+            parent_id: {{ $product->product_id }} // Đính kèm parent_id để phục vụ tính giảm giá combo ở giỏ hàng/thanh toán
         });
     });
 
     try {
+        // Gửi ngầm tuần tự từng yêu cầu thêm vào giỏ hàng (Để đồng bộ phiên làm việc của Session Cart)
         for (const item of itemsToAdd) {
             await fetch('/cart/add', {
                 method: 'POST',

@@ -1,12 +1,14 @@
 {{-- =====================================================
-     CROSS-SELL SECTION: "Thường mua cùng nhau"
-     Nhận biến: $crossSellProducts (Collection<Product>)
+     CROSS-SELL SECTION: "Thường mua cùng nhau" (Frequently Bought Together)
+     Hiển thị danh sách các sản phẩm gợi ý bán chéo (Cross-selling) dựa trên lịch sử mua sắm của khách hàng
+     hoặc dựa trên cài đặt danh mục. Có tích hợp nút thêm giỏ hàng nhanh bằng AJAX ngay tại chỗ.
+     Nhận biến đầu vào: $crossSellProducts (Collection<Product>)
      ===================================================== --}}
 
 @if(isset($crossSellProducts) && $crossSellProducts->isNotEmpty())
 @push('styles')
+<!-- CSS TÙY CHỈNH CHO PHÂN HỆ ĐỀ XUẤT BÁN CHÉO (CROSS-SELL SECTION) DẠNG THANH TRƯỢT NGANG -->
 <style>
-/* ===== CROSS-SELL SECTION ===== */
 .cs-section {
     background: #fff;
     border-radius: 14px;
@@ -35,6 +37,7 @@
     text-transform: uppercase;
 }
 
+/* Biểu tượng tia chớp đại diện cho ưu đãi mua kèm nhanh */
 .cs-title .cs-title-icon {
     width: 36px;
     height: 36px;
@@ -54,7 +57,7 @@
     text-transform: none;
 }
 
-/* Scroll wrapper */
+/* Khung cuộn ngang chứa danh sách sản phẩm đề xuất */
 .cs-scroll-wrapper {
     position: relative;
 }
@@ -73,7 +76,7 @@
 .cs-track::-webkit-scrollbar-track { background: transparent; }
 .cs-track::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
 
-/* Scroll buttons */
+/* Các nút điều hướng trái/phải nổi trên thanh trượt */
 .cs-scroll-btn {
     position: absolute;
     top: 50%;
@@ -97,7 +100,7 @@
 .cs-scroll-btn.prev { left: -14px; }
 .cs-scroll-btn.next { right: -14px; }
 
-/* Product card */
+/* Thiết kế thẻ Card sản phẩm */
 .cs-card {
     flex: 0 0 190px;
     border: 1.5px solid #f0f0f0;
@@ -119,7 +122,7 @@
     transform: translateY(-4px);
 }
 
-/* Flash Sale badge */
+/* Nhãn hiển thị cho sản phẩm Flash Sale */
 .cs-badge-flash {
     position: absolute;
     top: 10px;
@@ -137,7 +140,7 @@
     letter-spacing: .3px;
 }
 
-/* FBT badge */
+/* Nhãn hiển thị độ ưu tiên "Hay mua cùng" (Thường gán cho 3 sản phẩm đầu tiên) */
 .cs-badge-fbt {
     position: absolute;
     top: 10px;
@@ -205,7 +208,7 @@
     line-height: 1.2;
 }
 
-/* Nút thêm giỏ hàng inline */
+/* Nút thêm giỏ hàng nhanh (AJAX Cart Add) */
 .cs-btn-add {
     width: 100%;
     padding: 8px;
@@ -228,7 +231,7 @@
     color: #fff;
 }
 
-/* Responsive */
+/* Ẩn các nút cuộn ngang trên màn hình di động vì đã có thể lướt tay (Swipe) */
 @media (max-width: 768px) {
     .cs-card { flex: 0 0 155px; }
     .cs-scroll-btn { display: none; }
@@ -237,7 +240,7 @@
 @endpush
 
 <div class="cs-section" id="crossSellSection">
-    {{-- Header --}}
+    <!-- TIÊU ĐỀ KHỐI GỢI Ý MUA CÙNG -->
     <div class="cs-header">
         <h2 class="cs-title">
             <span class="cs-title-icon">
@@ -251,8 +254,9 @@
         </h2>
     </div>
 
-    {{-- Scroll Track --}}
+    <!-- KHU VỰC CUỘN SLIDER SẢN PHẨM -->
     <div class="cs-scroll-wrapper">
+        <!-- Nút cuộn sang bên trái -->
         <button class="cs-scroll-btn prev" onclick="csScroll(-1)" aria-label="Cuộn trái">
             <i class="fa-solid fa-chevron-left"></i>
         </button>
@@ -260,6 +264,7 @@
         <div class="cs-track" id="csTrack">
             @foreach($crossSellProducts as $index => $cs)
                 @php
+                    // Kiểm tra xem sản phẩm đề xuất này có đang được giảm giá Flash Sale hay không
                     $csIsFlash = isset($cs->flash_sale_price);
                     $csDisplayPrice = $csIsFlash ? $cs->flash_sale_price : $cs->base_price;
                 @endphp
@@ -268,19 +273,19 @@
                    id="cs-card-{{ $cs->product_id }}"
                    title="{{ $cs->name }}">
 
-                    {{-- Badge Flash Sale --}}
+                    <!-- Badge nhãn màu cam/đỏ nếu là Flash Sale -->
                     @if($csIsFlash)
                         <span class="cs-badge-flash">
                             <i class="fa-solid fa-fire"></i> SALE
                         </span>
                     @endif
 
-                    {{-- Badge FBT (3 sản phẩm đầu từ order history) --}}
+                    <!-- Gán nhãn "Hay mua cùng" cho 3 sản phẩm đầu tiên có tần suất ghép đơn cao nhất -->
                     @if($index < 3 && !$csIsFlash)
                         <span class="cs-badge-fbt">Hay mua cùng</span>
                     @endif
 
-                    {{-- Ảnh --}}
+                    <!-- Ảnh sản phẩm thu nhỏ -->
                     <div class="cs-img-wrap">
                         <img class="cs-img"
                              src="{{ $cs->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}"
@@ -288,10 +293,10 @@
                              loading="lazy">
                     </div>
 
-                    {{-- Tên --}}
+                    <!-- Tên sản phẩm giới hạn 2 dòng -->
                     <div class="cs-name">{{ $cs->name }}</div>
 
-                    {{-- Giá --}}
+                    <!-- Khối hiển thị giá bán (Đang Sale / Giá gốc / Giá cũ) -->
                     <div class="cs-price-block">
                         @if($csIsFlash)
                             <div class="cs-price-sale">
@@ -312,7 +317,7 @@
                         @endif
                     </div>
 
-                    {{-- Nút thêm giỏ --}}
+                    <!-- Nút bấm Đặt mua nhanh lập tức bằng AJAX mà không tải lại trang -->
                     <button class="cs-btn-add"
                             onclick="event.preventDefault(); csBuyNow({{ $cs->product_id }}, '{{ addslashes($cs->name) }}', {{ $csDisplayPrice }})"
                             id="cs-btn-{{ $cs->product_id }}">
@@ -322,6 +327,7 @@
             @endforeach
         </div>
 
+        <!-- Nút cuộn sang bên phải -->
         <button class="cs-scroll-btn next" onclick="csScroll(1)" aria-label="Cuộn phải">
             <i class="fa-solid fa-chevron-right"></i>
         </button>
@@ -330,25 +336,34 @@
 
 @push('scripts')
 <script>
-// === Cross-Sell Section JS ===
-
-// Cuộn ngang track
+/**
+ * Hàm: csScroll
+ * Công dụng: Điều hướng cuộn thanh trượt ngang chứa danh sách sản phẩm.
+ * @param {Number} dir Hướng cuộn (-1 là cuộn sang trái, 1 là cuộn sang phải)
+ */
 function csScroll(dir) {
     const track = document.getElementById('csTrack');
     if (!track) return;
     track.scrollBy({ left: dir * 220, behavior: 'smooth' });
 }
 
-// Thêm vào giỏ hàng nhanh (không vào trang chi tiết)
+/**
+ * Hàm: csBuyNow
+ * Công dụng: Thực hiện gọi API thêm sản phẩm đề xuất vào giỏ hàng và hiển thị Optimistic UI.
+ * @param {Number} productId ID sản phẩm
+ * @param {String} productName Tên sản phẩm phục vụ thông báo
+ * @param {Number} price Giá bán hiện hành
+ */
 function csBuyNow(productId, productName, price) {
     const btn = document.getElementById('cs-btn-' + productId);
+    if (!btn) return;
 
-    // Optimistic UI
+    // Phản hồi giao diện tức thì (Optimistic UI) bằng cách tắt nút bấm và hiện hiệu ứng spinner
     const originalHtml = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang thêm...';
     btn.disabled = true;
 
-    // Giả lập thêm giỏ hàng (gọi endpoint add-to-cart của project)
+    // Gửi yêu cầu POST lên endpoint giỏ hàng
     fetch('/cart/add', {
         method: 'POST',
         headers: {
@@ -359,31 +374,40 @@ function csBuyNow(productId, productName, price) {
     })
     .then(r => r.json())
     .then(data => {
+        // Nếu thêm thành công, đổi màu nút sang xanh lá biểu thị hoàn tất và cập nhật số giỏ hàng ở header
         if (data.success || data.status === 'ok' || data.message) {
             btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã thêm!';
             btn.style.background = '#16a34a';
             btn.style.borderColor = '#16a34a';
             btn.style.color = '#fff';
 
-            // Hiển thị toast (tái dụng toast của trang show.blade.php)
+            // Gọi hàm hiển thị thông báo góc màn hình nếu trang chi tiết có hỗ trợ
             if (typeof showToast === 'function') {
                 showToast('Đã thêm "' + productName + '" vào giỏ hàng!');
             }
 
-            // Cập nhật badge giỏ hàng nếu có
+            // Đồng bộ số lượng giỏ hàng trên badge
             const cartBadge = document.getElementById('cartCount');
             if (cartBadge && data.cart_count !== undefined) {
                 cartBadge.innerText = data.cart_count;
+            }
+            
+            // Cập nhật giỏ hàng trên header chính
+            const headerCartBadge = document.getElementById('headerCartBadge');
+            if(headerCartBadge && data.cart_count !== undefined) {
+                headerCartBadge.innerText = data.cart_count;
+                headerCartBadge.style.display = data.cart_count > 0 ? 'block' : 'none';
             }
         } else {
             throw new Error(data.message || 'Lỗi thêm giỏ hàng');
         }
     })
     .catch(err => {
-        // Fallback: chuyển đến trang chi tiết sản phẩm
+        // Trong trường hợp lỗi mạng hoặc session hết hạn, chuyển hướng người dùng đến trang chi tiết để xử lý thủ công
         window.location.href = '/san-pham/' + productId;
     })
     .finally(() => {
+        // Reset nút bấm về trạng thái ban đầu sau 2 giây để người dùng có thể click lại nếu muốn mua thêm
         setTimeout(() => {
             btn.innerHTML = originalHtml;
             btn.disabled = false;

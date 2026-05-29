@@ -147,10 +147,23 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - `resources/js/components/AdminTopbar.tsx`
     - `resources/views/partials/chatbot.blade.php` (Giao diện & Logic Chatbot RAG)
     - `resources/views/admin/rewards/index.blade.php` (Quản trị Vòng quay & Catalog phần thưởng)
+    - `resources/views/admin/rewards/history.blade.php` (Giao diện lịch sử đổi thưởng & quay số của Admin)
     - `app/Http/Controllers/RewardsHistoryController.php` (Lịch sử đổi thưởng/quay số frontend controller)
     - `app/Http/Controllers/Admin/RewardImageController.php` (Upload ảnh quà tặng admin controller)
     - `resources/views/frontend/rewards/history.blade.php` (Giao diện lịch sử đổi quà & quay thưởng)
     - `resources/views/frontend/rewards/show.blade.php` (Giao diện chi tiết quà tặng & AJAX đổi thưởng)
+    - `app/Services/FlashSaleService.php` (Dịch vụ xử lý tồn kho & locking cho Flash Sale)
+    - `app/Services/InventoryService.php` (Dịch vụ quản lý kho hàng, IMEIs/Serials và đồng bộ kho theo đơn hàng)
+    - `app/Http/Controllers/Admin/FlashSaleController.php` (Bộ điều khiển quản lý chiến dịch Flash Sale phía Admin)
+    - `app/Http/Controllers/Admin/FlashSaleProductController.php` (Bộ điều khiển quản lý sản phẩm tham gia Flash Sale phía Admin)
+    - `resources/views/frontend/products/index.blade.php` (Giao diện sản phẩm & AJAX bộ lọc nâng cao phía Frontend)
+    - `app/Models/FlashSale.php` (Eloquent Model đại diện cho chiến dịch Flash Sale)
+    - `app/Models/FlashSaleProduct.php` (Eloquent Model đại diện cho sản phẩm Flash Sale)
+    - `resources/views/partials/compare-bar.blade.php` (Thanh so sánh sản phẩm floating phía Frontend)
+    - `resources/views/partials/footer.blade.php` (Footer đa ngôn ngữ chân trang)
+    - `resources/views/partials/header.blade.php` (Header chính tích hợp AJAX Autocomplete, đa ngôn ngữ, và thông báo)
+    - `resources/views/partials/notification-filters.blade.php` (Khung lọc thông báo tái sử dụng)
+    - `resources/views/partials/product_grid_items.blade.php` (Khung hiển thị từng sản phẩm trong danh sách lưới)
   - Đảm bảo các kỹ sư tiếp quản dễ dàng nắm vững kiến trúc, các bước hoạt động (quét DOM, dịch gộp, bộ lọc dịch, cách intercept model, click-outside, v.v.).
 
 ### 7. Phân hệ Đa Ngôn Ngữ (Dynamic Localization) - Gộp nhánh thành công
