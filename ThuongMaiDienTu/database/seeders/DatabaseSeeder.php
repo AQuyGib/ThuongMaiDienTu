@@ -28,6 +28,11 @@ class DatabaseSeeder extends Seeder
             InventoryMovementSeeder::class,
             InventoryAuditSeeder::class,
             CommentSeeder::class,
+            ServiceInvoiceSeeder::class,
+            RepairTicketSeeder::class,
+            ArticleSeeder::class,
+            CashbookSeeder::class,
+            FlashSaleSeeder::class,
         ]);
     }
 }

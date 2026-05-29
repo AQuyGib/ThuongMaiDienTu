@@ -25,7 +25,6 @@ class ChatbotController extends Controller
         'gemini-3.5-flash',
         'gemini-3-flash-preview',
         'gemini-2.5-flash',
-        'gemini-2.5-flash-lite',
     ];
 
     /**
@@ -45,12 +44,11 @@ class ChatbotController extends Controller
     {
         $prompt = trim($request->input('prompt', ''));
         $currentProductContext = trim($request->input('context', ''));
-        $isEnglish = \Illuminate\Support\Facades\App::getLocale() === 'en';
 
         if (!$prompt) {
             return response()->json([
                 'success' => false,
-                'message' => $isEnglish ? 'Please enter a question.' : 'Vui lòng nhập câu hỏi.',
+                'message' => 'Vui lòng nhập câu hỏi.',
             ]);
         }
 
@@ -58,7 +56,7 @@ class ChatbotController extends Controller
         if (!$apiKey) {
             return response()->json([
                 'success' => false,
-                'message' => $isEnglish ? 'AI API Key is not configured.' : 'Chưa cấu hình API Key cho AI.',
+                'message' => 'Chưa cấu hình API Key cho AI.',
             ]);
         }
 
@@ -66,49 +64,20 @@ class ChatbotController extends Controller
         $productKnowledge = $this->searchProducts($prompt);
 
         // BƯỚC 2: Chuẩn bị prompt & gọi Gemini API
-        if ($isEnglish) {
-            $contextInstruction = 'The customer is on the Home page or viewing general categories. Provide a general consultation.';
-            if ($currentProductContext) {
-                $contextInstruction = "SPECIAL NOTE: The customer is CURRENTLY VIEWING THIS PRODUCT:\n{$currentProductContext}\n-> Prioritize using this product's information to reply.";
-            }
+        $contextInstruction = 'Khách hàng đang ở Trang chủ hoặc xem danh mục chung. Hãy tư vấn tổng quan.';
+        if ($currentProductContext) {
+            $contextInstruction = "ĐẶC BIỆT LƯU Ý: Khách hàng ĐANG XEM SẢN PHẨM NÀY:\n{$currentProductContext}\n-> Ưu tiên dùng thông tin sản phẩm này để trả lời.";
+        }
 
-            $fullPrompt = "CONTEXT: You are a smart sales assistant for DIENMAY PRO - a retail system of phones, laptops, and tech accessories.
-INVENTORY CONTEXT (Data from Database):
-{$productKnowledge}
-
-RESPONSE RULES (EXTREMELY IMPORTANT):
-1. MUST ANSWER IN DETAIL, RICH IN INFORMATION WITH DEEP ANALYSIS:
-   - For example, when asked for laptops for students, analyze in detail according to light study/office needs (Acer, Asus, Lenovo, HP) and heavy technical/gaming/graphic needs (Dell, MacBook, gaming laptops, graphic laptops).
-   - Provide specific brand suggestions and classifications.
-
-2. LINK INSERTION RULES (DO NOT USE BROKEN LINKS):
-   - To insert a link to view details for a BRAND, CATEGORY, or PRODUCT TYPE, you MUST use the search link in this format: <a href=\"/search?q=keyword\" class=\"chatbot-product-link\">View details</a> or <a href=\"/search?q=keyword\" class=\"chatbot-product-link\">keyword_name</a> (e.g.: /search?q=Asus, /search?q=Dell, /search?q=MacBook, /search?q=laptop+gaming, /search?q=laptop+van+phong).
-   - For a SPECIFIC product in the INVENTORY CONTEXT above: use the exact link /san-pham/ID (e.g.: <a href=\"/san-pham/12\" class=\"chatbot-product-link\">Product Name</a>).
-   - NEVER make up links like /san-pham/brand-name or /san-pham/category-name. All categories and brands must go through the link /search?q=keyword.
-
-3. NEVER USE MARKDOWN: Do not use characters like **, -, #, * or any Markdown syntax in the reply.
-4. USE HTML TAGS FOR FORMATTING:
-   - Bold titles or important keywords: <b>content</b>
-   - Line break: <br>
-5. RESPONSE FORMATTING RULES (TO AVOID CLUTTER AND EXCESSIVE EMPTY LINES):
-   - Use EXACTLY ONE <br> tag between main points. DO NOT use multiple consecutive <br> tags.
-   - Use emojis at the beginning of lines (e.g., 👉, ✅, 📱, 💻) to make the layout clean, professional, beautiful, and easy to read.
-   - Avoid long blocks of text; break into 3-4 short, easy-to-follow paragraphs.
-6. LANGUAGE: You MUST respond in English.
-7. STYLE: Friendly, thoughtful, enthusiastic advice like a professional salesperson.
-
-{$contextInstruction}
-
-CUSTOMER QUESTION: {$prompt}";
-        } else {
-            $contextInstruction = 'Khách hàng đang ở Trang chủ hoặc xem danh mục chung. Hãy tư vấn tổng quan.';
-            if ($currentProductContext) {
-                $contextInstruction = "ĐẶC BIỆT LƯU Ý: Khách hàng ĐANG XEM SẢN PHẨM NÀY:\n{$currentProductContext}\n-> Ưu tiên dùng thông tin sản phẩm này để trả lời.";
-            }
-
-            $fullPrompt = "BỐI CẢNH: Bạn là Trợ lý bán hàng thông minh của DIENMAY PRO - hệ thống bán lẻ điện thoại, laptop, phụ kiện công nghệ.
+        $fullPrompt = "BỐI CẢNH: Bạn là Trợ lý bán hàng thông minh của DIENMAY PRO - hệ thống bán lẻ điện thoại, laptop, phụ kiện công nghệ.
 NGỮ CẢNH KHO HÀNG (Dữ liệu từ Database):
 {$productKnowledge}
+
+NGỮ CẢNH CHÍNH SÁCH CỬA HÀNG (Dịch vụ, Bảo hành, Đổi trả, Trả góp, Tích điểm):
+- BẢO HÀNH: Bảo hành chính hãng từ 12 - 24 tháng tùy dòng máy. Khách hàng kiểm tra thời hạn bảo hành trực tiếp tại: <a href=\"/warranty\" class=\"chatbot-product-link\">Tra cứu bảo hành</a> hoặc quy định chi tiết tại <a href=\"/chinh-sach-bao-hanh\" class=\"chatbot-product-link\">Chính sách bảo hành</a>.
+- ĐỔI TRẢ & HOÀN TIỀN: Hỗ trợ 1 đổi 1 hoặc hoàn tiền miễn phí trong vòng 30 ngày nếu phát sinh lỗi từ nhà sản xuất. Chi tiết tại <a href=\"/chinh-sach-doi-tra\" class=\"chatbot-product-link\">Chính sách đổi trả</a>.
+- TRẢ GÓP: Hỗ trợ trả góp 0% lãi suất qua thẻ tín dụng (Visa, MasterCard, JCB qua cổng OnePay không phí chuyển đổi) hoặc qua Kredivo. Ngoài ra có trả góp qua các công ty tài chính với mức trả trước từ 30%. Khách hàng đăng ký trực tiếp bằng cách nhấn nút \"Trả góp 0%\" tại trang chi tiết sản phẩm.
+- TÍCH ĐIỂM & ĐỔI THƯỞNG: Mua sắm tích lũy điểm để nâng hạng thành viên (Đồng, Bạc, Vàng, Kim Cương). Điểm dùng đổi Voucher giảm giá, Voucher vận chuyển hoặc quà tặng thật, hoặc tham gia Vòng quay may mắn tại: <a href=\"/rewards\" class=\"chatbot-product-link\">Cửa hàng đổi thưởng</a>.
 
 QUY TẮC PHẢN HỒI (CỰC KỲ QUAN TRỌNG):
 1. PHẢI TRẢ LỜI CHI TIẾT, GIÀU THÔNG TIN VÀ CÓ PHÂN TÍCH SÂU: 
@@ -118,6 +87,7 @@ QUY TẮC PHẢN HỒI (CỰC KỲ QUAN TRỌNG):
 2. QUY TẮC CHÈN LINK (KHÔNG ĐƯỢC ĐỂ HỎNG LINK):
    - Để chèn link xem chi tiết cho THƯƠNG HIỆU, DANH MỤC hoặc PHÂN LOẠI SẢN PHẨM, bạn PHẢI sử dụng link tìm kiếm với định dạng: <a href=\"/search?q=từ_khóa\" class=\"chatbot-product-link\">Xem chi tiết</a> hoặc <a href=\"/search?q=từ_khóa\" class=\"chatbot-product-link\">tên_từ_khóa</a> (Ví dụ: /search?q=Asus, /search?q=Dell, /search?q=MacBook, /search?q=laptop+gaming, /search?q=laptop+van+phong).
    - Đối với sản phẩm CỤ THỂ có trong NGỮ CẢNH KHO HÀNG ở trên: sử dụng đúng link /san-pham/ID (Ví dụ: <a href=\"/san-pham/12\" class=\"chatbot-product-link\">Tên sản phẩm</a>).
+   - Đối với các câu hỏi về chính sách bảo hành, đổi trả, trả góp hoặc đổi thưởng, bạn PHẢI sử dụng đúng các đường link được cung cấp sẵn ở phần NGỮ CẢNH CHÍNH SÁCH CỬA HÀNG ở trên.
    - TUYỆT ĐỐI KHÔNG tự bịa link dạng /san-pham/tên-thương-hiệu hay /san-pham/tên-danh-mục. Tất cả các danh mục và thương hiệu bắt buộc phải qua link /search?q=từ_khóa.
 
 3. TUYỆT ĐỐI KHÔNG DÙNG MARKDOWN: Không dùng các ký tự **, -, #, * hay bất kỳ cú pháp Markdown nào trong câu trả lời.
@@ -128,13 +98,12 @@ QUY TẮC PHẢN HỒI (CỰC KỲ QUAN TRỌNG):
    - Giữa các đoạn ý chính, dùng ĐÚNG 1 thẻ <br> để cách dòng. KHÔNG dùng nhiều thẻ <br> liên tiếp làm thừa khoảng trắng.
    - Hãy sắp xếp các phân loại sản phẩm bằng các emoji ở đầu dòng (ví dụ: 👉, ✅, 📱, 💻) để tạo bố cục thoáng đãng, chuyên nghiệp, đẹp mắt và dễ đọc.
    - Tránh viết một khối văn bản dài dính cục, chia nhỏ thành 3-4 đoạn ngắn, dễ theo dõi.
-6. NGÔN NGỮ: Bạn bắt buộc phải trả lời bằng Tiếng Việt.
+6. NGÔN NGỮ: Khách hỏi tiếng gì, đáp tiếng đó.
 7. PHONG CÁCH: Thân thiện, chu đáo, nhiệt tình tư vấn như một nhân viên bán hàng chuyên nghiệp.
 
 {$contextInstruction}
 
 CÂU HỎI CỦA KHÁCH: {$prompt}";
-        }
 
         // BƯỚC 3: Gọi Gemini API (fallback qua nhiều model)
         $result = $this->callGeminiApi($apiKey, $fullPrompt);
@@ -148,7 +117,7 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
 
         return response()->json([
             'success' => false,
-            'message' => $isEnglish ? 'AI connection error (' . $result['error'] . ')' : 'Lỗi kết nối AI (' . $result['error'] . ')',
+            'message' => 'Lỗi kết nối AI (' . $result['error'] . ')',
         ]);
     }
 
@@ -157,7 +126,6 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
      */
     private function searchProducts(string $prompt): string
     {
-        $isEnglish = \Illuminate\Support\Facades\App::getLocale() === 'en';
         $keywords = explode(' ', mb_strtolower($prompt, 'UTF-8'));
         $searchTerms = [];
 
@@ -169,63 +137,49 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
         }
 
         if (empty($searchTerms)) {
-            return $isEnglish 
-                ? 'The customer is asking a general question, not containing clear product keywords.'
-                : 'Khách hàng đang hỏi câu hỏi chung chung, không chứa từ khóa sản phẩm rõ ràng.';
+            return 'Khách hàng đang hỏi câu hỏi chung chung, không chứa từ khóa sản phẩm rõ ràng.';
         }
 
         try {
-            // Sử dụng Eloquent Product để tận dụng BaseTranslationTrait và nạp bản dịch tự động
-            // Thử tìm kiếm khớp đồng thời tất cả các từ khóa (AND)
-            $query = \App\Models\Product::whereNull('deleted_at');
+            // Thử tìm kiếm khớp đồng thời tất cả các từ khóa (AND) trước để đạt độ chính xác cao nhất
+            $query = DB::table('products')->whereNull('deleted_at');
             $query->where(function ($q) use ($searchTerms) {
                 foreach ($searchTerms as $term) {
-                    $q->where(function ($subQ) use ($term) {
-                        $subQ->where('name', 'LIKE', "%{$term}%")
-                             ->orWhereHas('translations', function ($transQ) use ($term) {
-                                 $transQ->where('name', 'LIKE', "%{$term}%");
-                             });
-                    });
+                    $q->where('name', 'LIKE', "%{$term}%");
                 }
             });
 
-            $foundProducts = $query->limit(10)->get();
+            $foundProducts = $query->select('product_id', 'name', 'base_price')
+                ->limit(10)
+                ->get();
 
             // Nếu không có sản phẩm nào khớp tất cả các từ khóa, fallback sang khớp một trong các từ khóa (OR)
             if ($foundProducts->isEmpty()) {
-                $query = \App\Models\Product::whereNull('deleted_at');
+                $query = DB::table('products')->whereNull('deleted_at');
                 $query->where(function ($q) use ($searchTerms) {
                     foreach ($searchTerms as $term) {
-                        $q->orWhere('name', 'LIKE', "%{$term}%")
-                          ->orWhereHas('translations', function ($transQ) use ($term) {
-                              $transQ->where('name', 'LIKE', "%{$term}%");
-                          });
+                        $q->orWhere('name', 'LIKE', "%{$term}%");
                     }
                 });
-                $foundProducts = $query->limit(10)->get();
+                $foundProducts = $query->select('product_id', 'name', 'base_price')
+                    ->limit(10)
+                    ->get();
             }
 
             if ($foundProducts->isEmpty()) {
-                return $isEnglish 
-                    ? "The system did not find any products matching the keyword.\n"
-                    : "Hệ thống không tìm thấy sản phẩm nào khớp chính xác với từ khóa.\n";
+                return "Hệ thống không tìm thấy sản phẩm nào khớp chính xác với từ khóa.\n";
             }
 
-            $knowledge = $isEnglish 
-                ? "SEARCH RESULTS IN INVENTORY RELATED TO THE QUESTION:\n"
-                : "KẾT QUẢ TÌM KIẾM TRONG KHO HÀNG LIÊN QUAN ĐẾN CÂU HỎI:\n";
-
+            $knowledge = "KẾT QUẢ TÌM KIẾM TRONG KHO HÀNG LIÊN QUAN ĐẾN CÂU HỎI:\n";
             foreach ($foundProducts as $p) {
                 $price = number_format($p->base_price, 0, ',', '.');
-                $knowledge .= $isEnglish 
-                    ? "- {$p->name}: Price {$price}đ (Link: /san-pham/{$p->product_id})\n"
-                    : "- {$p->name}: Giá {$price}đ (Link: /san-pham/{$p->product_id})\n";
+                $knowledge .= "- {$p->name}: Giá {$price}đ (Link: /san-pham/{$p->product_id})\n";
             }
 
             return $knowledge;
         } catch (\Exception $e) {
             Log::error('Chatbot DB search error: ' . $e->getMessage());
-            return $isEnglish ? 'Database query error.' : 'Lỗi truy vấn kho hàng.';
+            return 'Lỗi truy vấn kho hàng.';
         }
     }
 
