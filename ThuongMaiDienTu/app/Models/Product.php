@@ -185,6 +185,11 @@ class Product extends Model
         return $this->variants->contains(fn($v) => $v->is_low_stock);
     }
 
+    /**
+     * Mối quan hệ nhiều - nhiều tự liên kết (Self-referencing belongsToMany)
+     * Đại diện cho các sản phẩm gợi ý bán kèm (Cross-sell) được quản trị viên chỉ định thủ công trong database.
+     * Liên kết thông qua bảng trung gian 'product_cross_sells' và sắp xếp theo thứ tự hiển thị.
+     */
     public function crossSells()
     {
         return $this->belongsToMany(Product::class, 'product_cross_sells', 'product_id', 'cross_sell_id')
@@ -192,6 +197,12 @@ class Product extends Model
             ->orderBy('product_cross_sells.sort_order', 'asc');
     }
 
+    /**
+     * Mối quan hệ nhiều - nhiều tự liên kết (Self-referencing belongsToMany)
+     * Đại diện cho các sản phẩm phụ kiện mua kèm dạng Combo ưu đãi tiết kiệm.
+     * Liên kết qua bảng trung gian 'product_combos', có mang theo các thông tin bổ sung (pivot columns) 
+     * gồm: loại giảm giá (discount_type), mức giảm giá (discount_value), và thứ tự sắp xếp (sort_order).
+     */
     public function comboProducts()
     {
         return $this->belongsToMany(Product::class, 'product_combos', 'product_id', 'combo_product_id')

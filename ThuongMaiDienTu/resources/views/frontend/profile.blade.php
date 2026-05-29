@@ -1998,6 +1998,9 @@
 
 @push('scripts')
 <script>
+    // ============================================================
+    // DỮ LIỆU BAN ĐẦU CỦA PROFILE KHÁCH HÀNG (DÙNG ĐỂ CHECK THAY ĐỔI)
+    // ============================================================
     const originalProfileData = {
         full_name: @json($user->full_name),
         gender: @json($user->gender ?? ''),
@@ -2006,6 +2009,10 @@
         address: @json($user->address ?? '')
     };
 
+    /**
+     * Khôi phục form cập nhật thông tin cá nhân về trạng thái ban đầu.
+     * Xóa sạch các class báo lỗi validation viền đỏ (is-invalid) cũ.
+     */
     function resetProfileForm() {
         const form = document.getElementById('editProfileForm');
         if (form) {
@@ -2022,6 +2029,11 @@
         }
     }
 
+    /**
+     * CHUYỂN TẢI GIAO DIỆN TAB ĐỘNG (TAB SWITCHER SYSTEM)
+     * Ẩn/hiện các tab tương ứng và đồng bộ hóa tham số 'tab' vào URL search params của trình duyệt
+     * để người dùng reload trang không bị mất tab hiện tại.
+     */
     function switchTab(tabId, element) {
         document.querySelectorAll('.profile-nav-item').forEach(item => {
             item.classList.remove('active');
@@ -2035,13 +2047,15 @@
 
         document.getElementById(tabId).classList.add('active');
 
-        // Sync tab in browser URL search params
+        // Đồng bộ hóa tab vào URL search params của trình duyệt
         const url = new URL(window.location);
         url.searchParams.set('tab', tabId);
         window.history.replaceState({}, '', url);
     }
 
-    /* ===== Toast Notification System ===== */
+    // ============================================================
+    // HỆ THỐNG TOAST THÔNG BÁO TỰ TẠO (TOAST SYSTEM)
+    // ============================================================
     function showToast(title, message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -2075,7 +2089,9 @@
         }, 4000);
     }
 
-    /* ===== Custom Confirmation System ===== */
+    // ============================================================
+    // HỘP THOẠI XÁC NHẬN TÙY CHỈNH (CUSTOM CONFIRMATION MODAL SYSTEM)
+    // ============================================================
     let confirmCallback = null;
     function showConfirm(title, message, callback) {
         document.getElementById('confirmTitle').innerText = title;
@@ -2087,7 +2103,6 @@
     function closeConfirmModal() {
         document.getElementById('confirmModal').classList.remove('active');
         confirmCallback = null;
-        // Reset lại nút xác nhận về trạng thái ban đầu
         const btn = document.getElementById('btnDoConfirm');
         btn.disabled = false;
         btn.innerHTML = 'Xác nhận xóa';
@@ -2101,6 +2116,9 @@
         }
     });
 
+    /**
+     * Bật/tắt trạng thái chờ loading cho nút bấm để tránh double click submit.
+     */
     function setBtnLoading(btnId, isLoading, text = 'Đang lưu...') {
         const btn = document.getElementById(btnId);
         if (isLoading) {
@@ -2113,7 +2131,9 @@
         }
     }
 
-
+    // ============================================================
+    // MODAL ĐĂNG KÝ HỌC SINH/SINH VIÊN (S-STUDENT PROGRAM REGISTRATION)
+    // ============================================================
     function openStudentModal() {
         document.getElementById('studentModal').classList.add('active');
     }
@@ -2127,6 +2147,7 @@
         document.getElementById('uploadPlaceholder').style.display = 'block';
     }
 
+    // Hiển thị ảnh xem trước (Preview) của thẻ học sinh khi upload
     function previewStudentCard(input) {
         if (input.files && input.files[0]) {
             var reader = new FileReader();
@@ -2182,12 +2203,12 @@
                     errorSpan.style.marginTop = '4px';
                     el.parentNode.appendChild(errorSpan);
                 }
-                // Cập nhật nội dung thông báo lỗi
                 errorSpan.innerText = message;
             }
         }
     }
 
+    // Submit thông tin đăng ký S-Student lên hệ thống (phía client giả lập xử lý)
     function submitStudentRegistration() {
         clearValidationErrors('studentRegistrationForm');
         const sName = document.getElementById('studentFullName');
@@ -2217,7 +2238,9 @@
         }, 1500);
     }
 
-    // --- Business Modal ---
+    // ============================================================
+    // MODAL ĐĂNG KÝ DOANH NGHIỆP (M-BUSINESS REGISTRATION SYSTEM)
+    // ============================================================
     function openBusinessModal() {
         document.getElementById('businessModal').classList.add('active');
     }
@@ -2247,6 +2270,7 @@
         }
     }
 
+    // Submit đăng ký thành viên doanh nghiệp (giả lập)
     function submitBusinessRegistration() {
         clearValidationErrors('businessRegistrationForm');
         const cName = document.getElementById('companyName');
@@ -2275,13 +2299,16 @@
         }, 2000);
     }
 
-    // --- Address Modal ---
+    // ============================================================
+    // MODAL SỔ ĐỊA CHỈ & HÀNH CHÍNH QUẬN HUYỆN (ADDRESS BOOK SYSTEM)
+    // ============================================================
     const isEnglish = {{ App::getLocale() === 'en' ? 'true' : 'false' }};
 
     function openAddressModal() {
         document.getElementById('addressModal').classList.add('active');
         clearValidationErrors('addAddressForm');
         if (document.getElementById('addrCity').options.length <= 1) {
+            // Tải danh sách tỉnh thành lần đầu tiên mở modal
             fetchProvincesData();
         }
     }
@@ -2292,7 +2319,7 @@
         document.getElementById('addrId').value = '';
         clearValidationErrors('addAddressForm');
         
-        // Reset selections
+        // Reset lại dropdown
         document.getElementById('addrCity').selectedIndex = 0;
         document.getElementById('addrDistrict').innerHTML = '<option value="">Chọn Quận/Huyện</option>';
         document.getElementById('addrDistrict').disabled = true;
@@ -2300,7 +2327,10 @@
         document.getElementById('addrWard').disabled = true;
     }
 
-    // Fetch API Data (Stable Version)
+    /**
+     * TẢI DANH SÁCH TỈNH THÀNH (PROVINCES FETCH API)
+     * Sử dụng API công cộng của Esgoo.
+     */
     function fetchProvincesData() {
         fetch('https://esgoo.net/api-tinhthanh/1/0.htm')
             .then(res => res.json())
@@ -2312,9 +2342,7 @@
             .catch(err => console.error('Error fetching provinces:', err));
     }
 
-    // 34 allowed provinces from header (Nghị quyết 202/2025/QH15)
-    // We map esgoo IDs to the Vietnamese display names. Since these strings contain Vietnamese accented characters,
-    // they will be automatically translated into English by the TranslateHtmlResponse middleware when App::getLocale() is 'en'.
+    // Whitelist 34 tỉnh thành hợp lệ cho phép áp dụng theo Nghị quyết 202/2025/QH15
     const provinceIdMap = {
         '79': 'TP. Hồ Chí Minh', '01': 'TP. Hà Nội', '31': 'TP. Hải Phòng', '48': 'TP. Đà Nẵng', '92': 'TP. Cần Thơ', '46': 'TP. Huế',
         '89': 'An Giang', '27': 'Bắc Ninh', '96': 'Cà Mau', '04': 'Cao Bằng',
@@ -2330,7 +2358,7 @@
         const citySelect = document.getElementById('addrCity');
         citySelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
         data.forEach(city => {
-            // Check if the province ID is in the allowed whitelist
+            // Lọc chỉ lấy các tỉnh thành nằm trong whitelist
             if (provinceIdMap.hasOwnProperty(city.id)) {
                 let displayName = provinceIdMap[city.id];
                 let option = document.createElement('option');
@@ -2342,6 +2370,7 @@
         });
     }
 
+    // Lắng nghe sự kiện thay đổi Tỉnh/Thành để tải danh sách Quận/Huyện tương ứng
     document.getElementById('addrCity').addEventListener('change', function() {
         const cityCode = this.options[this.selectedIndex].dataset.code;
         const districtSelect = document.getElementById('addrDistrict');
@@ -2377,6 +2406,7 @@
         }
     });
 
+    // Lắng nghe sự kiện thay đổi Quận/Huyện để tải danh sách Phường/Xã
     document.getElementById('addrDistrict').addEventListener('change', function() {
         const distCode = this.options[this.selectedIndex].dataset.code;
         const wardSelect = document.getElementById('addrWard');
@@ -2409,18 +2439,12 @@
     });
 
     /**
-     * Thực hiện gửi thông tin địa chỉ lên Server qua AJAX
-     *
-     * Hàm này có trách nhiệm:
-     * 1. Validate dữ liệu phía Client-side (City, District, Ward, Street không được trống).
-     * 2. Nếu có lỗi, gọi `highlightInvalidField` để báo lỗi màu đỏ trực tiếp dưới ô nhập liệu.
-     * 3. Gửi request POST (Thêm mới) hoặc PUT/POST (Cập nhật) bằng Fetch API lên server.
-     *    - Cấu hình header 'Accept': 'application/json' để buộc Laravel trả lỗi validation dạng JSON.
-     * 4. Phân tích lỗi trả về từ Server: Nếu Server trả về lỗi validation (Status 422), hàm sẽ phân tích 
-     *    và hiển thị đúng dòng thông báo lỗi chi tiết xuống dưới từng ô nhập liệu tương ứng.
+     * THỰC THI GỬI THÔNG TIN ĐỊA CHỈ LÊN SERVER QUA AJAX
+     * Validate dữ liệu trống phía client.
+     * AJAX POST/PUT lên controller xử lý lưu trữ địa chỉ.
+     * Bắt lỗi validation (Status 422) từ Laravel Validator và ánh xạ xuống giao diện.
      */
     function submitAddress() {
-        // Xóa sạch thông báo lỗi cũ
         clearValidationErrors('addAddressForm');
         
         const id = document.getElementById('addrId').value;
@@ -2432,7 +2456,6 @@
         const type = document.querySelector('input[name="addrType"]:checked').value;
         const isDefault = document.getElementById('addrIsDefault').checked;
         
-        // Tiến hành kiểm tra dữ liệu bỏ trống phía Client-side
         let hasError = false;
         if(!city.value) { highlightInvalidField('addrCity', 'Vui lòng chọn Tỉnh/Thành phố.'); hasError = true; }
         if(!district.value) { highlightInvalidField('addrDistrict', 'Vui lòng chọn Quận/Huyện.'); hasError = true; }
@@ -2444,16 +2467,14 @@
             return;
         }
 
-        // Kích hoạt trạng thái loading cho nút lưu
         setBtnLoading('addressSubmitBtn', true);
         const url = id ? `/profile/address/${id}` : '{{ route('profile.address.store') }}';
 
-        // Gửi yêu cầu lưu trữ đến Server
         fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json', // Nhận phản hồi dạng JSON thay vì HTML redirect
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             body: JSON.stringify({
@@ -2470,10 +2491,9 @@
             return res.json().then(data => {
                 if (!res.ok) {
                     let errorMsg = data.error || data.message;
-                    // Nếu server trả về lỗi xác thực Validation (Laravel Validator)
+                    // Xử lý lỗi validation từ Laravel Validator
                     if (data.errors) {
                         clearValidationErrors('addAddressForm');
-                        // Duyệt qua danh sách lỗi và ánh xạ trường dữ liệu từ Laravel về ID trên form
                         for (const key in data.errors) {
                             let fieldId = '';
                             if (key === 'city') fieldId = 'addrCity';
@@ -2482,7 +2502,6 @@
                             else if (key === 'street') fieldId = 'addrStreet';
                             else if (key === 'name') fieldId = 'addrName';
                             
-                            // Hiển thị thông báo lỗi chi tiết của từng ô
                             if (fieldId && data.errors[key][0]) {
                                 highlightInvalidField(fieldId, data.errors[key][0]);
                             }
@@ -2500,7 +2519,7 @@
         .then(data => {
             if(data.success) {
                 const action = id ? 'Cập nhật' : 'Thêm mới';
-                // Lưu thông báo thành công vào sessionStorage để hiển thị sau khi tải lại trang
+                // Lưu trạng thái toast để sau khi tải lại trang sẽ hiển thị thông báo
                 sessionStorage.setItem('profile_toast', JSON.stringify({
                     title: 'Thành công',
                     msg: `${action} địa chỉ thành công!`,
@@ -2519,6 +2538,12 @@
         });
     }
 
+    /**
+     * MỞ FORM CẬP NHẬT ĐỊA CHỈ (EDIT ADDRESS LOADER)
+     * Đổ dữ liệu cũ vào form.
+     * Gọi API lấy Tỉnh thành, Quận huyện, Phường xã và tự động chọn đúng Option cũ
+     * nhờ hàm `normalize` lọc dấu tiếng Việt để so khớp tương đối chính xác.
+     */
     function editAddress(id, city, district, ward, street, name, type, isDefault) {
         document.getElementById('addressModalTitle').innerText = 'Cập nhật địa chỉ';
         document.getElementById('addressSubmitBtn').innerText = 'Cập nhật';
@@ -2533,7 +2558,7 @@
         setTimeout(() => {
             const citySelect = document.getElementById('addrCity');
             
-            // Helper function to normalize names for robust matching of old and new formats across languages
+            // Hàm chuẩn hóa chuỗi tiếng Việt để so sánh chuỗi tương đối chính xác giữa các locale ngôn ngữ
             const normalize = (name) => {
                 if (!name) return "";
                 return name.toLowerCase()
@@ -2542,12 +2567,13 @@
                            .replace(/^(phường|xã|thị\s+trấn)\s+/i, "")
                            .replace(/thừa thiên huế/i, "huế")
                            .replace(/\s+(city|province|district|town|ward|commune)$/i, "")
-                           .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Strip accents for cross-language compatibility
+                           .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Khử các ký tự dấu tiếng Việt
                            .trim();
             };
 
             const normalizedCity = normalize(city);
 
+            // Tìm và select Tỉnh/Thành
             for(let i=0; i<citySelect.options.length; i++) {
                 if(normalize(citySelect.options[i].value) === normalizedCity) { 
                     citySelect.selectedIndex = i; 
@@ -2555,6 +2581,8 @@
                 }
             }
             citySelect.dispatchEvent(new Event('change'));
+            
+            // Tìm và select Quận/Huyện sau 500ms
             setTimeout(() => {
                 const distSelect = document.getElementById('addrDistrict');
                 const normalizedDist = normalize(district);
@@ -2562,6 +2590,8 @@
                     if(normalize(distSelect.options[i].value) === normalizedDist) { distSelect.selectedIndex = i; break; }
                 }
                 distSelect.dispatchEvent(new Event('change'));
+                
+                // Tìm và select Phường/Xã sau 500ms nữa
                 setTimeout(() => {
                     const wardSelect = document.getElementById('addrWard');
                     const normalizedWard = normalize(ward);
@@ -2573,6 +2603,11 @@
         }, 500);
     }
 
+    // ============================================================
+    // CÁC HÀNH ĐỘNG AJAX TƯƠNG TÁC KHÁC TRÊN PROFILE
+    // ============================================================
+
+    // Copy mã voucher vào bộ nhớ tạm Clipboard kèm phản hồi giao diện
     function copyVoucher(code, btn) {
         navigator.clipboard.writeText(code).then(() => {
             const originalText = btn.innerText;
@@ -2590,6 +2625,7 @@
         });
     }
 
+    // Thêm sản phẩm vào giỏ hàng qua AJAX POST
     function addToCart(productId) {
         fetch('{{ route('cart.add') }}', {
             method: 'POST',
@@ -2621,11 +2657,13 @@
         });
     }
 
+    // Cập nhật số lượng sản phẩm hiển thị trên tab yêu thích
     function updateWishlistCount(count) {
         const countEl = document.getElementById('wishlist-count');
         if (countEl) countEl.textContent = count;
     }
 
+    // Xóa một sản phẩm khỏi danh sách yêu thích qua AJAX DELETE
     function removeFromWishlist(id) {
         showConfirm('Xóa khỏi yêu thích', 'Bạn muốn bỏ sản phẩm này khỏi danh sách yêu thích?', function() {
             fetch(`/wishlist/${id}`, {
@@ -2664,6 +2702,7 @@
         });
     }
 
+    // Xóa toàn bộ danh sách sản phẩm yêu thích (Clear Wishlist)
     function clearWishlist() {
         showConfirm('Xóa tất cả', 'Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?', function() {
             fetch('{{ route('wishlist.clear') }}', {
@@ -2690,6 +2729,7 @@
         });
     }
 
+    // Thêm nhanh vào giỏ hàng từ trang Wishlist kèm feedback loading trên nút
     function addToCartFromWishlist(btn, productId) {
         const originalHTML = btn.innerHTML;
         btn.disabled = true;
@@ -2722,6 +2762,7 @@
         });
     }
 
+    // Xóa một địa chỉ khỏi sổ địa chỉ giao nhận qua AJAX DELETE
     function deleteAddress(id) {
         showConfirm('Xóa địa chỉ', 'Bạn có chắc chắn muốn xóa địa chỉ này? Thao tác này không thể hoàn tác.', function() {
             fetch(`/profile/address/${id}`, {
@@ -2752,7 +2793,9 @@
         });
     }
 
-    // Repair Booking Modals and Progress Stepper Actions
+    // ============================================================
+    // TIẾN TRÌNH THEO DÕI SỬA CHỮA / BẢO HÀNH (REPAIR TRACKING SYSTEM)
+    // ============================================================
     function openRepairModal() {
         document.getElementById('repairModal').classList.add('active');
     }
@@ -2764,10 +2807,16 @@
         document.getElementById('trackingModal').classList.remove('active');
     }
 
+    /**
+     * ĐỌC VÀ HIỂN THỊ TIẾN TRÌNH SỬA CHỮA THIẾT BỊ LÊN TRỤC BẬC THANG (STEPPER PROGRESS)
+     * Đọc JSON dữ liệu phiếu sửa chữa đính trên nút.
+     * Điền thông tin mã phiếu, số IMEI, lỗi mô tả, ngày hẹn và kỹ thuật viên nhận máy.
+     * So sánh trạng thái ('Received', 'Checking', 'Under_Repair', 'Waiting_Parts', 'Done') 
+     * để gán các class active/completed cho các mốc tương ứng trên sơ đồ Stepper.
+     */
     function viewProgress(btn) {
         const ticket = JSON.parse(btn.getAttribute('data-ticket'));
         
-        // Gắn dữ liệu vào modal
         document.getElementById('track-id').innerText = ticket.ticket_id;
         document.getElementById('track-imei').innerText = ticket.imei_serial;
         document.getElementById('track-desc').innerText = ticket.issue_desc;
@@ -2778,7 +2827,7 @@
         const year = scheduleDate.getFullYear();
         const formattedDate = `${day}/${month}/${year}`;
         
-        // Tự động thay đổi nhãn của ngày hẹn tùy theo trạng thái
+        // Cập nhật nhãn ngày nhận/ngày trả tương ứng theo trạng thái
         const dateLabel = document.getElementById('track-date-label');
         if (['Under_Repair', 'Waiting_Parts', 'Done'].includes(ticket.status)) {
             dateLabel.innerText = @json(__('ui.repair_date_return_label'));
@@ -2793,7 +2842,7 @@
         }
         document.getElementById('track-tech').innerText = techName;
         
-        // Reset class active/completed cho tất cả các bước trong stepper
+        // Reset sạch các trạng thái của các bước mốc trước đó
         const steps = ['step-received', 'step-checking', 'step-repairing', 'step-done'];
         steps.forEach(id => {
             const el = document.getElementById(id);
@@ -2802,7 +2851,7 @@
             }
         });
         
-        // Reset nội dung mô tả mặc định của các bước trước khi gán dữ liệu mới
+        // Khôi phục mô tả gốc của các mốc
         document.getElementById('step-received-desc').innerHTML = @json(__('ui.repair_step_received_desc'));
         document.getElementById('step-checking-desc').innerHTML = @json(__('ui.repair_step_checking_desc'));
         document.getElementById('step-repairing-desc').innerHTML = @json(__('ui.repair_step_repairing_desc'));
@@ -2815,7 +2864,7 @@
             document.getElementById('step-received').classList.add('completed');
             document.getElementById('step-checking').classList.add('active');
             
-            // Nếu có chi phí dự kiến thì hiển thị thêm ở bước Kiểm tra & báo giá
+            // Hiện chi phí dự kiến nếu có trong bước báo giá
             const costHtml = ticket.estimated_cost > 0 
                 ? `<div style="margin-top:5px; color:#0369a1; font-weight:600;"><i class="fa-solid fa-calculator"></i> ` + @json(__('ui.repair_step_checking_cost')) + ` ${new Intl.NumberFormat('vi-VN').format(ticket.estimated_cost)} đ</div>`
                 : '';
@@ -2852,8 +2901,11 @@
         document.getElementById('trackingModal').classList.add('active');
     }
 
-    // Initialize Active Tab & Notifications
+    // ============================================================
+    // KHỞI CHẠY KHI TẢI XONG TRANG (DOM CONTENT LOADED INITIALIZATIONS)
+    // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
+        // Kiểm tra xem dữ liệu cập nhật profile có gì thay đổi so với DB không trước khi submit
         const editForm = document.getElementById('editProfileForm');
         if (editForm) {
             editForm.addEventListener('submit', function(e) {
@@ -2877,6 +2929,7 @@
             });
         }
 
+        // Tự động kiểm tra hiển thị Toast thông báo lưu từ sessionStorage (nếu có)
         const toastData = sessionStorage.getItem('profile_toast');
         if (toastData) {
             const data = JSON.parse(toastData);
@@ -2884,6 +2937,7 @@
             sessionStorage.removeItem('profile_toast');
         }
 
+        // Tự động chuyển đến Tab tương ứng dựa trên tham số 'tab' trên thanh địa chỉ URL
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab');
         
@@ -2903,7 +2957,7 @@
             }
         }
 
-        // Tự động mở lại modal đăng ký nếu có lỗi validation từ server trả về
+        // Tự động mở lại modal đăng ký bảo hành/sửa chữa nếu có lỗi validation từ Server Laravel trả về
         @if($errors->has('customer_name') || $errors->has('customer_phone') || $errors->has('customer_email') || $errors->has('imei_serial') || $errors->has('issue_desc') || $errors->has('schedule_date'))
             openRepairModal();
         @endif

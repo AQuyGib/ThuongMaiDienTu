@@ -552,3 +552,41 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Xử lý fallback cho trường "Tên gợi nhớ" (`name`): Nếu để trống, hệ thống sẽ tự động lấy thông tin từ "Họ và tên" của tài khoản (`$user->full_name`). Đã cấu hình trên Controller để chuẩn hóa khoảng trắng thừa & lưu `null` nếu chuỗi trống, đồng thời dùng toán tử Elvis `?:` trên Blade để đảm bảo giao diện fallback đúng chuẩn.
   - Thêm chú thích và comment code chi tiết (JSDoc cho Javascript, Docblock cho PHP) giải thích cặn kẽ mục đích và luồng xử lý của từng hàm/chức năng vừa thay đổi.
 
+### 34. Tài liệu hóa & Chú thích chi tiết hệ thống Thông báo (Notification System Documentation)
+- **Tài liệu hóa Backend:**
+  - `app/Http/Controllers/NotificationController.php`: Bổ sung chú thích tiếng Việt làm rõ logic endpoint đánh dấu đã đọc của User và kiểm tra bảo mật ngăn chặn xem trộm thông báo.
+  - `app/Services/NotificationService.php`: Bổ sung chú thích giải thích cơ chế chunking (1000 bản ghi) để tối ưu hóa việc tạo thông báo hàng loạt mà không gây quá tải bộ nhớ.
+  - `app/Jobs/SendNotificationCampaignJob.php`: Bổ sung chú thích về cách thức queue chạy ngầm xử lý phân phối chiến dịch thông báo lớn bất đồng bộ.
+  - `app/Models/Notification.php`: Chú thích rõ ràng các casts cột JSON `data`, scope `unread()`, và quan hệ `user()`.
+  - `app/Http/Controllers/Admin/NotificationCampaignController.php`: Chú thích chi tiết cơ chế cache thống kê Dashboard trong 1 giờ, các API tìm kiếm coupon/user phục vụ autocomplete, logic dispatch queue, và logic quét tự động tồn kho thấp gửi cảnh báo cho admin.
+- **Tài liệu hóa Frontend (Admin views):**
+  - `resources/views/admin/notifications/dashboard.blade.php`: Chú thích cấu trúc lưới stats card, chart, và top loại thông báo.
+  - `resources/views/admin/notifications/show.blade.php`: Chú thích cách trình bày metadata JSON và đánh dấu đã đọc trực tiếp khi xem.
+  - `resources/views/admin/notifications/create.blade.php`: Chú thích cặn kẽ hệ thống script Javascript xử lý autocomplete bằng AJAX có Debounce 300ms, quản lý tags chọn sản phẩm, khuyến mãi, tài khoản nhận, và cơ chế đóng mở dropdown thông minh.
+- **Mục tiêu:** Giúp mã nguồn minh bạch 100%, sẵn sàng cho việc bảo trì, tối ưu hóa và mở rộng sang các kênh thông báo nâng cao (như Firebase Push Notification, SMS) trong tương lai.
+
+### 35. Tài liệu hóa & Chú thích chi tiết hệ thống Gợi ý bán chéo (Cross-sell & Combo Discount System)
+- **Tài liệu hóa Backend:**
+  - `app/Services/CrossSellService.php`: Bổ sung chú thích tiếng Việt cực kỳ chi tiết cho thuật toán 7 tầng gợi ý bán chéo (FBT từ co-order_details, cùng thương hiệu khác danh mục, cùng phân khúc giá Flash Sale, cá nhân hóa lịch sử xem, và fallback cùng danh mục), có cấu hình cache 30 phút.
+  - `app/Http/Controllers/Admin/ProductController.php`: Chú thích chi tiết các phương thức `syncCrossSells` và `syncCombos` xử lý đồng bộ cơ sở dữ liệu và dọn dẹp các cache tương ứng.
+  - `app/Http/Controllers/ProductController.php` & `app/Http/Controllers/Frontend/ProductController.php`: Chú thích luồng ghi nhận lịch sử xem sản phẩm cho user đăng nhập (phục vụ cá nhân hóa) và tích hợp lấy danh sách gợi ý bán chéo, nạp thông tin khuyến mãi Flash Sale thời gian thực.
+  - `app/Models/Product.php`: Chú thích tiếng Việt làm rõ quan hệ tự liên kết `crossSells()` và `comboProducts()` mang các trường pivot bổ trợ.
+- **Tài liệu hóa Frontend (Views & Scripts):**
+  - `resources/views/admin/products/ProductDetail.blade.php`: Chú thích chi tiết cấu trúc Modal thiết lập combo và bán kèm, các hàm định dạng hiển thị kết quả của Select2, và mã Javascript tự động tính toán tổng giá sau giảm thời gian thực.
+  - `resources/views/frontend/products/_combo_bundle.blade.php`: Chú thích vai trò của gói combo mua kèm, hàm tự động cập nhật tổng giá trị/số tiền tiết kiệm khi tích chọn checkbox, và luồng Sequential AJAX gọi tuần tự API thêm vào giỏ hàng bảo mật.
+  - `resources/views/frontend/products/_cross_sell.blade.php`: Chú thích giao diện thanh cuộn ngang slider sản phẩm bán kèm, optimistic UI hiển thị trạng thái "Đã thêm" tức thời của AJAX và cập nhật badge cart trên header.
+
+### 36. Tài liệu hóa & Chú thích chi tiết hệ thống Tích điểm & Đổi thưởng (Loyalty Points & Rewards System)
+- **Tài liệu hóa Backend:**
+  - `app/Services/PointsService.php`: Chú thích tiếng Việt cực kỳ chi tiết cho tỷ lệ tích lũy `EARN_RATE` (10k VND = 1 điểm) và giá trị quy đổi `POINT_VALUE` (1 điểm = 1k VND); các hàm cộng điểm giao dịch đơn completed (`applyOrderCompletedPoints`), hoàn điểm/thu hồi điểm khi cancel đơn (`cancelOrderPoints`), trừ điểm ví tiêu dùng (`deductWalletPoints`), xác định hạng VIP (`resolveRankLevel`), và cơ chế khóa bản ghi `lockForUpdate` chống race condition.
+  - `app/Services/RewardsService.php`: Giải thích logic kiểm tra điều kiện tồn kho quà, hạng tối thiểu, số dư; thuật toán quay thưởng ngẫu nhiên theo trọng số (Weighted Random) trong phương thức `spinWheel`.
+  - `app/Http/Controllers/RewardsController.php`: Chú thích luồng API đổi voucher, API spin vòng quay may mắn có xác thực đăng nhập và bảo mật CSRF.
+  - Các Eloquent Models (`app/Models/RewardCatalog.php`, `app/Models/RewardRedemption.php`, `app/Models/LuckyWheelSpin.php`, `app/Models/UserPoint.php`, `app/Models/PointTransaction.php`): Bổ sung Docblock tiếng Việt chi tiết làm rõ ý nghĩa của các cột dữ liệu, ép kiểu `casts`, các mối quan hệ khoá ngoại, và quan hệ đa hình `morphTo`.
+- **Tài liệu hóa Frontend (Views & Scripts):**
+  - `resources/views/frontend/rewards/index.blade.php`: Chú thích toàn bộ hệ thống Canvas vẽ đĩa quay 3D, vòng LED nhấp nháy, thuật toán xoay đĩa dừng đúng góc quà trúng ở kim chỉ góc 270 độ, AJAX đổi quà và spin.
+  - `resources/views/frontend/rewards/show.blade.php` & `resources/views/frontend/rewards/history.blade.php`: Chú thích hệ thống lọc lịch sử, định dạng hiển thị timeline tiến trình và xử lý AJAX đổi voucher đơn lẻ.
+  - `resources/views/admin/rewards/index.blade.php` (Giao diện Quản trị): Chú thích toàn bộ logic bật/tắt hiển thị vòng quay ở client, logic form thêm/sửa linh động ẩn hiện các trường đầu vào VND/Freeship/Rate theo chủng loại quà, và modal test spin offline.
+
+
+
+

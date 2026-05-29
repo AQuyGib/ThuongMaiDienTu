@@ -1,0 +1,79 @@
+TÀI LIỆU ĐỐI CHIẾU CHỨC NĂNG VÀ MÃ NGUỒNDự án: Website Bán Hàng Đồ Điện Gia Dụng (HAE1 - DIENMAYPRO)Nhóm thực hiện: Nguyễn Thanh Hiền, Trần Văn Hải, Nguyễn Anh Quý
+Dựa trên báo cáo tổng hợp và cấu trúc thư mục mã nguồn (TKPM) của toàn bộ dự án, dưới đây là bảng mapping chi tiết toàn bộ các tính năng tương ứng với các file code cụ thể trong hệ thống (bao gồm cả Web Client, Admin Portal, Backend Service/Repository, và Mobile App Flutter).
+Nhóm Chức năng
+Đường dẫn File (Source Code)
+Mô tả chi tiết
+Kiến trúc hệ thống & Cơ sở dữ liệu (Core Architecture)
+- src/Database/DatabaseConnection.php- core/database.php- sql/*.sql (các file script khởi tạo và cấu trúc DB)
+Thiết lập kết nối MySQL sử dụng PDO qua Pattern Singleton. Cấu trúc hóa thư mục dự án theo mô hình Service Layer & Repository Pattern để tách biệt phần xử lý CSDL.
+Bảo mật 2 Lớp (2FA OTP) & Gửi Mail
+- core/totp_helper.php- core/mail_helper.php- views/pages/two_factor.php- public/api/auth.php (action two-factor-verify)- mobile_app/lib/features/auth/presentation/screens/two_factor_verify_screen.dart
+Cơ chế bảo mật xác thực hai bước qua Email bằng PHPMailer. Sinh OTP ngẫu nhiên lưu vào DB kèm thời gian hết hạn (10 phút), đồng bộ trạng thái xác thực giữa Web (Session) và Mobile (JWT token).
+Đăng nhập bằng Google (Google OAuth SSO)
+- core/google_oauth.php- views/api/google_login.php- views/api/google_callback.php- mobile_app/lib/features/auth/presentation/screens/login_screen.dart
+Tích hợp xác thực đăng nhập nhanh SSO bằng Google Client SDK. Tự động kiểm tra, đồng bộ thông tin và cập nhật tài khoản người dùng trong bảng `users` bảo mật.
+Bảo mật mã giảm giá & Chống Brute-force
+- views/api/ajax_voucher.php- src/Repository/CouponRepository.php
+Tích hợp thuật toán ngăn chặn tấn công Brute-force khi nhập thử mã Coupon (khóa 15 phút nếu nhập sai quá 5 lần) và xác thực CSRF Token bảo vệ giao dịch.
+Trang chủ & Menu danh mục cuộn ngang (Web/Mobile)
+- views/pages/index.php- views/partials/header.php- views/partials/product_card.php- mobile_app/lib/features/home/presentation/screens/home_screen.dart
+Giao diện trang chủ hiển thị các sản phẩm đề xuất, danh mục sản phẩm cuộn ngang, thanh tìm kiếm thông minh, và hỗ trợ chuyển đổi giao diện sáng/tối.
+Chi tiết sản phẩm & Thư viện ảnh (Gallery Auto Slide)
+- views/pages/product_detail.php- mobile_app/lib/features/product/presentation/screens/product_detail_screen.dart
+Hiển thị thông số kỹ thuật sản phẩm, album ảnh (Gallery) với cơ chế Auto Slide tự động chuyển ảnh sau 5 giây, reset bộ đếm khi nhấp tay, và tự động cuộn danh sách thumbnail.
+Đánh giá & Bình luận đệ quy (Recursive Review System)
+- views/pages/product_detail.php (JS review form)- public/api/review.php- src/Repository/ReviewRepository.php
+Hệ thống đánh giá sản phẩm bằng sao, nhận xét và đính kèm ảnh. Hỗ trợ trả lời bình luận nhiều cấp đệ quy bằng AJAX (Web) và API (Mobile App).
+So sánh sản phẩm (Product Comparison)
+- views/pages/compare.php- views/api/ajax_compare.php- public/api/compare.php- mobile_app/lib/features/product/presentation/screens/compare_screen.dart- mobile_app/lib/features/catalog/presentation/widgets/sticky_compare_bar.dart
+So sánh chi tiết thông số kỹ thuật của tối đa 3 sản phẩm. Tích hợp thanh so sánh thu gọn (Sticky Bar) ở đáy và bảng so sánh cuộn ngang với cột nhãn cố định bên trái (Frozen Column) trên di động.
+Mua trả góp lãi suất 0% (Installment Request)
+- views/pages/product_detail.php (Modal trả góp)- views/api/save_installment.php- public/api/installment.php- src/Repository/InstallmentRepository.php
+Cho phép người dùng đăng ký mua trả góp sản phẩm, tự động tính toán số tiền phải trả mỗi tháng tương ứng với các kỳ hạn 3, 6, 9, 12 tháng dựa trên giá sản phẩm.
+Danh sách yêu thích (Wishlist)
+- views/pages/profile.php (tab wishlist)- public/api/wishlist.php- mobile_app/lib/features/wishlist/presentation/screens/wishlist_screen.dart- src/Repository/WishlistRepository.php
+Thêm sản phẩm vào danh sách yêu thích cá nhân thông qua AJAX (Web) và API (Mobile), tự động đồng bộ hóa trạng thái biểu tượng trái tim trên các thẻ sản phẩm.
+Sổ địa chỉ nhận hàng (Address Book)
+- views/pages/profile.php (tab address)- public/api/address.php- mobile_app/lib/features/profile/presentation/screens/edit_profile_screen.dart- src/Repository/AddressRepository.php
+Quản lý danh sách địa chỉ nhận hàng (Thêm, Sửa, Xóa, Đặt mặc định) và tích hợp hộp thoại chọn địa chỉ nhanh tại màn hình đặt hàng.
+Hệ thống thông báo đẩy (Notifications & Push Notification)
+- views/partials/header.php (dropdown thông báo)- public/api/notification.php- public/api/fcm_token.php- mobile_app/lib/features/notifications/- src/Repository/NotificationRepository.php
+Quản lý thông báo trạng thái đơn hàng. Đồng bộ mã `fcm_token` từ Mobile App lên máy chủ để hỗ trợ dịch vụ gửi thông báo đẩy qua Firebase Cloud Messaging (FCM).
+Tìm kiếm gợi ý thông minh (Search Suggestions)
+- views/partials/header.php (JS search)- public/api/search.php- mobile_app/lib/features/catalog/presentation/controllers/search_suggestions_provider.dart
+Gợi ý nhanh danh mục và sản phẩm đề xuất kèm theo hình ảnh, giá cả thời gian thực khi khách hàng gõ từ khóa tìm kiếm.
+Giỏ hàng trực tuyến (Shopping Cart)
+- views/pages/cart.php- views/api/add_to_cart.php- public/api/cart.php- mobile_app/lib/features/cart/- src/Service/CartService.php
+Quản lý giỏ hàng trực tuyến, tự động tính thuế VAT, phí vận chuyển và áp dụng ràng buộc hạn chế số lượng mua chống buôn sỉ (>10 sản phẩm).
+Đặt hàng & Thanh toán (Checkout Page)
+- views/pages/checkout.php- public/api/checkout.php- mobile_app/lib/features/checkout/- src/Service/CheckoutService.php
+Trang điền thông tin đặt hàng, tích hợp ví Voucher giảm giá, chọn địa chỉ từ sổ địa chỉ, tính toán tổng tiền và tạo hóa đơn thanh toán.
+Thanh toán QR Động (VietQR & PayOS Integration)
+- views/pages/payment.php- core/payos_config.php- views/api/webhook_payos.php- views/api/webhook_sepay.php- public/api/payment.php- mobile_app/lib/features/payment/
+Tích hợp cổng VietQR/PayOS để sinh QR thanh toán động theo số tiền đơn hàng. Bắt webhook tự động từ SePay/PayOS để cập nhật trạng thái đơn hàng khi nhận được tiền.
+Theo dõi đơn hàng & Yêu cầu Bảo hành/Đổi trả
+- views/pages/track_order.php- public/api/order.php- mobile_app/lib/features/orders/- src/Repository/OrderRepository.php
+Tra cứu thông tin đơn hàng bảo mật theo mã ID. Hiển thị timeline trạng thái đơn hàng (Timeline Stepper) và gửi yêu cầu bảo hành hoặc đổi trả.
+Xử lý Đổi trả, Bảo hành chéo & Hoàn tồn kho (Restock)
+- views/pages/track_order.php (logic POST)- src/Repository/WarrantyRepository.php- src/Repository/ReturnRepository.php
+Chặn gửi yêu cầu bảo hành nếu đơn hàng đang làm thủ tục trả hàng hoàn tiền, và ngược lại. Tự động Restock cấp phát lại số lượng tồn kho sản phẩm khi duyệt trả hàng.
+Bảng điều khiển Admin, Lọc nâng cao & Báo cáo doanh thu
+- views/admin/admin.php- views/api/export_revenue.php- src/Service/AdminService.php
+Thống kê tổng quan đơn hàng, doanh thu qua các biểu đồ trực quan. Bộ lọc doanh thu nâng cao theo tháng và khoảng ngày, hỗ trợ xuất báo cáo ra file Excel động (.csv/xlsx).
+In báo cáo doanh thu tối ưu (Clean Print Layout)
+- views/admin/admin.php (khối styles @media print)
+Tối ưu hóa giao diện trang in bằng CSS. Tự động ẩn menu điều hướng sidebar/topbar và định dạng bảng biểu báo cáo vừa vặn 100% trang giấy khi in (Ctrl+P).
+Quản lý Sản phẩm, Danh mục & Khách hàng (Admin CRUD)
+- views/admin/admin.php- src/Repository/ProductRepository.php- src/Repository/UserRepository.php
+Thực hiện CRUD sản phẩm kèm upload nhiều ảnh, kiểm soát lỗi tải lên chi tiết (phân quyền đĩa, dung lượng file) và quản lý trạng thái các tài khoản người dùng.
+Lịch sử đăng nhập & Khóa tài khoản bảo mật (Ban/Unban)
+- views/pages/login_history.php- views/admin/admin.php (tab login history)- src/Repository/LoginHistoryRepository.php- core/security.php
+Ghi log tất cả các lượt đăng nhập (mã hóa IP, lưu tên trình duyệt, vị trí địa lý quốc gia/thành phố). Cho phép Admin thực hiện khóa hoặc mở khóa tài khoản trực tiếp.
+AI Chatbot hỗ trợ tìm kiếm sản phẩm (RAG Chatbot)
+- views/api/chatbot.php- public/api/chatbot.php- mobile_app/lib/features/chatbot/- src/Repository/ProductRepository.php (searchProductsForChatbot)
+Sử dụng API Google Gemini 2.0/2.5 Flash, áp dụng kỹ thuật RAG trích xuất từ khóa trong câu hỏi để tìm kiếm sản phẩm trong database chèn làm ngữ cảnh cho AI. Hỗ trợ ngữ cảnh thời gian thực (Time Context) và tự động nhận diện ngôn ngữ.
+Ứng dụng di động Flutter (Mobile UI Client & Architecture)
+- Thư mục mobile_app/lib/- mobile_app/pubspec.yaml
+Ứng dụng di động Android/iOS hoàn chỉnh kết nối API Backend DienMayPro. Sử dụng State Management Riverpod, định tuyến GoRouter, thư viện kết nối Dio và lưu trữ local SharedPreferences.
+
+Lưu ý khi sử dụng báo cáo: Bảng này rất hữu ích để bạn đính kèm vào Phụ lục đồ án, hoặc dùng làm tài liệu ôn tập để bảo vệ trước Hội đồng chấm thi (giảng viên thường sẽ hỏi: "Em làm chức năng X thì file code nằm ở đâu?").
