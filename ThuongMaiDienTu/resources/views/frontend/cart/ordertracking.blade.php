@@ -203,23 +203,14 @@
                         </div>
                     </div>
 
-                    <!-- Sản phẩm đã đặt (thu gọn mặc định) -->
+                    <!-- Nút xem chi tiết sản phẩm → mở modal -->
                     <div>
-                        <button onclick="toggleProducts()" id="products-toggle-btn"
+                        <button onclick="openProductsModal()"
                             class="w-full py-3.5 px-6 bg-[#0046ab] hover:bg-blue-800 active:scale-[0.98] text-white rounded-2xl font-bold shadow-md shadow-blue-200 flex items-center justify-center gap-3 transition-all duration-200">
                             <i class="fa-solid fa-box-open text-lg"></i>
-                            <span id="products-btn-label">Xem chi tiết sản phẩm đã đặt</span>
-                            <i id="products-chevron" class="fa-solid fa-chevron-down text-white/80 transition-transform duration-300 ml-auto"></i>
+                            <span>Xem chi tiết sản phẩm đã đặt</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-white/80 ml-auto"></i>
                         </button>
-                        <div id="products-panel" class="hidden mt-3 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-                                <i class="fa-solid fa-list-check text-[#0046ab]"></i>
-                                <span class="font-bold text-gray-800 text-sm">Danh sách sản phẩm đã đặt</span>
-                            </div>
-                            <div id="result-products" class="px-5 pb-4 pt-2 space-y-0">
-                                <!-- Sản phẩm được chèn động -->
-                            </div>
-                        </div>
                     </div>
 
                     <button onclick="resetSearch()"
@@ -238,23 +229,69 @@
     </div>
 </div>
 
+<!-- ===== Modal: Danh sách sản phẩm đã đặt ===== -->
+<div id="products-modal" class="fixed inset-0 z-[9999] flex items-center justify-center hidden" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeProductsModal()"></div>
+
+    <!-- Modal box -->
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 flex flex-col max-h-[85vh] animate-modal-in overflow-hidden">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                    <i class="fa-solid fa-list-check text-[#0046ab] text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-800 text-base leading-tight">Sản phẩm đã đặt</h2>
+                    <p id="modal-order-code" class="text-xs text-gray-400 font-medium"></p>
+                </div>
+            </div>
+            <button onclick="closeProductsModal()" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-500 transition-all">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+        </div>
+
+        <!-- Product list -->
+        <div id="result-products" class="overflow-y-auto px-6 py-4 space-y-0 flex-1"></div>
+
+        <!-- Footer: tổng tiền -->
+        <div class="flex-shrink-0 border-t border-dashed border-gray-200 px-6 py-4 flex justify-between items-center bg-gray-50">
+            <span class="text-sm font-bold text-gray-500">TỔNG TIỀN ĐƠN HÀNG:</span>
+            <span id="modal-total" class="text-xl font-black text-red-600"></span>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(32px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+.animate-modal-in { animation: modalIn 0.28s cubic-bezier(.22,1,.36,1) both; }
+</style>
+
 <script>
-    function toggleProducts() {
-        const panel   = document.getElementById('products-panel');
-        const chevron = document.getElementById('products-chevron');
-        const label   = document.getElementById('products-btn-label');
-        const isHidden = panel.classList.toggle('hidden');
-        chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
-        if (label) label.textContent = isHidden ? 'Xem chi tiết sản phẩm đã đặt' : 'Ẩn chi tiết sản phẩm đã đặt';
+    function openProductsModal() {
+        document.getElementById('products-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
     }
+
+    function closeProductsModal() {
+        document.getElementById('products-modal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Đóng modal khi nhấn ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeProductsModal();
+    });
 
     function doSearch(e) {
         e.preventDefault();
-        // Đóng panel sản phẩm về mặc định khi tìm kiếm mới
-        const panel   = document.getElementById('products-panel');
-        const chevron = document.getElementById('products-chevron');
-        if (panel) { panel.classList.add('hidden'); }
-        if (chevron) { chevron.style.transform = 'rotate(0deg)'; }
+        // Đóng modal sản phẩm khi tìm kiếm mới
+        closeProductsModal();
         const loading   = document.getElementById('loading');
         const result    = document.getElementById('trackingResult');
         const noResult  = document.getElementById('noResult');
@@ -299,14 +336,20 @@
 
         // Địa chỉ và Tổng tiền
         document.getElementById('result-address').textContent = data.shipping_address;
-        document.getElementById('result-total').textContent = new Intl.NumberFormat('vi-VN').format(data.final_amount) + 'đ';
+        const formatted = new Intl.NumberFormat('vi-VN').format(data.final_amount) + 'đ';
+        document.getElementById('result-total').textContent  = formatted;
+        document.getElementById('modal-total').textContent   = formatted;
+        // Cập nhật mã đơn hàng trong header modal
+        const orderCode = '#' + (data.order_code || data.order_id);
+        document.getElementById('modal-order-code').textContent = 'Mã đơn: ' + orderCode;
 
         // Render sản phẩm đã mua
         const productsContainer = document.getElementById('result-products');
         productsContainer.innerHTML = '';
         if (data.items && data.items.length > 0) {
             data.items.forEach(item => {
-                const imgUrl = item.image ? `/storage/${item.image}` : '/images/no-image.png';
+                // Controller đã trả về URL đầy đủ — dùng trực tiếp không cần prefix /storage/
+                const imgUrl = item.image || 'https://via.placeholder.com/56x56?text=SP';
                 productsContainer.innerHTML += `
                     <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid #f3f4f6;">
                         <img src="${imgUrl}" style="width:56px; height:56px; min-width:56px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb;" onerror="this.src='/images/no-image.png'">

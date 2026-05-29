@@ -881,13 +881,32 @@ class CartController extends Controller
             $variant = $detail->inventoryItem->variant ?? null;
             $product = $variant->product ?? null;
 
-            // Lấy ảnh sản phẩm (thumbnail)
+            // Resolve ảnh sản phẩm thành URL đầy đủ (nhất quán với product_grid)
             $image = null;
-            if ($product && $product->images) {
-                $images = is_string($product->images) ? json_decode($product->images, true) : $product->images;
-                $image = is_array($images) && count($images) > 0 ? $images[0] : $product->thumbnail;
-            } else {
-                $image = $product->thumbnail ?? null;
+            if ($product) {
+                $thumb = $product->thumbnail;
+                if ($thumb && \Illuminate\Support\Str::startsWith($thumb, 'http')) {
+                    // thumbnail đã là URL đầy đủ
+                    $image = $thumb;
+                } else {
+                    // Thử lấy từ mảng images
+                    $rawImages = $product->images;
+                    if ($rawImages) {
+                        $arr = is_string($rawImages) ? json_decode($rawImages, true) : $rawImages;
+                        $first = is_array($arr) && count($arr) > 0 ? $arr[0] : null;
+                        if ($first && \Illuminate\Support\Str::startsWith($first, 'http')) {
+                            $image = $first;
+                        } elseif ($first) {
+                            $image = asset('storage/' . ltrim($first, '/'));
+                        }
+                    }
+                    // Fallback về uploads/products/ như product_grid làm
+                    if (!$image) {
+                        $image = $thumb
+                            ? asset('uploads/products/' . $thumb)
+                            : null;
+                    }
+                }
             }
 
             $productName = $detail->product_name
