@@ -1,7 +1,22 @@
 # Project Memory
 
 ## Current State & Focus
+- **Tính phí vận chuyển động (Dynamic Shipping Fee) — HOÀN THÀNH (v2):**
+  - Bỏ nút "Kiểm tra phí giao hàng" khỏi trang `shoppingcart.blade.php`.
+  - Thêm dropdown **5 nhóm khoảng cách địa lý** tại `pay.blade.php`, **ngưỡng miễn phí đồng nhất 10.000.000đ** cho tất cả tỉnh thành:
+    - 🏙️ Nhóm 1 — Nội thành (< 30km): HCM, HN → **20.000đ**
+    - 🚐 Nhóm 2 — Vùng lân cận (30–150km): Bình Dương, Đồng Nai, Long An, Tiền Giang, BRVT, Bắc Ninh, Hưng Yên, Hà Nam, Vĩnh Phúc → **35.000đ**
+    - 🚚 Nhóm 3 — Vùng trung bình (150–400km): Hải Phòng, Cần Thơ, An Giang, Kiên Giang, Đồng Tháp,... → **50.000đ**
+    - ✈️ Nhóm 4 — Vùng xa (400–700km): Đà Nẵng, Khánh Hòa, Huế, Quảng Nam, Bình Định,... → **70.000đ**
+    - 🗺️ Nhóm 5 — Vùng rất xa (> 700km): Tây Nguyên, miền núi phía bắc, Cà Mau, hải đảo → **100.000đ**
+  - Backend `calculateServerShippingFee()` và validation `province` đã đồng bộ với 34 mã tỉnh thành mới.
+- **Đồng bộ địa chỉ Profile → Trang Thanh toán — HOÀN THÀNH:**
+  - Thêm `@php` block đầu `pay.blade.php` để tự động lấy địa chỉ mặc định từ `user_addresses` (ưu tiên `is_default=1`, fallback là địa chỉ đầu tiên, fallback cuối là `users.address`).
+  - Tự động điền: **Họ và tên** (`users.full_name`), **Số điện thoại** (`users.phone_number`), **Tỉnh/Thành phố** (map `city` → province code), **Địa chỉ chi tiết** (`street, ward, district` — không kèm city vì đã có dropdown).
+  - Trường `user_addresses.name` là nhãn địa chỉ gợi nhớ ("Nhà riêng", "Văn phòng"), KHÔNG dùng cho tên người nhận.
+  - Phí vận chuyển tự động tính ngay khi trang load nếu tỉnh đã được pre-select (qua `loadCart() → calculateShipping()`).
 - **Chatbot Reversion & Optimization:**
+
   - Reverted recent multilingual additions to `ChatbotController.php` and `chatbot.blade.php` to restore the original Vietnamese-first prompt behavior and simple, robust HTML rendering.
   - Cleared out the `decodeHtml` helper from `chatbot.blade.php` that was stripping `<a>` tags and corrupting `<br>` tags during message parsing and history loading.
   - Added store policy answering capabilities to `ChatbotController.php` prompt context, enabling the AI to accurately respond to questions about warranties, returns, installment options, and point rewards with proper internal links.

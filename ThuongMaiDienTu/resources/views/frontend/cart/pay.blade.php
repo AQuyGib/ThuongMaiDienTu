@@ -18,6 +18,202 @@
 @endpush
 
 @section('content')
+@php
+    $prefilledName = '';
+    $prefilledPhone = '';
+    $prefilledProvince = '';
+    $prefilledAddress = '';
+    if (Auth::check()) {
+        $user = Auth::user();
+        $prefilledName = $user->full_name;
+        $prefilledPhone = $user->phone_number;
+        
+        $defaultAddress = $user->addresses()->where('is_default', 1)->first() 
+            ?? $user->addresses()->first();
+            
+        if ($defaultAddress) {
+            // Lưu ý: $defaultAddress->name là nhãn địa chỉ ("Nhà riêng", "Văn phòng"),
+            // KHÔNG phải tên người nhận. Tên người nhận lấy từ users.full_name.
+            
+            $addrParts = [];
+            if (!empty($defaultAddress->street)) {
+                $addrParts[] = $defaultAddress->street;
+            }
+            if (!empty($defaultAddress->ward)) {
+                $addrParts[] = $defaultAddress->ward;
+            }
+            if (!empty($defaultAddress->district)) {
+                $addrParts[] = $defaultAddress->district;
+            }
+            $prefilledAddress = implode(', ', $addrParts);
+            
+            if (!empty($defaultAddress->city)) {
+                $cityStr = mb_strtolower($defaultAddress->city);
+                if (str_contains($cityStr, 'hồ chí minh') || str_contains($cityStr, 'hcm')) {
+                    $prefilledProvince = 'hcm';
+                } elseif (str_contains($cityStr, 'hà nội') || str_contains($cityStr, 'hn')) {
+                    $prefilledProvince = 'hn';
+                } elseif (str_contains($cityStr, 'bình dương')) {
+                    $prefilledProvince = 'bd';
+                } elseif (str_contains($cityStr, 'đồng nai')) {
+                    $prefilledProvince = 'dnai';
+                } elseif (str_contains($cityStr, 'long an')) {
+                    $prefilledProvince = 'la';
+                } elseif (str_contains($cityStr, 'tiền giang')) {
+                    $prefilledProvince = 'tg';
+                } elseif (str_contains($cityStr, 'vũng tàu') || str_contains($cityStr, 'bà rịa')) {
+                    $prefilledProvince = 'vt';
+                } elseif (str_contains($cityStr, 'bắc ninh')) {
+                    $prefilledProvince = 'bn';
+                } elseif (str_contains($cityStr, 'hưng yên')) {
+                    $prefilledProvince = 'hy';
+                } elseif (str_contains($cityStr, 'hà nam')) {
+                    $prefilledProvince = 'hnam';
+                } elseif (str_contains($cityStr, 'vĩnh phúc')) {
+                    $prefilledProvince = 'vp';
+                } elseif (str_contains($cityStr, 'hải phòng')) {
+                    $prefilledProvince = 'hp';
+                } elseif (str_contains($cityStr, 'cần thơ')) {
+                    $prefilledProvince = 'ct';
+                } elseif (str_contains($cityStr, 'hòa bình')) {
+                    $prefilledProvince = 'hb';
+                } elseif (str_contains($cityStr, 'nam định') || str_contains($cityStr, 'ninh bình')) {
+                    $prefilledProvince = 'nb';
+                } elseif (str_contains($cityStr, 'an giang')) {
+                    $prefilledProvince = 'ag';
+                } elseif (str_contains($cityStr, 'kiên giang')) {
+                    $prefilledProvince = 'kg';
+                } elseif (str_contains($cityStr, 'đồng tháp')) {
+                    $prefilledProvince = 'dt';
+                } elseif (str_contains($cityStr, 'trà vinh') || str_contains($cityStr, 'vĩnh long')) {
+                    $prefilledProvince = 'tv';
+                } elseif (str_contains($cityStr, 'bến tre') || str_contains($cityStr, 'sóc trăng')) {
+                    $prefilledProvince = 'bte';
+                } elseif (str_contains($cityStr, 'đà nẵng')) {
+                    $prefilledProvince = 'dn';
+                } elseif (str_contains($cityStr, 'quảng nam') || str_contains($cityStr, 'quảng ngãi')) {
+                    $prefilledProvince = 'qng';
+                } elseif (str_contains($cityStr, 'bình định') || str_contains($cityStr, 'phú yên')) {
+                    $prefilledProvince = 'bdinh';
+                } elseif (str_contains($cityStr, 'khánh hòa') || str_contains($cityStr, 'nha trang')) {
+                    $prefilledProvince = 'nth';
+                } elseif (str_contains($cityStr, 'thanh hóa') || str_contains($cityStr, 'nghệ an')) {
+                    $prefilledProvince = 'th';
+                } elseif (str_contains($cityStr, 'quảng bình') || str_contains($cityStr, 'quảng trị')) {
+                    $prefilledProvince = 'qbi';
+                } elseif (str_contains($cityStr, 'thừa thiên') || str_contains($cityStr, 'huế')) {
+                    $prefilledProvince = 'hue';
+                } elseif (str_contains($cityStr, 'gia lai') || str_contains($cityStr, 'kon tum')) {
+                    $prefilledProvince = 'gl';
+                } elseif (str_contains($cityStr, 'đắk lắk') || str_contains($cityStr, 'đắk nông')) {
+                    $prefilledProvince = 'dkl';
+                } elseif (str_contains($cityStr, 'lào cai') || str_contains($cityStr, 'yên bái')) {
+                    $prefilledProvince = 'lc';
+                } elseif (str_contains($cityStr, 'điện biên') || str_contains($cityStr, 'lai châu')) {
+                    $prefilledProvince = 'dbi';
+                } elseif (str_contains($cityStr, 'sơn la')) {
+                    $prefilledProvince = 'ss';
+                } elseif (str_contains($cityStr, 'cao bằng') || str_contains($cityStr, 'bắc kạn')) {
+                    $prefilledProvince = 'cb';
+                } elseif (str_contains($cityStr, 'lạng sơn') || str_contains($cityStr, 'hà giang')) {
+                    $prefilledProvince = 'ls';
+                } elseif (str_contains($cityStr, 'cà mau') || str_contains($cityStr, 'bạc liêu')) {
+                    $prefilledProvince = 'cm';
+                } else {
+                    $prefilledProvince = 'other';
+                }
+            }
+        } else {
+            // Fallback: lấy từ users.address (format: "street, ward, district, city")
+            if (!empty($user->address)) {
+                $parts = explode(',', $user->address);
+                if (count($parts) >= 2) {
+                    $cityPart = trim(end($parts));
+                    $cityStr = mb_strtolower($cityPart);
+                    // Strip city (phần cuối) khỏi địa chỉ để tránh trùng lặp với dropdown
+                    $addressParts = array_slice($parts, 0, count($parts) - 1);
+                    $prefilledAddress = trim(implode(',', $addressParts));
+                    // Map city → province code
+                    if (str_contains($cityStr, 'hồ chí minh') || str_contains($cityStr, 'hcm')) {
+                        $prefilledProvince = 'hcm';
+                    } elseif (str_contains($cityStr, 'hà nội') || str_contains($cityStr, 'hn')) {
+                        $prefilledProvince = 'hn';
+                    } elseif (str_contains($cityStr, 'bình dương')) {
+                        $prefilledProvince = 'bd';
+                    } elseif (str_contains($cityStr, 'đồng nai')) {
+                        $prefilledProvince = 'dnai';
+                    } elseif (str_contains($cityStr, 'long an')) {
+                        $prefilledProvince = 'la';
+                    } elseif (str_contains($cityStr, 'tiền giang')) {
+                        $prefilledProvince = 'tg';
+                    } elseif (str_contains($cityStr, 'vũng tàu') || str_contains($cityStr, 'bà rịa')) {
+                        $prefilledProvince = 'vt';
+                    } elseif (str_contains($cityStr, 'bắc ninh')) {
+                        $prefilledProvince = 'bn';
+                    } elseif (str_contains($cityStr, 'hưng yên')) {
+                        $prefilledProvince = 'hy';
+                    } elseif (str_contains($cityStr, 'hà nam')) {
+                        $prefilledProvince = 'hnam';
+                    } elseif (str_contains($cityStr, 'vĩnh phúc')) {
+                        $prefilledProvince = 'vp';
+                    } elseif (str_contains($cityStr, 'hải phòng')) {
+                        $prefilledProvince = 'hp';
+                    } elseif (str_contains($cityStr, 'cần thơ')) {
+                        $prefilledProvince = 'ct';
+                    } elseif (str_contains($cityStr, 'hòa bình')) {
+                        $prefilledProvince = 'hb';
+                    } elseif (str_contains($cityStr, 'nam định') || str_contains($cityStr, 'ninh bình')) {
+                        $prefilledProvince = 'nb';
+                    } elseif (str_contains($cityStr, 'an giang')) {
+                        $prefilledProvince = 'ag';
+                    } elseif (str_contains($cityStr, 'kiên giang')) {
+                        $prefilledProvince = 'kg';
+                    } elseif (str_contains($cityStr, 'đồng tháp')) {
+                        $prefilledProvince = 'dt';
+                    } elseif (str_contains($cityStr, 'trà vinh') || str_contains($cityStr, 'vĩnh long')) {
+                        $prefilledProvince = 'tv';
+                    } elseif (str_contains($cityStr, 'bến tre') || str_contains($cityStr, 'sóc trăng')) {
+                        $prefilledProvince = 'bte';
+                    } elseif (str_contains($cityStr, 'đà nẵng')) {
+                        $prefilledProvince = 'dn';
+                    } elseif (str_contains($cityStr, 'quảng nam') || str_contains($cityStr, 'quảng ngãi')) {
+                        $prefilledProvince = 'qng';
+                    } elseif (str_contains($cityStr, 'bình định') || str_contains($cityStr, 'phú yên')) {
+                        $prefilledProvince = 'bdinh';
+                    } elseif (str_contains($cityStr, 'khánh hòa') || str_contains($cityStr, 'nha trang')) {
+                        $prefilledProvince = 'nth';
+                    } elseif (str_contains($cityStr, 'thanh hóa') || str_contains($cityStr, 'nghệ an')) {
+                        $prefilledProvince = 'th';
+                    } elseif (str_contains($cityStr, 'quảng bình') || str_contains($cityStr, 'quảng trị')) {
+                        $prefilledProvince = 'qbi';
+                    } elseif (str_contains($cityStr, 'thừa thiên') || str_contains($cityStr, 'huế')) {
+                        $prefilledProvince = 'hue';
+                    } elseif (str_contains($cityStr, 'gia lai') || str_contains($cityStr, 'kon tum')) {
+                        $prefilledProvince = 'gl';
+                    } elseif (str_contains($cityStr, 'đắk lắk') || str_contains($cityStr, 'đắk nông')) {
+                        $prefilledProvince = 'dkl';
+                    } elseif (str_contains($cityStr, 'lào cai') || str_contains($cityStr, 'yên bái')) {
+                        $prefilledProvince = 'lc';
+                    } elseif (str_contains($cityStr, 'điện biên') || str_contains($cityStr, 'lai châu')) {
+                        $prefilledProvince = 'dbi';
+                    } elseif (str_contains($cityStr, 'sơn la')) {
+                        $prefilledProvince = 'ss';
+                    } elseif (str_contains($cityStr, 'cao bằng') || str_contains($cityStr, 'bắc kạn')) {
+                        $prefilledProvince = 'cb';
+                    } elseif (str_contains($cityStr, 'lạng sơn') || str_contains($cityStr, 'hà giang')) {
+                        $prefilledProvince = 'ls';
+                    } elseif (str_contains($cityStr, 'cà mau') || str_contains($cityStr, 'bạc liêu')) {
+                        $prefilledProvince = 'cm';
+                    } else {
+                        $prefilledProvince = 'other';
+                    }
+                } else {
+                    $prefilledAddress = $user->address;
+                }
+            }
+        }
+    }
+@endphp
 <div class="bg-gray-50 min-h-screen py-8">
 <div class="max-w-6xl mx-auto px-4">
 
@@ -67,25 +263,87 @@
             <label class="block text-sm font-semibold text-gray-700 mb-1">Họ và tên *</label>
             <input id="inp-name" name="customer_name" type="text" required maxlength="50"
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
-              value="{{ Auth::check() ? Auth::user()->name : '' }}" placeholder="Nguyễn Văn A">
+              value="{{ Auth::check() ? $prefilledName : '' }}" placeholder="Nguyễn Văn A">
             <p id="err-name" class="text-xs text-red-500 mt-1 hidden"></p>
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại *</label>
             <input id="inp-phone" name="customer_phone" type="tel" required maxlength="10"
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
-              value="{{ Auth::check() && Auth::user()->phone ? Auth::user()->phone : '' }}" placeholder="0901234567">
+              value="{{ Auth::check() ? $prefilledPhone : '' }}" placeholder="0901234567">
             <p id="err-phone" class="text-xs text-red-500 mt-1 hidden"></p>
           </div>
         </div>
         <div class="mt-4">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Tỉnh/Thành phố *</label>
+          <select id="inp-province" name="province" required
+            class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white transition text-sm cursor-pointer mb-3">
+            <option value="" disabled {{ $prefilledProvince ? '' : 'selected' }}>-- Chọn Tỉnh/Thành phố --</option>
+
+            {{-- Nhóm 1: Nội thành (< 30 km) --}}
+            <optgroup label="🏙️ Nội thành — Phí 20.000đ (Miễn phí từ 10tr)">
+                <option value="hcm" data-fee="20000" data-threshold="10000000" {{ $prefilledProvince === 'hcm' ? 'selected' : '' }}>TP. Hồ Chí Minh</option>
+                <option value="hn"  data-fee="20000" data-threshold="10000000" {{ $prefilledProvince === 'hn' ? 'selected' : '' }}>TP. Hà Nội</option>
+            </optgroup>
+
+            {{-- Nhóm 2: Vùng lân cận (30 – 150 km) --}}
+            <optgroup label="🚐 Vùng lân cận (30–150 km) — Phí 35.000đ (Miễn phí từ 10tr)">
+                <option value="bd"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'bd' ? 'selected' : '' }}>Tỉnh Bình Dương</option>
+                <option value="dnai" data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'dnai' ? 'selected' : '' }}>Tỉnh Đồng Nai</option>
+                <option value="la"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'la' ? 'selected' : '' }}>Tỉnh Long An</option>
+                <option value="tg"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'tg' ? 'selected' : '' }}>Tỉnh Tiền Giang</option>
+                <option value="vt"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'vt' ? 'selected' : '' }}>Tỉnh Bà Rịa – Vũng Tàu</option>
+                <option value="bn"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'bn' ? 'selected' : '' }}>Tỉnh Bắc Ninh</option>
+                <option value="hy"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'hy' ? 'selected' : '' }}>Tỉnh Hưng Yên</option>
+                <option value="hnam" data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'hnam' ? 'selected' : '' }}>Tỉnh Hà Nam</option>
+                <option value="vp"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'vp' ? 'selected' : '' }}>Tỉnh Vĩnh Phúc</option>
+            </optgroup>
+
+            {{-- Nhóm 3: Vùng trung bình (150 – 400 km) --}}
+            <optgroup label="🚚 Vùng trung bình (150–400 km) — Phí 50.000đ (Miễn phí từ 10tr)">
+                <option value="hp"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'hp' ? 'selected' : '' }}>TP. Hải Phòng</option>
+                <option value="ct"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'ct' ? 'selected' : '' }}>TP. Cần Thơ</option>
+                <option value="hb"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'hb' ? 'selected' : '' }}>Tỉnh Hòa Bình</option>
+                <option value="nb"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'nb' ? 'selected' : '' }}>Tỉnh Nam Định & Ninh Bình</option>
+                <option value="ag"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'ag' ? 'selected' : '' }}>Tỉnh An Giang</option>
+                <option value="kg"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'kg' ? 'selected' : '' }}>Tỉnh Kiên Giang</option>
+                <option value="dt"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'dt' ? 'selected' : '' }}>Tỉnh Đồng Tháp</option>
+                <option value="tv"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'tv' ? 'selected' : '' }}>Tỉnh Trà Vinh & Vĩnh Long</option>
+                <option value="bte"  data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'bte' ? 'selected' : '' }}>Tỉnh Bến Tre & Sóc Trăng</option>
+            </optgroup>
+
+            {{-- Nhóm 4: Vùng xa (400 – 700 km) --}}
+            <optgroup label="✈️ Vùng xa (400–700 km) — Phí 70.000đ (Miễn phí từ 10tr)">
+                <option value="dn"   data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'dn' ? 'selected' : '' }}>TP. Đà Nẵng</option>
+                <option value="qng"  data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'qng' ? 'selected' : '' }}>Tỉnh Quảng Nam & Quảng Ngãi</option>
+                <option value="bdinh" data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'bdinh' ? 'selected' : '' }}>Tỉnh Bình Định & Phú Yên</option>
+                <option value="nth"  data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'nth' ? 'selected' : '' }}>Tỉnh Khánh Hòa (Nha Trang)</option>
+                <option value="th"   data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'th' ? 'selected' : '' }}>Tỉnh Thanh Hóa & Nghệ An</option>
+                <option value="qbi"  data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'qbi' ? 'selected' : '' }}>Tỉnh Quảng Bình & Quảng Trị</option>
+                <option value="hue"  data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'hue' ? 'selected' : '' }}>Tỉnh Thừa Thiên – Huế</option>
+            </optgroup>
+
+            {{-- Nhóm 5: Vùng rất xa (> 700 km) --}}
+            <optgroup label="🗺️ Vùng rất xa (> 700 km) — Phí 100.000đ (Miễn phí từ 10tr)">
+                <option value="gl"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'gl' ? 'selected' : '' }}>Tỉnh Gia Lai & Kon Tum</option>
+                <option value="dkl"  data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'dkl' ? 'selected' : '' }}>Tỉnh Đắk Lắk & Đắk Nông</option>
+                <option value="lc"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'lc' ? 'selected' : '' }}>Tỉnh Lào Cai & Yên Bái</option>
+                <option value="dbi"  data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'dbi' ? 'selected' : '' }}>Tỉnh Điện Biên & Lai Châu</option>
+                <option value="ss"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'ss' ? 'selected' : '' }}>Tỉnh Sơn La & Hòa Bình</option>
+                <option value="cb"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'cb' ? 'selected' : '' }}>Tỉnh Cao Bằng & Bắc Kạn</option>
+                <option value="ls"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'ls' ? 'selected' : '' }}>Tỉnh Lạng Sơn & Hà Giang</option>
+                <option value="cm"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'cm' ? 'selected' : '' }}>Tỉnh Cà Mau & Bạc Liêu</option>
+                <option value="other" data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'other' ? 'selected' : '' }}>Tỉnh thành khác / Hải đảo</option>
+            </optgroup>
+          </select>
+
           <div class="flex justify-between items-center mb-1">
-            <label class="block text-sm font-semibold text-gray-700">Địa chỉ giao hàng *</label>
+            <label class="block text-sm font-semibold text-gray-700">Địa chỉ chi tiết (Số nhà, tên đường, phường/xã, quận/huyện) *</label>
             <span id="counter-address" class="text-xs text-gray-400 font-medium">0/150</span>
           </div>
           <input id="inp-address" name="shipping_address" type="text" required maxlength="150"
             class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
-            placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
+            value="{{ Auth::check() ? $prefilledAddress : '' }}" placeholder="VD: 123 Đường Lê Lợi, Phường Bến Thành, Quận 1">
           <p id="err-address" class="text-xs text-red-500 mt-1 hidden"></p>
         </div>
         <div class="mt-4">
@@ -212,7 +470,7 @@
           </div>
           <div class="flex justify-between text-gray-600">
             <span>Phí vận chuyển</span>
-            <span class="font-medium text-green-600">Miễn phí</span>
+            <span id="sum-shipping" class="font-medium text-gray-800">Chưa chọn khu vực</span>
           </div>
           <div id="sum-discount-row" class="flex justify-between text-gray-600 hidden">
             <span>Giảm giá</span>
@@ -271,10 +529,40 @@ const BANK = { id: 'MB', account: '123456789', name: 'DIENMAYPRO' };
 let cartItems = [];
 let subtotalVal = 0;
 let discountVal = 0;
+let shippingVal = 0;
 let currentMethod = 'cod';
 
 // ---- FORMAT ----
 const fmt = n => new Intl.NumberFormat('vi-VN').format(n || 0) + 'đ';
+
+// ---- CALCULATE SHIPPING ----
+function calculateShipping() {
+  const provSel = document.getElementById('inp-province');
+  if (!provSel) return;
+  const opt = provSel.options[provSel.selectedIndex];
+  if (!opt || opt.value === '') {
+    shippingVal = 0;
+    document.getElementById('sum-shipping').textContent = 'Chưa chọn khu vực';
+    updateTotals();
+    return;
+  }
+
+  const baseFee = parseInt(opt.getAttribute('data-fee')) || 0;
+  const threshold = parseInt(opt.getAttribute('data-threshold')) || 0;
+  
+  // Tổng tạm tính sau giảm giá
+  const currentTotal = subtotalVal - discountVal;
+
+  if (currentTotal >= threshold) {
+    shippingVal = 0;
+    document.getElementById('sum-shipping').innerHTML = `<span class="line-through text-gray-400 mr-1.5">${fmt(baseFee)}</span><span class="text-green-600 font-bold">Miễn phí</span>`;
+  } else {
+    shippingVal = baseFee;
+    document.getElementById('sum-shipping').textContent = fmt(baseFee);
+  }
+
+  updateTotals();
+}
 
 // ---- LOAD CART FROM SESSIONSTORAGE ----
 function loadCart() {
@@ -306,12 +594,13 @@ function renderItems() {
       <span class="shrink-0 font-bold text-gray-800">${fmt(i.price * i.quantity)}</span>
     </div>`).join('');
   document.getElementById('item-badge').textContent = cartItems.length + ' sản phẩm';
-  updateTotals();
+  // Nếu đã chọn tỉnh từ trước (sau khi reload), tính phí
+  calculateShipping();
   checkFormValidity();
 }
 
 function updateTotals() {
-  const total = subtotalVal - discountVal;
+  const total = subtotalVal - discountVal + shippingVal;
   document.getElementById('sum-subtotal').textContent = fmt(subtotalVal);
   document.getElementById('sum-total').textContent = fmt(total > 0 ? total : 0);
   document.getElementById('discount_amount_input').value = discountVal;
@@ -542,14 +831,21 @@ function checkFormValidity() {
     if (errNote) errNote.classList.add('hidden');
   }
 
+  const provSel = document.getElementById('inp-province');
+  const provValid = provSel && provSel.value !== '';
+
   const btn = document.getElementById('btn-order');
   if (btn) {
-    btn.disabled = !(nameValid && phoneValid && addrValid && noteValid);
+    btn.disabled = !(nameValid && phoneValid && addrValid && noteValid && provValid);
   }
 }
 
 ['inp-name', 'inp-phone', 'inp-address', 'inp-note'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', checkFormValidity);
+});
+document.getElementById('inp-province')?.addEventListener('change', () => {
+  calculateShipping();
+  checkFormValidity();
 });
 
 // ---- SUBMIT ----
@@ -558,6 +854,8 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
 
   const name = document.getElementById('inp-name').value.trim();
   const phone = document.getElementById('inp-phone').value.trim();
+  const provSel = document.getElementById('inp-province');
+  const province = provSel ? provSel.value : '';
   const addr = document.getElementById('inp-address').value.trim();
   const note = document.getElementById('inp-note').value.trim();
   const discountInp = document.getElementById('discount-code');
@@ -567,8 +865,9 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   const isPhoneInvalid = /[a-zA-Z]/.test(phone) || !/^0[0-9]{8,9}$/.test(phone);
   const isAddrInvalid = addr.length < 10 || addr.length > 150 || /[!@#$%^&*()_+=\[\]{}|\\:;"'<>?~`]/.test(addr);
   const isNoteInvalid = note.length > 250;
+  const isProvinceInvalid = province === '';
 
-  if (isNameInvalid || isPhoneInvalid || isAddrInvalid || isNoteInvalid) {
+  if (isNameInvalid || isPhoneInvalid || isAddrInvalid || isNoteInvalid || isProvinceInvalid) {
     alert('Vui lòng kiểm tra lại thông tin nhập vào hợp lệ!');
     return;
   }
@@ -580,6 +879,7 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   const data = {
     name: name,
     phone: phone,
+    province: province,
     address: addr,
     note: note,
     payment_method: currentMethod,

@@ -501,6 +501,41 @@ class CartController extends Controller
         return view('frontend.cart.confirmation', compact('order'));
     }
 
+    private function calculateServerShippingFee(string $province, int $totalAmount): int
+    {
+        // Ngưỡng miễn phí vận chuyển đồng nhất: 10.000.000đ
+        $threshold = 10000000;
+
+        // Nhóm 1: Nội thành (< 30 km) — 20.000đ
+        $group1 = ['hcm', 'hn'];
+
+        // Nhóm 2: Vùng lân cận (30–150 km) — 35.000đ
+        $group2 = ['bd', 'dnai', 'la', 'tg', 'vt', 'bn', 'hy', 'hnam', 'vp'];
+
+        // Nhóm 3: Vùng trung bình (150–400 km) — 50.000đ
+        $group3 = ['hp', 'ct', 'hb', 'nb', 'ag', 'kg', 'dt', 'tv', 'bte'];
+
+        // Nhóm 4: Vùng xa (400–700 km) — 70.000đ
+        $group4 = ['dn', 'qng', 'bdinh', 'nth', 'th', 'qbi', 'hue'];
+
+        // Nhóm 5: Vùng rất xa (> 700 km) — 100.000đ
+        $group5 = ['gl', 'dkl', 'lc', 'dbi', 'ss', 'cb', 'ls', 'cm', 'other'];
+
+        if (in_array($province, $group1)) {
+            $fee = 20000;
+        } elseif (in_array($province, $group2)) {
+            $fee = 35000;
+        } elseif (in_array($province, $group3)) {
+            $fee = 50000;
+        } elseif (in_array($province, $group4)) {
+            $fee = 70000;
+        } else {
+            $fee = 100000; // group5 + fallback
+        }
+
+        return $totalAmount >= $threshold ? 0 : $fee;
+    }
+
     public function confirmOrder(Request $request)
     {
         $cart = session()->get('cart', []);
@@ -543,26 +578,31 @@ class CartController extends Controller
                 }
             }
         }
-        $finalAmount = $totalAmount - $discount;
 
         $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
             'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
+            'province' => ['required', 'string', 'in:hcm,hn,bd,dnai,la,tg,vt,bn,hy,hnam,vp,hp,ct,hb,nb,ag,kg,dt,tv,bte,dn,qng,bdinh,nth,th,qbi,hue,gl,dkl,lc,dbi,ss,cb,ls,cm,other'],
             'address' => ['required', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
             'note' => ['nullable', 'string', 'max:250'],
         ]);
 
         $name = $request->input('name');
         $phone = $request->input('phone');
+        $province = $request->input('province');
         $address = $request->input('address');
         $note = $request->input('note');
         $paymentMethod = $request->input('payment_method') === 'qr' ? 'VNPAY' : 'COD';
+
+        // Tính phí vận chuyển ở backend
+        $shippingFee = $this->calculateServerShippingFee($province, (int) ($totalAmount - $discount));
+        $finalAmount = $totalAmount - $discount + $shippingFee;
 
         $order = Order::create([
             'user_id' => auth()->id(),
             'order_type' => 'Online',
             'total_amount' => $totalAmount,
-            'shipping_fee' => 0,
+            'shipping_fee' => $shippingFee,
             'discount_amount' => $discount,
             'wallet_points_used' => 0,
             'final_amount' => $finalAmount > 0 ? $finalAmount : 0,
