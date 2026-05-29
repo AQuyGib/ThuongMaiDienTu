@@ -64,7 +64,7 @@ class FlashSaleCheckoutTest extends TestCase
             'phone' => '0901234567',
             'address' => '123 Duong ABC, Quan 1, TP HCM',
             'note' => 'Ghi chu test',
-        ])->assertJson(['status' => 'success. success']);
+        ])->assertJson(['status' => 'success']);
         $fsp->refresh();
         $this->assertSame(0, $fsp->sold_quantity);
         $this->assertFalse(session()->has('cart'));

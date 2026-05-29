@@ -307,18 +307,30 @@ class CartController extends Controller
         ]);
     }
 
+    /**
+     * Phương thức pay(): Chuẩn bị dữ liệu và hiển thị trang thanh toán đơn hàng (Checkout).
+     * Hàm này thực hiện:
+     *   - Lấy giỏ hàng từ session. Nếu trống, chuyển hướng về trang giỏ hàng kèm lỗi.
+     *   - Lấy thông tin sản phẩm và giá bán thực tế (ưu tiên giá Flash Sale nếu có, hoặc giá gốc).
+     *   - Kiểm tra và giữ chỗ số lượng sản phẩm Flash Sale trong DB (lockCartFlashSale) để tránh người khác mua mất trong lúc thanh toán.
+     *   - Tính toán tổng tiền tạm tính, số tiền được giảm giá từ voucher, và số tiền giảm từ điểm tích lũy thành viên.
+     *   - Truy vấn số dư điểm ví của người dùng hiện tại để hiển thị.
+     */
     public function pay(Request $request, PointsService $pointsService)
     {
+        // 1. Lấy dữ liệu giỏ hàng đang lưu trong Session
         $cart = session()->get('cart', []);
         if (empty($cart)) {
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống.');
         }
 
+        // 2. Định dạng lại danh sách sản phẩm, lấy thông tin hình ảnh, tên và giá tiền thực tế
         $cartItems = collect($cart)->map(function ($item, $id) {
             $product = Product::find($id);
             if (!$product) {
                 return null;
             }
+            // Sử dụng giá flash sale nếu sản phẩm đang chạy flash sale, ngược lại dùng giá gốc
             $effectivePrice = isset($item['flash_sale_price']) ? (int) $item['flash_sale_price'] : (int) ($item['price'] ?? $product->base_price);
             return [
                 'id' => $id,
@@ -331,30 +343,38 @@ class CartController extends Controller
             ];
         })->filter()->values();
 
+        // 3. Lọc ra các sản phẩm được tích chọn mua
         $selectedItems = $cartItems->filter(fn($i) => $i['selected'])->values();
         if ($selectedItems->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
         }
 
+        // Chuyển danh sách sản phẩm chọn mua thành dạng mảng
         $selectedCart = collect($cart)->filter(fn($item) => $item['selected'] ?? true)->toArray();
 
+        // 4. Gọi Service thực hiện giữ chỗ (khóa) số lượng Flash Sale trong database
         $lockOk = $this->flashSaleService->lockCartFlashSale($selectedCart);
         if (! $lockOk) {
             return redirect()->route('cart.index')->with('error', 'Một số sản phẩm Flash Sale đã hết số lượng hoặc hết hạn. Vui lòng kiểm tra lại giỏ hàng.');
         }
 
+        // Đánh dấu giỏ hàng đã được khóa thành công
         session()->put('cart_locked', true);
 
+        // 5. Tính toán các giá trị tiền bạc
         $checkoutItems = $selectedItems;
         $subtotal = (int) $checkoutItems->sum(fn ($item) => $item['price'] * $item['quantity']);
-        $discount = (int) session('checkout_discount', 0);
-        $walletPointsUsed = (int) session('checkout_wallet_points', 0);
-        $walletReduction = $walletPointsUsed * PointsService::POINT_VALUE;
-        $finalAmount = max(0, $subtotal - $discount - $walletReduction);
+        $discount = (int) session('checkout_discount', 0); // Tiền giảm giá từ voucher
+        $walletPointsUsed = (int) session('checkout_wallet_points', 0); // Số điểm ví sử dụng
+        $walletReduction = $walletPointsUsed * PointsService::POINT_VALUE; // Quy đổi điểm sang tiền VND
+        $finalAmount = max(0, $subtotal - $discount - $walletReduction); // Tổng số tiền khách phải trả thực tế
+
+        // Lấy số dư điểm và xếp hạng thẻ của người dùng
         $balance = Auth::check()
             ? $pointsService->getBalance(Auth::user())
             : ['wallet_points' => 0, 'rank_points' => 0, 'current_rank' => 'Bronze'];
 
+        // Trả về giao diện thanh toán kèm các thông số tính toán được
         return view('frontend.cart.pay', [
             'cartItems' => $checkoutItems,
             'subtotal' => $subtotal,
@@ -366,8 +386,13 @@ class CartController extends Controller
         ]);
     }
 
+    /**
+     * Phương thức applyWalletPoints(): Xử lý áp dụng điểm tích lũy của khách hàng để giảm tiền trực tiếp trên hóa đơn.
+     * Trả về kết quả JSON thông qua AJAX.
+     */
     public function applyWalletPoints(Request $request, PointsService $pointsService)
     {
+        // Xác thực số điểm gửi lên từ client phải là số nguyên dương
         $data = $request->validate([
             'wallet_points' => ['required', 'integer', 'min:0'],
         ]);
@@ -376,26 +401,37 @@ class CartController extends Controller
             return response()->json(['message' => 'Vui lòng đăng nhập để dùng điểm.'], 401);
         }
 
+        // Lấy số dư điểm hiện có của khách hàng từ DB
         $balance = $pointsService->getBalance(Auth::user());
+        // Giới hạn số điểm áp dụng không được vượt quá số điểm hiện có của ví khách
         $walletPoints = min((int) $data['wallet_points'], (int) $balance['wallet_points']);
 
+        // Lưu trữ số điểm áp dụng vào Session để tính toán lúc checkout
         session(['checkout_wallet_points' => $walletPoints]);
 
         return response()->json([
             'success' => true,
             'wallet_points' => $walletPoints,
-            'wallet_reduction' => $walletPoints * PointsService::POINT_VALUE,
+            'wallet_reduction' => $walletPoints * PointsService::POINT_VALUE, // Tiền được giảm (VND)
         ]);
     }
 
+    /**
+     * Phương thức validateVoucher(): Xác thực mã giảm giá (voucher) nhập vào qua AJAX.
+     * Tính toán số tiền được giảm và lưu vào Session.
+     */
     public function validateVoucher(Request $request)
     {
+        // Xác thực mã code và tổng tiền hàng gửi lên
         $data = $request->validate([
             'code' => ['required', 'string', 'max:50'],
             'subtotal' => ['required', 'integer', 'min:1'],
         ]);
 
+        // Kiểm tra mã giảm giá thuộc loại nào và tính số tiền được chiết khấu
         [$discount, $message] = $this->resolveVoucherDiscount((string) $data['code'], (int) $data['subtotal']);
+        
+        // Nếu mã không hợp lệ hoặc số tiền chiết khấu bằng 0
         if ($discount <= 0) {
             session(['checkout_discount' => 0]);
             return response()->json([
@@ -404,6 +440,7 @@ class CartController extends Controller
             ], 422);
         }
 
+        // Lưu số tiền được giảm từ voucher vào Session
         session(['checkout_discount' => $discount]);
 
         return response()->json([
@@ -413,8 +450,13 @@ class CartController extends Controller
         ]);
     }
 
+    /**
+     * Phương thức placeOrder(): Xử lý ghi nhận và tạo đơn hàng từ form checkout (dành cho API cũ).
+     * Bọc toàn bộ quá trình cập nhật database trong một DB Transaction để đảm bảo tính an toàn dữ liệu.
+     */
     public function placeOrder(Request $request, PointsService $pointsService)
     {
+        // Xác thực các trường dữ liệu thông tin giao hàng cơ bản
         $data = $request->validate([
             'customer_name' => ['required', 'string', 'max:150'],
             'customer_phone' => ['required', 'string', 'max:30'],
@@ -429,6 +471,7 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Giỏ hàng trống.'], 422);
         }
 
+        // Tính toán các giá trị tiền bạc
         $subtotal = (int) $cartItems->sum(fn ($item) => $item['price'] * $item['quantity']);
         $shippingFee = 0;
         $discount = (int) session('checkout_discount', 0);
@@ -438,7 +481,9 @@ class CartController extends Controller
         $user = Auth::user();
 
         try {
+            // Chạy Transaction cập nhật dữ liệu hàng loạt
             $order = DB::transaction(function () use ($data, $cartItems, $subtotal, $shippingFee, $discount, $walletPointsUsed, $finalAmount, $user, $pointsService, $cart) {
+                // 1. Tạo bản ghi đơn hàng mới
                 $order = Order::create([
                     'user_id' => $user?->user_id,
                     'order_type' => 'Online',
@@ -459,6 +504,7 @@ class CartController extends Controller
                     'order_code' => 'ORD' . now()->format('YmdHis') . random_int(100, 999),
                 ]);
 
+                // 2. Tạo chi tiết các mặt hàng trong đơn hàng
                 foreach ($cartItems as $item) {
                     OrderDetail::create([
                         'order_id' => $order->order_id,
@@ -470,13 +516,15 @@ class CartController extends Controller
                     ]);
                 }
 
-                // Confirm flash sale
+                // 3. Xác nhận và trừ tồn kho các sản phẩm Flash Sale đang giữ chỗ
                 $this->flashSaleService->confirmCartFlashSale($cart);
 
+                // 4. Nếu có sử dụng điểm ví, tiến hành trừ điểm trong database
                 if ($walletPointsUsed > 0 && $user) {
                     $pointsService->deductWalletPoints($user, $walletPointsUsed, $order, 'Dùng điểm tiêu dùng khi đặt hàng');
                 }
 
+                // 5. Xóa sạch session giỏ hàng và các session giảm giá tạm tính
                 session()->forget(['cart', 'checkout_wallet_points', 'checkout_discount', 'cart_locked']);
 
                 return $order;
@@ -495,14 +543,29 @@ class CartController extends Controller
         }
     }
 
+    /**
+     * Hiển thị trang xác nhận đặt hàng thành công.
+     */
     public function confirmation(int $orderId)
     {
         $order = Order::with(['details'])->findOrFail($orderId);
         return view('frontend.cart.confirmation', compact('order'));
     }
 
+    /**
+     * Phương thức confirmOrder(): Xử lý đặt hàng chính thức từ trang thanh toán (AJAX).
+     * Đây là hàm xử lý quan trọng chứa toàn bộ các kiểm tra bảo mật phía Server:
+     *   - Tải sản phẩm từ Session (Tránh bypass F12 thay đổi giá).
+     *   - Kiểm tra mã voucher (Bao gồm voucher tĩnh và mã đổi thưởng thuộc sở hữu của riêng User trong DB).
+     *   - Chặn Replay Attack bằng cách đổi trạng thái voucher sang 'used' ngay lập tức.
+     *   - Thực thi Laravel Validation cho Họ tên (chữ), Số điện thoại (9-10 chữ số), Địa chỉ nhận hàng.
+     *   - Trừ tồn kho biến thể sản phẩm, cập nhật trạng thái kho sang 'Sold'.
+     *   - Khấu trừ tồn kho Flash Sale thực tế.
+     *   - Reset giỏ hàng.
+     */
     public function confirmOrder(Request $request)
     {
+        // 1. Đọc giỏ hàng hiện tại và lọc ra các sản phẩm được chọn mua
         $cart = session()->get('cart', []);
         $selectedCart = collect($cart)->filter(fn($item) => $item['selected'] ?? true)->toArray();
 
@@ -510,20 +573,25 @@ class CartController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Giỏ hàng trống hoặc chưa chọn sản phẩm.'], 400);
         }
 
+        // Tính tổng tiền gốc từ giỏ hàng (Server-side calculation)
         $totalAmount = collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
 
+        // 2. Xử lý mã giảm giá / Voucher
         $couponCode = strtoupper((string) (session('applied_coupon_code') ?: $request->input('discount_code', '')));
         [$discount] = $this->resolveVoucherDiscount($couponCode, (int) $totalAmount);
 
+        // Nếu mã không khớp với voucher hệ thống, kiểm tra xem có phải là Voucher đổi thưởng động của User không
         if ($discount <= 0 && $couponCode !== '') {
             $redemption = \App\Models\RewardRedemption::with('reward')
                 ->where('redemption_code', $couponCode)
-                ->where('user_id', auth()->id())
+                ->where('user_id', auth()->id()) // RÀNG BUỘC: Bắt buộc mã phải thuộc sở hữu của chính User đang login
                 ->first();
 
+            // Nếu mã tồn tại, hợp lệ và chưa hết hạn sử dụng
             if ($redemption && in_array($redemption->status, ['issued', 'approved', 'won'], true) && (!$redemption->expires_at || !$redemption->expires_at->isPast())) {
                 $reward = $redemption->reward;
                 if ($reward) {
+                    // Áp dụng số tiền được chiết khấu dựa theo loại voucher (tiền mặt / tiền ship)
                     if ($reward->reward_type === 'shipping') {
                         $discount = (int) $reward->shipping_discount_amount;
                     } elseif ($reward->reward_type === 'wheel_prize') {
@@ -536,19 +604,26 @@ class CartController extends Controller
 
                     $discount = min($discount, $totalAmount);
 
-                    // Đánh dấu mã đổi thưởng đã dùng sau khi đặt đơn thành công.
+                    // CẬP NHẬT TRẠNG THÁI VOUCHER THÀNH used ĐỂ CHỐNG SPAM SỬ DỤNG LẠI (Anti Replay Attack)
                     $redemption->status = 'used';
                     $redemption->used_at = now();
                     $redemption->save();
                 }
             }
         }
+        
+        // Tính tổng tiền cuối cùng phải thanh toán
         $finalAmount = $totalAmount - $discount;
 
+        // 3. XÁC THỰC THÔNG TIN GIAO HÀNG PHÍA SERVER-SIDE (Chống bypass F12 HTML)
         $request->validate([
+            // Họ tên chỉ nhận chữ và khoảng trắng, độ dài từ 2 đến 50 ký tự
             'name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
+            // Số điện thoại Việt Nam bắt đầu bằng số 0, độ dài 9-10 chữ số
             'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
+            // Địa chỉ nhận hàng từ 10 đến 150 ký tự, không chứa ký tự đặc biệt nguy hiểm
             'address' => ['required', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
+            // Ghi chú đơn hàng tối đa 250 ký tự
             'note' => ['nullable', 'string', 'max:250'],
         ]);
 
@@ -556,8 +631,10 @@ class CartController extends Controller
         $phone = $request->input('phone');
         $address = $request->input('address');
         $note = $request->input('note');
+        // Quyết định phương thức thanh toán
         $paymentMethod = $request->input('payment_method') === 'qr' ? 'VNPAY' : 'COD';
 
+        // 4. Ghi nhận thông tin đơn hàng mới vào DB
         $order = Order::create([
             'user_id' => auth()->id(),
             'order_type' => 'Online',
@@ -575,10 +652,12 @@ class CartController extends Controller
             'order_code' => 'ORD' . now()->format('YmdHis') . random_int(100, 999),
         ]);
 
+        // 5. Duyệt qua từng sản phẩm trong giỏ hàng để cập nhật kho và tạo Chi tiết đơn hàng
         foreach ($selectedCart as $productId => $item) {
             $qty = $item['quantity'];
             $price = $item['price'];
 
+            // Lấy biến thể sản phẩm (variant). Nếu chưa có thì tự động tạo biến thể mặc định
             $variant = ProductVariant::where('product_id', $productId)->first();
             if (!$variant) {
                 $variant = ProductVariant::create([
@@ -588,11 +667,13 @@ class CartController extends Controller
                 ]);
             }
 
+            // Truy vấn các IMEI sản phẩm cụ thể đang có trạng thái Trong kho (In_Stock)
             $inventoryItems = InventoryItem::where('variant_id', $variant->variant_id)
                 ->where('status', 'In_Stock')
                 ->take($qty)
                 ->get();
 
+            // Nếu số lượng IMEI thực tế trong kho thiếu so với khách đặt, tự động sinh mã IMEI giả lập cho đơn hàng Online
             $needed = $qty - $inventoryItems->count();
             for ($i = 0; $i < $needed; $i++) {
                 $newItem = InventoryItem::create([
@@ -605,6 +686,7 @@ class CartController extends Controller
                 $inventoryItems->push($newItem);
             }
 
+            // Ghi nhận chi tiết đơn hàng cho từng sản phẩm và đánh dấu trạng thái IMEI là Sold (Đã bán)
             foreach ($inventoryItems as $invItem) {
                 OrderDetail::create([
                     'order_id' => $order->order_id,
@@ -617,14 +699,18 @@ class CartController extends Controller
             }
         }
 
+        // 6. Xác nhận giảm số lượng tồn kho của Flash Sale thực tế
         $this->flashSaleService->confirmCartFlashSale($selectedCart);
 
+        // 7. Loại bỏ các sản phẩm đã mua ra khỏi giỏ hàng Session, chỉ giữ lại các sản phẩm không chọn mua
         $remainingCart = collect($cart)->filter(fn($item) => !($item['selected'] ?? true))->toArray();
         if (empty($remainingCart)) {
             session()->forget('cart');
         } else {
             session()->put('cart', $remainingCart);
         }
+        
+        // Xóa các session giảm giá tạm tính sau khi đặt hàng thành công
         session()->forget(['cart_locked', 'checkout_discount', 'applied_coupon_code']);
 
         return response()->json([
@@ -635,14 +721,23 @@ class CartController extends Controller
         ]);
     }
 
+    /**
+     * Phương thức cancelOrder(): Hủy đơn hàng đang chờ và giải phóng (hoàn lại) số lượng Flash Sale đã khóa.
+     */
     public function cancelOrder(Request $request)
     {
         $cart = session()->get('cart', []);
+        // Giải phóng số lượng Flash Sale đã khóa giữ chỗ về lại kho bán
         $this->flashSaleService->releaseCartFlashSale($cart);
+        
+        // Xóa giỏ hàng
         session()->forget(['cart', 'cart_locked']);
         return redirect()->route('cart.index')->with('success', 'Đã hủy đơn hàng và hoàn lại số lượng Flash Sale.');
     }
 
+    /**
+     * Phương thức timeoutOrder(): Giải phóng số lượng Flash Sale khi quá trình thanh toán bị hết thời gian chờ (timeout).
+     */
     public function timeoutOrder(Request $request)
     {
         $cart = session()->get('cart', []);

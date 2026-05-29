@@ -1,6 +1,11 @@
 # Project Memory
 
 ## Current State & Focus
+- **Dọn dẹp & Đồng bộ hóa Hệ thống Testing:**
+  - Sửa lỗi lặp lại code dư thừa ở cuối file `ServiceInvoiceController.php` (cắt bỏ phần trùng lặp của hàm `destroy`).
+  - Khắc phục các test case Flash Sale (`FlashSaleCheckoutTest` và `FlashSaleEndToEndTest`) bị lỗi: Sửa đổi assert status trả về từ `'success. success'` thành `'success'`; tích hợp cơ chế đăng nhập (`actingAs($user)`) và chạy seeder `RoleSeeder` trong môi trường test trước khi gọi các route thanh toán yêu cầu middleware `auth`.
+  - Khắc phục test case của chiến dịch thông báo (`NotificationTest`): Thay đổi giá trị target gửi đi từ `'users'` thành `'all'` để vượt qua kiểm tra validation backend.
+  - Chạy toàn bộ test suite (`php artisan test`) thành công 100% không còn lỗi.
 - **Chatbot Reversion & Optimization:**
   - Reverted recent multilingual additions to `ChatbotController.php` and `chatbot.blade.php` to restore the original Vietnamese-first prompt behavior and simple, robust HTML rendering.
   - Cleared out the `decodeHtml` helper from `chatbot.blade.php` that was stripping `<a>` tags and corrupting `<br>` tags during message parsing and history loading.
@@ -23,8 +28,15 @@
   - Compare product module upgrade is now aligned with the user-provided roadmap.
   - Advanced product filtering for frontend product listing with partial AJAX rendering.
   - Service-based backend filtering via `ProductFilterService`.
+  - Bổ sung bình luận tiếng Việt chi tiết cho toàn bộ mã nguồn JavaScript lọc sản phẩm (`product-filter.js`) giúp lập trình viên và quản trị viên dễ dàng nắm bắt logic.
+
 
 ## Files Changed
+- **Testing & Bug Fixes:**
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/ServiceInvoiceController.php`
+  - `ThuongMaiDienTu/tests/Feature/FlashSaleCheckoutTest.php`
+  - `ThuongMaiDienTu/tests/Feature/FlashSaleEndToEndTest.php`
+  - `ThuongMaiDienTu/tests/Feature/NotificationTest.php`
 - **Checkout / Payment Validation:**
   - `ThuongMaiDienTu/resources/views/frontend/cart/pay.blade.php`
 - **Articles:**
