@@ -224,22 +224,35 @@
 
 @push('scripts')
 <script>
+// Token CSRF dùng để xác thực bảo mật các request POST lên Laravel Server (Tránh tấn công giả mạo request chéo site)
 const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+// Lấy các phần tử DOM của modal thông báo kết quả chung
 const modal = document.getElementById('modal');
 const modalTitle = document.getElementById('modal-title');
 const modalBody = document.getElementById('modal-body');
 
+/**
+ * Hàm hiển thị Modal thông báo kết quả.
+ * @param {string} title Tiêu đề thông báo
+ * @param {string} body Nội dung chi tiết thông báo
+ */
 function openModal(title, body) {
   modalTitle.textContent = title;
   modalBody.textContent = body;
   modal.classList.remove('hidden');
   modal.classList.add('flex');
 }
+
+/**
+ * Hàm đóng Modal thông báo kết quả.
+ */
 function closeModal() {
   modal.classList.add('hidden');
   modal.classList.remove('flex');
 }
 
+// Đối tượng chứa từ điển ngôn ngữ đa ngôn ngữ (Localization) phục vụ giao diện người dùng
 const trans = {
   vi: {
     points: ' điểm',
@@ -282,30 +295,40 @@ const trans = {
     cannotRedeem: 'Cannot redeem reward',
   }
 };
+
+// Xác định ngôn ngữ hiện tại của trang web
 const lang = '{{ app()->getLocale() }}' === 'en' ? 'en' : 'vi';
 const t = trans[lang];
 
+// Xử lý sự kiện lọc phần thưởng (Voucher, Free Ship, Quà tặng)
 document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const filter = btn.dataset.filter;
+    // Bỏ class Active (Nền đen) của nút cũ
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('bg-slate-900','text-white'));
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.add('bg-white','border'));
+    
+    // Thêm class Active cho nút vừa click
     btn.classList.add('bg-slate-900','text-white');
     btn.classList.remove('bg-white','border');
 
+    // Ẩn / Hiện card phần thưởng tương ứng với danh mục được lọc
     document.querySelectorAll('.reward-card').forEach(card => {
       const ok = filter === 'all' || card.dataset.type === filter || card.dataset.category === filter;
+      card.style.styleDisplay = ok ? '' : 'none';
       card.style.display = ok ? '' : 'none';
     });
   });
 });
 
+// Xử lý sự kiện đổi phần thưởng khi người dùng bấm nút "Đổi ngay"
 document.querySelectorAll('.redeem-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
     const rewardId = btn.dataset.id;
     const requiresRankCheck = parseInt(btn.dataset.requiresRankCheck) || 0;
     const minRank = btn.dataset.minRank || 'none';
     
+    // Ràng buộc bảo mật Frontend: Kiểm tra hạng thành viên tối thiểu trước khi gửi request đổi quà
     if (requiresRankCheck && minRank !== 'none') {
       const userRankVal = rankOrder[userRank] || 1;
       const minRankVal = rankOrder[minRank] || 0;
@@ -316,10 +339,12 @@ document.querySelectorAll('.redeem-btn').forEach(btn => {
       }
     }
 
+    // Vô hiệu hóa nút để tránh gửi trùng lặp request (Double submission)
     btn.disabled = true;
     btn.textContent = t.redeemingBtn;
 
     try {
+      // Gửi request POST lên máy chủ yêu cầu trừ điểm đổi thưởng
       const res = await fetch('{{ route('rewards.redeem') }}', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -327,8 +352,11 @@ document.querySelectorAll('.redeem-btn').forEach(btn => {
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || t.cannotRedeem);
+      
+      // Hiển thị thông báo đổi thành công kèm theo mã coupon nhận được
       const successMsg = t.redeemSuccessMsg.replace('{code}', data.data.redemption_code).replace('{points}', data.data.remaining_points);
       openModal(t.redeemSuccess, successMsg);
+      // Tải lại trang sau 1.5 giây để cập nhật lại số dư ví điểm
       setTimeout(() => window.location.reload(), 1500);
     } catch (e) {
       openModal(t.errorOccurred, e.message);
@@ -339,7 +367,10 @@ document.querySelectorAll('.redeem-btn').forEach(btn => {
   });
 });
 
+// Lấy hạng hiện tại của người dùng đăng nhập từ Laravel Auth Session
 const userRank = '{{ Auth::check() ? Auth::user()->member_tier : 'Dong' }}';
+
+// Bảng ánh xạ giá trị thứ tự các hạng thành viên phục vụ so sánh phân quyền
 const rankOrder = {
   'none': 0,
   'Dong': 1,
@@ -351,6 +382,8 @@ const rankOrder = {
   'KimCuong': 4,
   'Diamond': 4
 };
+
+// Bản dịch nhãn hạng thành viên
 const rankNamesMap = {
   'Dong': lang === 'en' ? 'Bronze' : 'Đồng',
   'Bac': lang === 'en' ? 'Silver' : 'Bạc',
@@ -359,19 +392,23 @@ const rankNamesMap = {
   'none': lang === 'en' ? 'No requirement' : 'Không yêu cầu'
 };
 
-// Vẽ Canvas Vòng Quay
-const luckyWheels = @json($wheels);
+// --- LOGIC HỆ THỐNG VÒNG QUAY MAY MẮN CANVAS ---
+const luckyWheels = @json($wheels); // Nhận danh sách cấu hình các loại vòng quay từ Backend
 const canvas = document.getElementById('wheel-canvas');
 const ctx = canvas ? canvas.getContext('2d') : null;
-const allWheelPrizes = @json($catalog->where('reward_type', 'wheel_prize')->values());
-const wheelColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
-let currentWheelTab = luckyWheels.length > 0 ? luckyWheels[0].key : 'standard';
-let segments = [];
-let anglePerSegment = 0;
-let currentRotation = 0;
-let isSpinning = false;
-let ledTick = 0;
+const allWheelPrizes = @json($catalog->where('reward_type', 'wheel_prize')->values()); // Danh sách tất cả phần quà của vòng quay
+const wheelColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6']; // Palettes màu 3D
+let currentWheelTab = luckyWheels.length > 0 ? luckyWheels[0].key : 'standard'; // Tab vòng quay đang chọn
+let segments = []; // Danh sách phân vùng các ô trên đĩa quay thực tế
+let anglePerSegment = 0; // Góc của mỗi ô (đo bằng Radian)
+let currentRotation = 0; // Tổng góc xoay tích lũy của đĩa quay (đo bằng Độ - Degree)
+let isSpinning = false; // Trạng thái đang xoay (Chặn tương tác khi đĩa đang quay)
+let ledTick = 0; // Biến trạng thái chạy led viền đĩa nhấp nháy
 
+/**
+ * Hàm xây dựng phân vùng ô quà tặng cho Canvas dựa trên Tab Vòng quay đang hoạt động.
+ * Tự động nhân bản các ô quà để đảm bảo đĩa có tối thiểu 6 ô (cho đẹp giao diện).
+ */
 function buildSegments() {
   const activePrizes = allWheelPrizes.filter(prize => {
     const meta = prize.metadata ?? {};
@@ -385,11 +422,13 @@ function buildSegments() {
     return;
   }
 
+  // Nhân bản quà nếu số lượng quà cấu hình quá ít để lấp đầy vòng quay
   let temp = [...activePrizes];
   while (temp.length < 6) {
     temp = temp.concat(activePrizes);
   }
 
+  // Chuyển đổi sang định dạng Segment vẽ Canvas
   segments = temp.map((prize, idx) => ({
     id: prize.reward_id,
     name: prize.name.replace('Vòng quay - ', '').substring(0, 12),
@@ -400,11 +439,15 @@ function buildSegments() {
   anglePerSegment = (2 * Math.PI) / segments.length;
 }
 
+/**
+ * Chuyển đổi qua lại giữa các Tab cấp độ vòng quay (Thường, Bạc, Vàng).
+ * @param {string} tab Cấp độ vòng quay ('standard', 'silver', 'gold')
+ */
 function switchWheelTab(tab) {
-  if (isSpinning) return;
+  if (isSpinning) return; // Nếu đang quay, cấm chuyển tab
   currentWheelTab = tab;
 
-  // Cập nhật giao diện tab
+  // Cập nhật giao diện CSS active/inactive cho các nút tab
   luckyWheels.forEach(w => {
     const btn = document.getElementById(`tab-${w.key}`);
     if (btn) {
@@ -416,7 +459,7 @@ function switchWheelTab(tab) {
     }
   });
 
-  // Cập nhật badge & chi phí tương ứng
+  // Cập nhật thông tin chi phí điểm và nhãn hiển thị của vòng quay vừa chọn
   const matched = luckyWheels.find(x => x.key === tab);
   let cost = matched ? matched.points_cost : 10;
   let badgeTitle = matched ? (lang === 'en' ? matched.name_en : matched.name) : (lang === 'en' ? 'Standard Wheel' : 'Vòng quay Thường');
@@ -424,7 +467,7 @@ function switchWheelTab(tab) {
   document.getElementById('wheel-badge-title').textContent = badgeTitle;
   document.getElementById('wheel-cost-badge').textContent = `${cost}${t.pointsCost}`;
   
-  // Cập nhật hạng tối thiểu yêu cầu
+  // Cập nhật badge yêu cầu hạng tối thiểu
   const minRank = matched ? (matched.min_rank || 'none') : 'none';
   const rankBadge = document.getElementById('wheel-rank-badge');
   if (rankBadge) {
@@ -437,24 +480,31 @@ function switchWheelTab(tab) {
     }
   }
   
+  // Thay đổi text trên nút quay
   const spinBtn = document.getElementById('spin-btn');
   if (spinBtn) {
     spinBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin hidden" id="spin-btn-spinner"></i><i class="fa-solid fa-dharmachakra"></i> ${t.spinNow} (${cost} ${t.pointsWord})`;
   }
 
-  // Reset góc quay đĩa
+  // Reset đĩa quay về góc 0 độ
   currentRotation = 0;
   if (canvas) canvas.style.transform = `rotate(0deg)`;
 
+  // Xây dựng lại danh sách ô và vẽ lại Canvas vòng mới
   buildSegments();
   drawWheel();
 }
 
+// Lặp vô hạn tạo hiệu ứng nhấp nháy đèn LED bao quanh viền đĩa quay
 setInterval(() => {
   ledTick = (ledTick + 1) % 2;
   if (canvas) drawWheel();
 }, 280);
 
+/**
+ * Hàm vẽ đồ họa đĩa quay may mắn 3D lên Canvas của HTML5.
+ * Hỗ trợ gradient tỏa tròn radial, mạ vàng kim loại (Gold Rim) và hệ thống bóng LED neon nhấp nháy.
+ */
 function drawWheel() {
   if (!canvas || !ctx) return;
   const size = canvas.width;
@@ -463,6 +513,7 @@ function drawWheel() {
 
   ctx.clearRect(0, 0, size, size);
 
+  // Nếu không có phần quà nào được cấu hình cho vòng quay này
   if (segments.length === 0) {
     ctx.beginPath();
     ctx.arc(center, center, radius, 0, 2 * Math.PI);
@@ -480,7 +531,7 @@ function drawWheel() {
     return;
   }
 
-  // Vẽ các sector
+  // Vẽ các phân vùng hình quạt (Sectors)
   segments.forEach((seg, i) => {
     const startAngle = i * anglePerSegment;
     const endAngle = startAngle + anglePerSegment;
@@ -490,7 +541,7 @@ function drawWheel() {
     ctx.arc(center, center, radius - 6, startAngle, endAngle);
     ctx.closePath();
 
-    // Tạo hiệu ứng chuyển sắc Radial Gradient 3D sang trọng
+    // Thiết lập hiệu ứng chuyển màu gradient tỏa tròn 3D giúp giao diện cao cấp hơn
     const grad = ctx.createRadialGradient(center, center, 10, center, center, radius - 6);
     if (seg.color === '#ef4444') {
       grad.addColorStop(0, '#ff8787');
@@ -512,18 +563,19 @@ function drawWheel() {
     ctx.fillStyle = grad;
     ctx.fill();
 
+    // Vẽ đường viền ngăn cách màu trắng tinh tế giữa các ô quạt
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Vẽ chữ cho sector
+    // Viết chữ tên món quà xoay góc tương ứng theo tâm đĩa
     ctx.save();
     ctx.translate(center, center);
     ctx.rotate(startAngle + anglePerSegment / 2);
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     
-    // Đổ bóng cho chữ dễ đọc
+    // Đổ bóng nhẹ cho chữ để chữ nổi bật trên nền gradient màu
     ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
     ctx.shadowBlur = 4;
     ctx.fillStyle = seg.textColor;
@@ -532,7 +584,7 @@ function drawWheel() {
     ctx.restore();
   });
 
-  // Vòng tròn viền ngoài mạ vàng kim (Gold Metallic Rim)
+  // Vẽ viền tròn ngoài kim loại mạ vàng sang trọng (Gold Metallic Rim)
   const rimGrad = ctx.createRadialGradient(center, center, radius - 10, center, center, radius);
   rimGrad.addColorStop(0, '#b58928');
   rimGrad.addColorStop(0.3, '#f9d976');
@@ -545,14 +597,14 @@ function drawWheel() {
   ctx.lineWidth = 10;
   ctx.stroke();
 
-  // Khuyên tròn bảo vệ viền
+  // Khuyên chỉ đen bao bọc đĩa quay ngoài cùng
   ctx.beginPath();
   ctx.arc(center, center, radius, 0, 2 * Math.PI);
   ctx.strokeStyle = '#2d1e03';
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Vẽ các chấm LED lấp lánh chạy xung quanh viền
+  // Vẽ hệ thống bóng LED tròn nhấp nháy đổi màu quanh viền đĩa
   const numLeds = 24;
   const ledAngle = (2 * Math.PI) / numLeds;
   for (let j = 0; j < numLeds; j++) {
@@ -563,19 +615,20 @@ function drawWheel() {
     ctx.beginPath();
     ctx.arc(x, y, 3.5, 0, 2 * Math.PI);
     
+    // Cơ chế đổi trạng thái sáng/tắt so le dựa theo nhịp tick thời gian
     if ((j + ledTick) % 2 === 0) {
-      ctx.fillStyle = '#ffffb3'; // Vàng neon sáng
+      ctx.fillStyle = '#ffffb3'; // LED vàng sáng rực
       ctx.shadowColor = '#f59e0b';
       ctx.shadowBlur = 6;
     } else {
-      ctx.fillStyle = '#d9480f'; // Đỏ cam tối
+      ctx.fillStyle = '#d9480f'; // LED đỏ cam trạng thái tắt mờ
       ctx.shadowBlur = 0;
     }
     ctx.fill();
-    ctx.shadowBlur = 0;
+    ctx.shadowBlur = 0; // Reset bóng đổ tránh lan sang các thành phần khác
   }
   
-  // Vòng tròn trung tâm 3D Gold
+  // Vẽ nút tròn màu vàng mạ khối 3D ở chính tâm đĩa (Center Pin)
   const centerGrad = ctx.createRadialGradient(center, center, 0, center, center, 24);
   centerGrad.addColorStop(0, '#ffffff');
   centerGrad.addColorStop(0.4, '#f9d976');
@@ -591,29 +644,34 @@ function drawWheel() {
   ctx.stroke();
 }
 
-// Khởi động segments ban đầu
+// Khởi chạy vẽ đĩa quay ban đầu
 buildSegments();
 if (canvas) {
   drawWheel();
 }
 
+/**
+ * Tiến hành gọi API quay số từ Backend, nhận kết quả và thực hiện animation xoay đĩa.
+ * Đảm bảo đĩa quay mượt mà, dừng đúng ô trúng giải ở vị trí kim chỉ trên đỉnh (góc 270 độ).
+ */
 async function startSpin() {
   if (isSpinning || segments.length === 0) return;
 
   const matched = luckyWheels.find(x => x.key === currentWheelTab);
   let cost = matched ? matched.points_cost : 10;
   
-  // Kiểm tra hạng thành viên tối thiểu trước khi quay
+  // Kiểm tra hạng thành viên tối thiểu phía Frontend
   const minRank = matched ? (matched.min_rank || 'none') : 'none';
   const userRankVal = rankOrder[userRank] || 1;
   const minRankVal = rankOrder[minRank] || 0;
   
   if (userRankVal < minRankVal) {
     const displayRankName = rankNamesMap[minRank] || minRank;
-    openModal(t.failed || (lang === 'en' ? 'Spin failed' : 'Quay thất bại'), lang === 'en' ? `You need to be at least ${displayRankName} rank to spin this wheel!` : `Bạn cần đạt hạng từ ${displayRankName} trở lên mới có thể quay vòng quay này!`);
+    openModal(t.failed || 'Quay thất bại', lang === 'en' ? `You need to be at least ${displayRankName} rank to spin this wheel!` : `Bạn cần đạt hạng từ ${displayRankName} trở lên mới có thể quay vòng quay này!`);
     return;
   }
   
+  // Kiểm tra số dư ví điểm của người dùng trước khi gửi yêu cầu lên server
   const userHeaderPointsEl = document.getElementById('user-header-points');
   let currentBalance = 0;
   if (userHeaderPointsEl) {
@@ -621,7 +679,7 @@ async function startSpin() {
   }
   
   if (currentBalance < cost) {
-    openModal(t.failed || (lang === 'en' ? 'Spin failed' : 'Quay thất bại'), lang === 'en' ? 'You do not have enough points to spin this wheel!' : 'Bạn không đủ điểm để quay vòng quay này!');
+    openModal(t.failed || 'Quay thất bại', lang === 'en' ? 'You do not have enough points to spin this wheel!' : 'Bạn không đủ điểm để quay vòng quay này!');
     return;
   }
 
@@ -635,6 +693,7 @@ async function startSpin() {
   if (btnSpinner) btnSpinner.classList.remove('hidden');
 
   try {
+    // Gọi API POST yêu cầu quay số từ máy chủ Laravel
     const res = await fetch('{{ route('rewards.spin') }}', {
       method: 'POST',
       headers: { 
@@ -647,10 +706,10 @@ async function startSpin() {
     const data = await res.json();
     if (!res.ok || !data.success) throw new Error(data.message || (lang === 'en' ? 'Cannot spin the lucky wheel' : 'Không thể quay vòng may mắn'));
 
-    // Lấy ID phần thưởng trúng giải
+    // Lấy ID món quà được Backend trả về là kết quả trúng giải
     const wonRewardId = parseInt(data.data.result.reward_id);
     
-    // Tìm các chỉ số ô có ID khớp
+    // Tìm các chỉ số phân vùng (Segments) trên đĩa khớp với ID quà trúng giải
     const matchingIndices = [];
     segments.forEach((seg, index) => {
       if (seg.id === wonRewardId) {
@@ -662,32 +721,33 @@ async function startSpin() {
       throw new Error(t.configError);
     }
 
-    // Chọn ngẫu nhiên một ô trúng giải hợp lệ
+    // Chọn ngẫu nhiên một ô đích hợp lệ nếu quà được nhân bản nhiều ô trên đĩa
     const targetSegmentIndex = matchingIndices[Math.floor(Math.random() * matchingIndices.length)];
 
-    // Tính toán góc quay
+    // Số vòng quay trơn tối thiểu để tạo cảm giác hồi hộp (6 vòng)
     const extraSpins = 6;
+    // Tìm góc Radian và độ (Degree) của ô trúng giải
     const centerAngleRad = (targetSegmentIndex * anglePerSegment) + (anglePerSegment / 2);
     const centerAngleDeg = (centerAngleRad * 180) / Math.PI;
 
-    // Để ô trúng giải dừng ở kim chỉ phía TRÊN (góc 270 độ)
+    // Tính toán góc quay đích đến sao cho ô quà dừng lại ngay tại vị trí kim chỉ đỉnh (270 độ)
     let targetRotationDeg = 270 - centerAngleDeg;
 
-    // Đảm bảo xoay tiến lên phía trước theo chiều kim đồng hồ
+    // Tính tổng góc quay tích lũy lũy tiến để đĩa quay tiếp tục tiến theo chiều kim đồng hồ
     const additionalDeg = (extraSpins * 360) + (targetRotationDeg - (currentRotation % 360) + 360) % 360;
     currentRotation += additionalDeg;
 
-    // Áp dụng CSS để xoay đĩa
+    // Kích hoạt xoay đĩa quay bằng cách gán style CSS transform rotate cho Canvas
     if (canvas) {
       canvas.style.transform = `rotate(${currentRotation}deg)`;
     }
 
-    // Chờ kết thúc xoay
+    // Chờ 5.1 giây (đúng bằng thời gian hiệu ứng chuyển động xoay CSS hoàn thành) để mở modal thông báo phần quà
     setTimeout(() => {
       const wonMsgFormatted = t.wonMsg.replace('{reward}', data.data.reward_name).replace('{points}', data.data.remaining_points);
       openModal(t.congrats, wonMsgFormatted);
       
-      // Cập nhật điểm trên UI
+      // Đồng bộ cập nhật điểm hiển thị ở các ví điểm trên UI Frontend
       const pointsDisplay = document.getElementById('user-points-display') || document.querySelector('.text-3xl.font-black.text-blue-600');
       if (pointsDisplay) {
         pointsDisplay.textContent = new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'vi-VN').format(data.data.remaining_points) + t.points;
@@ -712,6 +772,7 @@ async function startSpin() {
   }
 }
 
+// Đăng ký sự kiện click chuột cho nút Quay ngay ở sidebar và nút SPIN ở tâm đĩa quay
 document.getElementById('spin-btn')?.addEventListener('click', startSpin);
 document.getElementById('wheel-center-btn')?.addEventListener('click', startSpin);
 </script>

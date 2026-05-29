@@ -444,22 +444,25 @@ Tích hợp Google Gemini API qua Backend RAG.
 
 {{-- JavaScript Chatbot --}}
 <script>
+    // Sử dụng biểu thức tự chạy (IIFE) để đóng gói mã nguồn, tránh rò rỉ biến ra phạm vi global
     (function () {
         'use strict';
 
+        // Lấy các phần tử giao diện từ DOM
         const chatWindow = document.getElementById('ai-chat-window');
         const chatMessages = document.getElementById('chatbot-messages');
         const chatInput = document.getElementById('chatbot-input');
         const chatFab = document.getElementById('chatbot-fab');
 
-        let hasWelcomed = false;
-        let messageList = []; // Mảng lưu các tin nhắn hợp lệ để phục vụ khôi phục lịch sử
+        let hasWelcomed = false; // Đánh dấu đã hiển thị tin nhắn chào mừng chưa
+        let messageList = []; // Mảng lưu lịch sử tin nhắn trong phiên làm việc hiện tại
 
-        const HISTORY_KEY = 'chatbot_history';
-        const SESSION_TTL = 60 * 60 * 1000; // 60 phút (mili-giây)
+        const HISTORY_KEY = 'chatbot_history'; // Key lưu trữ lịch sử tin nhắn trong LocalStorage
+        const SESSION_TTL = 60 * 60 * 1000; // Thời hạn hiệu lực của một phiên chat (60 phút)
 
         /**
-         * Lưu danh sách tin nhắn và cập nhật thời gian hết hạn
+         * Lưu danh sách tin nhắn vào LocalStorage kèm theo thời gian hết hạn (Expires).
+         * @param {Array} messages Danh sách các tin nhắn cần lưu
          */
         function saveHistory(messages) {
             try {
@@ -474,7 +477,9 @@ Tích hợp Google Gemini API qua Backend RAG.
         }
 
         /**
-         * Tải danh sách tin nhắn nếu phiên chat chưa hết hạn
+         * Tải danh sách tin nhắn cũ từ LocalStorage nếu chưa bị hết hạn.
+         * Tự động xóa lịch sử và trả về null nếu phiên chat đã quá hạn 60 phút.
+         * @return {Array|null} Trả về danh sách tin nhắn hoặc null
          */
         function loadHistory() {
             try {
@@ -487,13 +492,13 @@ Tích hợp Google Gemini API qua Backend RAG.
                     return null;
                 }
 
+                // Kiểm tra xem thời gian hiện tại đã vượt quá thời gian hết hạn của phiên chat chưa
                 if (Date.now() > data.expires_at) {
-                    // Phiên chat đã hết hạn (quá 60 phút không tương tác)
                     localStorage.removeItem(HISTORY_KEY);
                     return null;
                 }
 
-                // Gia hạn phiên chat thêm 60 phút kể từ lần truy cập này
+                // Tự động gia hạn thêm 60 phút kể từ thời điểm khách hàng tiếp tục tương tác
                 data.expires_at = Date.now() + SESSION_TTL;
                 localStorage.setItem(HISTORY_KEY, JSON.stringify(data));
 
@@ -505,10 +510,11 @@ Tích hợp Google Gemini API qua Backend RAG.
         }
 
         /**
-         * Khôi phục hoặc tạo mới phiên chat khi load trang
+         * Khởi tạo hoặc khôi phục lại lịch sử trò chuyện khi khách tải lại trang web.
+         * Đảm bảo tính nhất quán ngôn ngữ: Nếu khách chuyển đổi ngôn ngữ giao diện (Vi/En),
+         * hệ thống tự động xóa lịch sử cũ để tránh hiện tin nhắn cũ sai ngôn ngữ.
          */
         function initChatSession() {
-            // Xóa lịch sử chat nếu ngôn ngữ thay đổi (tránh hiển thị tin nhắn cũ sai ngôn ngữ)
             const currentLocale = document.documentElement.lang || 'vi';
             const savedLocale = localStorage.getItem('chatbot_locale');
             if (savedLocale && savedLocale !== currentLocale) {
@@ -520,7 +526,7 @@ Tích hợp Google Gemini API qua Backend RAG.
             if (cached && cached.length > 0) {
                 messageList = cached;
                 hasWelcomed = true;
-                // Vẽ lại toàn bộ tin nhắn từ cache (không cần lưu đè lại vào cache)
+                // Render lại toàn bộ bong bóng chat cũ mà không kích hoạt lưu đè lên LocalStorage
                 cached.forEach(msg => {
                     appendMsg(msg.text, msg.role, false);
                 });
@@ -528,13 +534,15 @@ Tích hợp Google Gemini API qua Backend RAG.
         }
 
         /**
-         * Check pending payment order and show alert above chatbot FAB
+         * Kiểm tra đơn hàng đang chờ thanh toán qua mã QR (QR Code Payment).
+         * Nếu phát hiện có đơn hàng chưa hoàn tất thanh toán lưu ở LocalStorage,
+         * hệ thống hiển thị một banner thông báo nổi (Alert) ngay phía trên nút robot chat.
          */
         function checkPendingPayment() {
             const orderId = localStorage.getItem('pending_payment_order_id');
             const alertEl = document.getElementById('pending-payment-alert');
 
-            // Don't show if we are currently on the maQR page
+            // Bảo mật giao diện: Không hiển thị banner cảnh báo này nếu khách hàng đang đứng ở trang thanh toán QR
             const isQRPage = window.location.pathname.includes('/maQR') || window.location.pathname.includes('/ma-qr');
 
             if (orderId && !isQRPage) {
@@ -554,23 +562,26 @@ Tích hợp Google Gemini API qua Backend RAG.
             }
         }
 
-        // Tự động khởi chạy khôi phục lịch sử và kiểm tra thanh toán khi load trang
+        // Tự động khôi phục phiên chat và quét đơn hàng chờ thanh toán khi hoàn tất tải DOM
         document.addEventListener('DOMContentLoaded', () => {
             initChatSession();
             checkPendingPayment();
         });
+
         /**
-         * Mở/đóng cửa sổ chat
+         * Hàm bật/tắt hiển thị cửa sổ robot chat AI (SlideUp animation).
          */
         window.chatbotToggle = function () {
             chatWindow.classList.toggle('active');
             if (chatWindow.classList.contains('active')) {
-                chatInput.focus();
+                chatInput.focus(); // Tự động trỏ con nháy chuột vào ô nhập tin nhắn
+                
+                // Nếu là lần đầu mở cửa sổ chat trong phiên hiện tại, hiển thị lời chào mặc định
                 if (!hasWelcomed) {
                     hasWelcomed = true;
                     let greeting = {!! json_encode(__('ui.chatbot_greeting'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
 
-                    // Nếu đang xem chi tiết sản phẩm, đổi lời chào
+                    // Nếu khách đang xem chi tiết sản phẩm, đổi lời chào
                     if (typeof window.chatbotProductContext !== 'undefined' && window.chatbotProductContext) {
                         const prodName = window.chatbotProductName || '';
                         greeting = {!! json_encode(__('ui.chatbot_product_greeting'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}.replace(':product', prodName);
@@ -581,17 +592,17 @@ Tích hợp Google Gemini API qua Backend RAG.
         };
 
         /**
-         * Thêm tin nhắn vào chat
-         * @param {string} text - Nội dung tin nhắn
-         * @param {string} role - 'user' hoặc 'ai'
-         * @param {boolean} save - Có lưu vào LocalStorage hay không
+         * Thêm một tin nhắn (Bong bóng chat) vào khung hội thoại.
+         * @param {string} text Nội dung tin nhắn (Hỗ trợ HTML an toàn)
+         * @param {string} role Đối tượng gửi ('user' hoặc 'ai')
+         * @param {boolean} save Chỉ thị có lưu tin nhắn này vào LocalStorage để khôi phục phiên hay không
          */
         function appendMsg(text, role, save = true) {
             const div = document.createElement('div');
             div.className = 'chatbot-msg ' + role;
             div.innerHTML = text;
             chatMessages.appendChild(div);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Tự động cuộn khung chat xuống đáy tin nhắn mới nhất
 
             if (save) {
                 messageList.push({ text: text, role: role });
@@ -600,7 +611,7 @@ Tích hợp Google Gemini API qua Backend RAG.
         }
 
         /**
-         * Hiện loading animation
+         * Hiển thị biểu tượng 3 dấu chấm nhấp nháy (Loading Dots) báo hiệu AI đang xử lý câu trả lời.
          */
         function showLoading() {
             const loader = document.createElement('div');
@@ -611,13 +622,17 @@ Tích hợp Google Gemini API qua Backend RAG.
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
+        /**
+         * Loại bỏ biểu tượng Loading Dots khỏi giao diện chat.
+         */
         function removeLoading() {
             const el = document.getElementById('chatbot-loading');
             if (el) el.remove();
         }
 
         /**
-         * Gửi tin nhắn nhanh
+         * Sự kiện khi click chọn một câu hỏi gợi ý nhanh (Quick message).
+         * @param {string} text Nội dung câu hỏi thô
          */
         window.chatbotQuickMsg = function (text) {
             if (!chatWindow.classList.contains('active')) chatbotToggle();
@@ -626,7 +641,8 @@ Tích hợp Google Gemini API qua Backend RAG.
         };
 
         /**
-         * Hỏi AI về sản phẩm cụ thể (gọi từ nút bên ngoài)
+         * Hỏi nhanh thông tin/đánh giá về một sản phẩm (gọi từ nút "Hỏi đáp AI" ở trang chi tiết sản phẩm).
+         * @param {string} productName Tên sản phẩm
          */
         window.askChatbotAboutProduct = function (productName) {
             if (!chatWindow.classList.contains('active')) chatbotToggle();
@@ -635,7 +651,9 @@ Tích hợp Google Gemini API qua Backend RAG.
         };
 
         /**
-         * Gọi Backend RAG Chatbot
+         * Gửi request AJAX POST chứa câu hỏi thô và ngữ cảnh sản phẩm lên Backend RAG Chatbot Controller.
+         * @param {string} prompt Câu hỏi của khách hàng
+         * @return {Promise<string>} Trả về nội dung phản hồi từ AI
          */
         async function callBackend(prompt) {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -650,7 +668,7 @@ Tích hợp Google Gemini API qua Backend RAG.
                 },
                 body: JSON.stringify({
                     prompt: prompt,
-                    context: context,
+                    context: context, // Truyền kèm ngữ cảnh sản phẩm đang xem
                 }),
             });
 
@@ -664,38 +682,46 @@ Tích hợp Google Gemini API qua Backend RAG.
         }
 
         /**
-         * Xử lý gửi tin nhắn
+         * Xử lý gửi tin nhắn của người dùng:
+         * 1. Đọc nội dung ở ô input, kiểm tra rỗng.
+         * 2. Append tin nhắn người dùng lên khung chat.
+         * 3. Hiển thị Loading animation.
+         * 4. Gọi API Backend, nhận phản hồi từ Gemini AI.
+         * 5. Làm sạch mã HTML & Loại bỏ các cú pháp Markdown thừa nếu AI vô tình trả về.
+         * 6. Render tin nhắn trả lời lên khung chat.
          */
         window.chatbotSend = async function () {
             const text = chatInput.value.trim();
             if (!text) return;
 
             appendMsg(text, 'user');
-            chatInput.value = '';
+            chatInput.value = ''; // Làm sạch ô nhập liệu
             showLoading();
 
             try {
                 const aiResponse = await callBackend(text);
                 removeLoading();
 
+                // Lấy phản hồi AI, nếu lỗi dùng câu dịch thông báo lỗi mặc định từ hệ thống
                 let cleanResponse = (aiResponse || {!! json_encode(__('ui.chatbot_error'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}).trim();
 
-                // Loại bỏ markdown thừa mà AI có thể vẫn trả về
+                // Dọn dẹp và chuẩn hóa định dạng văn bản (Chuyển Markdown sang HTML an toàn)
                 cleanResponse = cleanResponse
-                    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')    // **text** → <b>text</b>
-                    .replace(/^[\s]*[-•*]\s/gm, '👉 ')           // Dấu gạch đầu dòng Markdown -> 👉
-                    .replace(/^[\s]*#{1,4}\s*(.*)/gm, '<b>$1</b>') // Heading Markdown -> <b>text</b>
+                    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')    // Chuyển in đậm **text** -> <b>text</b>
+                    .replace(/^[\s]*[-•*]\s/gm, '👉 ')           // Chuyển dấu gạch đầu dòng Markdown -> 👉
+                    .replace(/^[\s]*#{1,4}\s*(.*)/gm, '<b>$1</b>') // Chuyển định dạng header Markdown -> <b>text</b>
                     .replace(/\r\n/g, '\n')
-                    .replace(/\n{2,}/g, '\n\n')                 // Gom các dòng trắng liên tiếp
+                    .replace(/\n{2,}/g, '\n\n')                 // Gom nhóm các dòng trống liên tiếp
                     .replace(/\n/g, '<br>')
-                    .replace(/(<br>\s*){3,}/gi, '<br><br>')     // Giới hạn tối đa 2 thẻ <br> liên tiếp (khoảng cách 1 dòng trống)
-                    .replace(/^(<br>\s*)+/i, '')                // Xóa các thẻ <br> thừa ở đầu tin nhắn
-                    .replace(/(<br>\s*)+$/i, '');               // Xóa các thẻ <br> thừa ở cuối tin nhắn
+                    .replace(/(<br>\s*){3,}/gi, '<br><br>')     // Giới hạn tối đa khoảng trống cách dòng là 1 dòng trống
+                    .replace(/^(<br>\s*)+/i, '')                // Xóa thẻ xuống dòng thừa ở đầu
+                    .replace(/(<br>\s*)+$/i, '');               // Xóa thẻ xuống dòng thừa ở cuối
 
                 appendMsg(cleanResponse, 'ai');
             } catch (error) {
                 removeLoading();
                 console.error('Chatbot error:', error);
+                // Hiển thị thông báo lỗi màu đỏ nổi bật để người dùng nhận biết
                 appendMsg('<b style="color:#ef4444">' + {!! json_encode(__('ui.chatbot_error'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!} + '</b><br><span style="font-size:12px;color:#6b7280">' + error.message + '</span>', 'ai', false);
             }
         };

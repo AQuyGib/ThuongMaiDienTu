@@ -145,9 +145,14 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - `app/Traits/BaseTranslationTrait.php`
     - `resources/js/helpers.ts`
     - `resources/js/components/AdminTopbar.tsx`
+    - `resources/views/partials/chatbot.blade.php` (Giao diện & Logic Chatbot RAG)
+    - `resources/views/admin/rewards/index.blade.php` (Quản trị Vòng quay & Catalog phần thưởng)
+    - `app/Http/Controllers/RewardsHistoryController.php` (Lịch sử đổi thưởng/quay số frontend controller)
+    - `app/Http/Controllers/Admin/RewardImageController.php` (Upload ảnh quà tặng admin controller)
+    - `resources/views/frontend/rewards/history.blade.php` (Giao diện lịch sử đổi quà & quay thưởng)
+    - `resources/views/frontend/rewards/show.blade.php` (Giao diện chi tiết quà tặng & AJAX đổi thưởng)
   - Đảm bảo các kỹ sư tiếp quản dễ dàng nắm vững kiến trúc, các bước hoạt động (quét DOM, dịch gộp, bộ lọc dịch, cách intercept model, click-outside, v.v.).
 
-<<<<<<< HEAD
 ### 7. Phân hệ Đa Ngôn Ngữ (Dynamic Localization) - Gộp nhánh thành công
 - **Khắc phục lỗi View Product list:**
   - Đã khôi phục và đồng bộ chính xác file `ProductController.php` và `Product.blade.php` trên nhánh `Hien/dangonngu` trước khi merge vào `master`.
