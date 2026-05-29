@@ -33,24 +33,26 @@ class TranslateHtmlResponse
         $response = $next($request);
 
         // Bỏ qua route chatbot hoàn toàn để tránh can thiệp vào dữ liệu AI tự sinh
-        if ($request->is('chatbot') || $request->is('*/chatbot')) {
+        $isChatbot = $request->is('chatbot') || $request->is('*/chatbot') || $request->routeIs('chatbot.*');
+        \Illuminate\Support\Facades\Log::info("TranslateHtmlResponse: Path: " . $request->path() . ", IsChatbot: " . ($isChatbot ? 'YES' : 'NO') . ", Locale: " . \Illuminate\Support\Facades\App::getLocale());
+        if ($isChatbot) {
             return $response;
         }
- 
+
         // CHỈ thực hiện dịch khi ngôn ngữ hiện tại của ứng dụng được chọn là Tiếng Anh ('en')
         if (App::getLocale() !== 'en') {
             return $response;
         }
- 
+
         // Bỏ qua các phản hồi điều hướng (Redirect) hoặc lỗi hệ thống nghiêm trọng (500...)
         if ($response->isRedirection() || $response->isServerError()) {
             return $response;
         }
- 
+
         // Kiểm tra xem phản hồi trả về có phải định dạng JSON (API/AJAX) hay không
         $contentType = $response->headers->get('Content-Type');
         $isJson = ($response instanceof \Illuminate\Http\JsonResponse) || (strpos($contentType, 'application/json') !== false);
- 
+
         if ($isJson) {
             $content = $response->getContent();
             if (!blank($content)) {
@@ -59,7 +61,7 @@ class TranslateHtmlResponse
                     // Tăng thời gian thực thi tối đa lên 120s phòng trường hợp dịch dữ liệu JSON lớn trong lần đầu
                     @set_time_limit(120);
                     $translatedData = $this->translateJsonArray($data);
-                    
+
                     // Cập nhật lại nội dung dịch vào JsonResponse hoặc JSON string tương ứng
                     if ($response instanceof \Illuminate\Http\JsonResponse) {
                         $response->setData($translatedData);
@@ -70,24 +72,24 @@ class TranslateHtmlResponse
             }
             return $response;
         }
- 
+
         // Nếu không phải HTML thì bỏ qua không dịch (ví dụ: file tải về, ảnh, css, js...)
         if (strpos($contentType, 'text/html') === false) {
             return $response;
         }
- 
+
         $content = $response->getContent();
         if (blank($content)) {
             return $response;
         }
- 
+
         // Thiết lập thời gian tối đa thực thi (120 giây) để tránh timeout do dịch trang HTML nhiều thẻ chữ
         @set_time_limit(120);
- 
+
         // Thực hiện phân tích và dịch nội dung HTML
         $translatedContent = $this->translateHtml($content);
         $response->setContent($translatedContent);
- 
+
         return $response;
     }
 
@@ -114,13 +116,13 @@ class TranslateHtmlResponse
 
         // Khởi tạo thư viện DOMDocument để duyệt và chỉnh sửa HTML
         $dom = new \DOMDocument();
-        
+
         // Vô hiệu hóa lỗi cảnh báo nội bộ (libxml errors) giúp bỏ qua cảnh báo của các thẻ HTML5 mới
         libxml_use_internal_errors(true);
-        
+
         // Nạp HTML với khai báo UTF-8 giúp giữ nguyên các ký tự có dấu Tiếng Việt
         $dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-        
+
         libxml_clear_errors();
 
         // [PASS 1]: Thu thập tất cả các chuỗi Tiếng Việt chưa dịch trên trang (quét text node và thuộc tính)
@@ -181,7 +183,15 @@ class TranslateHtmlResponse
                     }
                 } elseif ($attrName === 'value' && strtolower($node->nodeName) === 'input') {
                     // Chỉ dịch thuộc tính value của các nút bấm, không dịch của các ô input text thông thường
-                    $type = strtolower($node->getAttribute('type') ?? '');
+                    $type = '';
+                    if ($node instanceof \DOMElement) {
+                        $type = strtolower($node->getAttribute('type') ?? '');
+                    } elseif ($node->attributes) {
+                        $typeAttr = $node->attributes->getNamedItem('type');
+                        if ($typeAttr) {
+                            $type = strtolower($typeAttr->nodeValue ?? '');
+                        }
+                    }
                     if (in_array($type, ['submit', 'button', 'reset'])) {
                         $text = $attr->value;
                         if ($this->shouldTranslate($text)) {
@@ -244,7 +254,15 @@ class TranslateHtmlResponse
                         $attr->value = $this->getCachedTranslation($text, $translator);
                     }
                 } elseif ($attrName === 'value' && strtolower($node->nodeName) === 'input') {
-                    $type = strtolower($node->getAttribute('type') ?? '');
+                    $type = '';
+                    if ($node instanceof \DOMElement) {
+                        $type = strtolower($node->getAttribute('type') ?? '');
+                    } elseif ($node->attributes) {
+                        $typeAttr = $node->attributes->getNamedItem('type');
+                        if ($typeAttr) {
+                            $type = strtolower($typeAttr->nodeValue ?? '');
+                        }
+                    }
                     if (in_array($type, ['submit', 'button', 'reset'])) {
                         $text = $attr->value;
                         if ($this->shouldTranslate($text)) {
@@ -296,7 +314,7 @@ class TranslateHtmlResponse
         if ($trimmed === '') {
             return false;
         }
-        
+
         // Bỏ qua nếu chuỗi không chứa bất kỳ chữ cái nào (chỉ toàn ký hiệu hoặc khoảng trắng)
         if (!preg_match('/[\p{L}]/u', $trimmed)) {
             return false;
@@ -346,7 +364,7 @@ class TranslateHtmlResponse
     protected function batchTranslate(array $untranslated): void
     {
         $strings = array_keys($untranslated);
-        
+
         // Chia nhóm mỗi lần dịch 15 chuỗi văn bản
         $chunks = array_chunk($strings, 15);
 
@@ -357,7 +375,7 @@ class TranslateHtmlResponse
             }, $chunk);
 
             $combined = implode("\n", $cleanChunk);
-            
+
             // Gửi một yêu cầu duy nhất dịch toàn bộ cụm văn bản
             $translatedCombined = $this->translator->translate($combined, 'vi', 'en');
 
@@ -467,19 +485,52 @@ class TranslateHtmlResponse
     protected function isMachineKey(string $key): bool
     {
         $keyLower = strtolower($key);
-        
+
         // Các key kết thúc bằng _id hoặc bắt đầu bằng is_
         if (preg_match('/_id$/', $keyLower) || preg_match('/^is_/', $keyLower)) {
             return true;
         }
 
         $blacklist = [
-            'status', 'success', 'code', 'error_code', 'action', 'type', 'id',
-            'role', 'email', 'username', 'phone', 'thumbnail', 'image', 'path',
-            'file', 'mime_type', 'extension', 'url', 'redirect', 'route', 'key',
-            'field', 'slug', 'locale', 'lang', 'created_at', 'updated_at',
-            'deleted_at', 'date', 'time', 'size', 'file_size', 'avatar', 'icon',
-            'color', 'rom', 'rom_capacity', 'extra_price', 'response'
+            'status',
+            'success',
+            'code',
+            'error_code',
+            'action',
+            'type',
+            'id',
+            'role',
+            'email',
+            'username',
+            'phone',
+            'thumbnail',
+            'image',
+            'path',
+            'file',
+            'mime_type',
+            'extension',
+            'url',
+            'redirect',
+            'route',
+            'key',
+            'field',
+            'slug',
+            'locale',
+            'lang',
+            'created_at',
+            'updated_at',
+            'deleted_at',
+            'date',
+            'time',
+            'size',
+            'file_size',
+            'avatar',
+            'icon',
+            'color',
+            'rom',
+            'rom_capacity',
+            'extra_price',
+            'response'
         ];
 
         return in_array($keyLower, $blacklist);
@@ -492,13 +543,13 @@ class TranslateHtmlResponse
     {
         // Biểu thức chính quy quét các ký tự có dấu Tiếng Việt
         $viRegex = '/[\x{00C0}-\x{00C3}\x{00C8}-\x{00CA}\x{00CC}-\x{00CD}\x{00D2}-\x{00D5}\x{00D9}-\x{00DA}\x{00DD}\x{00E0}-\x{00E3}\x{00E8}-\x{00EA}\x{00EC}-\x{00ED}\x{00F2}-\x{00F5}\x{00F9}-\x{00FA}\x{00FD}\x{0102}-\x{0103}\x{0110}-\x{0111}\x{0128}-\x{0129}\x{0168}-\x{0169}\x{01A0}-\x{01A1}\x{01AF}-\x{01B0}\x{1EA0}-\x{1EF9}]/u';
-        
+
         $patterns = [
-            '/"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"/u', // Tìm chuỗi nháy kép "..."
-            '/\'([^\'\\\\]*(?:\\\\.[^\'\\\\]*)*)\'/u', // Tìm chuỗi nháy đơn '...'
+            '/"([^"\\\\\r\n]*(?:\\\\.[^"\\\\\r\n]*)*)"/u', // Tìm chuỗi nháy kép "..."
+            '/\'([^\'\\\\\r\n]*(?:\\\\.[^\'\\\\\r\n]*)*)\'/u', // Tìm chuỗi nháy đơn '...'
             '/`([^`\\\\]*(?:\\\\.[^`\\\\]*)*)`/u'   // Tìm chuỗi nháy ngược `...` (template literals)
         ];
-        
+
         foreach ($patterns as $pattern) {
             if (preg_match_all($pattern, $script, $matches)) {
                 foreach ($matches[1] as $strContent) {
@@ -521,15 +572,15 @@ class TranslateHtmlResponse
     protected function translateJavascriptStrings(string $scriptContent, TranslationService $translator): string
     {
         $viRegex = '/[\x{00C0}-\x{00C3}\x{00C8}-\x{00CA}\x{00CC}-\x{00CD}\x{00D2}-\x{00D5}\x{00D9}-\x{00DA}\x{00DD}\x{00E0}-\x{00E3}\x{00E8}-\x{00EA}\x{00EC}-\x{00ED}\x{00F2}-\x{00F5}\x{00F9}-\x{00FA}\x{00FD}\x{0102}-\x{0103}\x{0110}-\x{0111}\x{0128}-\x{0129}\x{0168}-\x{0169}\x{01A0}-\x{01A1}\x{01AF}-\x{01B0}\x{1EA0}-\x{1EF9}]/u';
-        
+
         $patterns = [
-            '/"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"/u',
-            '/\'([^\'\\\\]*(?:\\\\.[^\'\\\\]*)*)\'/u',
+            '/"([^"\\\\\r\n]*(?:\\\\.[^"\\\\\r\n]*)*)"/u',
+            '/\'([^\'\\\\\r\n]*(?:\\\\.[^\'\\\\\r\n]*)*)\'/u',
             '/`([^`\\\\]*(?:\\\\.[^`\\\\]*)*)`/u'
         ];
-        
+
         $replacements = [];
-        
+
         foreach ($patterns as $pattern) {
             if (preg_match_all($pattern, $scriptContent, $matches)) {
                 foreach ($matches[1] as $index => $strContent) {
@@ -547,12 +598,12 @@ class TranslateHtmlResponse
                 }
             }
         }
-        
+
         // Thực hiện thay thế hàng loạt
         if (!empty($replacements)) {
             $scriptContent = strtr($scriptContent, $replacements);
         }
-        
+
         return $scriptContent;
     }
 }

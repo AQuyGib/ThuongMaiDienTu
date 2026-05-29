@@ -24,14 +24,24 @@ class SearchController extends Controller
         }
 
         // Tìm kiếm sản phẩm
-        $products = Product::where('name', 'LIKE', "%{$query}%")
-            ->whereNull('deleted_at')
+        $products = Product::whereNull('deleted_at')
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%")
+                  ->orWhereHas('translations', function ($sub) use ($query) {
+                      $sub->where('name', 'LIKE', "%{$query}%");
+                  });
+            })
             ->select('product_id', 'name', 'thumbnail', 'base_price', 'old_price')
             ->limit(5)
             ->get();
 
         // Tìm kiếm danh mục liên quan
-        $categories = Category::where('name', 'LIKE', "%{$query}%")
+        $categories = Category::where(function ($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%")
+                  ->orWhereHas('translations', function ($sub) use ($query) {
+                      $sub->where('name', 'LIKE', "%{$query}%");
+                  });
+            })
             ->select('category_id', 'name', 'slug')
             ->limit(3)
             ->get();
