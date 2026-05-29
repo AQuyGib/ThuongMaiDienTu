@@ -115,11 +115,11 @@ class ProfileController extends Controller
         }
 
         $request->validate([
-            'full_name' => 'required|string|min:2|max:50|regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u',
-            'phone_number' => 'nullable|string|regex:/^0[0-9]{8,9}$/',
-            'gender' => 'nullable|string|max:20',
-            'dob' => 'nullable|date',
-            'address' => 'nullable|string|min:10|max:150|regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u',
+            'full_name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
+            'phone_number' => ['nullable', 'string', 'regex:/^0[0-9]{8,9}$/'],
+            'gender' => ['nullable', 'string', 'max:20'],
+            'dob' => ['nullable', 'date'],
+            'address' => ['nullable', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
         ], [
             'full_name.required' => 'Họ và tên là bắt buộc.',
             'full_name.min' => 'Họ và tên phải từ 2 ký tự trở lên.',
@@ -132,6 +132,28 @@ class ProfileController extends Controller
         ]);
 
         $user = Auth::user();
+
+        // Chuẩn hóa dữ liệu đầu vào và dữ liệu cũ để so sánh chính xác
+        $inputFullName = trim($request->full_name);
+        $inputPhoneNumber = $request->phone_number ? trim($request->phone_number) : null;
+        $inputGender = $request->gender ?: null;
+        $inputDob = $request->dob ?: null;
+        $inputAddress = $request->address ? trim($request->address) : null;
+
+        $userFullName = trim($user->full_name);
+        $userPhoneNumber = $user->phone_number ? trim($user->phone_number) : null;
+        $userGender = $user->gender ?: null;
+        $userDob = $user->dob ?: null;
+        $userAddress = $user->address ? trim($user->address) : null;
+
+        if ($inputFullName === $userFullName &&
+            $inputPhoneNumber === $userPhoneNumber &&
+            $inputGender === $userGender &&
+            $inputDob === $userDob &&
+            $inputAddress === $userAddress) {
+            return back()->withErrors(['no_change' => 'Không có thông tin nào thay đổi so với dữ liệu cũ.'])->withInput();
+        }
+
         $user->full_name = $request->full_name;
         $user->phone_number = $request->phone_number;
         $user->gender = $request->gender;
@@ -167,23 +189,36 @@ class ProfileController extends Controller
         return redirect()->route('profile.index', ['tab' => 'info-tab'])->with('password_success', 'Đã cập nhật mật khẩu thành công!');
     }
 
+    /**
+     * Thêm mới địa chỉ cho người dùng hiện tại
+     * 
+     * Hàm này nhận dữ liệu từ AJAX request để tạo mới một địa chỉ giao hàng.
+     * Quy tắc validation sử dụng dạng mảng (array) thay vì chuỗi dùng dấu pipe "|"
+     * để tránh xung đột với các ký tự Regex chứa pipe.
+     * 
+     * @param Request $request Chứa các thông tin: city, district, ward, street, name (tên gợi nhớ), type, is_default
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function addAddress(Request $request)
     {
+        // Kiểm tra đăng nhập
         if (!Auth::check()) {
             return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
         }
 
+        // Xác thực dữ liệu đầu vào
         $request->validate([
-            'city' => 'required|string',
-            'district' => 'required|string',
-            'ward' => 'required|string',
-            'street' => 'required|string|min:10|max:150|regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u',
-            'name' => 'nullable|string|max:50|regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u',
-            'type' => 'required|string|in:Nhà,Văn phòng',
-            'is_default' => 'boolean'
+            'city' => ['required', 'string'],
+            'district' => ['required', 'string'],
+            'ward' => ['required', 'string'],
+            // Loại bỏ quy tắc min:10 để cho phép nhập địa chỉ ngắn. Loại trừ các ký tự đặc biệt lạ bằng Regex
+            'street' => ['required', 'string', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
+            // Tên gợi nhớ không bắt buộc, nếu nhập thì giới hạn 50 kí tự và không chứa số hay ký tự đặc biệt
+            'name' => ['nullable', 'string', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
+            'type' => ['required', 'string', 'in:Nhà,Văn phòng'],
+            'is_default' => ['boolean']
         ], [
             'street.required' => 'Địa chỉ số nhà, tên đường là bắt buộc.',
-            'street.min' => 'Địa chỉ phải từ 10 ký tự trở lên.',
             'street.max' => 'Địa chỉ tối đa 150 ký tự.',
             'street.regex' => 'Địa chỉ không được chứa ký tự đặc biệt lạ.',
             'name.max' => 'Tên gợi nhớ tối đa 50 ký tự.',
@@ -194,26 +229,28 @@ class ProfileController extends Controller
         
         $isDefault = $request->is_default ?? false;
         
-        // Nếu là địa chỉ mặc định, reset các địa chỉ khác
+        // Nếu là địa chỉ mặc định, reset thuộc tính is_default của các địa chỉ cũ về false
         if ($isDefault) {
             \App\Models\UserAddress::where('user_id', $user->user_id)->update(['is_default' => false]);
-            // Cập nhật luôn chuỗi address cho user
+            // Đồng bộ luôn chuỗi địa chỉ mặc định vào bảng users để hiển thị nhanh
             $user->address = "{$request->street}, {$request->ward}, {$request->district}, {$request->city}";
             $user->save();
         } elseif (\App\Models\UserAddress::where('user_id', $user->user_id)->count() === 0) {
-            // Nếu chưa có địa chỉ nào, bắt buộc là mặc định
+            // Nếu đây là địa chỉ đầu tiên của tài khoản, bắt buộc phải đặt làm địa chỉ mặc định
             $isDefault = true;
             $user->address = "{$request->street}, {$request->ward}, {$request->district}, {$request->city}";
             $user->save();
         }
 
+        // Tạo bản ghi địa chỉ mới trong DB
         \App\Models\UserAddress::create([
             'user_id' => $user->user_id,
             'city' => $request->city,
             'district' => $request->district,
             'ward' => $request->ward,
             'street' => $request->street,
-            'name' => $request->name,
+            // Cắt khoảng trắng thừa ở hai đầu. Nếu bỏ trống thì lưu null để giao diện tự fallback sang Họ và tên tài khoản
+            'name' => $request->name ? trim($request->name) : null,
             'type' => $request->type,
             'is_default' => $isDefault
         ]);
@@ -221,25 +258,37 @@ class ProfileController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * Cập nhật địa chỉ hiện có của người dùng
+     * 
+     * Hàm này tìm bản ghi địa chỉ theo ID và user_id của người dùng hiện tại,
+     * xác thực dữ liệu và thực hiện cập nhật.
+     * 
+     * @param Request $request Chứa thông tin chỉnh sửa
+     * @param int $id ID của bản ghi địa chỉ cần sửa
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateAddress(Request $request, $id)
     {
+        // Kiểm tra đăng nhập
         if (!Auth::check()) {
             return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
         }
 
+        // Tìm địa chỉ thuộc về user, nếu không thấy sẽ ném ra lỗi 404
         $address = \App\Models\UserAddress::where('user_id', Auth::id())->findOrFail($id);
 
+        // Xác thực dữ liệu tương tự lúc thêm mới
         $request->validate([
-            'city' => 'required|string',
-            'district' => 'required|string',
-            'ward' => 'required|string',
-            'street' => 'required|string|min:10|max:150|regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u',
-            'name' => 'nullable|string|max:50|regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u',
-            'type' => 'required|string|in:Nhà,Văn phòng',
-            'is_default' => 'boolean'
+            'city' => ['required', 'string'],
+            'district' => ['required', 'string'],
+            'ward' => ['required', 'string'],
+            'street' => ['required', 'string', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
+            'name' => ['nullable', 'string', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
+            'type' => ['required', 'string', 'in:Nhà,Văn phòng'],
+            'is_default' => ['boolean']
         ], [
             'street.required' => 'Địa chỉ số nhà, tên đường là bắt buộc.',
-            'street.min' => 'Địa chỉ phải từ 10 ký tự trở lên.',
             'street.max' => 'Địa chỉ tối đa 150 ký tự.',
             'street.regex' => 'Địa chỉ không được chứa ký tự đặc biệt lạ.',
             'name.max' => 'Tên gợi nhớ tối đa 50 ký tự.',
@@ -249,22 +298,27 @@ class ProfileController extends Controller
         $isDefault = $request->is_default ?? false;
         $user = Auth::user();
 
+        // Xử lý logic đặt làm địa chỉ mặc định
         if ($isDefault) {
+            // Tắt cờ mặc định của các địa chỉ cũ
             \App\Models\UserAddress::where('user_id', $user->user_id)->update(['is_default' => false]);
+            // Đồng bộ chuỗi địa chỉ mặc định vào hồ sơ tài khoản
             $user->address = "{$request->street}, {$request->ward}, {$request->district}, {$request->city}";
             $user->save();
         } elseif ($address->is_default) {
-            // Đang là mặc định mà bỏ tích thì sao? Có thể bỏ qua hoặc yêu cầu phải có 1 cái mặc định
-            // Tạm thời vẫn giữ nó là mặc định nếu chưa có cái nào khác
+            // Nếu địa chỉ này đang là mặc định nhưng người dùng cố bỏ chọn,
+            // ta vẫn giữ nó là mặc định để tránh việc tài khoản không có địa chỉ mặc định nào.
             $isDefault = true;
         }
 
+        // Thực hiện cập nhật bản ghi địa chỉ trong DB
         $address->update([
             'city' => $request->city,
             'district' => $request->district,
             'ward' => $request->ward,
             'street' => $request->street,
-            'name' => $request->name,
+            // Cắt khoảng trắng thừa ở hai đầu. Nếu bỏ trống thì lưu null để giao diện tự fallback sang Họ và tên tài khoản
+            'name' => $request->name ? trim($request->name) : null,
             'type' => $request->type,
             'is_default' => $isDefault
         ]);

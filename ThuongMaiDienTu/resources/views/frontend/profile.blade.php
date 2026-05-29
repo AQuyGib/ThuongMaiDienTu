@@ -1030,10 +1030,13 @@
                 <div class="account-cards-grid">
                     
                     <!-- Thông tin cá nhân -->
+                    @php
+                        $hasProfileError = $errors->has('full_name') || $errors->has('phone_number') || $errors->has('gender') || $errors->has('dob') || $errors->has('address') || $errors->has('no_change');
+                    @endphp
                     <div class="acc-card" style="grid-column: 1 / -1;">
                         <div class="acc-card-header">
                             <h3>Thông tin cá nhân</h3>
-                            <a href="#" style="color: #0046ab; font-size: 13px; font-weight: 600;" onclick="event.preventDefault(); document.getElementById('viewProfileInfo').style.display = 'none'; document.getElementById('editProfileForm').style.display = 'block'; this.style.display = 'none';">Sửa</a>
+                            <a href="#" style="color: #0046ab; font-size: 13px; font-weight: 600;{{ $hasProfileError ? ' display: none;' : '' }}" onclick="event.preventDefault(); document.getElementById('viewProfileInfo').style.display = 'none'; document.getElementById('editProfileForm').style.display = 'block'; this.style.display = 'none';">Sửa</a>
                         </div>
                         
                         @if(session('success'))
@@ -1042,7 +1045,7 @@
                             </div>
                         @endif
 
-                        <div class="acc-card-content" id="viewProfileInfo">
+                        <div class="acc-card-content" id="viewProfileInfo" style="{{ $hasProfileError ? 'display: none;' : 'display: flex;' }}">
                             <div class="acc-info-row">
                                 <span class="acc-info-label">Họ và tên:</span>
                                 <span class="acc-info-value">{{ $user->full_name }}</span>
@@ -1074,11 +1077,19 @@
                         </div>
 
                         <!-- Form ẩn để cập nhật (Khi bấm Sửa) -->
-                        <form id="editProfileForm" action="{{ route('profile.update') }}" method="POST" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <form id="editProfileForm" action="{{ route('profile.update') }}" method="POST" style="{{ $hasProfileError ? 'display: block;' : 'display: none;' }} margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
                             @csrf
+                            @if($errors->has('no_change'))
+                                <div style="background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: 600; font-size: 13px;">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> {{ $errors->first('no_change') }}
+                                </div>
+                            @endif
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Họ và tên</label>
-                                <input type="text" name="full_name" class="form-control" value="{{ $user->full_name }}" required>
+                                <input type="text" name="full_name" class="form-control @error('full_name') is-invalid @enderror" value="{{ old('full_name', $user->full_name) }}" required>
+                                @error('full_name')
+                                    <span style="color: #e21033; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Địa chỉ Email</label>
@@ -1086,31 +1097,43 @@
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Giới tính</label>
-                                <select name="gender" class="form-control">
+                                <select name="gender" class="form-control @error('gender') is-invalid @enderror">
                                     <option value="">Chọn giới tính</option>
-                                    <option value="Nam" {{ $user->gender == 'Nam' ? 'selected' : '' }}>Nam</option>
-                                    <option value="Nữ" {{ $user->gender == 'Nữ' ? 'selected' : '' }}>Nữ</option>
-                                    <option value="Khác" {{ $user->gender == 'Khác' ? 'selected' : '' }}>Khác</option>
+                                    <option value="Nam" {{ old('gender', $user->gender) == 'Nam' ? 'selected' : '' }}>Nam</option>
+                                    <option value="Nữ" {{ old('gender', $user->gender) == 'Nữ' ? 'selected' : '' }}>Nữ</option>
+                                    <option value="Khác" {{ old('gender', $user->gender) == 'Khác' ? 'selected' : '' }}>Khác</option>
                                 </select>
+                                @error('gender')
+                                    <span style="color: #e21033; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Ngày sinh</label>
-                                <input type="date" name="dob" class="form-control" value="{{ $user->dob }}">
+                                <input type="date" name="dob" class="form-control @error('dob') is-invalid @enderror" value="{{ old('dob', $user->dob) }}">
+                                @error('dob')
+                                    <span style="color: #e21033; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Số điện thoại</label>
-                                <input type="tel" name="phone_number" class="form-control" value="{{ $user->phone_number }}" placeholder="Nhập số điện thoại">
+                                <input type="tel" name="phone_number" class="form-control @error('phone_number') is-invalid @enderror" value="{{ old('phone_number', $user->phone_number) }}" placeholder="Nhập số điện thoại">
+                                @error('phone_number')
+                                    <span style="color: #e21033; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Địa chỉ mặc định</label>
-                                <input type="text" name="address" class="form-control" value="{{ $user->address }}" placeholder="Nhập địa chỉ của bạn">
+                                <input type="text" name="address" class="form-control @error('address') is-invalid @enderror" value="{{ old('address', $user->address) }}" placeholder="Nhập địa chỉ của bạn">
+                                @error('address')
+                                    <span style="color: #e21033; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Ngày tham gia</label>
                                 <input type="text" class="form-control" value="{{ $user->created_at ? $user->created_at->format('d/m/Y') : 'Không rõ' }}" readonly style="background: #f1f5f9; cursor: not-allowed;">
                             </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                                <button type="button" class="btn-outline" onclick="document.getElementById('editProfileForm').style.display='none'; document.getElementById('viewProfileInfo').style.display='flex'; document.querySelector('.acc-card-header a').style.display='block';">Hủy</button>
+                                <button type="button" class="btn-outline" onclick="resetProfileForm(); document.getElementById('editProfileForm').style.display='none'; document.getElementById('viewProfileInfo').style.display='flex'; document.querySelector('.acc-card-header a').style.display='block';">Hủy</button>
                                 <button type="submit" class="btn-update" style="margin-top: 10px; padding: 8px 20px; background: #0046ab;">Lưu</button>
                             </div>
                         </form>
@@ -1128,7 +1151,7 @@
                                 <div style="border: 1px solid #eee; border-radius: 12px; padding: 15px;">
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                         <strong style="font-size: 14px; color: #333;">
-                                            {{ $address->name ?? $user->full_name }}
+                                            {{ $address->name ?: $user->full_name }}
                                             @if($address->is_default)
                                                 <span style="color: #e21033; font-size: 11px; margin-left: 5px;">[Mặc định]</span>
                                             @endif
@@ -1975,6 +1998,30 @@
 
 @push('scripts')
 <script>
+    const originalProfileData = {
+        full_name: @json($user->full_name),
+        gender: @json($user->gender ?? ''),
+        dob: @json($user->dob ?? ''),
+        phone_number: @json($user->phone_number ?? ''),
+        address: @json($user->address ?? '')
+    };
+
+    function resetProfileForm() {
+        const form = document.getElementById('editProfileForm');
+        if (form) {
+            form.querySelector('[name="full_name"]').value = originalProfileData.full_name;
+            form.querySelector('[name="gender"]').value = originalProfileData.gender;
+            form.querySelector('[name="dob"]').value = originalProfileData.dob;
+            form.querySelector('[name="phone_number"]').value = originalProfileData.phone_number;
+            form.querySelector('[name="address"]').value = originalProfileData.address;
+            
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            form.querySelectorAll('span[style*="color: #e21033"]').forEach(el => el.remove());
+            const noChangeAlert = form.querySelector('div[style*="background: #fee2e2"]');
+            if (noChangeAlert) noChangeAlert.remove();
+        }
+    }
+
     function switchTab(tabId, element) {
         document.querySelectorAll('.profile-nav-item').forEach(item => {
             item.classList.remove('active');
@@ -1987,6 +2034,11 @@
         });
 
         document.getElementById(tabId).classList.add('active');
+
+        // Sync tab in browser URL search params
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tabId);
+        window.history.replaceState({}, '', url);
     }
 
     /* ===== Toast Notification System ===== */
@@ -2087,14 +2139,53 @@
         }
     }
 
+    /**
+     * Xóa sạch các trạng thái lỗi validation cũ của form
+     *
+     * Hàm này xóa class 'is-invalid' của các thẻ input/select bị lỗi và 
+     * loại bỏ tất cả các thẻ thông báo lỗi màu đỏ (invalid-feedback-custom) 
+     * để khôi phục giao diện form sạch sẽ trước khi thực hiện lượt validate mới.
+     *
+     * @param {string} formId - ID của thẻ form cần xóa lỗi
+     */
     function clearValidationErrors(formId) {
         const form = document.getElementById(formId);
-        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        if (form) {
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            form.querySelectorAll('.invalid-feedback-custom').forEach(el => el.remove());
+        }
     }
 
-    function highlightInvalidField(id, isUploadBox = false) {
+    /**
+     * Đánh dấu ô nhập liệu bị lỗi và hiển thị thông báo bên dưới
+     *
+     * Hàm này thêm class 'is-invalid' vào ô nhập liệu để hiện viền đỏ, 
+     * đồng thời tạo động một thẻ span chứa thông báo lỗi chèn ngay phía dưới ô nhập liệu đó.
+     *
+     * @param {string} id - ID của ô nhập liệu (input/select) bị lỗi
+     * @param {string} message - Nội dung thông báo lỗi cần hiển thị
+     * @param {boolean} isUploadBox - Cờ đánh dấu nếu đây là khung upload file (cần viền đỏ cho container cha)
+     */
+    function highlightInvalidField(id, message = '', isUploadBox = false) {
         const el = isUploadBox ? document.getElementById(id).parentElement : document.getElementById(id);
-        el.classList.add('is-invalid');
+        if (el) {
+            el.classList.add('is-invalid');
+            if (message) {
+                // Kiểm tra xem đã tồn tại thẻ báo lỗi cũ dưới ô này chưa
+                let errorSpan = el.parentNode.querySelector('.invalid-feedback-custom');
+                if (!errorSpan) {
+                    errorSpan = document.createElement('span');
+                    errorSpan.className = 'invalid-feedback-custom';
+                    errorSpan.style.color = '#e21033';
+                    errorSpan.style.fontSize = '11px';
+                    errorSpan.style.display = 'block';
+                    errorSpan.style.marginTop = '4px';
+                    el.parentNode.appendChild(errorSpan);
+                }
+                // Cập nhật nội dung thông báo lỗi
+                errorSpan.innerText = message;
+            }
+        }
     }
 
     function submitStudentRegistration() {
@@ -2189,6 +2280,7 @@
 
     function openAddressModal() {
         document.getElementById('addressModal').classList.add('active');
+        clearValidationErrors('addAddressForm');
         if (document.getElementById('addrCity').options.length <= 1) {
             fetchProvincesData();
         }
@@ -2198,6 +2290,7 @@
         document.getElementById('addressModal').classList.remove('active');
         document.getElementById('addAddressForm').reset();
         document.getElementById('addrId').value = '';
+        clearValidationErrors('addAddressForm');
         
         // Reset selections
         document.getElementById('addrCity').selectedIndex = 0;
@@ -2315,8 +2408,21 @@
         }
     });
 
+    /**
+     * Thực hiện gửi thông tin địa chỉ lên Server qua AJAX
+     *
+     * Hàm này có trách nhiệm:
+     * 1. Validate dữ liệu phía Client-side (City, District, Ward, Street không được trống).
+     * 2. Nếu có lỗi, gọi `highlightInvalidField` để báo lỗi màu đỏ trực tiếp dưới ô nhập liệu.
+     * 3. Gửi request POST (Thêm mới) hoặc PUT/POST (Cập nhật) bằng Fetch API lên server.
+     *    - Cấu hình header 'Accept': 'application/json' để buộc Laravel trả lỗi validation dạng JSON.
+     * 4. Phân tích lỗi trả về từ Server: Nếu Server trả về lỗi validation (Status 422), hàm sẽ phân tích 
+     *    và hiển thị đúng dòng thông báo lỗi chi tiết xuống dưới từng ô nhập liệu tương ứng.
+     */
     function submitAddress() {
+        // Xóa sạch thông báo lỗi cũ
         clearValidationErrors('addAddressForm');
+        
         const id = document.getElementById('addrId').value;
         const city = document.getElementById('addrCity');
         const district = document.getElementById('addrDistrict');
@@ -2326,24 +2432,28 @@
         const type = document.querySelector('input[name="addrType"]:checked').value;
         const isDefault = document.getElementById('addrIsDefault').checked;
         
+        // Tiến hành kiểm tra dữ liệu bỏ trống phía Client-side
         let hasError = false;
-        if(!city.value) { highlightInvalidField('addrCity'); hasError = true; }
-        if(!district.value) { highlightInvalidField('addrDistrict'); hasError = true; }
-        if(!ward.value) { highlightInvalidField('addrWard'); hasError = true; }
-        if(!street.value) { highlightInvalidField('addrStreet'); hasError = true; }
+        if(!city.value) { highlightInvalidField('addrCity', 'Vui lòng chọn Tỉnh/Thành phố.'); hasError = true; }
+        if(!district.value) { highlightInvalidField('addrDistrict', 'Vui lòng chọn Quận/Huyện.'); hasError = true; }
+        if(!ward.value) { highlightInvalidField('addrWard', 'Vui lòng chọn Phường/Xã.'); hasError = true; }
+        if(!street.value) { highlightInvalidField('addrStreet', 'Vui lòng nhập địa chỉ (Số nhà, tên đường).'); hasError = true; }
 
         if(hasError) {
             showToast('Lỗi nhập liệu', 'Vui lòng điền đầy đủ các thông tin bắt buộc!', 'warning');
             return;
         }
 
+        // Kích hoạt trạng thái loading cho nút lưu
         setBtnLoading('addressSubmitBtn', true);
         const url = id ? `/profile/address/${id}` : '{{ route('profile.address.store') }}';
 
+        // Gửi yêu cầu lưu trữ đến Server
         fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json', // Nhận phản hồi dạng JSON thay vì HTML redirect
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             body: JSON.stringify({
@@ -2356,10 +2466,41 @@
                 is_default: isDefault
             })
         })
-        .then(res => res.json())
+        .then(res => {
+            return res.json().then(data => {
+                if (!res.ok) {
+                    let errorMsg = data.error || data.message;
+                    // Nếu server trả về lỗi xác thực Validation (Laravel Validator)
+                    if (data.errors) {
+                        clearValidationErrors('addAddressForm');
+                        // Duyệt qua danh sách lỗi và ánh xạ trường dữ liệu từ Laravel về ID trên form
+                        for (const key in data.errors) {
+                            let fieldId = '';
+                            if (key === 'city') fieldId = 'addrCity';
+                            else if (key === 'district') fieldId = 'addrDistrict';
+                            else if (key === 'ward') fieldId = 'addrWard';
+                            else if (key === 'street') fieldId = 'addrStreet';
+                            else if (key === 'name') fieldId = 'addrName';
+                            
+                            // Hiển thị thông báo lỗi chi tiết của từng ô
+                            if (fieldId && data.errors[key][0]) {
+                                highlightInvalidField(fieldId, data.errors[key][0]);
+                            }
+                        }
+                        const firstKey = Object.keys(data.errors)[0];
+                        if (firstKey && data.errors[firstKey][0]) {
+                            errorMsg = data.errors[firstKey][0];
+                        }
+                    }
+                    return { success: false, error: errorMsg };
+                }
+                return data;
+            });
+        })
         .then(data => {
             if(data.success) {
                 const action = id ? 'Cập nhật' : 'Thêm mới';
+                // Lưu thông báo thành công vào sessionStorage để hiển thị sau khi tải lại trang
                 sessionStorage.setItem('profile_toast', JSON.stringify({
                     title: 'Thành công',
                     msg: `${action} địa chỉ thành công!`,
@@ -2713,6 +2854,29 @@
 
     // Initialize Active Tab & Notifications
     document.addEventListener('DOMContentLoaded', function() {
+        const editForm = document.getElementById('editProfileForm');
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                const currentFullName = this.querySelector('[name="full_name"]').value.trim();
+                const currentGender = this.querySelector('[name="gender"]').value;
+                const currentDob = this.querySelector('[name="dob"]').value;
+                const currentPhoneNumber = this.querySelector('[name="phone_number"]').value.trim();
+                const currentAddress = this.querySelector('[name="address"]').value.trim();
+
+                const norm = val => val || '';
+
+                if (currentFullName === norm(originalProfileData.full_name) &&
+                    currentGender === norm(originalProfileData.gender) &&
+                    currentDob === norm(originalProfileData.dob) &&
+                    currentPhoneNumber === norm(originalProfileData.phone_number) &&
+                    currentAddress === norm(originalProfileData.address)) {
+                    
+                    e.preventDefault();
+                    showToast('Thông báo', 'Không có thông tin nào thay đổi so với dữ liệu cũ!', 'warning');
+                }
+            });
+        }
+
         const toastData = sessionStorage.getItem('profile_toast');
         if (toastData) {
             const data = JSON.parse(toastData);

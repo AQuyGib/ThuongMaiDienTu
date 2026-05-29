@@ -426,8 +426,6 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Cập nhật định dạng DocBlock chi tiết cho phương thức `index()` của `DashboardController.php`, mô tả tường tận nhiệm vụ của hàm, các luồng phân quyền bảo mật, 12 nhóm dữ liệu thống kê thu thập cùng các cấu trúc dữ liệu truyền ra view.
   - Thêm đầy đủ comment trong file giao diện `dashboard.blade.php` giải thích cấu trúc layout Grid, Flexbox, các khối Blade dynamic components và phần vẽ biểu đồ bằng Javascript (Chart.js).
 
-
-
 ### 25. Sửa lỗi Chatbot hiển thị Raw Unicode & Phản hồi sai ngôn ngữ
 - **Sửa lỗi Welcome Message hiển thị raw unicode escapes (`\u003Cb`, `\ud83d\udc4b`):**
   - Nguyên nhân: Directive `@json()` của Blade mặc định sử dụng flag `JSON_HEX_TAG` mã hóa `<`, `>` thành `\u003C`, `\u003E` gây hiển thị dạng text thô.
@@ -458,7 +456,7 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - Trang chính sách: giữ nguyên `/warranty`, `/rewards`, `/chinh-sach-bao-hanh`, `/chinh-sach-doi-tra`, tuyệt đối không dịch sang `/return-policy` hay `/warranty-policy`.
 - **Tối ưu hóa RAG và Lọc từ khóa tiếng Anh:**
   - Mở rộng danh sách từ dừng `$stopwords` bao gồm các từ tiếng Anh phổ biến (`cheap`, `under`, `recommend`, `which`, `suitable`, `for`, `student`, `students`, v.v.).
-  - Bổ sung thuật toán chuẩn hóa từ số nhiều sang số ít tiếng Anh (singularization algorithm) in `searchProducts` để trích xuất đúng từ khóa gốc (ví dụ: `phones` -> `phone`, `laptops` -> `laptop`, `accessories` -> `accessory`), đảm bảo tìm kiếm chính xác các sản phẩm tương ứng trong database.
+  - Bổ dung thuật toán chuẩn hóa từ số nhiều sang số ít tiếng Anh (singularization algorithm) in `searchProducts` để trích xuất đúng từ khóa gốc (ví dụ: `phones` -> `phone`, `laptops` -> `laptop`, `accessories` -> `accessory`), đảm bảo tìm kiếm chính xác các sản phẩm tương ứng trong database.
   - Bản địa hóa kết quả tìm kiếm kho hàng (Inventory context) động trong prompt dựa trên locale để tránh gây nhiễu ngôn ngữ cho AI.
 - **Các file sửa đổi:**
   - `app/Http/Controllers/ChatbotController.php`
@@ -512,3 +510,27 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - **Các file sửa đổi:**
   - `app/Http/Middleware/TranslateHtmlResponse.php`
   - `app/Http/Controllers/ChatbotController.php`
+
+### 32. Ngăn chặn cập nhật thông tin cá nhân trùng lặp (Prevent Unchanged Profile Updates)
+- **Controller (`app/Http/Controllers/ProfileController.php`):**
+  - Thêm logic kiểm tra xem dữ liệu gửi từ form cập nhật thông tin cá nhân có khác biệt so với dữ liệu hiện tại trong Database hay không (so sánh `full_name`, `gender`, `dob`, `phone_number`, `address` sau khi chuẩn hóa khoảng trắng).
+  - Trả về thông báo lỗi `'no_change'` với nội dung `"Không có thông tin nào thay đổi so với dữ liệu cũ."` nếu tất cả thông tin trùng khớp, giúp ngăn chặn ghi đè database dư thừa.
+  - Chuyển đổi các quy tắc Validate (validation rules) dạng chuỗi nối nhau bằng ký tự ống (`|`) sang dạng mảng (`array`) để khắc phục triệt để lỗi Laravel phân tích sai ký tự đặc biệt `|` bên trong Regex của trường `full_name` và `address`.
+- **View (`resources/views/frontend/profile.blade.php`):**
+  - Khai báo biến kiểm tra lỗi profile `$hasProfileError` để tự động duy trì trạng thái hiển thị của Form chỉnh sửa (`editProfileForm`) và ẩn giao diện thông tin tĩnh khi trang tải lại kèm lỗi validation.
+  - Hiển thị trực quan thông báo lỗi `'no_change'` và lỗi validation riêng của từng trường ngay dưới ô nhập liệu.
+  - Triển khai chức năng Hủy (Cancel) bằng cách gọi hàm `resetProfileForm()` để phục hồi lại dữ liệu ban đầu trên form qua Javascript và xóa sạch các trạng thái lỗi/cảnh báo validation cũ.
+  - Tích hợp sự kiện `submit` kiểm tra trước trên Client-side. Nếu toàn bộ dữ liệu khớp với giá trị ban đầu, form sẽ hủy gửi và hiển thị Toast cảnh báo *"Không có thông tin nào thay đổi so với dữ liệu cũ!"* nhanh chóng, cải thiện trải nghiệm người dùng (UX).
+
+### 33. Sửa lỗi lưu/cập nhật địa chỉ mới (Fix Address Store/Update Validation Error)
+- **Nguyên nhân lỗi:**
+  - Quy tắc xác thực (validation rules) của trường `street` và `name` trong `addAddress` và `updateAddress` có chứa ký tự ống `|` trong Regex (phân loại ký tự đặc biệt). Do viết ở dạng chuỗi nên Laravel phân tích nhầm ký tự `|` này làm dấu phân tách quy tắc, gây ra ngoại lệ `preg_match(): No ending delimiter` và sập trang.
+  - Phía Client sử dụng request `fetch` không truyền Header `Accept: application/json` khiến Laravel tự động phản hồi bằng HTML (redirect hoặc báo lỗi hệ thống dạng web) thay vì JSON khi xảy ra lỗi validation. Trình duyệt không thể phân tích HTML này thành JSON (`res.json()`), làm phát sinh exception JS rồi nhảy vào block `.catch` hiển thị cảnh báo sai lệch: *"Lỗi kết nối / Vui lòng kiểm tra lại đường truyền mạng."*.
+- **Giải pháp xử lý:**
+  - Chuyển toàn bộ quy tắc xác thực của `addAddress` và `updateAddress` trong `ProfileController.php` sang dạng mảng (`array`) để bảo toàn ký tự `|` trong Regex.
+  - Loại bỏ hoàn toàn ràng buộc độ dài tối thiểu 10 ký tự (`min:10`) đối với trường địa chỉ (`street`) theo mong muốn của người dùng.
+  - Cập nhật headers của fetch lưu/sửa địa chỉ trong `profile.blade.php` truyền thêm `'Accept': 'application/json'`.
+  - Nâng cấp phần xử lý xác thực trên Client-side: Khi người dùng bỏ trống hoặc dữ liệu không hợp lệ, hệ thống sẽ hiển thị dòng thông báo nhắc nhở màu đỏ trực quan ngay dưới từng ô nhập liệu tương ứng, thay vì chỉ hiển thị Toast thông báo chung.
+  - Xử lý fallback cho trường "Tên gợi nhớ" (`name`): Nếu để trống, hệ thống sẽ tự động lấy thông tin từ "Họ và tên" của tài khoản (`$user->full_name`). Đã cấu hình trên Controller để chuẩn hóa khoảng trắng thừa & lưu `null` nếu chuỗi trống, đồng thời dùng toán tử Elvis `?:` trên Blade để đảm bảo giao diện fallback đúng chuẩn.
+  - Thêm chú thích và comment code chi tiết (JSDoc cho Javascript, Docblock cho PHP) giải thích cặn kẽ mục đích và luồng xử lý của từng hàm/chức năng vừa thay đổi.
+
