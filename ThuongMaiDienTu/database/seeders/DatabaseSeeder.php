@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             ArticleSeeder::class,
             CashbookSeeder::class,
             FlashSaleSeeder::class,
+            LargeProductSeeder::class,
         ]);
     }
 }
