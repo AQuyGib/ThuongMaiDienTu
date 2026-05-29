@@ -43,6 +43,25 @@ class ProductFilterService
             $query->where('rating', '>=', 4.5);
         }
 
+        // Lọc sản phẩm còn hàng (có ít nhất 1 inventory_item In_Stock)
+        if (($params['in_stock'] ?? null) === '1') {
+            $query->whereHas('variants', function ($vq) {
+                $vq->whereHas('inventoryItems', function ($iq) {
+                    $iq->where('status', 'In_Stock');
+                });
+            });
+        }
+
+        // Lọc hàng mới về (top 20% product_id cao nhất)
+        if (($params['new_arrival'] ?? null) === '1') {
+            $maxId = DB::table('products')->whereNull('deleted_at')->max('product_id');
+            $minId = DB::table('products')->whereNull('deleted_at')->min('product_id');
+            if ($maxId && $minId) {
+                $threshold = $maxId - (int)(($maxId - $minId) * 0.2);
+                $query->where('product_id', '>=', $threshold);
+            }
+        }
+
         $query->filterBySpecs($specs);
 
         return $query->paginate($perPage)->withQueryString();
@@ -65,7 +84,8 @@ class ProductFilterService
     {
         $nonSpecKeys = [
             'category_id', 'category_slug', 'min_price', 'max_price', 'q', 'sort',
-            'needs', 'eco_friendly', 'high_repairability', 'page', 'brand'
+            'needs', 'eco_friendly', 'high_repairability', 'page', 'brand',
+            'in_stock', 'new_arrival'
         ];
 
         $specs = array_diff_key($params, array_flip($nonSpecKeys));

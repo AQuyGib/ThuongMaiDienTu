@@ -178,6 +178,7 @@
 
                 <!-- Order Summary -->
                 <div class="space-y-6">
+                    <!-- Thông tin tóm tắt -->
                     <div class="bg-white rounded-3xl shadow-xl p-6 border border-gray-100">
                         <h3 class="text-base font-bold text-gray-800 mb-5 border-b pb-4 flex items-center gap-2">
                             <i class="fa-solid fa-circle-info text-[#0046ab]"></i> Thông tin tóm tắt
@@ -187,19 +188,29 @@
                                 <span class="text-gray-500">Người nhận:</span>
                                 <span id="result-name" class="font-bold text-gray-800"></span>
                             </div>
-                            <div class="flex justify-between text-sm">
+                            <div class="flex justify-between items-center text-sm">
                                 <span class="text-gray-500">Trạng thái:</span>
-                                <span class="bg-yellow-100 text-yellow-700 text-[10px] font-black px-2 py-0.5 rounded">ĐANG XỬ LÝ</span>
+                                <span id="result-status" class="text-[10px] font-black px-2 py-0.5 rounded"></span>
                             </div>
                             <div class="pt-3 border-t border-gray-50 text-sm">
                                 <span class="text-gray-500 block mb-1">Địa chỉ giao hàng:</span>
-                                <p class="font-medium text-gray-800 leading-relaxed">123 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh</p>
+                                <p id="result-address" class="font-medium text-gray-800 leading-relaxed"></p>
                             </div>
                         </div>
                         <div class="mt-6 pt-5 border-t-2 border-dashed border-gray-100 flex justify-between items-end">
                             <span class="text-sm text-gray-500 font-bold">TỔNG TIỀN:</span>
-                            <span class="text-2xl font-black text-red-600">38.970.000đ</span>
+                            <span id="result-total" class="text-2xl font-black text-red-600"></span>
                         </div>
+                    </div>
+
+                    <!-- Nút xem chi tiết sản phẩm → mở modal -->
+                    <div>
+                        <button onclick="openProductsModal()"
+                            class="w-full py-3.5 px-6 bg-[#0046ab] hover:bg-blue-800 active:scale-[0.98] text-white rounded-2xl font-bold shadow-md shadow-blue-200 flex items-center justify-center gap-3 transition-all duration-200">
+                            <i class="fa-solid fa-box-open text-lg"></i>
+                            <span>Xem chi tiết sản phẩm đã đặt</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-white/80 ml-auto"></i>
+                        </button>
                     </div>
 
                     <button onclick="resetSearch()"
@@ -218,9 +229,69 @@
     </div>
 </div>
 
+<!-- ===== Modal: Danh sách sản phẩm đã đặt ===== -->
+<div id="products-modal" class="fixed inset-0 z-[9999] flex items-center justify-center hidden" role="dialog" aria-modal="true">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeProductsModal()"></div>
+
+    <!-- Modal box -->
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 flex flex-col max-h-[85vh] animate-modal-in overflow-hidden">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                    <i class="fa-solid fa-list-check text-[#0046ab] text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="font-bold text-gray-800 text-base leading-tight">Sản phẩm đã đặt</h2>
+                    <p id="modal-order-code" class="text-xs text-gray-400 font-medium"></p>
+                </div>
+            </div>
+            <button onclick="closeProductsModal()" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-red-50 hover:text-red-500 text-gray-500 transition-all">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+        </div>
+
+        <!-- Product list -->
+        <div id="result-products" class="overflow-y-auto px-6 py-4 space-y-0 flex-1"></div>
+
+        <!-- Footer: tổng tiền -->
+        <div class="flex-shrink-0 border-t border-dashed border-gray-200 px-6 py-4 flex justify-between items-center bg-gray-50">
+            <span class="text-sm font-bold text-gray-500">TỔNG TIỀN ĐƠN HÀNG:</span>
+            <span id="modal-total" class="text-xl font-black text-red-600"></span>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(32px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+.animate-modal-in { animation: modalIn 0.28s cubic-bezier(.22,1,.36,1) both; }
+</style>
+
 <script>
+    function openProductsModal() {
+        document.getElementById('products-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeProductsModal() {
+        document.getElementById('products-modal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Đóng modal khi nhấn ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeProductsModal();
+    });
+
     function doSearch(e) {
         e.preventDefault();
+        // Đóng modal sản phẩm khi tìm kiếm mới
+        closeProductsModal();
         const loading   = document.getElementById('loading');
         const result    = document.getElementById('trackingResult');
         const noResult  = document.getElementById('noResult');
@@ -230,30 +301,147 @@
         result.classList.add('hidden');
         noResult.classList.add('hidden');
         
-        const code = codeInput.value.trim().toUpperCase();
+        const code = codeInput.value.trim();
         if (!code) return;
 
         loading.classList.remove('hidden');
 
-        setTimeout(() => {
-            loading.classList.add('hidden');
-
-            // Giả lập tìm kiếm: chỉ tìm thấy nếu mã bắt đầu bằng DMP (hoặc bất kỳ mã nào dài hơn 5 ký tự để demo)
-            if (code.length >= 5) {
-                showResult({ id: code, name: 'Huỳnh Văn Vinh Em' });
-            } else {
+        fetch(`/orders/search?code=${encodeURIComponent(code)}`)
+            .then(res => {
+                if (!res.ok) throw new Error('Order not found');
+                return res.json();
+            })
+            .then(data => {
+                loading.classList.add('hidden');
+                if (data.success) {
+                    showResult(data);
+                } else {
+                    noResult.classList.remove('hidden');
+                }
+            })
+            .catch(err => {
+                loading.classList.add('hidden');
                 noResult.classList.remove('hidden');
-            }
-        }, 1000);
+            });
     }
 
     function showResult(data) {
-        document.getElementById('order-id-badge').textContent = '#' + data.id;
-        document.getElementById('result-name').textContent    = data.name;
+        document.getElementById('order-id-badge').textContent = '#' + (data.order_code || data.order_id);
+        document.getElementById('result-name').textContent    = data.customer_name;
+        
+        // Trạng thái đơn hàng
+        const statusEl = document.getElementById('result-status');
+        statusEl.textContent = data.status_label;
+        statusEl.className = 'text-[10px] font-black px-2 py-0.5 rounded ' + data.status_color;
+
+        // Địa chỉ và Tổng tiền
+        document.getElementById('result-address').textContent = data.shipping_address;
+        const formatted = new Intl.NumberFormat('vi-VN').format(data.final_amount) + 'đ';
+        document.getElementById('result-total').textContent  = formatted;
+        document.getElementById('modal-total').textContent   = formatted;
+        // Cập nhật mã đơn hàng trong header modal
+        const orderCode = '#' + (data.order_code || data.order_id);
+        document.getElementById('modal-order-code').textContent = 'Mã đơn: ' + orderCode;
+
+        // Render sản phẩm đã mua
+        const productsContainer = document.getElementById('result-products');
+        productsContainer.innerHTML = '';
+        if (data.items && data.items.length > 0) {
+            data.items.forEach(item => {
+                // Controller đã trả về URL đầy đủ — dùng trực tiếp không cần prefix /storage/
+                const imgUrl = item.image || 'https://via.placeholder.com/56x56?text=SP';
+                productsContainer.innerHTML += `
+                    <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid #f3f4f6;">
+                        <img src="${imgUrl}" style="width:56px; height:56px; min-width:56px; object-fit:cover; border-radius:8px; border:1px solid #e5e7eb;" onerror="this.src='/images/no-image.png'">
+                        <div style="flex:1; min-width:0; word-break:normal; overflow-wrap:anywhere;">
+                            <div style="font-size:13px; font-weight:700; color:#1f2937; line-height:1.4;">${item.product_name}</div>
+                            <div style="font-size:12px; color:#6b7280; margin-top:4px;">Số lượng: ${item.quantity}</div>
+                        </div>
+                        <div style="font-size:13px; font-weight:800; color:#1f2937; white-space:nowrap; padding-left:8px;">${new Intl.NumberFormat('vi-VN').format(item.price)}đ</div>
+                    </div>
+                `;
+            });
+        }
+
+        // Cập nhật timeline
+        updateTimeline(data.status);
 
         const result = document.getElementById('trackingResult');
         result.classList.remove('hidden');
         result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function updateTimeline(status) {
+        const steps = document.querySelectorAll('.relative.space-y-10 > .flex');
+        
+        // Reset classes và styles
+        steps.forEach(step => {
+            step.classList.remove('step-completed', 'step-active');
+            step.querySelector('.tracking-dot').className = 'tracking-dot';
+            
+            const h4 = step.querySelector('h4');
+            const p = step.querySelector('p');
+            if (h4) h4.className = 'font-bold text-gray-300 text-base';
+            if (p) p.className = 'text-gray-300 text-sm';
+        });
+
+        const setActive = (stepIndex, title, desc, iconClass) => {
+            const step = steps[stepIndex];
+            if (!step) return;
+            step.classList.add('step-active');
+            step.querySelector('.tracking-dot').className = 'tracking-dot border-[#0046ab] text-[#0046ab]';
+            step.querySelector('.tracking-dot').innerHTML = `<i class="${iconClass}"></i>`;
+            const h4 = step.querySelector('h4');
+            const p = step.querySelector('p');
+            if (h4) {
+                h4.textContent = title;
+                h4.className = 'font-bold text-[#0046ab] text-base';
+            }
+            if (p) {
+                p.textContent = desc;
+                p.className = 'text-gray-500 text-sm';
+            }
+        };
+
+        const setCompleted = (stepIndex, title, desc, iconClass) => {
+            const step = steps[stepIndex];
+            if (!step) return;
+            step.classList.add('step-completed');
+            step.querySelector('.tracking-dot').className = 'tracking-dot bg-[#0046ab] border-[#0046ab] text-white';
+            step.querySelector('.tracking-dot').innerHTML = `<i class="${iconClass}"></i>`;
+            const h4 = step.querySelector('h4');
+            const p = step.querySelector('p');
+            if (h4) {
+                h4.textContent = title;
+                h4.className = 'font-bold text-gray-800 text-base';
+            }
+            if (p) {
+                p.textContent = desc;
+                p.className = 'text-gray-500 text-sm';
+            }
+        };
+
+        // Step 1: Đặt hàng thành công
+        setCompleted(0, 'Đã đặt hàng thành công', 'Hệ thống đã ghi nhận đơn hàng của bạn.', 'fa-solid fa-file-invoice');
+
+        if (status === 'Pending' || status === 'BaoCK') {
+            setActive(1, 'Chờ duyệt thanh toán', 'Giao dịch đang chờ Admin xác thực.', 'fa-solid fa-circle-notch fa-spin');
+        } else if (status === 'Cancelled') {
+            setActive(1, 'Đơn hàng đã bị hủy', 'Đơn hàng này không còn hiệu lực.', 'fa-solid fa-circle-xmark text-red-500');
+        } else {
+            setCompleted(1, 'Đã xác nhận thanh toán', 'Giao dịch đã được xác thực thành công.', 'fa-solid fa-check-double');
+            
+            if (status === 'Shipping') {
+                setCompleted(2, 'Đang đóng gói', 'Sản phẩm đang được đóng gói chuẩn bị giao.', 'fa-solid fa-box-open');
+                setActive(3, 'Đang vận chuyển', 'Sản phẩm đang được vận chuyển tới quý khách.', 'fa-solid fa-truck text-blue-500');
+            } else if (status === 'Delivered' || status === 'Completed') {
+                setCompleted(2, 'Đã đóng gói', 'Sản phẩm đã được kiểm tra và đóng gói.', 'fa-solid fa-box-open');
+                setCompleted(3, 'Đang vận chuyển', 'Sản phẩm đã được giao cho đơn vị vận chuyển.', 'fa-solid fa-truck');
+                setCompleted(4, 'Đã giao hàng thành công', 'Đơn hàng đã được giao đến tay quý khách.', 'fa-solid fa-house-circle-check');
+            } else {
+                setActive(2, 'Đang xử lý chuẩn bị hàng', 'Sản phẩm đang được chuẩn bị.', 'fa-solid fa-circle-notch fa-spin');
+            }
+        }
     }
 
     function resetSearch() {

@@ -64,10 +64,7 @@ class CustomerController extends Controller
 
     public function create()
     {
-        return view('admin.customers.form', [
-            'customer' => new User(),
-            'title' => 'Thêm mới khách hàng'
-        ]);
+        return redirect()->route('admin.customers.index')->with('show_create_modal', true);
     }
 
     public function store(Request $request)
@@ -76,9 +73,11 @@ class CustomerController extends Controller
             'full_name' => 'required|string|max:50',
             'email' => 'required|email|max:100|unique:users,email',
             'password' => 'required|string|min:6',
-            'phone_number' => 'nullable|string|max:15',
+            'phone_number' => ['nullable', 'regex:/^0[0-9]{9}$/'],
             'address' => 'nullable|string|max:255',
             'status' => 'required|in:Active,Banned',
+        ], [
+            'phone_number.regex' => 'Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng số 0.',
         ]);
 
         $customer = User::create([
@@ -116,25 +115,44 @@ class CustomerController extends Controller
 
     public function edit($id)
     {
-        $customer = User::where('role_id', 3)->findOrFail($id);
-        return view('admin.customers.form', [
-            'customer' => $customer,
-            'title' => 'Chỉnh sửa khách hàng'
-        ]);
+        try {
+            $customer = User::where('role_id', 3)->findOrFail($id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            $isDeleted = User::where('role_id', 3)->onlyTrashed()->where('user_id', $id)->exists();
+            if ($isDeleted) {
+                return redirect()->route('admin.customers.index')
+                    ->with('error', 'Khách hàng này đã bị xóa bởi người khác từ trước!');
+            }
+            return redirect()->route('admin.customers.index')
+                ->with('error', 'Không tìm thấy thông tin khách hàng!');
+        }
+        return redirect()->route('admin.customers.index')->with('edit_customer', $customer);
     }
 
     public function update(Request $request, $id)
     {
-        $customer = User::where('role_id', 3)->findOrFail($id);
+        try {
+            $customer = User::where('role_id', 3)->findOrFail($id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            $isDeleted = User::where('role_id', 3)->onlyTrashed()->where('user_id', $id)->exists();
+            if ($isDeleted) {
+                return redirect()->route('admin.customers.index')
+                    ->with('error', 'Khách hàng này đã bị xóa bởi người khác. Vui lòng tải lại trang!');
+            }
+            return redirect()->route('admin.customers.index')
+                ->with('error', 'Không tìm thấy thông tin khách hàng. Vui lòng tải lại trang!');
+        }
 
         $validated = $request->validate([
             'full_name' => 'required|string|max:50',
             'email' => ['required', 'email', 'max:100', Rule::unique('users', 'email')->ignore($customer->user_id, 'user_id')],
             'password' => 'nullable|string|min:6',
-            'phone_number' => 'nullable|string|max:15',
+            'phone_number' => ['nullable', 'regex:/^0[0-9]{9}$/'],
             'address' => 'nullable|string|max:255',
             'status' => 'required|in:Active,Banned',
             'version' => 'required|integer', // Đối với optimistic locking
+        ], [
+            'phone_number.regex' => 'Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng số 0.',
         ]);
 
         $updateData = [
@@ -175,7 +193,17 @@ class CustomerController extends Controller
             return redirect()->back()->with('error', 'Bạn không có quyền xóa khách hàng!');
         }
 
-        $customer = User::where('role_id', 3)->findOrFail($id);
+        try {
+            $customer = User::where('role_id', 3)->findOrFail($id);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            $isDeleted = User::where('role_id', 3)->onlyTrashed()->where('user_id', $id)->exists();
+            if ($isDeleted) {
+                return redirect()->route('admin.customers.index')
+                    ->with('error', 'Khách hàng này đã bị xóa bởi người khác từ trước!');
+            }
+            return redirect()->route('admin.customers.index')
+                ->with('error', 'Không tìm thấy thông tin khách hàng!');
+        }
         $name = $customer->full_name;
         
         // Laravel SoftDeletes sẽ tự động xử lý khi gọi delete()
@@ -281,7 +309,7 @@ class CustomerController extends Controller
     {
         $query = User::where('role_id', 3);
 
-        // Áp dụng cùng bộ lọc với trang index
+        // Áp dụng bộ lọc
         if ($search = $request->input('q')) {
             $query->where(function($q) use ($search) {
                 $q->where('full_name', 'LIKE', "%{$search}%")
@@ -305,38 +333,48 @@ class CustomerController extends Controller
         $customers = $query->orderByDesc('created_at')->get();
 
         $filename = "customers_export_" . date('YmdHis') . ".csv";
-        $headers = [
-            "Content-type"        => "text/csv; charset=UTF-8",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        ];
 
-        $columns = ['ID', 'Ho Ten', 'Email', 'So Dien Thoai', 'Hang', 'Trang Thai', 'Ngay Tao'];
+        // Sử dụng file tạm trong bộ nhớ để tạo CSV
+        $handle = fopen('php://temp', 'r+');
 
-        $callback = function() use($customers, $columns) {
-            $file = fopen('php://output', 'w');
-            // Thêm BOM để hiển thị đúng tiếng Việt trong Excel
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            fputcsv($file, $columns);
+        // Thêm BOM (Byte Order Mark) để Excel nhận dạng đúng font UTF-8 tiếng Việt
+        fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
 
-            foreach ($customers as $customer) {
-                fputcsv($file, [
-                    $customer->user_id,
-                    $customer->full_name,
-                    $customer->email,
-                    $customer->phone_number,
-                    $customer->member_tier,
-                    $customer->status,
-                    $customer->created_at
-                ]);
-            }
+        // Tiêu đề cột
+        fputcsv($handle, [
+            'ID', 
+            'Họ và Tên', 
+            'Email', 
+            'Số điện thoại', 
+            'Hạng thành viên', 
+            'Địa chỉ', 
+            'Trạng thái', 
+            'Ngày tạo'
+        ]);
 
-            fclose($file);
-        };
+        foreach ($customers as $customer) {
+            fputcsv($handle, [
+                $customer->user_id,
+                $customer->full_name,
+                $customer->email,
+                $customer->phone_number,
+                $customer->member_tier,
+                $customer->address,
+                $customer->status === 'Active' ? 'Đang hoạt động' : 'Khóa tài khoản',
+                $customer->created_at ? $customer->created_at->format('d/m/Y H:i:s') : ''
+            ]);
+        }
 
-        return response()->stream($callback, 200, $headers);
+        rewind($handle);
+        $csvContent = stream_get_contents($handle);
+        fclose($handle);
+
+        return response($csvContent)
+            ->header('Content-Type', 'text/csv; charset=UTF-8')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+            ->header('Pragma', 'no-cache')
+            ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
+            ->header('Expires', '0');
     }
 }
 

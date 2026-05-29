@@ -2,29 +2,44 @@
 
 namespace App\Providers;
 
+use App\Models\Attribute;
+use App\Models\Category;
+use App\Models\Order;
+use App\Models\Page;
+use App\Models\Product;
+use App\Observers\BaseTranslationObserver;
+use App\Observers\OrderObserver;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
+        // Core app services are registered automatically by Laravel.
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        if (config('app.env') !== 'local') {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
-        }
-        \Illuminate\Support\Facades\Schema::defaultStringLength(191);
+        $this->bootInfrastructure();
+        $this->bootObservers();
+        $this->bootLoginHistory();
+    }
 
-        \Illuminate\Support\Facades\Event::listen(
+    protected function bootInfrastructure(): void
+    {
+        if (config('app.env') !== 'local') {
+            URL::forceScheme('https');
+        }
+
+        Schema::defaultStringLength(191);
+    }
+
+    protected function bootLoginHistory(): void
+    {
+        Event::listen(
             \Illuminate\Auth\Events\Login::class,
             function ($event) {
                 \App\Models\LoginHistory::create([
@@ -35,5 +50,18 @@ class AppServiceProvider extends ServiceProvider
                 ]);
             }
         );
+    }
+
+    protected function bootObservers(): void
+    {
+        Order::observe(OrderObserver::class);
+
+        if (! config('translatable.auto_translate', true)) {
+            return;
+        }
+
+        foreach ([Product::class, Category::class, Attribute::class, Page::class] as $model) {
+            $model::observe(BaseTranslationObserver::class);
+        }
     }
 }

@@ -355,6 +355,9 @@
         </div>
     </div>
 
+    {{-- Mua kèm Combo tiết kiệm --}}
+    @include('frontend.products._combo_bundle', ['comboProducts' => $comboProducts])
+
     {{-- Layout Giữa: Giới thiệu + Specs --}}
     <div class="middle-section">
         {{-- Giới thiệu --}}
@@ -406,6 +409,9 @@
 
     {{-- Đánh giá sản phẩm --}}
     @include('frontend.products.partials.reviews')
+
+    {{-- Gợi ý bán chéo: Thường mua cùng nhau --}}
+    @include('frontend.products._cross_sell', ['crossSellProducts' => $crossSellProducts])
     {{-- Sản phẩm liên quan --}}
     @if($relatedProducts->count())
         <div class="pd-related">
@@ -608,6 +614,14 @@
 
 @push('scripts')
 <script>
+// --- Chatbot AI: Cung cấp ngữ cảnh sản phẩm đang xem ---
+window.chatbotProductName = {!! json_encode($product->name) !!};
+window.chatbotProductContext = {!! json_encode(
+    $product->name . ' - Giá: ' . number_format($product->base_price, 0, ',', '.') . 'đ' .
+    ($product->old_price ? ' (Giá gốc: ' . number_format($product->old_price, 0, ',', '.') . 'đ)' : '') .
+    ($product->category ? ' - Danh mục: ' . $product->category->name : '')
+) !!};
+
 // --- Tự cuộn lên đầu khi F5 ---
 if (history.scrollRestoration) {
     history.scrollRestoration = 'manual';
@@ -829,24 +843,45 @@ function showProductToast(msg) {
     }
 }
 
-function buyNow() {
-    window.location.href = "{{ route('cart.index') }}";
+function addToCart(redirect = false) {
+    const data = {
+        product_id: '{{ $product->product_id }}',
+        quantity: 1
+    };
+
+    fetch('{{ route("cart.add") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(res => {
+        if(res.status === 'success') {
+            if (redirect) {
+                window.location.href = "{{ route('cart.index') }}";
+            } else {
+                showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
+                const headerBadge = document.getElementById('headerCartBadge');
+                if (headerBadge && res.cart_count !== undefined) {
+                    headerBadge.innerText = res.cart_count;
+                    headerBadge.style.display = res.cart_count > 0 ? 'block' : 'none';
+                }
+            }
+        } else if(res.error) {
+            showToast(res.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Đã xảy ra lỗi khi thêm vào giỏ hàng!', 'error');
+    });
 }
 
-function addToCart() {
-    showToast('Đã thêm sản phẩm vào giỏ hàng thành công!');
-    
-    // Update cart count logic
-    let userId = '{{ Auth::id() ?? "guest" }}';
-    let cartCount = parseInt(localStorage.getItem('cartCount_' + userId) || 0);
-    cartCount++;
-    localStorage.setItem('cartCount_' + userId, cartCount);
-    
-    const headerBadge = document.getElementById('headerCartBadge');
-    if (headerBadge) {
-        headerBadge.innerText = cartCount;
-        headerBadge.style.display = 'block';
-    }
+function buyNow() {
+    addToCart(true);
 }
 
 // Wishlist Toggle
