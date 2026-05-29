@@ -7,18 +7,21 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
- * ChatbotController - API Chatbot RAG (Retrieval-Augmented Generation)
+ * ChatbotController - Bộ điều khiển API Chatbot RAG (Retrieval-Augmented Generation)
  *
- * Luồng xử lý:
- * 1. Nhận câu hỏi từ Frontend (AJAX POST)
- * 2. Trích xuất từ khóa & tìm kiếm sản phẩm liên quan trong DB (LIKE)
- * 3. Gửi câu hỏi + ngữ cảnh (sản phẩm tìm được) lên Gemini API
- * 4. Trả JSON response cho Frontend
+ * Nhiệm vụ chính:
+ * 1. Tiếp nhận câu hỏi và ngữ cảnh (sản phẩm đang xem) từ người dùng ở Frontend.
+ * 2. Phân tích ngôn ngữ câu hỏi (Tiếng Việt hay Tiếng Anh).
+ * 3. Trích xuất từ khóa tìm kiếm, thực hiện truy vấn cơ sở dữ liệu (Database) để lấy thông tin các sản phẩm liên quan (RAG).
+ * 4. Kết hợp câu hỏi, thông tin sản phẩm tìm được, và các chính sách của hệ thống (Bảo hành, Đổi trả, Trả góp, Tích điểm) thành một Prompt hướng dẫn chi tiết.
+ * 5. Gửi Prompt này lên API Gemini của Google để AI tổng hợp câu trả lời thông minh, tự động chuyển đổi qua lại giữa nhiều model dự phòng nếu gặp lỗi (Fallback).
+ * 6. Trả kết quả tư vấn đã được định dạng HTML sạch về cho giao diện Chatbot ở Frontend.
  */
 class ChatbotController extends Controller
 {
     /**
-     * Danh sách các model Gemini fallback (thử lần lượt)
+     * Danh sách các phiên bản mô hình AI Gemini để chạy dự phòng.
+     * Nếu mô hình đầu tiên bị lỗi (quá tải, hết hạn ngạch...), hệ thống sẽ tự động thử các mô hình tiếp theo.
      */
     private array $models = [
         'gemini-3.1-flash-lite',
@@ -28,7 +31,9 @@ class ChatbotController extends Controller
     ];
 
     /**
-     * Các từ vô nghĩa (stop words) sẽ bị lọc bỏ khi trích xuất từ khóa
+     * Danh sách các từ vô nghĩa (Stop Words) trong tiếng Việt và tiếng Anh.
+     * Những từ này sẽ bị loại bỏ khỏi câu hỏi khi trích xuất từ khóa tìm kiếm sản phẩm
+     * để tránh việc tìm kiếm bị nhiễu và tăng tốc độ truy vấn cơ sở dữ liệu.
      */
     private array $stopwords = [
         'là', 'gì', 'cho', 'tôi', 'hỏi', 'có', 'không', 'giá', 'bao', 'nhiêu',
@@ -40,13 +45,19 @@ class ChatbotController extends Controller
     ];
 
     /**
-     * Xử lý request chat từ Frontend
+     * Phương thức chat(): Điểm nhận request từ Frontend gửi lên qua AJAX POST.
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function chat(Request $request)
     {
+        // Lấy câu hỏi từ người dùng và làm sạch khoảng trắng thừa ở hai đầu
         $prompt = trim($request->input('prompt', ''));
+        // Ngữ cảnh sản phẩm khách hàng đang xem (nếu khách đang ở trang chi tiết sản phẩm)
         $currentProductContext = trim($request->input('context', ''));
 
+        // Kiểm tra nếu câu hỏi trống thì phản hồi yêu cầu người dùng nhập lại
         if (!$prompt) {
             return response()->json([
                 'success' => false,
@@ -54,6 +65,7 @@ class ChatbotController extends Controller
             ]);
         }
 
+        // Lấy cấu hình khóa API Gemini từ file môi trường .env
         $apiKey = config('services.gemini.api_key');
         if (!$apiKey) {
             return response()->json([
@@ -62,20 +74,23 @@ class ChatbotController extends Controller
             ]);
         }
 
-        // Tự động phát hiện ngôn ngữ dựa trên câu hỏi của khách hàng (không phụ thuộc vào locale của trang web)
+        // Tự động phát hiện ngôn ngữ dựa trên câu hỏi của khách hàng (tiếng Anh hay tiếng Việt)
         $detectedLang = $this->detectLanguage($prompt);
         $isEnglish = ($detectedLang === 'en');
 
-        // BƯỚC 1: RAG - Trích xuất từ khóa & tìm kiếm sản phẩm trong DB (sử dụng ngôn ngữ đã phát hiện)
+        // BƯỚC 1: TRÍCH XUẤT THÔNG TIN SẢN PHẨM (RAG)
+        // Tìm kiếm các sản phẩm trong kho hàng liên quan đến câu hỏi của khách
         $productKnowledge = $this->searchProducts($prompt, $isEnglish);
 
-        // BƯỚC 2: Chuẩn bị prompt & gọi Gemini API
+        // BƯỚC 2: CHUẨN BỊ NỘI DUNG PROMPT & CÁC CHỈ THỊ CHO AI
         if ($isEnglish) {
+            // Định nghĩa chỉ thị ngữ cảnh sản phẩm hiện tại bằng tiếng Anh
             $contextInstruction = 'The customer is on the Homepage or browsing general categories. Please provide a general consultation.';
             if ($currentProductContext) {
                 $contextInstruction = "SPECIAL NOTICE: The customer is VIEWING THIS PRODUCT:\n{$currentProductContext}\n-> Prioritize using this product's details in your response.";
             }
 
+            // Xây dựng Prompt tiếng Anh toàn diện gửi lên cho AI
             $fullPrompt = "BACKGROUND: You are the Smart Shopping Assistant of DIENMAY PRO - a retail system for phones, laptops, and technology accessories.
 INVENTORY SEARCH RESULTS RELATED TO THE QUESTION:
 {$productKnowledge}
@@ -102,10 +117,10 @@ RESPONSE RULES (CRITICAL - MANDATORY):
    - NEVER drop the entire product list into a long block of text. Only mention 2-4 most relevant products, distributed across the analysis sections.
 
 4. LINK INSERTION RULES (NEVER MAKE BROKEN LINKS - MANDATORY):
-    - All product detail links MUST use the HTML link format with the exact URL prefix \"/san-pham/\" followed by the product ID, and MUST have class \"chatbot-product-link\" with the product name as the link text: <a href=\"/san-pham/ID\" class=\"chatbot-product-link\">Product Name</a> (Example: <a href=\"/san-pham/16\" class=\"chatbot-product-link\">ASUS ROG Strix G16 2024</a>). DO NOT display the link as raw text, and DO NOT use the URL as the link text. DO NOT translate \"san-pham\" to \"product\", \"products\", \"en/san-pham\", or anything else in the href attribute.
-    - All brand, category, or product type links MUST use the exact search format: <a href=\"/search?q=keyword\" class=\"chatbot-product-link\">keyword_name</a> (Example: <a href=\"/search?q=Asus\" class=\"chatbot-product-link\">Asus</a>, <a href=\"/search?q=Dell\" class=\"chatbot-product-link\">Dell</a>, <a href=\"/search?q=MacBook\" class=\"chatbot-product-link\">MacBook</a>). DO NOT translate or change the \"/search?q=\" path.
-    - All policy links MUST keep the exact path provided in the STORE POLICY CONTEXT above (e.g. \"/chinh-sach-bao-hanh\", \"/chinh-sach-doi-tra\", \"/warranty\", \"/rewards\"). DO NOT translate these paths (e.g., do not use \"/warranty-policy\" or \"/return-policy\" inside the href attribute).
-    - NEVER make up links like /san-pham/brand-name or /san-pham/category-name. All brands and categories must go through the /search?q=keyword link.
+     - All product detail links MUST use the HTML link format with the exact URL prefix \"/san-pham/\" followed by the product ID, and MUST have class \"chatbot-product-link\" with the product name as the link text: <a href=\"/san-pham/ID\" class=\"chatbot-product-link\">Product Name</a> (Example: <a href=\"/san-pham/16\" class=\"chatbot-product-link\">ASUS ROG Strix G16 2024</a>). DO NOT display the link as raw text, and DO NOT use the URL as the link text. DO NOT translate \"san-pham\" to \"product\", \"products\", \"en/san-pham\", or anything else in the href attribute.
+     - All brand, category, or product type links MUST use the exact search format: <a href=\"/search?q=keyword\" class=\"chatbot-product-link\">keyword_name</a> (Example: <a href=\"/search?q=Asus\" class=\"chatbot-product-link\">Asus</a>, <a href=\"/search?q=Dell\" class=\"chatbot-product-link\">Dell</a>, <a href=\"/search?q=MacBook\" class=\"chatbot-product-link\">MacBook</a>). DO NOT translate or change the \"/search?q=\" path.
+     - All policy links MUST keep the exact path provided in the STORE POLICY CONTEXT above (e.g. \"/chinh-sach-bao-hanh\", \"/chinh-sach-doi-tra\", \"/warranty\", \"/rewards\"). DO NOT translate these paths (e.g., do not use \"/warranty-policy\" or \"/return-policy\" inside the href attribute).
+     - NEVER make up links like /san-pham/brand-name or /san-pham/category-name. All brands and categories must go through the /search?q=keyword link.
 
 5. DO NOT USE MARKDOWN: Do not use **, -, #, * or any Markdown syntax in the response.
 6. USE HTML TAGS FOR FORMATTING:
@@ -120,11 +135,13 @@ RESPONSE RULES (CRITICAL - MANDATORY):
 
 CUSTOMER'S QUESTION: {$prompt}";
         } else {
+            // Định nghĩa chỉ thị ngữ cảnh sản phẩm hiện tại bằng tiếng Việt
             $contextInstruction = 'Khách hàng đang ở Trang chủ hoặc xem danh mục chung. Hãy tư vấn tổng quan.';
             if ($currentProductContext) {
                 $contextInstruction = "ĐẶC BIỆT LƯU Ý: Khách hàng ĐANG XEM SẢN PHẨM NÀY:\n{$currentProductContext}\n-> Ưu tiên dùng thông tin sản phẩm này để trả lời.";
             }
 
+            // Xây dựng Prompt tiếng Việt toàn diện gửi lên cho AI
             $fullPrompt = "BỐI CẢNH: Bạn là Trợ lý bán hàng thông minh của DIENMAY PRO - hệ thống bán lẻ điện thoại, laptop, phụ kiện công nghệ.
 NGỮ CẢNH KHO HÀNG (Dữ liệu từ Database):
 {$productKnowledge}
@@ -170,9 +187,10 @@ QUY TẮC PHẢN HỒI (CỰC KỲ QUAN TRỌNG - BẮT BUỘC):
 CÂU HỎI CỦA KHÁCH: {$prompt}";
         }
 
-        // BƯỚC 3: Gọi Gemini API (fallback qua nhiều model)
+        // BƯỚC 3: GỬI YÊU CẦU LÊN API GEMINI ĐỂ NHẬN PHẢN HỒI (Hỗ trợ tự động dự phòng model)
         $result = $this->callGeminiApi($apiKey, $fullPrompt);
 
+        // Trả kết quả JSON về cho Frontend dựa vào trạng thái gọi AI thành công hay thất bại
         if ($result['success']) {
             return response()->json([
                 'success' => true,
@@ -187,38 +205,52 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
     }
 
     /**
-     * Trích xuất từ khóa từ câu hỏi & tìm sản phẩm liên quan trong DB
+     * Trích xuất từ khóa từ câu hỏi người dùng & tìm kiếm sản phẩm liên quan trong Database.
+     * Đây là quá trình "Retrieval" của kỹ thuật RAG.
+     * 
+     * @param string $prompt Câu hỏi thô từ khách hàng
+     * @param bool $isEnglish Cờ báo hiệu câu hỏi bằng tiếng Anh
+     * @return string Trả về chuỗi danh sách sản phẩm tìm được để AI tham khảo làm ngữ cảnh
      */
     private function searchProducts(string $prompt, bool $isEnglish): string
     {
+        // Tách câu hỏi thành mảng các từ đơn bằng khoảng trắng
         $keywords = explode(' ', mb_strtolower($prompt, 'UTF-8'));
         $searchTerms = [];
 
+        // Duyệt qua từng từ để lọc và chuẩn hóa từ khóa
         foreach ($keywords as $word) {
+            // Loại bỏ các ký tự đặc biệt, dấu câu, chỉ giữ lại chữ cái và chữ số
             $word = trim(preg_replace('/[^\p{L}\p{N}\s]/u', '', $word));
+            
+            // Chỉ giữ lại từ có độ dài từ 2 ký tự trở lên và KHÔNG nằm trong danh sách từ vô nghĩa (stopwords)
             if (mb_strlen($word) >= 2 && !in_array($word, $this->stopwords)) {
-                // Chuẩn hóa từ tiếng Anh số nhiều về số ít
+                // CHUẨN HÓA TIẾNG ANH: Nếu là từ tiếng Anh, tự động chuyển danh từ số nhiều về số ít để khớp database dễ hơn
                 if (preg_match('/^[a-z]+$/i', $word)) {
                     if (str_ends_with($word, 'ies')) {
-                        $word = substr($word, 0, -3) . 'y';
+                        $word = substr($word, 0, -3) . 'y'; // Ví dụ: properties -> property
                     } elseif (str_ends_with($word, 'es') && !str_ends_with($word, 'ees')) {
-                        $word = substr($word, 0, -2);
+                        $word = substr($word, 0, -2); // Ví dụ: boxes -> box
                     } elseif (str_ends_with($word, 's') && !str_ends_with($word, 'ss') && !str_ends_with($word, 'as') && !str_ends_with($word, 'us')) {
-                        $word = substr($word, 0, -1);
+                        $word = substr($word, 0, -1); // Ví dụ: laptops -> laptop
                     }
                 }
                 $searchTerms[] = $word;
             }
         }
+        
+        // Loại bỏ các từ khóa bị trùng lặp
         $searchTerms = array_unique($searchTerms);
 
+        // Nếu sau khi lọc không còn từ khóa chất lượng nào, trả về thông báo để AI tự tư vấn chung
         if (empty($searchTerms)) {
             return 'Khách hàng đang hỏi câu hỏi chung chung, không chứa từ khóa sản phẩm rõ ràng.';
         }
 
         try {
-            // Thử tìm kiếm khớp đồng thời tất cả các từ khóa (AND) trước để đạt độ chính xác cao nhất
-            // Tìm trong cả bảng chính products và bảng dịch product_translations, cùng bảng category/translations
+            // CHIẾN LƯỢC TRUY VẤN:
+            // Lần 1: Thử tìm kiếm khớp ĐỒNG THỜI tất cả các từ khóa (toán tử AND).
+            // Tìm kiếm trong cột Tên sản phẩm chính, Bản dịch sản phẩm tiếng Anh, Danh mục sản phẩm, và Bản dịch danh mục.
             $foundProducts = \App\Models\Product::whereNull('deleted_at')
                 ->where(function ($q) use ($searchTerms) {
                     foreach ($searchTerms as $term) {
@@ -239,7 +271,8 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
                 ->limit(10)
                 ->get();
 
-            // Nếu không có sản phẩm nào khớp tất cả các từ khóa, fallback sang khớp một trong các từ khóa (OR)
+            // Lần 2 (Fallback): Nếu không có sản phẩm nào khớp đồng thời tất cả các từ,
+            // nới lỏng điều kiện bằng cách tìm sản phẩm khớp ÍT NHẤT MỘT trong các từ khóa (toán tử OR).
             if ($foundProducts->isEmpty()) {
                 $foundProducts = \App\Models\Product::whereNull('deleted_at')
                     ->where(function ($q) use ($searchTerms) {
@@ -260,27 +293,28 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
                     ->get();
             }
 
+            // Nếu vẫn không tìm thấy sản phẩm nào trong database
             if ($foundProducts->isEmpty()) {
                 return "Hệ thống không tìm thấy sản phẩm nào khớp chính xác với từ khóa.\n";
             }
 
+            // Xây dựng chuỗi văn bản danh sách sản phẩm để nối vào Prompt gửi AI
             $knowledge = $isEnglish 
                 ? "INVENTORY SEARCH RESULTS RELATED TO THE QUESTION:\n" 
                 : "KẾT QUẢ TÌM KIẾM TRONG KHO HÀNG LIÊN QUAN ĐẾN CÂU HỎI:\n";
-
-            $targetLocale = $isEnglish ? 'en' : 'vi';
 
             foreach ($foundProducts as $p) {
                 $price = number_format($p->base_price ?? 0, 0, ',', '.');
                 $productId = $p->product_id ?? ($p->id ?? 0);
                 
-                // Lấy tên sản phẩm tương ứng với ngôn ngữ được phát hiện
+                // Lấy tên sản phẩm tương ứng với ngôn ngữ đã xác định
                 $name = $p->name ?? '';
                 if ($isEnglish) {
                     if ($p instanceof \App\Models\Product) {
+                        // Tải bản dịch tên sản phẩm tiếng Anh
                         $name = $p->translateTo('en')['name'] ?? $p->name;
                     } else {
-                        // Dự phòng nếu $p là stdClass (trong các test case hoặc truy vấn raw)
+                        // Dự phòng nếu $p là đối tượng stdClass trong truy vấn raw
                         $translation = \Illuminate\Support\Facades\DB::table('product_translations')
                             ->where('product_id', $productId)
                             ->where('locale', 'en')
@@ -291,6 +325,7 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
                     }
                 }
                 
+                // Ghép nối thông tin dạng: Tên sản phẩm - Giá - Link để AI dựng câu trả lời
                 if ($isEnglish) {
                     $knowledge .= "- {$name}: Price {$price} VND (Link: /san-pham/{$productId})\n";
                 } else {
@@ -300,45 +335,58 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
 
             return $knowledge;
         } catch (\Exception $e) {
-            Log::error('Chatbot DB search error: ' . $e->getMessage());
+            // Ghi nhận lỗi truy vấn database nếu xảy ra
+            Log::error('Lỗi tìm kiếm sản phẩm cho Chatbot: ' . $e->getMessage());
             return 'Lỗi truy vấn kho hàng.';
         }
     }
 
     /**
-     * Gọi Gemini API với cơ chế fallback qua nhiều model
+     * Thực hiện gửi yêu cầu POST HTTP tới API của Google Gemini.
+     * Tự động thử qua nhiều model trong mảng $models nếu gặp lỗi.
+     * 
+     * @param string $apiKey Khóa API Gemini
+     * @param string $prompt Nội dung chỉ thị gửi AI
+     * @return array Mảng chứa kết quả thành công và text, hoặc báo lỗi cụ thể
      */
     private function callGeminiApi(string $apiKey, string $prompt): array
     {
         $lastError = '';
 
+        // Duyệt qua từng phiên bản mô hình AI (Cơ chế fallback)
         foreach ($this->models as $model) {
+            // URL endpoint của API Gemini theo từng model tương ứng
             $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . trim($apiKey);
 
+            // Cấu trúc dữ liệu Payload JSON chuẩn yêu cầu bởi Gemini
             $postData = json_encode([
                 'contents' => [
                     ['parts' => [['text' => $prompt]]],
                 ],
             ]);
 
+            // Khởi tạo tiến trình CURL để gửi request
             $ch = curl_init($apiUrl);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => $postData,
                 CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYPEER => false, // Bỏ qua kiểm tra chứng chỉ SSL cục bộ để tránh lỗi môi trường local
                 CURLOPT_SSL_VERIFYHOST => 0,
-                CURLOPT_TIMEOUT => 30,
+                CURLOPT_TIMEOUT => 30, // Thời gian chờ tối đa 30 giây
             ]);
 
+            // Thực thi gửi request và ghi nhận phản hồi
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlError = curl_error($ch);
             curl_close($ch);
 
+            // Nếu kết nối CURL không lỗi và máy chủ Google trả về mã HTTP 200 (Thành công)
             if ($response !== false && $httpCode === 200) {
                 $resData = json_decode($response, true);
+                // Trích xuất đoạn text trả về từ cấu trúc JSON của Gemini
                 if (isset($resData['candidates'][0]['content']['parts'][0]['text'])) {
                     return [
                         'success' => true,
@@ -347,19 +395,21 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
                 }
             }
 
+            // Ghi nhận thông tin lỗi của model hiện tại để chuẩn bị chuyển qua model tiếp theo
             if ($response !== false) {
                 $resData = json_decode($response, true);
                 if (isset($resData['error']['message'])) {
-                    $lastError = "Gemini API Error: " . $resData['error']['message'];
+                    $lastError = "Gemini API Error ({$model}): " . $resData['error']['message'];
                 } else {
-                    $lastError = $curlError ? "CURL Error: {$curlError}" : "HTTP {$httpCode} - Response: {$response}";
+                    $lastError = $curlError ? "CURL Error: {$curlError}" : "HTTP {$httpCode} (Model: {$model}) - Response: {$response}";
                 }
             } else {
-                $lastError = "CURL Error: {$curlError}";
+                $lastError = "CURL Error: {$curlError} (Model: {$model})";
             }
         }
 
-        Log::warning('Chatbot Gemini API failed: ' . $lastError);
+        // Ghi lại cảnh báo vào log nếu tất cả các mô hình Gemini đều thất bại
+        Log::warning('Toàn bộ các model Gemini API của Chatbot đều thất bại: ' . $lastError);
 
         return [
             'success' => false,
@@ -368,18 +418,23 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
     }
 
     /**
-     * Tự động phát hiện ngôn ngữ của câu hỏi khách hàng (tiếng Anh hay tiếng Việt)
+     * Tự động phân tích và phát hiện câu hỏi của khách hàng đang được viết bằng tiếng Anh hay tiếng Việt.
+     * 
+     * @param string $prompt Câu hỏi thô
+     * @return string 'vi' nếu là tiếng Việt, 'en' nếu là tiếng Anh
      */
     private function detectLanguage(string $prompt): string
     {
         $promptLower = mb_strtolower($prompt, 'UTF-8');
         
-        // 1. Nếu chứa ký tự có dấu đặc trưng của tiếng Việt -> chắc chắn là tiếng Việt
+        // CÁCH 1: KIỂM TRA DẤU TIẾNG VIỆT
+        // Nếu chuỗi chứa các ký tự nguyên âm có dấu đặc trưng của tiếng Việt -> 100% là tiếng Việt
         if (preg_match('/[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/u', $promptLower)) {
             return 'vi';
         }
         
-        // 2. Đếm số lượng từ khóa đặc trưng tiếng Anh vs tiếng Việt
+        // CÁCH 2: TÍNH TẦN SUẤT TỪ KHÓA (Cho trường hợp tiếng Việt không có dấu)
+        // Mảng các từ viết không dấu hoặc có dấu cơ bản hay gặp trong tiếng Việt
         $viWords = [
             'là', 'gì', 'cho', 'tôi', 'hỏi', 'có', 'không', 'giá', 'bao', 'nhiêu', 
             'tư', 'vấn', 'cái', 'này', 'xin', 'chào', 'mua', 'bán', 'nào', 'của', 
@@ -391,6 +446,7 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
             'day', 'do', 'o', 'dau', 'muon', 'tim', 'loai', 'hang', 'dien', 'thoai', 'khuyen', 'mai',
             'tot', 'nhat', 're', 'sinh', 'vien', 'hoc', 'tap', 'lam', 'viec', 'choi', 'game'
         ];
+        // Mảng các từ thông dụng hay gặp trong tiếng Anh
         $enWords = [
             'what', 'which', 'how', 'why', 'who', 'where', 'is', 'are', 'am', 'the', 
             'a', 'an', 'for', 'to', 'in', 'on', 'at', 'of', 'and', 'with', 'about', 
@@ -398,6 +454,7 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
             'buy', 'get', 'best', 'good', 'laptop', 'laptops', 'phone', 'phones', 'device', 'devices', 'price'
         ];
         
+        // Tách câu thành các từ đơn và lọc bỏ ký tự đặc biệt
         $words = explode(' ', preg_replace('/[^\p{L}\s]/u', '', $promptLower));
         $viCount = 0;
         $enCount = 0;
@@ -405,6 +462,7 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
         foreach ($words as $word) {
             $word = trim($word);
             if (empty($word)) continue;
+            // Tăng biến đếm nếu khớp từ trong danh mục tương ứng
             if (in_array($word, $viWords)) {
                 $viCount++;
             }
@@ -413,12 +471,12 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
             }
         }
         
-        // Nếu số lượng từ tiếng Anh lớn hơn -> nhận diện là tiếng Anh
+        // Nếu số lượng từ tiếng Anh xuất hiện nhiều hơn hẳn tiếng Việt
         if ($enCount > $viCount) {
             return 'en';
         }
         
-        // Mặc định là tiếng Việt
+        // Mặc định phản hồi bằng tiếng Việt
         return 'vi';
     }
 }

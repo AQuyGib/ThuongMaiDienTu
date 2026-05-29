@@ -4,6 +4,7 @@
 
 @section('content')
 @php
+    // Thực hiện tính toán nhanh các chỉ số thống kê từ danh sách bài viết
     $stats = [
         'total' => $articles->total(),
         'approved' => $articles->where('status', 'approved')->count(),
@@ -14,16 +15,22 @@
 
 <div class="space-y-6">
     <style>
+        /* Card mờ ảo (glassmorphism) cho giao diện quản trị */
         .glass-card { background: rgba(255,255,255,.88); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,.65); box-shadow: 0 20px 60px -28px rgba(15, 23, 42, .25); }
         .stat-card { transition: .25s ease; }
         .stat-card:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -28px rgba(37,99,235,.35); }
         .article-card { transition: .25s ease; }
         .article-card:hover { transform: translateY(-3px); }
+        
+        /* Trạng thái active của các chip lọc nhanh bài viết */
         .filter-chip.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+        
+        /* Ẩn bớt các thành phần phân trang thừa mặc định của Tailwind để làm gọn UI */
         .custom-pagination nav p, .custom-pagination nav > div:first-child { display: none !important; }
         .custom-pagination svg { width: 18px; height: 18px; }
     </style>
 
+    {{-- KHỐI HEADER GIỚI THIỆU TRANG VÀ NÚT TẠO MỚI BÀI VIẾT --}}
     <div class="rounded-[2rem] overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 text-white shadow-2xl">
         <div class="p-6 md:p-8 flex flex-col xl:flex-row xl:items-end justify-between gap-6">
             <div class="max-w-3xl space-y-4">
@@ -40,6 +47,7 @@
         </div>
     </div>
 
+    {{-- PHẦN THÔNG TIN THỐNG KÊ (KPI CARD) --}}
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         <div class="glass-card stat-card rounded-[1.75rem] p-5">
             <div class="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">Tổng bài viết</div>
@@ -59,7 +67,10 @@
         </div>
     </div>
 
+    {{-- KHỐI CONTAINER CHÍNH CHỨA BỘ LỌC VÀ BẢNG DANH SÁCH BÀI VIẾT --}}
     <div class="glass-card rounded-[2rem] p-5 md:p-6">
+        
+        {{-- Khối tìm kiếm bài viết --}}
         <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-5">
             <div>
                 <h2 class="text-lg font-black text-slate-900">Bộ lọc & thao tác nhanh</h2>
@@ -76,6 +87,7 @@
             </form>
         </div>
 
+        {{-- Các chip lọc nhanh bài đăng theo trạng thái --}}
         <div class="flex flex-wrap gap-3 mb-5">
             @php
                 $filters = [
@@ -92,6 +104,7 @@
             @endforeach
         </div>
 
+        {{-- Bảng hiển thị thông tin bài viết --}}
         <div class="overflow-x-auto rounded-[1.75rem] border border-slate-100 bg-white">
             <table class="min-w-full">
                 <thead class="bg-slate-50/80 text-[11px] uppercase tracking-[0.25em] text-slate-400">
@@ -106,6 +119,7 @@
                 <tbody class="divide-y divide-slate-100">
                     @forelse($articles as $article)
                         <tr class="article-card hover:bg-blue-50/40">
+                            {{-- Cột nội dung chính (Ảnh thumbnail, Tiêu đề, Ngày đăng, Ticket sửa chữa liên kết nếu có) --}}
                             <td class="px-6 py-5">
                                 <div class="flex items-center gap-4">
                                     <div class="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0 ring-1 ring-slate-100">
@@ -122,15 +136,21 @@
                                     </div>
                                 </div>
                             </td>
+                            
+                            {{-- Cột thông tin tác giả bài viết (Phân loại Admin/Khách hàng viết bài) --}}
                             <td class="px-6 py-5">
                                 <div class="flex flex-col gap-1">
                                     <span class="font-bold text-slate-900">{{ $article->author->full_name ?? 'N/A' }}</span>
                                     <span class="inline-flex w-fit px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] {{ $article->author_type === 'admin' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600' }}">{{ $article->author_type === 'admin' ? 'Admin' : 'Customer' }}</span>
                                 </div>
                             </td>
+                            
+                            {{-- Cột phân loại format layout bài viết --}}
                             <td class="px-6 py-5 text-center">
                                 <span class="inline-flex px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold uppercase">{{ $article->format_type }}</span>
                             </td>
+                            
+                            {{-- Cột trạng thái kiểm duyệt bài viết --}}
                             <td class="px-6 py-5">
                                 @if($article->status === 'approved')
                                     <span class="inline-flex items-center gap-2 text-emerald-600 font-black uppercase text-xs tracking-[0.2em]"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Đã duyệt</span>
@@ -140,10 +160,15 @@
                                     <span class="inline-flex items-center gap-2 text-rose-600 font-black uppercase text-xs tracking-[0.2em]"><span class="w-2 h-2 rounded-full bg-rose-500"></span>Từ chối</span>
                                 @endif
                             </td>
+                            
+                            {{-- Cột các nút thao tác quản trị nhanh --}}
                             <td class="px-6 py-5">
                                 <div class="flex justify-center items-center gap-2">
+                                    {{-- Nút sửa --}}
                                     <a href="{{ route('admin.articles.edit', $article->article_id) }}" class="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition" title="Chỉnh sửa"><i class="fa-solid fa-pen-nib"></i></a>
+                                    {{-- Nút xem chi tiết --}}
                                     <a href="{{ route('articles.show', $article->slug) }}" target="_blank" class="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition" title="Xem trước"><i class="fa-solid fa-eye"></i></a>
+                                    {{-- Form xóa bài viết --}}
                                     <form action="{{ route('admin.articles.destroy', $article->article_id) }}" method="POST" onsubmit="return confirm('Xóa bài viết này?');">
                                         @csrf
                                         @method('DELETE')
@@ -165,6 +190,7 @@
             </table>
         </div>
 
+        {{-- Phân trang của bảng danh sách quản lý --}}
         <div class="mt-5 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
             <div class="font-semibold">Hiển thị {{ $articles->count() }} / {{ $articles->total() }} bài viết</div>
             <div class="custom-pagination">{{ $articles->withQueryString()->links() }}</div>

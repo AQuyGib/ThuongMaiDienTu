@@ -29,8 +29,8 @@
   - Advanced product filtering for frontend product listing with partial AJAX rendering.
   - Service-based backend filtering via `ProductFilterService`.
   - Bổ sung bình luận tiếng Việt chi tiết cho toàn bộ mã nguồn JavaScript lọc sản phẩm (`product-filter.js`) giúp lập trình viên và quản trị viên dễ dàng nắm bắt logic.
-
-
+  - Bổ sung bình luận tiếng Việt siêu chi tiết, dễ hiểu cho các lập trình viên khác tại `ProductController.php`, `ProductFilterController.php`, và `ProductFilterService.php` giải thích cặn kẽ các logic lọc AJAX, gợi ý bán chéo FBT, Combo sản phẩm, và cơ chế bảo mật server-side.
+  - Hoàn tất tài liệu hóa chi tiết bằng comment tiếng Việt trong `PointsService.php` (Tích điểm & phân hạng), `CrossSellService.php` (Gợi ý bán chéo phân tầng), `ArticleController.php` (Admin CRUD bài viết), `ArticleFrontendController.php` (Khách hàng đăng bài & duyệt bài cộng điểm), `Article.php` (Model bài viết) và toàn bộ các file views liên quan đến Articles ở cả Frontend và Admin Dashboard.
 ## Files Changed
 - **Testing & Bug Fixes:**
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/ServiceInvoiceController.php`
@@ -42,14 +42,19 @@
 - **Articles:**
   - `ThuongMaiDienTu/app/Http/Controllers/ArticleFrontendController.php`
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/ArticleController.php`
+  - `ThuongMaiDienTu/app/Models/Article.php`
   - `ThuongMaiDienTu/resources/views/articles/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/articles/create.blade.php`
+  - `ThuongMaiDienTu/resources/views/articles/show.blade.php`
   - `ThuongMaiDienTu/resources/views/admin/articles/index.blade.php`
   - `ThuongMaiDienTu/resources/views/admin/articles/form.blade.php`
 - **Storefront (Compare & Filter):**
   - `ThuongMaiDienTu/app/Http/Controllers/CompareController.php`
   - `ThuongMaiDienTu/app/Http/Controllers/Frontend/ProductController.php`
   - `ThuongMaiDienTu/app/Http/Controllers/ProductFilterController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ChatbotController.php`
   - `ThuongMaiDienTu/app/Services/ProductFilterService.php`
+  - `ThuongMaiDienTu/app/Services/CrossSellService.php`
   - `ThuongMaiDienTu/public/assets/frontend/js/compare.js`
   - `ThuongMaiDienTu/public/assets/frontend/js/product-filter.js`
   - `ThuongMaiDienTu/resources/views/frontend/compare/index.blade.php`
@@ -78,6 +83,7 @@
   - `ThuongMaiDienTu/resources/views/admin/rewards/partials/image-modal.blade.php`
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/RewardsController.php`
   - `ThuongMaiDienTu/app/Services/RewardsService.php`
+  - `ThuongMaiDienTu/app/Services/PointsService.php`
 
 ## Important Logic & Behavior Changes
 - **Lucky Wheel Rank-Restrictions:**
