@@ -154,11 +154,30 @@ class InventorySyncTest extends TestCase
             'price' => 100000,
         ]);
 
+        // Manually trigger the initial sync as done in CartController
+        $order->load('details.inventoryItem.variant');
+        app(InventoryService::class)->syncOrderByStatus($order, null, $order->status);
+
+        // Verify the item is Sold and variant stock decreased to 0
+        $this->assertDatabaseHas('inventory_items', [
+            'item_id' => $item->item_id,
+            'status' => 'Sold',
+        ]);
+        $this->assertEquals(0, $variant->fresh()->stock);
+
+        // Cancel order - this triggers OrderObserver which should restore the stock
         $order->update(['status' => 'Cancelled']);
 
         $this->assertDatabaseHas('orders', [
             'order_id' => $order->order_id,
             'status' => 'Cancelled',
         ]);
+
+        // Verify the item is In_Stock again and variant stock increased back to 1
+        $this->assertDatabaseHas('inventory_items', [
+            'item_id' => $item->item_id,
+            'status' => 'In_Stock',
+        ]);
+        $this->assertEquals(1, $variant->fresh()->stock);
     }
 }

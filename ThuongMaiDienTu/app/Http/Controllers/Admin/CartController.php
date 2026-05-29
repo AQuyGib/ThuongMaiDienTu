@@ -477,6 +477,10 @@ class CartController extends Controller
                     $pointsService->deductWalletPoints($user, $walletPointsUsed, $order, 'Dùng điểm tiêu dùng khi đặt hàng');
                 }
 
+                // Đồng bộ tồn kho và ghi nhận lịch sử biến động kho cho đơn hàng mới
+                $order->load('details.inventoryItem.variant');
+                app(\App\Services\InventoryService::class)->syncOrderByStatus($order, null, $order->status);
+
                 session()->forget(['cart', 'checkout_wallet_points', 'checkout_discount', 'cart_locked']);
 
                 return $order;
@@ -611,11 +615,12 @@ class CartController extends Controller
                     'item_id' => $invItem->item_id,
                     'price' => $price,
                 ]);
-                
-                $invItem->status = 'Sold';
-                $invItem->save();
             }
         }
+
+        // Đồng bộ tồn kho và ghi nhận lịch sử biến động kho cho đơn hàng mới
+        $order->load('details.inventoryItem.variant');
+        app(\App\Services\InventoryService::class)->syncOrderByStatus($order, null, $order->status);
 
         $this->flashSaleService->confirmCartFlashSale($selectedCart);
 

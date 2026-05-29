@@ -152,7 +152,7 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 ### 11. Chức năng Kiểm kê & Cân bằng Kho (Inventory Audit & Reconciliation) - Đăng Nguyên
 - **Hạ tầng & Model:**
   - Tạo file migration khởi tạo bảng phiếu kiểm kê `inventory_audits` và chi tiết chênh lệch `inventory_audit_details`.
-  - Tạo các model `app/Models/InventoryAudit.php` và `app/Models/InventoryAuditDetail.php`.
+  - Tạo các model `app/Models/InventoryAudit.php` and `app/Models/InventoryAuditDetail.php`.
 - **Giao diện & Logic:**
   - Tạo `app/Http/Controllers/Admin/InventoryAuditController.php` quản lý danh sách, form tạo phiếu động bằng JS và xem chi tiết đối chiếu chênh lệch thừa/thiếu.
   - Tích hợp logic **Cân bằng kho (Reconcile)**:
@@ -161,6 +161,13 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - Khóa phiếu sang trạng thái `Completed`.
   - Tạo các view: `resources/views/admin/inventory/audits/index.blade.php`, `resources/views/admin/inventory/audits/create.blade.php`, `resources/views/admin/inventory/audits/show.blade.php` kèm cảnh báo xác nhận qua SweetAlert2.
   - Tích hợp 2 tab "Biến động kho" và "Kiểm kê kho" vào thanh tab điều hướng `resources/views/admin/partials/inventory-nav.blade.php`.
+
+### 11.1. Sửa lỗi Đồng bộ Kho khi Đặt hàng & Hủy đơn (Inventory & Order Sync Fix) - Đăng Nguyên
+- **Khắc phục lỗi:**
+  - Khi khách mua hàng trực tuyến (`placeOrder` và `confirmOrder` trong `CartController`), `OrderDetail` chưa được tạo xong tại thời điểm `Order::create` kích hoạt `OrderObserver`. Do đó, quá trình đồng bộ tồn kho ban đầu bị bỏ qua vì chi tiết đơn hàng rỗng.
+  - Khắc phục bằng cách gọi trực tiếp `InventoryService->syncOrderByStatus($order, null, $order->status)` trong `CartController` sau khi các `OrderDetail` đã được lưu vào cơ sở dữ liệu.
+  - Loại bỏ hoàn toàn cơ chế gán thủ công trạng thái `'Sold'` cho IMEI trong `confirmOrder` mà không trừ kho biến thể hay ghi chép lịch sử, để `InventoryService` kiểm soát toàn diện và ghi nhận đúng sự kiện `'sale'` vào bảng `inventory_movements`.
+  - Nâng cấp bộ test `tests/Feature/InventorySyncTest.php` để kiểm tra nghiêm ngặt sự thay đổi số lượng tồn kho biến thể và trạng thái của IMEI trong suốt chu trình từ đặt hàng đến hủy đơn.
 
 ### 12. Nâng cấp Xác thực & Giới hạn Đánh giá sản phẩm (Product Reviews Validation)
 - **Bảo mật & Phân quyền:**
