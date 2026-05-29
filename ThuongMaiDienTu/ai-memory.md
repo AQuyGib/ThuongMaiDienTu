@@ -309,7 +309,6 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Đặt ngôn ngữ mặc định của thẻ `<html>` là `{{ app()->getLocale() }}` để tối ưu SEO.
   - Cập nhật và biên dịch thành công mọi thay đổi.
 
-
 ### 18. Cập nhật và Khôi phục tệp video mẫu mới cho VideoSeeder
 - **Bối cảnh:** Thư mục `public/uploads/video/` bị loại trừ trong `.gitignore` dẫn đến việc thiếu tệp video mẫu khi chạy thử nghiệm trên máy cục bộ hoặc khi checkout code.
 - **Giải pháp:**
@@ -364,3 +363,91 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - Do các thẻ lọc (active filter tags như `Danh mục: Sound`, `Hãng: Asus`, `Nhu cầu: Chơi mượt Genshin`, v.v.) và popup chọn giá được tạo động bằng JavaScript ở Client-side nên Middleware backend không can thiệp được.
     - Đã thêm biến `isEn` phát hiện ngôn ngữ của trang (`document.documentElement.lang === 'en'`).
     - Bản địa hóa toàn bộ nhãn tĩnh được chèn động bởi JS như: tiêu đề popup `Filter` / `Bộ lọc`, nút `Close` / `Đóng`, nút `Apply` / `Xem kết quả`, các tag lọc (`Category`, `Price`, `Usage needs`, `Manufacturer`, `Color`, `Easy to repair`, `Environmentally friendly`), cũng như thông báo lỗi tải sản phẩm.
+
+### 23. Sửa lỗi Chatbot hiển thị Raw Unicode & Phản hồi sai ngôn ngữ
+- **Sửa lỗi Welcome Message hiển thị raw unicode escapes (`\u003Cb\u003E`, `\ud83d\udc4b`):**
+  - Nguyên nhân: Directive `@json()` của Blade mặc định sử dụng flag `JSON_HEX_TAG` mã hóa `<`, `>` thành `\u003C`, `\u003E` gây hiển thị dạng text thô.
+  - Khắc phục: Thay toàn bộ `@json(__('ui.chatbot_greeting'))` bằng `{!! json_encode(__('ui.chatbot_greeting'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}` để giữ nguyên HTML tags và emoji.
+  - Áp dụng cho: `chatbot_greeting`, `chatbot_product_greeting`, `chatbot_error` trong `chatbot.blade.php`.
+- **Sửa lỗi Chatbot trả lời sai ngôn ngữ:**
+  - Nguyên nhân ban đầu: Toàn bộ System Prompt trong `ChatbotController.php` hardcode bằng tiếng Việt, không có quy tắc ngôn ngữ rõ ràng.
+  - Khắc phục: Gộp thành 1 prompt duy nhất với quy tắc ngôn ngữ ưu tiên cao nhất (LANGUAGE RULE - HIGHEST PRIORITY): AI tự động nhận diện ngôn ngữ câu hỏi của khách và phản hồi 100% bằng chính ngôn ngữ đó. Hỗ trợ mọi ngôn ngữ (Việt, Anh, Nhật, Hàn, v.v.) mà không cần ép cứng theo locale.
+  - Loại bỏ `use App` facade và biến `$isEnglish` không còn cần thiết.
+- **Nâng cấp chất lượng phản hồi đồng đều ở mọi ngôn ngữ:**
+  - Thêm CẤU TRÚC CÂU TRẢ LỜI BẮT BUỘC: Mở đầu ấm áp → Phân tích theo nhu cầu sử dụng (2-3 đoạn với emoji) → Lồng ghép chính sách tự nhiên → Kết thúc mời gọi.
+  - Thêm PHONG CÁCH TƯ VẤN CHUYÊN NGHIỆP: Viết như chuyên gia trò chuyện, giải thích TẠI SAO phù hợp, KHÔNG liệt kê khô khan. Chỉ đề cập 2-4 sản phẩm liên quan nhất.
+  - Đảm bảo khi trả lời tiếng Anh hay bất kỳ ngôn ngữ nào khác, đều có chất lượng phân tích sâu, bố cục đẹp như tiếng Việt.
+- **Xóa lịch sử chat khi đổi ngôn ngữ:**
+  - Thêm tracking `chatbot_locale` trong `localStorage`. Khi phát hiện locale hiện tại khác với locale đã lưu, tự động xóa `chatbot_history` để tránh hiển thị tin nhắn cũ sai ngôn ngữ.
+- **Các file sửa đổi:**
+  - `resources/views/partials/chatbot.blade.php`
+  - `app/Http/Controllers/ChatbotController.php`
+
+### 24. Sửa lỗi Chatbot làm hỏng đường dẫn URL tiếng Anh & Tối ưu RAG tiếng Anh
+- **Cơ chế Prompt phân tách theo Locale:**
+  - Thiết lập lại biến kiểm tra ngôn ngữ `$isEnglish` trong `ChatbotController.php` dựa trên `App::getLocale() === 'en'`.
+  - Nếu ở locale tiếng Anh, sử dụng System Prompt hoàn toàn bằng tiếng Anh chuyên biệt, giúp AI hiểu sâu sắc và phản hồi mạch lạc bằng tiếng Anh với chất lượng cao nhất.
+- **Quy tắc chèn Link tuyệt đối (Link Preservation Rule):**
+  - Thêm chỉ dẫn cực kỳ nghiêm ngặt tại cả hai phiên bản Prompt (tiếng Anh & tiếng Việt), yêu cầu AI giữ nguyên 100% các đường dẫn URL nội bộ của hệ thống:
+    - Chi tiết sản phẩm: luôn dùng `/san-pham/{id}`, không dịch thành `/product/{id}` hay `/en/san-pham/`.
+    - Tìm kiếm/Thương hiệu/Danh mục: luôn dùng `/search?q={từ_khóa}`.
+    - Trang chính sách: giữ nguyên `/warranty`, `/rewards`, `/chinh-sach-bao-hanh`, `/chinh-sach-doi-tra`, tuyệt đối không dịch sang `/return-policy` hay `/warranty-policy`.
+- **Tối ưu hóa RAG và Lọc từ khóa tiếng Anh:**
+  - Mở rộng danh sách từ dừng `$stopwords` bao gồm các từ tiếng Anh phổ biến (`cheap`, `under`, `recommend`, `which`, `suitable`, `for`, `student`, `students`, v.v.).
+  - Bổ sung thuật toán chuẩn hóa từ số nhiều sang số ít tiếng Anh (singularization algorithm) trong `searchProducts` để trích xuất đúng từ khóa gốc (ví dụ: `phones` -> `phone`, `laptops` -> `laptop`, `accessories` -> `accessory`), đảm bảo tìm kiếm chính xác các sản phẩm tương ứng trong database.
+  - Bản địa hóa kết quả tìm kiếm kho hàng (Inventory context) động trong prompt dựa trên locale để tránh gây nhiễu ngôn ngữ cho AI.
+- **Các file sửa đổi:**
+  - `app/Http/Controllers/ChatbotController.php`
+
+### 25. Bản địa hóa động cho Chatbot độc lập với Locale của trang web (Bilingual Autodetect Chatbot)
+- **Tự động nhận diện ngôn ngữ của câu hỏi:**
+  - Triển khai phương thức `detectLanguage` trong `ChatbotController.php` để tự động phát hiện ngôn ngữ dựa trên nội dung tin nhắn (`prompt`) của khách hàng (không phụ thuộc vào locale hiện tại của website).
+  - Sử dụng regex kiểm tra ký tự có dấu đặc trưng của Tiếng Việt và thuật toán so sánh tần suất xuất hiện của các từ khóa đặc trưng tiếng Anh/tiếng Việt (bao gồm cả tiếng Việt không dấu).
+- **RAG & Hệ thống Prompt đồng bộ theo ngôn ngữ phát hiện:**
+  - Khi phát hiện người dùng hỏi bằng tiếng Anh, chatbot tự động kích hoạt bộ System Prompt tiếng Anh, gọi phương thức `$p->translateTo('en')` để lấy tên sản phẩm tiếng Anh làm bối cảnh RAG và trả về câu trả lời tiếng Anh.
+  - Khi phát hiện người dùng hỏi bằng tiếng Việt, chatbot kích hoạt bộ System Prompt tiếng Việt, lấy tên sản phẩm tiếng Việt làm bối cảnh RAG và trả về câu trả lời tiếng Việt.
+- **Cô lập hoàn toàn khỏi Middleware dịch thuật:**
+  - Xác nhận Middleware `TranslateHtmlResponse` không ảnh hưởng tới chatbot nhờ cấu trúc lọc route bypass `/chatbot` ở đầu middleware, giúp dữ liệu AI phản hồi bằng mọi ngôn ngữ luôn giữ nguyên cấu trúc HTML và link chính xác.
+- **Các file sửa đổi:**
+  - `app/Http/Controllers/ChatbotController.php`
+
+### 26. Khắc phục lỗi Call to unknown method: DOMNode::getAttribute()
+- **Nguyên nhân:** Trong PHP DOM Document, lớp cơ sở `DOMNode` không định nghĩa phương thức `getAttribute()` (chỉ có trên lớp con `DOMElement`). Trong quá trình duyệt đệ quy cây DOM, một số node đại diện cho phần tử `<input>` có thể được định kiểu hoặc khởi tạo là `DOMNode` thông thường bởi PHP parser làm chương trình ném ra ngoại lệ chí mạng.
+- **Khắc phục:** 
+  - Thêm kiểm tra kiểu `$node instanceof \DOMElement` trước khi gọi trực tiếp `getAttribute('type')`.
+  - Nếu không phải `DOMElement` nhưng vẫn có thuộc tính, sử dụng `$node->attributes->getNamedItem('type')` lấy từ bản đồ `DOMNamedNodeMap` một cách an toàn.
+  - Sửa lỗi đồng bộ ở cả hai nơi: hàm trích xuất thuộc tính `collectUntranslatedStrings` và hàm dịch thực tế `translateNode`.
+- **Các file sửa đổi:**
+  - `app/Http/Middleware/TranslateHtmlResponse.php`
+
+### 27. Khắc phục lỗi Call to unknown method: stdClass::translateTo()
+- **Nguyên nhân:** Khi chạy ứng dụng, trong một số điều kiện (như trong các trường hợp test case chạy trên sqlite, mock dữ liệu, hoặc các truy vấn raw), các bản ghi sản phẩm trả về có thể là các đối tượng `stdClass` thay vì các thực thể Eloquent Model `Product`. Do đó, việc gọi trực tiếp hàm `translateTo()` từ trait đa ngôn ngữ gây ra lỗi Fatal Error vì `stdClass` không chứa phương thức này.
+- **Khắc phục:**
+  - Trong phương thức `searchProducts()` của `ChatbotController.php`, bổ sung kiểm tra kiểu đối tượng `$p instanceof \App\Models\Product` trước khi gọi `translateTo()`.
+  - Nếu đối tượng là `stdClass`, thiết lập cơ chế dự phòng an toàn bằng cách thực hiện truy vấn Query Builder trực tiếp (`DB::table('product_translations')`) tìm kiếm bản dịch tương ứng của sản phẩm đó để lấy tên sản phẩm bằng Tiếng Anh.
+- **Các file sửa đổi:**
+  - `app/Http/Controllers/ChatbotController.php`
+
+### 28. Tối ưu hóa chỉ dẫn ngôn ngữ trong System Prompt cho Gemini
+- **Nguyên nhân:** Mặc dù backend đã tự động nhận diện ngôn ngữ và gửi Prompt tương ứng (Tiếng Anh/Tiếng Việt), chỉ dẫn cũ trong Prompt sử dụng câu lệnh tổng quát: "You MUST automatically detect the language...". Điều này khiến mô hình AI đôi lúc bị nhầm lẫn bởi các ngữ cảnh hỗn hợp hoặc thương hiệu tiếng Việt, dẫn đến việc chọn sai ngôn ngữ trả về (ví dụ người dùng hỏi bằng Tiếng Anh nhưng AI trả lời Tiếng Việt).
+- **Khắc phục:** 
+  - Điều chỉnh trực tiếp và cụ thể trong cả hai phiên bản Prompt:
+    - Trong Prompt Tiếng Anh: Chỉ định rõ câu lệnh **"The customer is querying in English. You MUST respond 100% in English."** kèm yêu cầu cấm viết tiếng Việt.
+    - Trong Prompt Tiếng Việt: Chỉ định rõ câu lệnh **"Khách hàng đang hỏi bằng Tiếng Việt. Bạn BẮT BUỘC phải phản hồi 100% bằng Tiếng Việt."** kèm yêu cầu cấm viết tiếng Anh.
+  - Loại bỏ hoàn toàn sự tự lựa chọn của mô hình AI, buộc AI tuân thủ tuyệt đối ngôn ngữ đích đã được backend PHP phân tích trước đó.
+- **Các file sửa đổi:**
+  - `app/Http/Controllers/ChatbotController.php`
+
+### 29. Khắc phục lỗi nhân đôi backslashes trong thẻ script khi dịch trang EN & Tối ưu chèn link sản phẩm trong chatbot
+- **Sửa lỗi nhân đôi dấu gạch chéo ngược (`\`) trong Regex JS của Chatbot:**
+  - **Nguyên nhân:** Khi người dùng đổi sang giao diện Tiếng Anh, Middleware `TranslateHtmlResponse` quét các chuỗi JS tĩnh nháy đơn/nháy kép để gửi dịch. Do regex cũ quét chuỗi lỏng lẻo, nó quét nhầm luôn các chuỗi Regex Javascript chứa dấu gạch chéo ngược (`\`) trên nhiều dòng (multiline). Khi chèn lại bằng `addcslashes`, nó nhân đôi tất cả các dấu `\` thành `\\`, làm hỏng logic replace Markdown và replace xuống dòng của Client-side.
+  - **Khắc phục:** Cấu trúc lại biểu thức chính quy quét chuỗi trong `TranslateHtmlResponse.php` ở cả hai phương thức `collectUntranslatedJsStrings` và `translateJavascriptStrings` thành `/"([^"\\\\\r\n]*(?:\\\\.[^"\\\\\r\n]*)*)"/u` (bổ sung loại trừ ký tự xuống dòng `\r`, `\n`). Giải pháp giúp giới hạn quét chuỗi trong phạm vi 1 dòng đơn, giải quyết triệt để hiện tượng match nhầm multiline và loại bỏ hoàn toàn lỗi nhân đôi backslashes.
+- **Tối ưu chèn link sản phẩm dưới dạng HTML đầy đủ:**
+  - **Khắc phục:** Nâng cấp luật chèn link `LINK INSERTION RULES` trong cả hai bộ System Prompt (Tiếng Việt & Tiếng Anh) tại `ChatbotController.php`, yêu cầu Gemini AI chèn thẳng tên sản phẩm đầy đủ vào thẻ HTML liên kết có class `chatbot-product-link` thay vì dùng link thô hoặc điền URL làm text hiển thị (Ví dụ: `<a href="/san-pham/16" class="chatbot-product-link">ASUS ROG Strix G16 2024</a>`).
+  - **Kết quả:** Kiểm thử tự động qua `scratch/test_chatbot.php` trả về phản hồi chatbot cực kỳ đẹp mắt, định dạng link HTML sản phẩm/chính sách và các dòng text hiển thị trơn tru, mượt mà ở cả hai ngôn ngữ.
+- **Các file sửa đổi:**
+  - `app/Http/Middleware/TranslateHtmlResponse.php`
+  - `app/Http/Controllers/ChatbotController.php`
+
+
+

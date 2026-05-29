@@ -114,7 +114,18 @@ class Product extends Model
         if ($keyword) {
             return $query->where(function ($q) use ($keyword) {
                 $q->where('name', 'LIKE', "%{$keyword}%")
-                    ->orWhere('seo_description', 'LIKE', "%{$keyword}%");
+                    ->orWhere('seo_description', 'LIKE', "%{$keyword}%")
+                    ->orWhereHas('translations', function ($sub) use ($keyword) {
+                        $sub->where('name', 'LIKE', "%{$keyword}%")
+                            ->orWhere('description', 'LIKE', "%{$keyword}%")
+                            ->orWhere('seo_description', 'LIKE', "%{$keyword}%");
+                    })
+                    ->orWhereHas('category', function ($sub) use ($keyword) {
+                        $sub->where('name', 'LIKE', "%{$keyword}%")
+                            ->orWhereHas('translations', function ($trans) use ($keyword) {
+                                $trans->where('name', 'LIKE', "%{$keyword}%");
+                            });
+                    });
             });
         }
         return $query;
