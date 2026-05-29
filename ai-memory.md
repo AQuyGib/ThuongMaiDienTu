@@ -25,6 +25,17 @@
   - Service-based backend filtering via `ProductFilterService`.
 
 ## Files Changed
+- **API Authentication (Login, Logout, Profile):**
+  - `ThuongMaiDienTu/app/Http/Controllers/Api/AuthController.php`
+  - `ThuongMaiDienTu/app/Http/Middleware/ApiAuthMiddleware.php`
+  - `ThuongMaiDienTu/app/Http/Resources/UserResource.php`
+  - `ThuongMaiDienTu/bootstrap/app.php`
+  - `ThuongMaiDienTu/routes/api.php`
+  - `ThuongMaiDienTu/tests/Feature/ApiAuthTest.php`
+  - `ThuongMaiDienTu/scratch/DienMayPro_Auth_API.postman_collection.json`
+- **System Orchestrator Upgrade:**
+  - `ThuongMaiDienTu/start.bat` (Ultimate Orchestrator v8.0 with interactive System Repair Assistant, one-click interactive Full Automation mode choices, Navigator Dashboard Launcher, comprehensive project health diagnostics report, live MySQL monitors, Laravel logs viewer and cleaner, and auto-healing environment bootstrap)
+  - `ThuongMaiDienTu/chay_du_an.bat` (deprecated / replaced by start.bat)
 - **Checkout / Payment Validation:**
   - `ThuongMaiDienTu/resources/views/frontend/cart/pay.blade.php`
 - **Articles:**
@@ -68,6 +79,13 @@
   - `ThuongMaiDienTu/app/Services/RewardsService.php`
 
 ## Important Logic & Behavior Changes
+- **API Authentication (Laravel Sanctum Integration):**
+  - Fully integrated industry-standard Laravel Sanctum token-based authentication using `HasApiTokens`.
+  - Configured `User.php` to use the `Laravel\Sanctum\HasApiTokens` trait.
+  - Implemented `AuthController.php` which generates personal access tokens via `$user->createToken('api-token')->plainTextToken` and revokes tokens upon logout via `currentAccessToken()->delete()`.
+  - Built custom `ApiAuthMiddleware.php` wrapping around the standard Sanctum guard (`Auth::guard('sanctum')->user()`) to perform clean authorization, banned account checking (immediately revoking their active token if blocked), and seamless integration into standard Laravel authentication states.
+  - Refactored `ApiAuthTest.php` feature tests to assert tokens against the standard `personal_access_tokens` table and verified credentials.
+  - Exported a fully-documented, dynamic Postman Collection JSON file with integrated test scripts that automatically capture and propagate authorization tokens across requests for fluid testing.
 - **Lucky Wheel Rank-Restrictions:**
   - Added a `min_rank` column in the Admin Quick Manager Modal. The dropdown options map to database tier names (`Dong`, `Bac`, `Vang`, `KimCuong`) and "none".
   - Created a client-side rank verification dictionary (`rankOrder`) in JavaScript to check and alert user if their active tier (`member_tier`) is insufficient for the selected wheel before triggering the spin API.
@@ -402,23 +420,10 @@
   - Verify the new detail-page compare button visually against the existing product action buttons.
   - Consider extracting compare button styles into reusable Blade components to reduce duplication.
   - Verify and apply the new migration against the actual database engine.
-
-    - Viết comment mô tả chức năng chi tiết cho tất cả các hàm và khối logic bên trong `Admin\RewardsController.php` (quản trị, validation, image upload, cấu hình vòng quay, lọc lịch sử).
-    - Viết comment cho `RewardsController.php` (frontend endpoint phục vụ xem quà, redeem AJAX, và quay thưởng AJAX).
-    - Viết comment giải thích logic nghiệp vụ của `RewardsService.php` (các giao dịch DB, tính toán random trúng giải theo trọng số, trừ điểm ví, kiểm tra hạng thành viên, kiểm tra tồn kho).
-    - Viết comment cho các file Seeder dữ liệu giả lập (`RewardSeeder.php`, `RewardHistorySeeder.php`).
-
-## TODOs & Follow-up Work
-- **Lucky Wheel & Rewards:**
-  - Check database translations for reward model attributes if multi-language data-level localization becomes necessary.
-  - Test custom sound effects triggering on spin start and stop if requested by the user.
-- **Vouchers / Coupon System:**
-  - Theo dõi trải nghiệm người dùng khi áp dụng mã giảm giá và đảm bảo phí ship (nếu có) được cập nhật đồng bộ.
-  - Test thực tế luồng mua hàng trọn vẹn với mã đổi thưởng.
-- **Articles:**
-  - If desired, refine tag taxonomy so lifestyle tags map to a dedicated database column instead of inferred article attributes.
-  - If desired, further reduce duplication by moving article preview markup into a shared partial component.
-- **Storefront:**
-  - Verify the new detail-page compare button visually against the existing product action buttons.
-  - Consider extracting compare button styles into reusable Blade components to reduce duplication.
-  - Verify and apply the new migration against the actual database engine.
+- **Environment & System Setup:**
+  - Kích hoạt thành công tiện ích mở rộng `zip` (`ext-zip`) và `gd` (`ext-gd`) trong tệp cấu hình PHP của hệ thống (`C:\xampp\php\php.ini`).
+  - Đã sẵn sàng hỗ trợ người dùng chạy lại `composer install` không bị gián đoạn và có tốc độ giải nén tối đa.
+  - Tích hợp **SUPER PIPELINE** (Standard Pipeline & Clean Rebuild Pipeline) vào `start.bat` để tổ hợp chạy toàn trình từ đầu đến cuối chỉ với 1-Click.
+  - **BUG FIX (Super Pipeline + MySQL):** Sửa 2 lỗi nghiêm trọng: (1) Thêm kiểm tra MySQL process (`mysqld.exe`) đang chạy trước khi gọi `migrate:fresh --seed` trong cả 2 pipeline (Standard & Clean Rebuild), tránh script treo chết khi MySQL chưa bật. (2) Thêm `goto PROCESS` sau `npm run build` trong PIPELINE_CLEAN_REBUILD — trước đó script rơi thẳng xuống nhãn `:VIEW_SITEMAP` khiến Laravel server không bao giờ được khởi chạy.
+  - Khắc phục thành công lỗi `QueryException: General error: 1 error in index orders_user_id_status_index after drop column` trên SQLite bằng cách tự động drop index ghép trước khi drop cột và tái tạo lại sau khi đổi cấu trúc cột trong tệp migration `2026_05_14_130000_add_cancelled_status_to_orders_table.php`.
+  - Khai báo bổ sung gói `"laravel/sanctum": "^4.0"` vào mục `"require"` của [composer.json](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/composer.json) giải quyết triệt để lỗi `Trait "Laravel\Sanctum\HasApiTokens" not found`, giúp package tự động cài đặt mượt mà khi rebuild.

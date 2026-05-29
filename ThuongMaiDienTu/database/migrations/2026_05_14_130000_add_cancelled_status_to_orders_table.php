@@ -16,6 +16,11 @@ return new class extends Migration {
         }
 
         if ($driver === 'sqlite') {
+            // Drop index truoc de tranh loi khoa phu thuoc trong SQLite
+            Schema::table('orders', function (Blueprint $table) {
+                $table->dropIndex('orders_user_id_status_index');
+            });
+
             Schema::table('orders', function (Blueprint $table) {
                 $table->string('status_tmp', 20)->default('Pending');
             });
@@ -35,6 +40,11 @@ return new class extends Migration {
             Schema::table('orders', function (Blueprint $table) {
                 $table->dropColumn('status_tmp');
             });
+
+            // Tai tao lai index ghep sau khi doi cau truc thanh cong
+            Schema::table('orders', function (Blueprint $table) {
+                $table->index(['user_id', 'status'], 'orders_user_id_status_index');
+            });
         }
     }
 
@@ -48,6 +58,11 @@ return new class extends Migration {
         }
 
         if ($driver === 'sqlite') {
+            // Drop index truoc de tranh loi khoa phu thuoc trong SQLite
+            Schema::table('orders', function (Blueprint $table) {
+                $table->dropIndex('orders_user_id_status_index');
+            });
+
             Schema::table('orders', function (Blueprint $table) {
                 $table->string('status_tmp', 20)->default('Pending');
             });
@@ -66,6 +81,11 @@ return new class extends Migration {
 
             Schema::table('orders', function (Blueprint $table) {
                 $table->dropColumn('status_tmp');
+            });
+
+            // Tai tao lai index ghep sau khi doi cau truc thanh cong
+            Schema::table('orders', function (Blueprint $table) {
+                $table->index(['user_id', 'status'], 'orders_user_id_status_index');
             });
         }
     }
