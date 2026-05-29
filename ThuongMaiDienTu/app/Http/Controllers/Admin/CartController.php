@@ -9,6 +9,7 @@ use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\PurchaseOrder;
+use App\Models\CouponFlashSale;
 use Illuminate\Support\Str;
 use App\Services\PointsService;
 use App\Services\FlashSaleService;
@@ -387,6 +388,31 @@ class CartController extends Controller
         ]);
     }
 
+    public function validateVoucher(Request $request)
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:50'],
+            'subtotal' => ['required', 'integer', 'min:1'],
+        ]);
+
+        [$discount, $message] = $this->resolveVoucherDiscount((string) $data['code'], (int) $data['subtotal']);
+        if ($discount <= 0) {
+            session(['checkout_discount' => 0]);
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Mã không hợp lệ.',
+            ], 422);
+        }
+
+        session(['checkout_discount' => $discount]);
+
+        return response()->json([
+            'success' => true,
+            'discount' => $discount,
+            'message' => $message ?: 'Áp dụng mã giảm giá thành công.',
+        ]);
+    }
+
     public function placeOrder(Request $request, PointsService $pointsService)
     {
         $data = $request->validate([
@@ -485,12 +511,46 @@ class CartController extends Controller
         }
 
         $totalAmount = collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
-        
-        $discount = 0;
-        if ($request->input('discount_code') === 'PRO10') {
-            $discount = (int) round($totalAmount * 0.1);
+
+        $couponCode = strtoupper((string) (session('applied_coupon_code') ?: $request->input('discount_code', '')));
+        [$discount] = $this->resolveVoucherDiscount($couponCode, (int) $totalAmount);
+
+        if ($discount <= 0 && $couponCode !== '') {
+            $redemption = \App\Models\RewardRedemption::with('reward')
+                ->where('redemption_code', $couponCode)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if ($redemption && in_array($redemption->status, ['issued', 'approved', 'won'], true) && (!$redemption->expires_at || !$redemption->expires_at->isPast())) {
+                $reward = $redemption->reward;
+                if ($reward) {
+                    if ($reward->reward_type === 'shipping') {
+                        $discount = (int) $reward->shipping_discount_amount;
+                    } elseif ($reward->reward_type === 'wheel_prize') {
+                        $discount = $reward->discount_amount > 0
+                            ? (int) $reward->discount_amount
+                            : (int) $reward->shipping_discount_amount;
+                    } else {
+                        $discount = (int) $reward->discount_amount;
+                    }
+
+                    $discount = min($discount, $totalAmount);
+
+                    // Đánh dấu mã đổi thưởng đã dùng sau khi đặt đơn thành công.
+                    $redemption->status = 'used';
+                    $redemption->used_at = now();
+                    $redemption->save();
+                }
+            }
         }
         $finalAmount = $totalAmount - $discount;
+
+        $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
+            'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
+            'address' => ['required', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
+            'note' => ['nullable', 'string', 'max:250'],
+        ]);
 
         $name = $request->input('name');
         $phone = $request->input('phone');
@@ -503,9 +563,16 @@ class CartController extends Controller
             'order_type' => 'Online',
             'total_amount' => $totalAmount,
             'shipping_fee' => 0,
+            'discount_amount' => $discount,
+            'wallet_points_used' => 0,
             'final_amount' => $finalAmount > 0 ? $finalAmount : 0,
             'payment_method' => $paymentMethod,
             'status' => 'Pending',
+            'customer_name' => $name,
+            'customer_phone' => $phone,
+            'shipping_address' => $address,
+            'note' => $note,
+            'order_code' => 'ORD' . now()->format('YmdHis') . random_int(100, 999),
         ]);
 
         foreach ($selectedCart as $productId => $item) {
@@ -553,8 +620,12 @@ class CartController extends Controller
         $this->flashSaleService->confirmCartFlashSale($selectedCart);
 
         $remainingCart = collect($cart)->filter(fn($item) => !($item['selected'] ?? true))->toArray();
-        session()->put('cart', $remainingCart);
-        session()->forget('cart_locked');
+        if (empty($remainingCart)) {
+            session()->forget('cart');
+        } else {
+            session()->put('cart', $remainingCart);
+        }
+        session()->forget(['cart_locked', 'checkout_discount', 'applied_coupon_code']);
 
         return response()->json([
             'status' => 'success',
@@ -631,5 +702,150 @@ class CartController extends Controller
             $total += (int)($item['quantity'] ?? 0);
         }
         return $total;
+    }
+
+    public function applyCoupon(Request $request)
+    {
+        $code = strtoupper($request->input('code'));
+        if (!$code) {
+            session()->forget(['checkout_discount', 'applied_coupon_code']);
+            return response()->json(['success' => true, 'discount' => 0, 'message' => 'Đã xóa mã giảm giá.']);
+        }
+
+        $cart = session()->get('cart', []);
+        $selectedCart = collect($cart)->filter(fn($item) => $item['selected'] ?? true)->toArray();
+        if (empty($selectedCart)) {
+            return response()->json(['success' => false, 'message' => 'Giỏ hàng trống hoặc chưa chọn sản phẩm.']);
+        }
+
+        $totalAmount = collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
+
+        // 1. Kiểm tra voucher hệ thống/coupon flash sale
+        [$discount, $message] = $this->resolveVoucherDiscount($code, (int) $totalAmount);
+        if ($discount > 0) {
+            session()->put('checkout_discount', $discount);
+            session()->put('applied_coupon_code', $code);
+            return response()->json([
+                'success' => true,
+                'discount' => $discount,
+                'message' => $message ?: 'Áp dụng mã giảm giá thành công!'
+            ]);
+        }
+
+        // 2. Kiểm tra mã đổi thưởng trong DB
+        $redemption = \App\Models\RewardRedemption::with('reward')
+            ->where('redemption_code', $code)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if (!$redemption) {
+            return response()->json(['success' => false, 'message' => 'Mã giảm giá không tồn tại hoặc không hợp lệ.']);
+        }
+
+        if (!in_array($redemption->status, ['issued', 'approved', 'won'])) {
+            return response()->json(['success' => false, 'message' => 'Mã giảm giá này đã được sử dụng hoặc không khả dụng.']);
+        }
+
+        if ($redemption->expires_at && $redemption->expires_at->isPast()) {
+            return response()->json(['success' => false, 'message' => 'Mã giảm giá này đã hết hạn sử dụng.']);
+        }
+
+        $reward = $redemption->reward;
+        if (!$reward) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy thông tin phần thưởng tương ứng.']);
+        }
+
+        // Tính toán giảm giá từ phần thưởng
+        $discount = 0;
+        if ($reward->reward_type === 'voucher') {
+            $discount = (int) $reward->discount_amount;
+        } elseif ($reward->reward_type === 'shipping') {
+            $discount = (int) $reward->shipping_discount_amount;
+        } elseif ($reward->reward_type === 'wheel_prize') {
+            $discount = $reward->discount_amount > 0 
+                ? (int) $reward->discount_amount 
+                : (int) $reward->shipping_discount_amount;
+        }
+
+        if ($discount <= 0) {
+            return response()->json(['success' => false, 'message' => 'Mã này không có giá trị giảm giá cho đơn hàng.']);
+        }
+
+        // Khống chế không giảm quá giá trị đơn hàng
+        if ($discount > $totalAmount) {
+            $discount = $totalAmount;
+        }
+
+        session()->put('checkout_discount', $discount);
+        session()->put('applied_coupon_code', $code);
+
+        return response()->json([
+            'success' => true,
+            'discount' => $discount,
+            'message' => 'Áp dụng mã đổi thưởng "' . $reward->name . '" thành công! Giảm ' . number_format($discount) . 'đ.'
+        ]);
+    }
+
+    public function discountCodeView()
+    {
+        $myVouchers = [];
+        if (auth()->check()) {
+            $myVouchers = \App\Models\RewardRedemption::with('reward')
+                ->where('user_id', auth()->id())
+                ->whereIn('status', ['issued', 'approved', 'won'])
+                ->where(function($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                })
+                ->get();
+        }
+        
+        $balance = [];
+        if (auth()->check()) {
+            $balance = \App\Models\UserPoint::where('user_id', auth()->id())->first();
+        }
+
+        return view('frontend.cart.Applydiscountcode', compact('myVouchers', 'balance'));
+    }
+
+    private function resolveVoucherDiscount(string $rawCode, int $subtotal): array
+    {
+        $code = strtoupper(trim($rawCode));
+        if ($code === '' || $subtotal <= 0) {
+            return [0, 'Mã giảm giá không hợp lệ.'];
+        }
+
+        if ($code === 'PRO10') {
+            return [(int) round($subtotal * 0.1), 'Áp dụng mã giảm giá 10% thành công!'];
+        }
+
+        $voucher = CouponFlashSale::query()
+            ->where('promo_type', 'Coupon')
+            ->where('code', $code)
+            ->first();
+
+        if (!$voucher) {
+            return [0, 'Mã không tồn tại.'];
+        }
+
+        $now = now();
+        if ($voucher->start_time && $now->lt(\Carbon\Carbon::parse($voucher->start_time))) {
+            return [0, 'Mã chưa đến thời gian sử dụng.'];
+        }
+        if ($voucher->end_time && $now->gt(\Carbon\Carbon::parse($voucher->end_time))) {
+            return [0, 'Mã đã hết hạn.'];
+        }
+
+        $discountType = $voucher->discount_type ?? 'fixed';
+        $discountVal = (float) $voucher->discount_val;
+        $discount = $discountType === 'percent'
+            ? (int) round($subtotal * ($discountVal / 100))
+            : (int) round($discountVal);
+
+        $discount = max(0, min($discount, $subtotal));
+        if ($discount <= 0) {
+            return [0, 'Mã không tạo ra giảm giá hợp lệ.'];
+        }
+
+        return [$discount, 'Áp dụng mã thành công.'];
     }
 }

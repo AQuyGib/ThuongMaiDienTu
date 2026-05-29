@@ -70,15 +70,18 @@ class ProductController extends Controller
                 ->exists();
         }
 
-        // Lấy danh sách đánh giá (chỉ lấy review gốc, không phải reply)
+        // Lấy danh sách đánh giá (chỉ lấy review gốc đã duyệt, không phải reply)
         $reviews = Review::where('product_id', $id)
             ->whereNull('parent_id')
-            ->with(['user', 'replies'])
+            ->where('is_approved', 1)
+            ->with(['user', 'replies' => function ($q) {
+                $q->where('is_approved', 1);
+            }])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->count();
-        $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->avg('rating') ?: 5;
+        $reviewCount = Review::where('product_id', $id)->whereNull('parent_id')->where('is_approved', 1)->count();
+        $avgRating = Review::where('product_id', $id)->whereNull('parent_id')->where('is_approved', 1)->avg('rating') ?: 5;
 
         // Gợi ý bán chéo: FBT → Brand → Flash Sale → Category
         $crossSellProducts = $this->crossSellService->getFullCrossSellList($product, 8);

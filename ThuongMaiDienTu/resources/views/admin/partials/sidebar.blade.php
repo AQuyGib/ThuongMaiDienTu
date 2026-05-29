@@ -86,6 +86,13 @@
             'section' => $isEn ? 'Products & Inventory' : 'Sản phẩm & Kho'
         ],
         [
+            'label' => $isEn ? 'Comments & Reviews' : 'Bình luận & Đánh giá',
+            'route' => route('admin.comments.index'),
+            'icon' => 'fa-solid fa-comments',
+            'active' => request()->is('admin/comments*'),
+            'section' => $isEn ? 'Products & Inventory' : 'Sản phẩm & Kho'
+        ],
+        [
             'label' => $isEn ? 'Warehouse Transfer' : 'Điều chuyển kho',
             'route' => route('admin.warehouse-transfers.index'),
             'icon' => 'fa-solid fa-truck-ramp-box',
@@ -111,6 +118,13 @@
             'route' => route('admin.rewards.index'),
             'icon' => 'fa-solid fa-gift',
             'active' => request()->routeIs('admin.rewards.index'),
+            'section' => $isEn ? 'Settings' : 'Thiết lập'
+        ],
+        [
+            'label' => $isEn ? 'Vouchers' : 'Voucher',
+            'route' => route('admin.vouchers.index'),
+            'icon' => 'fa-solid fa-ticket',
+            'active' => request()->routeIs('admin.vouchers.*'),
             'section' => $isEn ? 'Settings' : 'Thiết lập'
         ],
         [

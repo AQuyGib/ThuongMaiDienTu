@@ -21,6 +21,7 @@ use App\Http\Controllers\Auth\TwoFactorController;
 use App\Http\Controllers\CompareController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\VideoController;
+use App\Http\Controllers\Admin\CommentManagementController;
 
 // Authentication
 Route::get('/login-register', [AuthController::class, 'index'])->name('login_register');
@@ -68,6 +69,7 @@ Route::get('/', function () {
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
+Route::post('/reviews/{id}/report', [ReviewController::class, 'report'])->name('reviews.report')->middleware('auth');
 
 // Modules
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -80,11 +82,14 @@ Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear')
 Route::post('/cart/toggle-select', [CartController::class, 'toggleSelect'])->name('cart.toggleSelect');
 Route::post('/cart/toggle-all', [CartController::class, 'toggleAll'])->name('cart.toggleAll');
 Route::get('/ShippingCosts', [CartController::class, 'shipping'])->name('cart.shipping');
-Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
+Route::get('/pay', [CartController::class, 'pay'])->middleware('auth')->name('cart.pay');
 Route::post('/pay/wallet-points', [CartController::class, 'applyWalletPoints'])->name('cart.pay.wallet-points');
+Route::post('/cart/validate-voucher', [CartController::class, 'validateVoucher'])->name('cart.voucher.validate');
 Route::post('/pay/place-order', [CartController::class, 'placeOrder'])->name('cart.place-order');
 Route::get('/order-confirmation/{orderId}', [CartController::class, 'confirmation'])->name('cart.confirmation');
 Route::post('/cart/confirm', [CartController::class, 'confirmOrder'])->name('cart.confirm');
+Route::post('/cart/apply-coupon', [CartController::class, 'applyCoupon'])->name('cart.apply-coupon');
+Route::get('/pay/discount-code', [CartController::class, 'discountCodeView'])->name('cart.discount-code');
 Route::post('/cart/cancel', [CartController::class, 'cancelOrder'])->name('cart.cancel');
 Route::post('/cart/timeout', [CartController::class, 'timeoutOrder'])->name('cart.timeout');
 Route::get('/maQR', [CartController::class, 'ai'])->name('cart.qr');
@@ -93,8 +98,8 @@ Route::get('/print-bill', [CartController::class, 'print'])->name('cart.print');
 Route::get('/cart/count', [CartController::class, 'getCartCount'])->name('cart.count');
 
 Route::get('/rewards', [RewardsController::class, 'index'])->name('rewards.index');
-Route::get('/rewards/{reward}', [RewardsController::class, 'show'])->name('rewards.show');
 Route::get('/rewards/history', [RewardsHistoryController::class, 'index'])->name('rewards.history');
+Route::get('/rewards/{reward}', [RewardsController::class, 'show'])->name('rewards.show');
 Route::post('/rewards/redeem', [RewardsController::class, 'redeem'])->name('rewards.redeem');
 Route::post('/rewards/spin', [RewardsController::class, 'spin'])->name('rewards.spin');
 
@@ -106,6 +111,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/videos/{video}/comments', [VideoController::class, 'getComments'])->name('videos.comments.index');
     Route::post('/videos/{video}/comments', [VideoController::class, 'storeComment'])->name('videos.comments.store');
     Route::delete('/videos/comments/{comment}', [VideoController::class, 'destroyComment'])->name('videos.comments.destroy');
+    Route::post('/videos/comments/{comment}/report', [VideoController::class, 'reportComment'])->name('videos.comments.report');
 });
 
 // Articles & Lifestyle
@@ -160,11 +166,28 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::put('products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductController::class, 'updateVariant'])->name('admin.products.variants.update');
     Route::delete('products/{product}/variants/{variant}', [\App\Http\Controllers\Admin\ProductController::class, 'destroyVariant'])->name('admin.products.variants.destroy');
 
+    Route::get('rewards/history', [AdminRewardsController::class, 'history'])->name('admin.rewards.history');
     Route::get('rewards', [AdminRewardsController::class, 'index'])->name('admin.rewards.index');
     Route::post('rewards', [AdminRewardsController::class, 'store'])->name('admin.rewards.store');
+    Route::post('rewards/setting', [AdminRewardsController::class, 'updateSetting'])->name('admin.rewards.update-setting');
+    Route::post('rewards/wheels', [AdminRewardsController::class, 'updateLuckyWheels'])->name('admin.rewards.update-lucky-wheels');
     Route::put('rewards/{reward}', [AdminRewardsController::class, 'update'])->name('admin.rewards.update');
     Route::put('rewards/{reward}/image', [RewardImageController::class, 'update'])->name('admin.rewards.image.update');
     Route::delete('rewards/{reward}', [AdminRewardsController::class, 'destroy'])->name('admin.rewards.destroy');
+
+    // Comment & Review Management
+    Route::get('comments', [CommentManagementController::class, 'index'])->name('admin.comments.index');
+    Route::post('comments/reviews/bulk-delete', [CommentManagementController::class, 'bulkDeleteReviews'])->name('admin.comments.reviews.bulk-delete');
+    Route::post('comments/video-comments/bulk-delete', [CommentManagementController::class, 'bulkDeleteVideoComments'])->name('admin.comments.video-comments.bulk-delete');
+    Route::delete('comments/reviews/{id}', [CommentManagementController::class, 'destroyReview'])->name('admin.comments.reviews.destroy');
+    Route::delete('comments/video-comments/{id}', [CommentManagementController::class, 'destroyVideoComment'])->name('admin.comments.video-comments.destroy');
+    Route::post('comments/reviews/{id}/reply', [CommentManagementController::class, 'replyReview'])->name('admin.comments.reviews.reply');
+    Route::post('comments/video-comments/{id}/reply', [CommentManagementController::class, 'replyVideoComment'])->name('admin.comments.video-comments.reply');
+    Route::post('comments/reviews/{id}/approve', [CommentManagementController::class, 'approveReview'])->name('admin.comments.reviews.approve');
+    Route::post('comments/video-comments/{id}/approve', [CommentManagementController::class, 'approveVideoComment'])->name('admin.comments.video-comments.approve');
+    Route::post('comments/reviews/{id}/clear-reports', [CommentManagementController::class, 'clearReviewReports'])->name('admin.comments.reviews.clear-reports');
+    Route::post('comments/video-comments/{id}/clear-reports', [CommentManagementController::class, 'clearVideoCommentReports'])->name('admin.comments.video-comments.clear-reports');
+    Route::post('comments/users/{id}/unban', [CommentManagementController::class, 'unbanUser'])->name('admin.comments.users.unban');
 });
 
 Route::middleware('auth')->group(function () {
