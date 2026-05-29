@@ -2,8 +2,14 @@
 
 ## Current State & Focus
 - **Merge Activities:**
+
   - Merged `Vinhem/ThanhToan` into `master` successfully (completing the checkout name and address validation features).
   - Merged `master` into branch `Vinhem/QuetMaQR` successfully.
+=======
+  - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
+  - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
+  - Merged `Vinhem/CN_tracudonhang` into `master` successfully (fast-forward, 5 commits ahead). Files: `CartController.php`, `ordertracking.blade.php`, `maQR.blade.php`, `routes/web.php`, `ai-memory.md`. Pushed to `origin/master` (`8976d81..6e1a090`).
+
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
   - Added tag-based filtering on the lifestyle listing page.
   - Fixed admin article filters so status buttons and search now work together.
