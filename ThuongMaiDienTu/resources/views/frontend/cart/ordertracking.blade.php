@@ -204,17 +204,19 @@
                     </div>
 
                     <!-- Sản phẩm đã đặt (thu gọn mặc định) -->
-                    <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+                    <div>
                         <button onclick="toggleProducts()" id="products-toggle-btn"
-                            class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors">
-                            <span class="flex items-center gap-2 text-base font-bold text-gray-800">
-                                <i class="fa-solid fa-box text-[#0046ab]"></i>
-                                Chi tiết các sản phẩm đã đặt
-                            </span>
-                            <i id="products-chevron" class="fa-solid fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                            class="w-full py-3.5 px-6 bg-[#0046ab] hover:bg-blue-800 active:scale-[0.98] text-white rounded-2xl font-bold shadow-md shadow-blue-200 flex items-center justify-center gap-3 transition-all duration-200">
+                            <i class="fa-solid fa-box-open text-lg"></i>
+                            <span id="products-btn-label">Xem chi tiết sản phẩm đã đặt</span>
+                            <i id="products-chevron" class="fa-solid fa-chevron-down text-white/80 transition-transform duration-300 ml-auto"></i>
                         </button>
-                        <div id="products-panel" class="hidden px-6 pb-5 border-t border-gray-100">
-                            <div id="result-products" class="space-y-0 pt-3">
+                        <div id="products-panel" class="hidden mt-3 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                            <div class="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+                                <i class="fa-solid fa-list-check text-[#0046ab]"></i>
+                                <span class="font-bold text-gray-800 text-sm">Danh sách sản phẩm đã đặt</span>
+                            </div>
+                            <div id="result-products" class="px-5 pb-4 pt-2 space-y-0">
                                 <!-- Sản phẩm được chèn động -->
                             </div>
                         </div>
@@ -240,8 +242,10 @@
     function toggleProducts() {
         const panel   = document.getElementById('products-panel');
         const chevron = document.getElementById('products-chevron');
+        const label   = document.getElementById('products-btn-label');
         const isHidden = panel.classList.toggle('hidden');
         chevron.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
+        if (label) label.textContent = isHidden ? 'Xem chi tiết sản phẩm đã đặt' : 'Ẩn chi tiết sản phẩm đã đặt';
     }
 
     function doSearch(e) {
