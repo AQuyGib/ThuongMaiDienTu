@@ -587,6 +587,11 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - `resources/views/frontend/rewards/show.blade.php` & `resources/views/frontend/rewards/history.blade.php`: Chú thích hệ thống lọc lịch sử, định dạng hiển thị timeline tiến trình và xử lý AJAX đổi voucher đơn lẻ.
   - `resources/views/admin/rewards/index.blade.php` (Giao diện Quản trị): Chú thích toàn bộ logic bật/tắt hiển thị vòng quay ở client, logic form thêm/sửa linh động ẩn hiện các trường đầu vào VND/Freeship/Rate theo chủng loại quà, và modal test spin offline.
 
-
-
-
+### 37. Tích hợp nhánh Tối ưu & Cập nhật Báo cáo phân chia chức năng theo Thành viên
+- **Merge nhánh Git:**
+  - Thực hiện chuyển sang nhánh `master` và tích hợp nhánh phát triển `AnhQuy/ToiUu` (chứa toàn bộ nội dung cải tiến mã nguồn, comment Docblock và tối ưu hóa hệ thống) vào nhánh `master` dạng Fast-forward không có conflict.
+  - Tiến hành dọn dẹp Git repository: Xóa bỏ tệp tin tạm `docx_content.txt` khỏi Git tracking và thực tế trên đĩa cứng của `master`.
+- **Tài liệu hóa & Phân chia chức năng dự án mới:**
+  - Nhận diện cấu trúc dự án Thương mại điện tử hiện tại (`ThuongMaiDienTu`) với 5 thành viên phát triển: Anh Quý, Vinh Em, Thanh Hiền, Xuân Hòa, Đăng Nguyên dựa theo các branch trong Git.
+  - Tạo tệp Word mới chi tiết: **`d:\HOC\Hoc 4\pywword\Mapping_Chuc_Nng_Theo_Thanh_Vien.docx`** chứa bảng ánh xạ cặn kẽ 100% tất cả các tệp mã nguồn tương ứng (từ Controller, Service, Model, View, Migration, Route cho đến Script JS/CSS phụ trợ) cho từng nhánh tính năng của từng thành viên.
+  - Định dạng tệp Word thẩm mỹ cao, lề chuẩn 1 inch, sử dụng font *Times New Roman* kết hợp *Consolas* cho tên tệp code, và đổ màu tiêu đề phân cấp trực quan cho phần việc của mỗi người để chuẩn bị bảo vệ đồ án trước Hội đồng chấm thi.
