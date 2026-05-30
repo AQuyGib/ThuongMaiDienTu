@@ -2,29 +2,42 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ProductExport;
 use App\Http\Controllers\Controller;
+use App\Imports\ProductImport;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
     /**
      * Hiển thị danh sách sản phẩm (Trang Quản lý Sản phẩm)
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Lấy danh sách sản phẩm có phân trang, kèm relation category + đếm variants
+        $search = trim((string) $request->get('search', ''));
+
+
         $products = Product::with('category')
             ->withCount('variants')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('seo_description', 'like', '%' . $search . '%')
+                        ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                            $categoryQuery->where('name', 'like', '%' . $search . '%');
+                        });
+                });
+            })
             ->orderBy('product_id', 'desc')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
-        // Lấy tất cả danh mục (dùng cho dropdown chọn danh mục)
         $allCategories = Category::orderBy('name')->get();
 
-        // Thống kê
         $totalProducts = Product::count();
         $totalCategories = Category::count();
         $totalVariants = ProductVariant::count();
@@ -34,23 +47,108 @@ class ProductController extends Controller
             'allCategories',
             'totalProducts',
             'totalCategories',
-            'totalVariants'
+            'totalVariants',
+            'search'
         ));
     }
 
-    /**
-     * Hiển thị chi tiết sản phẩm + danh sách biến thể
-     */
+    public function exportExcel(Request $request)
+    {
+        $filters = $request->only(['category_id', 'keyword', 'status']);
+
+        return Excel::download(new ProductExport($filters), 'products-export-' . now()->format('Ymd-His') . '.xlsx');
+    }
+
+    public function downloadTemplate()
+    {
+        return Excel::download(new ProductExport(), 'products-template.xlsx');
+    }
+
+    public function importForm()
+    {
+        $allCategories = Category::orderBy('name')->get();
+
+        return view('admin.products.import', compact('allCategories'));
+    }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+        ]);
+
+        Excel::import(new ProductImport, $request->file('file'));
+
+        return redirect()->route('admin.products.index')
+            ->with('success', 'Import sản phẩm thành công.');
+    }
+
     public function show($id)
     {
-        $product = Product::with(['category', 'variants'])->findOrFail($id);
+        $product = Product::with(['category', 'variants', 'crossSells', 'comboProducts'])->findOrFail($id);
+        
+        // Lấy tất cả sản phẩm khác để admin có thể chọn bán kèm (loại trừ chính nó)
+        // Trong thực tế nếu SP quá nhiều thì nên dùng AJAX search, ở đây ta lấy danh sách đơn giản
+        $allProducts = Product::where('product_id', '!=', $id)
+            ->orderBy('name')
+            ->get(['product_id', 'name', 'base_price', 'thumbnail']);
 
-        return view('admin.products.ProductDetail', compact('product'));
+        return view('admin.products.ProductDetail', compact('product', 'allProducts'));
     }
 
     /**
-     * Thêm sản phẩm mới
+     * Cập nhật danh sách sản phẩm bán kèm (Cross-sell)
      */
+    public function syncCrossSells(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+        
+        // Sync các product_id được chọn vào bảng trung gian
+        // Xóa cache cũ để hiển thị mới ngay lập tức
+        $product->crossSells()->sync($request->cross_sell_ids ?? []);
+        
+        // Xóa cache của cả guest và user (vì cache key có chứa user_id/guest)
+        // Cách nhanh nhất là xóa theo prefix hoặc đơn giản là flush nếu hệ thống nhỏ
+        // Ở đây ta xóa key cụ thể của guest và user hiện tại
+        cache()->forget("cross_sell_v2_{$id}_user_" . (auth()->id() ?? 'guest'));
+        cache()->forget("cross_sell_v2_{$id}_user_guest");
+
+        return redirect()->route('admin.products.show', $id)
+            ->with('success', 'Cập nhật danh sách bán kèm thành công!');
+    }
+
+    /**
+     * Cập nhật danh sách combo mua kèm
+     */
+    public function syncCombos(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+        
+        $syncData = [];
+        if ($request->has('combo_product_ids')) {
+            foreach ($request->combo_product_ids as $index => $comboProductId) {
+                $discountType = $request->discount_types[$comboProductId] ?? 'fixed';
+                $discountValue = floatval($request->discount_values[$comboProductId] ?? 0);
+                
+                $syncData[$comboProductId] = [
+                    'discount_type' => $discountType,
+                    'discount_value' => $discountValue,
+                    'sort_order' => $index
+                ];
+            }
+        }
+        
+        $product->comboProducts()->sync($syncData);
+        
+        // Xóa cache hiển thị combo / cross-sell của sản phẩm
+        cache()->forget("cross_sell_v2_{$id}_user_" . (auth()->id() ?? 'guest'));
+        cache()->forget("cross_sell_v2_{$id}_user_guest");
+        cache()->forget("combo_products_{$id}");
+
+        return redirect()->route('admin.products.show', $id)
+            ->with('success', 'Cập nhật danh sách Combo mua kèm thành công!');
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -58,13 +156,6 @@ class ProductController extends Controller
             'category_id' => 'required|integer|exists:categories,category_id',
             'base_price' => 'required|numeric|min:0',
             'seo_description' => 'nullable|string|max:255',
-        ], [
-            'name.required' => 'Vui lòng nhập tên sản phẩm.',
-            'name.max' => 'Tên sản phẩm không được vượt quá 150 ký tự.',
-            'category_id.required' => 'Vui lòng chọn danh mục.',
-            'category_id.exists' => 'Danh mục không tồn tại.',
-            'base_price.required' => 'Vui lòng nhập giá bán.',
-            'base_price.min' => 'Giá bán phải lớn hơn hoặc bằng 0.',
         ]);
 
         Product::create([
@@ -72,15 +163,13 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'base_price' => $request->base_price,
             'seo_description' => $request->seo_description ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Thêm sản phẩm "' . $request->name . '" thành công!');
     }
 
-    /**
-     * Cập nhật sản phẩm
-     */
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -88,13 +177,6 @@ class ProductController extends Controller
             'category_id' => 'required|integer|exists:categories,category_id',
             'base_price' => 'required|numeric|min:0',
             'seo_description' => 'nullable|string|max:255',
-        ], [
-            'name.required' => 'Vui lòng nhập tên sản phẩm.',
-            'name.max' => 'Tên sản phẩm không được vượt quá 150 ký tự.',
-            'category_id.required' => 'Vui lòng chọn danh mục.',
-            'category_id.exists' => 'Danh mục không tồn tại.',
-            'base_price.required' => 'Vui lòng nhập giá bán.',
-            'base_price.min' => 'Giá bán phải lớn hơn hoặc bằng 0.',
         ]);
 
         $product = Product::findOrFail($id);
@@ -104,15 +186,13 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'base_price' => $request->base_price,
             'seo_description' => $request->seo_description ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Cập nhật sản phẩm "' . $request->name . '" thành công!');
     }
 
-    /**
-     * Xóa sản phẩm (soft delete)
-     */
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
@@ -124,13 +204,6 @@ class ProductController extends Controller
             ->with('success', 'Xóa sản phẩm "' . $name . '" thành công!');
     }
 
-    // ================================================================
-    //  VARIANT MANAGEMENT — CRUD biến thể sản phẩm
-    // ================================================================
-
-    /**
-     * Thêm biến thể mới cho sản phẩm
-     */
     public function storeVariant(Request $request, $productId)
     {
         $product = Product::findOrFail($productId);
@@ -139,11 +212,10 @@ class ProductController extends Controller
             'color' => 'nullable|string|max:30',
             'ram' => 'nullable|string|max:20',
             'rom_capacity' => 'nullable|string|max:20',
+            'cpu_chip' => 'nullable|string|max:100',
+            'gpu_chip' => 'nullable|string|max:100',
             'extra_price' => 'required|numeric|min:0',
             'image_url' => 'nullable|string|max:500',
-        ], [
-            'extra_price.required' => 'Vui lòng nhập giá cộng thêm.',
-            'extra_price.min' => 'Giá cộng thêm phải ≥ 0.',
         ]);
 
         ProductVariant::create([
@@ -151,17 +223,17 @@ class ProductController extends Controller
             'color' => $request->color ?: null,
             'ram' => $request->ram ?: null,
             'rom_capacity' => $request->rom_capacity ?: null,
+            'cpu_chip' => $request->cpu_chip ?: null,
+            'gpu_chip' => $request->gpu_chip ?: null,
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.show', $productId)
             ->with('success', 'Thêm biến thể thành công!');
     }
 
-    /**
-     * Cập nhật biến thể
-     */
     public function updateVariant(Request $request, $productId, $variantId)
     {
         Product::findOrFail($productId);
@@ -170,11 +242,10 @@ class ProductController extends Controller
             'color' => 'nullable|string|max:30',
             'ram' => 'nullable|string|max:20',
             'rom_capacity' => 'nullable|string|max:20',
+            'cpu_chip' => 'nullable|string|max:100',
+            'gpu_chip' => 'nullable|string|max:100',
             'extra_price' => 'required|numeric|min:0',
             'image_url' => 'nullable|string|max:500',
-        ], [
-            'extra_price.required' => 'Vui lòng nhập giá cộng thêm.',
-            'extra_price.min' => 'Giá cộng thêm phải ≥ 0.',
         ]);
 
         $variant = ProductVariant::where('variant_id', $variantId)
@@ -185,17 +256,17 @@ class ProductController extends Controller
             'color' => $request->color ?: null,
             'ram' => $request->ram ?: null,
             'rom_capacity' => $request->rom_capacity ?: null,
+            'cpu_chip' => $request->cpu_chip ?: null,
+            'gpu_chip' => $request->gpu_chip ?: null,
             'extra_price' => $request->extra_price,
             'image_url' => $request->image_url ?: null,
+            'safe_stock' => $request->safe_stock !== null ? $request->safe_stock : 5,
         ]);
 
         return redirect()->route('admin.products.show', $productId)
             ->with('success', 'Cập nhật biến thể thành công!');
     }
 
-    /**
-     * Xóa biến thể
-     */
     public function destroyVariant($productId, $variantId)
     {
         Product::findOrFail($productId);

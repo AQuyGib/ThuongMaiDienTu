@@ -5,11 +5,11 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng Nhập / Đăng Ký</title>
+    <title>{{ __('ui.login_register_title') }}</title>
     <!-- Font system: Outfit (UI) + Space Grotesk (Headlines) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -220,6 +220,12 @@
             box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); 
         }
 
+        /* Ẩn con mắt mặc định của trình duyệt (Edge) để tránh 2 con mắt */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
         .forgot-link { font-size: 13px; color: var(--text-muted); text-decoration: none; font-weight: 600; transition: color 0.3s; }
         .forgot-link:hover { color: var(--tech-blue); text-decoration: underline; }
 
@@ -301,6 +307,117 @@
         /* Canvas particle layer */
         #particle-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
 
+        /* Nút quay lại trang chủ */
+        .back-to-home {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 10px 18px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .back-to-home svg {
+            transition: transform 0.3s ease;
+        }
+        .back-to-home:hover {
+            color: var(--tech-blue);
+            background: #ffffff;
+            border-color: var(--tech-blue);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+        .back-to-home:hover svg {
+            transform: translateX(-4px);
+        }
+
+        /* Language Switcher in Login Page */
+        .login-lang-switcher {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .login-lang-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 10px 16px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .login-lang-btn:hover {
+            color: var(--tech-blue);
+            background: #ffffff;
+            border-color: var(--tech-blue);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+        .login-lang-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.15);
+            overflow: hidden;
+            z-index: 1100;
+            min-width: 150px;
+        }
+        .login-lang-dropdown.show {
+            display: block;
+            animation: dropdownFade 0.3s ease;
+        }
+        @keyframes dropdownFade {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .login-lang-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            font-size: 13px;
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: background .15s;
+            font-weight: 600;
+        }
+        .login-lang-option:hover {
+            background: #f0f7ff;
+            color: var(--tech-blue);
+        }
+        .login-lang-option.active {
+            background: #f0f7ff;
+            color: var(--tech-blue);
+            font-weight: 700;
+        }
+        .login-lang-option .active-indicator {
+            margin-left: auto;
+            color: var(--tech-blue);
+            font-weight: bold;
+            font-size: 11px;
+        }
+
     </style>
 </head>
 <body>
@@ -326,12 +443,11 @@
                 <div class="vp-main">
                     <div class="vp-tag">
                         <span class="vp-tag-dot"></span>
-                        Đang hoạt động
+                        {{ __('ui.active_badge') }}
                     </div>
-                    <h2 class="vp-title">Mua sắm điện máy<br><span>thông minh hơn</span></h2>
+                    <h2 class="vp-title">{{ __('ui.smart_shopping_title') }}<br><span>{{ __('ui.smart_shopping_highlight') }}</span></h2>
                     <p class="vp-desc">
-                        Hàng nghìn sản phẩm chính hãng với giá tốt nhất.<br>
-                        Giao hàng nhanh · Bảo hành chính hãng · Hoàn tiền 30 ngày.
+                        {!! __('ui.banner_features_desc') !!}
                     </p>
                 </div>
 
@@ -339,32 +455,92 @@
                 <div class="vp-stats">
                     <div class="vp-stat">
                         <div class="vp-stat-num">10K<span>+</span></div>
-                        <div class="vp-stat-label">Sản phẩm</div>
+                        <div class="vp-stat-label">{{ __('ui.stat_products') }}</div>
                     </div>
                     <div class="vp-stat">
                         <div class="vp-stat-num">98<span>%</span></div>
-                        <div class="vp-stat-label">Hài lòng</div>
+                        <div class="vp-stat-label">{{ __('ui.stat_satisfaction') }}</div>
                     </div>
                     <div class="vp-stat">
                         <div class="vp-stat-num">2H<span>+</span></div>
-                        <div class="vp-stat-label">Giao hàng</div>
+                        <div class="vp-stat-label">{{ __('ui.stat_delivery') }}</div>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- FORM PANEL (Phải) -->
-        <div class="form-panel">
+        <div class="form-panel" style="position: relative;">
             
+            <!-- Nút điều hướng & Ngôn ngữ -->
+            <div style="position: absolute; top: 25px; right: 30px; display: flex; align-items: center; gap: 10px; z-index: 100;">
+                <!-- Nút Quay lại Trang chủ -->
+                <a href="{{ route('home') }}" class="back-to-home">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>{{ __('ui.home_btn') }}</span>
+                </a>
+
+                <!-- Trình chọn ngôn ngữ -->
+                <div class="login-lang-switcher" id="loginLangSwitcher">
+                    <button class="login-lang-btn" id="loginLangToggleBtn">
+                        <span style="font-size: 14px; line-height: 1;">🌐</span>
+                        <span>{{ app()->getLocale() === 'en' ? 'EN' : 'VI' }}</span>
+                        <span style="font-size: 8px; margin-left: 2px;">▼</span>
+                    </button>
+                    <div class="login-lang-dropdown" id="loginLangDropdown">
+                        <a href="{{ route('locale.switch', 'vi') }}" class="login-lang-option {{ app()->getLocale() === 'vi' ? 'active' : '' }}">
+                            <span class="lang-flag">🇻🇳</span>
+                            <span>Tiếng Việt</span>
+                            @if(app()->getLocale() === 'vi')
+                                <span class="active-indicator">✓</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('locale.switch', 'en') }}" class="login-lang-option {{ app()->getLocale() === 'en' ? 'active' : '' }}">
+                            <span class="lang-flag">🇺🇸</span>
+                            <span>English</span>
+                            @if(app()->getLocale() === 'en')
+                                <span class="active-indicator">✓</span>
+                            @endif
+                        </a>
+                    </div>
+                </div>
+            </div>
+
             <!-- Đưa tên thương hiệu lên trên -->
             <div class="form-header">
                 <h2 class="brand-title">DienMay<span class="highlight">Pro</span></h2>
-                <p class="brand-slogan">Chào mừng đến với cửa hàng điện máy thông minh</p>
+                <p class="brand-slogan">{{ __('ui.welcome_back_slogan') }}</p>
             </div>
 
+            <!-- HIỂN THỊ LỖI HỆ THỐNG -->
+            @if(session('error'))
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #b91c1c; display: flex; align-items: center; gap: 10px; animation: shake 0.5s ease;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    {{ session('error') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #b91c1c; animation: shake 0.5s ease;">
+                    @foreach ($errors->all() as $error)
+                        <p>• {{ $error }}</p>
+                    @endforeach
+                </div>
+            @endif
+
+            <style>
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+            </style>
             <div class="tabs">
-                <div class="tab" id="tabLogin">Đăng nhập</div>
-                <div class="tab" id="tabRegister">Đăng ký</div>
+                <div class="tab" id="tabLogin">{{ __('ui.login_tab') }}</div>
+                <div class="tab" id="tabRegister">{{ __('ui.register_tab') }}</div>
             </div>
 
             @if($error_message)
@@ -379,26 +555,31 @@
                 <form method="POST" action="{{ route('login.post') }}">
                     @csrf
                     <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" value="{{ old('email') }}" required placeholder="Nhập địa chỉ email">
+                        <label for="email">{{ __('ui.email_label') }}</label>
+                        <input type="email" id="email" name="email" class="form-control" value="{{ old('email') }}" required placeholder="{{ __('ui.placeholder_email') }}">
                     </div>
 
                     <div class="form-group">
-                        <label for="password">Mật khẩu</label>
-                        <input type="password" id="password" name="password" class="form-control" required minlength="8" placeholder="••••••••">
+                        <label for="password">{{ __('ui.password_label') }}</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="password" name="password" class="form-control" required minlength="8" placeholder="{{ __('ui.placeholder_password') }}">
+                            <button type="button" class="eye-toggle" onclick="togglePassword('password', this)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </button>
+                        </div>
                         <div style="text-align: right; margin-top: 8px;">
-                            <a href="{{ route('password.request') }}" class="forgot-link">Quên mật khẩu?</a>
+                            <a href="{{ route('password.request') }}" class="forgot-link">{{ __('ui.forgot_password_link') }}</a>
                         </div>
                     </div>
 
-                    <button type="submit" name="login_submit" class="btn-submit">Đăng Nhập Ngay</button>
+                    <button type="submit" name="login_submit" class="btn-submit">{{ __('ui.login_btn') }}</button>
                 </form>
 
-                <div class="divider">hoặc</div>
+                <div class="divider">{{ __('ui.or_divider') }}</div>
 
                 <a href="{{ route('social.login', 'google') }}" class="btn-google">
                     <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                    <span>Sign in with Google</span>
+                    <span>{{ __('ui.login_google') }}</span>
                 </a>
             </div>
             
@@ -407,29 +588,29 @@
                 <form method="POST" action="{{ route('register.post') }}">
                     @csrf
                     <div class="form-group">
-                        <label for="full_name">Họ và tên</label>
-                        <input type="text" id="full_name" name="full_name" class="form-control" value="{{ old('full_name') }}" required placeholder="Nhập họ và tên">
+                        <label for="full_name">{{ __('ui.full_name_label') }}</label>
+                        <input type="text" id="full_name" name="full_name" class="form-control" value="{{ old('full_name') }}" required placeholder="{{ __('ui.placeholder_fullname') }}">
                     </div>
 
                     <div class="form-group">
-                        <label for="reg_email">Email</label>
-                        <input type="email" id="reg_email" name="email" class="form-control" value="{{ old('email') }}" required placeholder="Nhập địa chỉ email">
+                        <label for="reg_email">{{ __('ui.email_label') }}</label>
+                        <input type="email" id="reg_email" name="email" class="form-control" value="{{ old('email') }}" required placeholder="{{ __('ui.placeholder_email') }}">
                     </div>
 
                     <div style="display: flex; gap: 15px;">
                         <div class="form-group" style="flex: 1;">
-                            <label for="reg_password">Mật khẩu</label>
+                            <label for="reg_password">{{ __('ui.password_label') }}</label>
                             <div class="input-wrapper">
-                                <input type="password" id="reg_password" name="password" class="form-control" required minlength="8" placeholder="••••••••">
+                                <input type="password" id="reg_password" name="password" class="form-control" required minlength="8" placeholder="{{ __('ui.placeholder_password') }}">
                                 <button type="button" class="eye-toggle" onclick="togglePassword('reg_password', this)">
                                     <svg id="eye-reg" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
                         </div>
                         <div class="form-group" style="flex: 1;">
-                            <label for="password_confirmation">Xác nhận</label>
+                            <label for="password_confirmation">{{ __('ui.confirm_password_label') }}</label>
                             <div class="input-wrapper">
-                                <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required minlength="8" placeholder="••••••••">
+                                <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required minlength="8" placeholder="{{ __('ui.placeholder_password') }}">
                                 <button type="button" class="eye-toggle" onclick="togglePassword('password_confirmation', this)">
                                     <svg id="eye-confirm" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
@@ -437,7 +618,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" name="register_submit" class="btn-submit btn-submit-red">Đăng Ký Ngay</button>
+                    <button type="submit" name="register_submit" class="btn-submit btn-submit-red">{{ __('ui.reg_btn') }}</button>
                 </form>
             </div>
 
@@ -482,18 +663,23 @@
         }
 
         // Khởi tạo 80 hạt
+        // Khởi tạo danh sách 80 hạt (particles) ban đầu
         for (let i = 0; i < 80; i++) particles.push(new Particle());
 
+        // Hàm vẽ các đường nối giữa các hạt khi chúng ở gần nhau
         function drawConnections() {
             for (let i = 0; i < particles.length; i++) {
                 for (let j = i + 1; j < particles.length; j++) {
                     const dx = particles[i].x - particles[j].x;
                     const dy = particles[i].y - particles[j].y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    // Nếu khoảng cách giữa 2 hạt nhỏ hơn 70px thì vẽ đường nối
                     if (dist < 70) {
                         ctx.beginPath();
                         ctx.moveTo(particles[i].x, particles[i].y);
                         ctx.lineTo(particles[j].x, particles[j].y);
+                        // Độ đậm nhạt của đường nối phụ thuộc vào khoảng cách (càng gần càng rõ)
                         ctx.strokeStyle = `rgba(255,255,255,${0.06 * (1 - dist/70)})`;
                         ctx.lineWidth = 0.5;
                         ctx.stroke();
@@ -502,12 +688,22 @@
             }
         }
 
+        // Hàm vòng lặp chính để xử lý hiệu ứng hoạt họa (Animation Loop)
         function animateParticles() {
+            // Xóa toàn bộ canvas để chuẩn bị vẽ khung hình mới
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Vẽ các đường liên kết giữa các hạt
             drawConnections();
+            
+            // Cập nhật vị trí và vẽ từng hạt một
             particles.forEach(p => { p.update(); p.draw(); });
+            
+            // Yêu cầu trình duyệt gọi lại hàm này ở khung hình tiếp theo
             requestAnimationFrame(animateParticles);
         }
+        
+        // Bắt đầu chạy hiệu ứng
         animateParticles();
 
         /* ===== PASSWORD TOGGLE ===== */
@@ -521,33 +717,58 @@
                 : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>`;
         }
 
+        /* ===== CHUYỂN ĐỔI TAB ĐĂNG NHẬP / ĐĂNG KÝ ===== */
+        // Lấy các phần tử DOM của nút Tab
         const tabLogin = document.getElementById('tabLogin');
         const tabRegister = document.getElementById('tabRegister');
+        
+        // Lấy các phần tử DOM của Form hiển thị
         const formLoginView = document.getElementById('formLoginView');
         const formRegisterView = document.getElementById('formRegisterView');
 
+        // Hàm hiển thị Form Đăng nhập
         function showLogin() {
-            tabLogin.classList.add('active');
-            tabRegister.classList.remove('active');
-            formLoginView.classList.remove('hidden');
-            formRegisterView.classList.add('hidden');
+            tabLogin.classList.add('active'); // Làm nổi bật tab Đăng nhập
+            tabRegister.classList.remove('active'); // Tắt nổi bật tab Đăng ký
+            formLoginView.classList.remove('hidden'); // Hiện form Đăng nhập
+            formRegisterView.classList.add('hidden'); // Ẩn form Đăng ký
         }
 
+        // Hàm hiển thị Form Đăng ký
         function showRegister() {
-            tabRegister.classList.add('active');
-            tabLogin.classList.remove('active');
-            formRegisterView.classList.remove('hidden');
-            formLoginView.classList.add('hidden');
+            tabRegister.classList.add('active'); // Làm nổi bật tab Đăng ký
+            tabLogin.classList.remove('active'); // Tắt nổi bật tab Đăng nhập
+            formRegisterView.classList.remove('hidden'); // Hiện form Đăng ký
+            formLoginView.classList.add('hidden'); // Ẩn form Đăng nhập
         }
 
+        // Gắn sự kiện click cho các tab
         tabLogin.addEventListener('click', showLogin);
         tabRegister.addEventListener('click', showRegister);
 
+        // Lấy trạng thái tab đang active từ backend (mặc định là 'login')
         const currentActiveTab = '{{ $active_tab }}';
+        
+        // Hiển thị tab tương ứng khi vừa load trang
         if (currentActiveTab === 'register') {
             showRegister();
         } else {
             showLogin();
+        }
+
+        /* ===== LANGUAGE SWITCHER DROPDOWN ===== */
+        const loginLangBtn = document.getElementById('loginLangToggleBtn');
+        const loginLangDropdown = document.getElementById('loginLangDropdown');
+        if (loginLangBtn && loginLangDropdown) {
+            loginLangBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                loginLangDropdown.classList.toggle('show');
+            });
+            document.addEventListener('click', function(e) {
+                if (!loginLangBtn.contains(e.target) && !loginLangDropdown.contains(e.target)) {
+                    loginLangDropdown.classList.remove('show');
+                }
+            });
         }
     </script>
 </body>
