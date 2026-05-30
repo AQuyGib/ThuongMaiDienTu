@@ -1,369 +1,200 @@
 @extends('admin.layouts.master')
 @section('title', 'Quản lý Bài viết & Nội dung')
+@section('page-title', 'Quản lý Bài viết & Nội dung')
 
 @section('content')
+@php
+    // Thực hiện tính toán nhanh các chỉ số thống kê từ danh sách bài viết
+    $stats = [
+        'total' => $articles->total(),
+        'approved' => $articles->where('status', 'approved')->count(),
+        'pending' => $articles->where('status', 'pending')->count(),
+        'rejected' => $articles->where('status', 'rejected')->count(),
+    ];
+@endphp
+
+<div class="space-y-6">
     <style>
-        /* Custom Dropdown Styling */
-        .filter-dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            margin-top: 0.5rem;
-            width: 200px;
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            border: 1px solid #f3f4f6;
-            z-index: 50;
-        }
-
-        .filter-dropdown-menu.show {
-            display: block;
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Custom Pagination Styling */
-        .pagination {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .pagination li {
-            list-style: none;
-        }
-
-        .pagination li a,
-        .pagination li span {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.5rem;
-            height: 2.5rem;
-            border-radius: 0.75rem;
-            background-color: white;
-            border: 1px solid #f3f4f6;
-            color: #4b5563;
-            font-size: 0.875rem;
-            font-weight: 700;
-            transition: all 0.2s;
-        }
-
-        .pagination li.active span {
-            background-color: #2563eb;
-            color: white;
-            border-color: #2563eb;
-            shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
-        }
-
-        .pagination li a:hover {
-            background-color: #eff6ff;
-            color: #2563eb;
-            border-color: #bfdbfe;
-        }
-
-        /* Hide default laravel pagination labels */
-        .custom-pagination nav p {
-            display: none !important;
-        }
-        .custom-pagination nav > div:first-child {
-            display: none !important;
-        }
+        /* Card mờ ảo (glassmorphism) cho giao diện quản trị */
+        .glass-card { background: rgba(255,255,255,.88); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,.65); box-shadow: 0 20px 60px -28px rgba(15, 23, 42, .25); }
+        .stat-card { transition: .25s ease; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -28px rgba(37,99,235,.35); }
+        .article-card { transition: .25s ease; }
+        .article-card:hover { transform: translateY(-3px); }
+        
+        /* Trạng thái active của các chip lọc nhanh bài viết */
+        .filter-chip.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+        
+        /* Ẩn bớt các thành phần phân trang thừa mặc định của Tailwind để làm gọn UI */
+        .custom-pagination nav p, .custom-pagination nav > div:first-child { display: none !important; }
+        .custom-pagination svg { width: 18px; height: 18px; }
     </style>
 
-    <div class="container mx-auto px-4 py-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">Quản lý Bài viết & Nội dung</h1>
-
-            <a href="{{ route('admin.articles.create') }}"
-                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow flex items-center transition-colors">
-                <i class="fa-solid fa-plus mr-2"></i> Thêm Bài viết mới
+    {{-- KHỐI HEADER GIỚI THIỆU TRANG VÀ NÚT TẠO MỚI BÀI VIẾT --}}
+    <div class="rounded-[2rem] overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 text-white shadow-2xl">
+        <div class="p-6 md:p-8 flex flex-col xl:flex-row xl:items-end justify-between gap-6">
+            <div class="max-w-3xl space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[11px] font-bold tracking-[0.3em] uppercase border border-white/10">Article Studio</div>
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-black tracking-tight">Quản lý bài viết hiện đại</h1>
+                    <p class="mt-3 text-slate-300 max-w-2xl leading-relaxed">Theo dõi bài đăng theo trạng thái, lọc nhanh theo tác giả/format và tạo nội dung mới với trải nghiệm xem trước trực quan.</p>
+                </div>
+            </div>
+            <a href="{{ route('admin.articles.create') }}" class="inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-white text-slate-900 font-black shadow-lg shadow-black/10 hover:-translate-y-0.5 transition">
+                <i class="fa-solid fa-pen-to-square"></i>
+                Tạo bài viết
             </a>
         </div>
+    </div>
 
-        <!-- Hidden filter form -->
-        <form id="headerFilterForm" action="{{ route('admin.articles.index') }}" method="GET" class="hidden">
-            <input type="hidden" name="q" value="{{ request('q') }}">
-            <input type="hidden" name="author_type" id="hidden_author_type" value="{{ request('author_type') }}">
-            <input type="hidden" name="format_type" id="hidden_format_type" value="{{ request('format_type') }}">
-            <input type="hidden" name="status" id="hidden_status" value="{{ request('status') }}">
-        </form>
+    {{-- PHẦN THÔNG TIN THỐNG KÊ (KPI CARD) --}}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="glass-card stat-card rounded-[1.75rem] p-5">
+            <div class="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">Tổng bài viết</div>
+            <div class="mt-3 text-3xl font-black text-slate-900">{{ number_format($stats['total']) }}</div>
+        </div>
+        <div class="glass-card stat-card rounded-[1.75rem] p-5">
+            <div class="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-500">Đã duyệt</div>
+            <div class="mt-3 text-3xl font-black text-emerald-600">{{ number_format($stats['approved']) }}</div>
+        </div>
+        <div class="glass-card stat-card rounded-[1.75rem] p-5">
+            <div class="text-[11px] font-black uppercase tracking-[0.3em] text-amber-500">Chờ duyệt</div>
+            <div class="mt-3 text-3xl font-black text-amber-600">{{ number_format($stats['pending']) }}</div>
+        </div>
+        <div class="glass-card stat-card rounded-[1.75rem] p-5">
+            <div class="text-[11px] font-black uppercase tracking-[0.3em] text-rose-500">Từ chối</div>
+            <div class="mt-3 text-3xl font-black text-rose-600">{{ number_format($stats['rejected']) }}</div>
+        </div>
+    </div>
 
-        @if(session('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
-                <p>{{ session('error') }}</p>
+    {{-- KHỐI CONTAINER CHÍNH CHỨA BỘ LỌC VÀ BẢNG DANH SÁCH BÀI VIẾT --}}
+    <div class="glass-card rounded-[2rem] p-5 md:p-6">
+        
+        {{-- Khối tìm kiếm bài viết --}}
+        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-5">
+            <div>
+                <h2 class="text-lg font-black text-slate-900">Bộ lọc & thao tác nhanh</h2>
+                <p class="text-sm text-slate-500 mt-1">Tìm đúng bài viết trong vài giây.</p>
             </div>
-        @endif
+            <form action="{{ route('admin.articles.index') }}" method="GET" class="w-full xl:max-w-xl">
+                <div class="flex items-center gap-3">
+                    <div class="flex-1 relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" name="q" value="{{ request('q') }}" placeholder="Tìm theo tiêu đề, tác giả..." class="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 bg-white outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400">
+                    </div>
+                    <button class="px-5 py-3 rounded-2xl bg-slate-900 text-white font-black hover:bg-blue-700 transition">Tìm</button>
+                </div>
+            </form>
+        </div>
 
-        <div class="bg-white shadow-md rounded-xl overflow-hidden border border-gray-100">
-            <table class="min-w-full leading-normal">
-                <thead>
-                    <tr class="bg-gray-50/50">
-                        <th
-                            class="px-5 py-4 border-b border-gray-200 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">
-                            Nội dung bài viết
-                        </th>
+        {{-- Các chip lọc nhanh bài đăng theo trạng thái --}}
+        <div class="flex flex-wrap gap-3 mb-5">
+            @php
+                $filters = [
+                    '' => 'Tất cả',
+                    'pending' => 'Chờ duyệt',
+                    'approved' => 'Đã duyệt',
+                    'rejected' => 'Từ chối',
+                ];
+            @endphp
+            @foreach($filters as $key => $label)
+                <a href="{{ route('admin.articles.index', array_filter(array_merge(request()->except('page'), ['status' => $key]), fn($v) => $v !== '' && $v !== null)) }}" class="filter-chip inline-flex items-center px-4 py-2 rounded-full border text-sm font-bold transition {{ request('status') === $key || (!request('status') && $key === '') ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-600' }}">
+                    {{ $label }}
+                </a>
+            @endforeach
+        </div>
 
-                        {{-- Lọc Tác giả --}}
-                        <th
-                            class="px-5 py-4 border-b border-gray-200 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">
-                            <div class="relative inline-block text-left filter-container">
-                                <button type="button"
-                                    class="dropdown-trigger flex items-center gap-1.5 hover:text-blue-600 transition-colors py-1 px-2 rounded-md hover:bg-white border border-transparent hover:border-gray-200 shadow-none hover:shadow-sm">
-                                    TÁC GIẢ <i
-                                        class="fa-solid fa-chevron-down text-[9px] {{ request('author_type') ? 'text-blue-600' : 'text-gray-300' }}"></i>
-                                </button>
-                                <div class="filter-dropdown-menu">
-                                    <div
-                                        class="p-2 border-b border-gray-50 bg-gray-50/50 text-[10px] text-gray-400 font-bold px-4">
-                                        LỌC THEO VAI TRÒ</div>
-                                    <div class="py-1">
-                                        <a href="{{ route('admin.articles.index', array_merge(request()->query(), ['author_type' => ''])) }}"
-                                            class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 {{ !request('author_type') ? 'bg-blue-50 font-bold text-blue-600' : '' }}">
-                                            Tất cả
-                                            @if(!request('author_type')) <i class="fa-solid fa-check text-[10px]"></i>
-                                            @endif
-                                        </a>
-                                        <a href="{{ route('admin.articles.index', array_merge(request()->query(), ['author_type' => 'admin'])) }}"
-                                            class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 {{ request('author_type') === 'admin' ? 'bg-blue-50 font-bold text-blue-600' : '' }}">
-                                            Admin
-                                            @if(request('author_type') === 'admin') <i
-                                            class="fa-solid fa-check text-[10px]"></i> @endif
-                                        </a>
-                                        <a href="{{ route('admin.articles.index', array_merge(request()->query(), ['author_type' => 'customer'])) }}"
-                                            class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 {{ request('author_type') === 'customer' ? 'bg-blue-50 font-bold text-blue-600' : '' }}">
-                                            Customer
-                                            @if(request('author_type') === 'customer') <i
-                                            class="fa-solid fa-check text-[10px]"></i> @endif
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </th>
-
-                        {{-- Lọc Format --}}
-                        <th
-                            class="px-5 py-4 border-b border-gray-200 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">
-                            <div class="relative inline-block text-left filter-container">
-                                <button type="button"
-                                    class="dropdown-trigger flex items-center gap-1.5 hover:text-blue-600 transition-colors py-1 px-2 rounded-md hover:bg-white border border-transparent hover:border-gray-200 shadow-none hover:shadow-sm">
-                                    FORMAT <i
-                                        class="fa-solid fa-chevron-down text-[9px] {{ request('format_type') ? 'text-blue-600' : 'text-gray-300' }}"></i>
-                                </button>
-                                <div class="filter-dropdown-menu">
-                                    <div
-                                        class="p-2 border-b border-gray-50 bg-gray-50/50 text-[10px] text-gray-400 font-bold px-4">
-                                        LỌC ĐỊNH DẠNG</div>
-                                    <div class="py-1">
-                                        @php $formats = ['' => 'Tất cả', 'standard' => 'Standard', 'lookbook' => 'Lookbook', 'storytelling' => 'Storytelling']; @endphp
-                                        @foreach($formats as $key => $label)
-                                            <a href="{{ route('admin.articles.index', array_merge(request()->query(), ['format_type' => $key])) }}"
-                                                class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 {{ request('format_type') == $key ? 'bg-blue-50 font-bold text-blue-600' : '' }}">
-                                                {{ $label }}
-                                                @if(request('format_type') == $key) <i
-                                                class="fa-solid fa-check text-[10px]"></i> @endif
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            </div>
-                        </th>
-
-                        {{-- Lọc Trạng thái --}}
-                        <th
-                            class="px-5 py-4 border-b border-gray-200 text-left text-xs font-bold text-gray-500 uppercase tracking-widest">
-                            <div class="relative inline-block text-left filter-container">
-                                <button type="button"
-                                    class="dropdown-trigger flex items-center gap-1.5 hover:text-blue-600 transition-colors py-1 px-2 rounded-md hover:bg-white border border-transparent hover:border-gray-200 shadow-none hover:shadow-sm">
-                                    TRẠNG THÁI <i
-                                        class="fa-solid fa-chevron-down text-[9px] {{ request('status') ? 'text-blue-600' : 'text-gray-300' }}"></i>
-                                </button>
-                                <div class="filter-dropdown-menu">
-                                    <div
-                                        class="p-2 border-b border-gray-50 bg-gray-50/50 text-[10px] text-gray-400 font-bold px-4">
-                                        LỌC TRẠNG THÁI</div>
-                                    <div class="py-1">
-                                        @php $statuses = ['' => 'Tất cả', 'pending' => 'Chờ duyệt', 'approved' => 'Đã duyệt', 'rejected' => 'Từ chối']; @endphp
-                                        @foreach($statuses as $key => $label)
-                                            <a href="{{ route('admin.articles.index', array_merge(request()->query(), ['status' => $key])) }}"
-                                                class="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 {{ request('status') == $key ? 'bg-blue-50 font-bold text-blue-600' : '' }}">
-                                                {{ $label }}
-                                                @if(request('status') == $key) <i class="fa-solid fa-check text-[10px]"></i>
-                                                @endif
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            </div>
-                        </th>
-
-                        <th
-                            class="px-5 py-4 border-b border-gray-200 text-center text-xs font-bold text-gray-500 uppercase tracking-widest">
-                            <div class="flex justify-center items-center gap-2">
-                                HÀNH ĐỘNG
-                                @if(request()->anyFilled(['author_type', 'format_type', 'status']))
-                                    <a href="{{ route('admin.articles.index', ['q' => request('q')]) }}" title="Xóa tất cả lọc"
-                                        class="text-red-500 hover:bg-red-50 p-1.5 rounded-full transition-all">
-                                        <i class="fa-solid fa-filter-circle-xmark"></i>
-                                    </a>
-                                @endif
-                            </div>
-                        </th>
+        {{-- Bảng hiển thị thông tin bài viết --}}
+        <div class="overflow-x-auto rounded-[1.75rem] border border-slate-100 bg-white">
+            <table class="min-w-full">
+                <thead class="bg-slate-50/80 text-[11px] uppercase tracking-[0.25em] text-slate-400">
+                    <tr>
+                        <th class="px-6 py-4 text-left">Nội dung</th>
+                        <th class="px-6 py-4 text-left">Tác giả</th>
+                        <th class="px-6 py-4 text-center">Format</th>
+                        <th class="px-6 py-4 text-left">Trạng thái</th>
+                        <th class="px-6 py-4 text-center">Hành động</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @foreach($articles as $article)
-                        <tr class="hover:bg-blue-50/30 transition-all group">
-                            <td class="px-5 py-5 bg-white text-sm">
-                                <div class="flex items-center">
-                                    @if($article->thumbnail)
-                                        <div class="flex-shrink-0"
-                                            style="width: 56px; height: 56px; min-width: 56px; min-height: 56px; overflow: hidden; border-radius: 0.75rem;">
-                                            <img class="shadow-sm ring-1 ring-gray-100 group-hover:ring-blue-200 transition-all"
-                                                style="width: 100%; height: 100%; object-fit: cover;"
-                                                src="{{ asset($article->thumbnail) }}" alt="" />
-                                        </div>
-                                    @endif
-                                    <div class="ml-4">
-                                        <p
-                                            class="text-gray-900 font-bold leading-tight mb-1 group-hover:text-blue-700 transition-colors">
-                                            {{ Str::limit($article->title, 70) }}</p>
-                                        <div class="flex items-center gap-3">
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($articles as $article)
+                        <tr class="article-card hover:bg-blue-50/40">
+                            {{-- Cột nội dung chính (Ảnh thumbnail, Tiêu đề, Ngày đăng, Ticket sửa chữa liên kết nếu có) --}}
+                            <td class="px-6 py-5">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0 ring-1 ring-slate-100">
+                                        <img src="{{ $article->thumbnail ? asset($article->thumbnail) : 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=400' }}" class="w-full h-full object-cover" alt="{{ $article->title }}">
+                                    </div>
+                                    <div class="min-w-0">
+                                        <a href="{{ route('articles.show', $article->slug) }}" target="_blank" class="text-slate-900 font-black line-clamp-2 hover:text-blue-600 transition">{{ $article->title }}</a>
+                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 font-semibold"><i class="fa-regular fa-calendar"></i> {{ $article->created_at->format('d/m/Y') }}</span>
                                             @if($article->related_ticket_id)
-                                                <span
-                                                    class="text-[10px] font-bold bg-blue-100/50 text-blue-700 px-2 py-0.5 rounded border border-blue-200/50">
-                                                    REPAIR #{{ $article->related_ticket_id }}
-                                                </span>
+                                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold">#{{ $article->related_ticket_id }}</span>
                                             @endif
-                                            <span class="text-[11px] text-gray-400 font-medium flex items-center gap-1">
-                                                <i class="fa-regular fa-calendar-check"></i>
-                                                {{ $article->created_at->format('d/m/Y') }}
-                                            </span>
                                         </div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-5 py-5 bg-white text-sm">
+                            
+                            {{-- Cột thông tin tác giả bài viết (Phân loại Admin/Khách hàng viết bài) --}}
+                            <td class="px-6 py-5">
                                 <div class="flex flex-col gap-1">
-                                    <span
-                                        class="text-gray-900 font-bold whitespace-nowrap">{{ $article->author->full_name ?? 'N/A' }}</span>
-                                    @if($article->author_type === 'admin')
-                                        <span
-                                            class="w-fit px-2 py-0.5 text-[9px] font-black uppercase tracking-tighter text-indigo-600 bg-indigo-50 rounded border border-indigo-100">ADMIN
-                                            STAFF</span>
-                                    @else
-                                        <span
-                                            class="w-fit px-2 py-0.5 text-[9px] font-black uppercase tracking-tighter text-emerald-600 bg-emerald-50 rounded border border-emerald-100">CUSTOMER
-                                            HUB</span>
-                                    @endif
+                                    <span class="font-bold text-slate-900">{{ $article->author->full_name ?? 'N/A' }}</span>
+                                    <span class="inline-flex w-fit px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] {{ $article->author_type === 'admin' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600' }}">{{ $article->author_type === 'admin' ? 'Admin' : 'Customer' }}</span>
                                 </div>
                             </td>
-                            <td class="px-5 py-5 bg-white text-sm text-center">
-                                <span
-                                    class="inline-block px-3 py-1 text-[11px] font-bold text-gray-500 bg-gray-50 border border-gray-100 rounded-lg uppercase tracking-tight">
-                                    {{ $article->format_type }}
-                                </span>
+                            
+                            {{-- Cột phân loại format layout bài viết --}}
+                            <td class="px-6 py-5 text-center">
+                                <span class="inline-flex px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold uppercase">{{ $article->format_type }}</span>
                             </td>
-                            <td class="px-5 py-5 bg-white text-sm">
+                            
+                            {{-- Cột trạng thái kiểm duyệt bài viết --}}
+                            <td class="px-6 py-5">
                                 @if($article->status === 'approved')
-                                    <div class="flex items-center gap-2 text-green-600">
-                                        <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-                                        <span class="text-xs font-black uppercase tracking-wider">Đã duyệt</span>
-                                    </div>
+                                    <span class="inline-flex items-center gap-2 text-emerald-600 font-black uppercase text-xs tracking-[0.2em]"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Đã duyệt</span>
                                 @elseif($article->status === 'pending')
-                                    <div class="flex items-center gap-2 text-amber-500">
-                                        <div class="w-2 h-2 rounded-full bg-amber-400 animate-ping absolute"></div>
-                                        <div class="w-2 h-2 rounded-full bg-amber-400 relative"></div>
-                                        <span class="text-xs font-black uppercase tracking-wider">Chờ xử lý</span>
-                                    </div>
+                                    <span class="inline-flex items-center gap-2 text-amber-600 font-black uppercase text-xs tracking-[0.2em]"><span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>Chờ duyệt</span>
                                 @else
-                                    <div class="flex items-center gap-2 text-rose-500">
-                                        <div class="w-2 h-2 rounded-full bg-rose-500"></div>
-                                        <span class="text-xs font-black uppercase tracking-wider">Từ chối</span>
-                                    </div>
+                                    <span class="inline-flex items-center gap-2 text-rose-600 font-black uppercase text-xs tracking-[0.2em]"><span class="w-2 h-2 rounded-full bg-rose-500"></span>Từ chối</span>
                                 @endif
                             </td>
-                            <td class="px-5 py-5 bg-white text-sm">
+                            
+                            {{-- Cột các nút thao tác quản trị nhanh --}}
+                            <td class="px-6 py-5">
                                 <div class="flex justify-center items-center gap-2">
-                                    <a href="{{ route('admin.articles.edit', $article->article_id) }}"
-                                        class="flex items-center justify-center w-9 h-9 text-indigo-600 bg-indigo-50 hover:bg-indigo-600 hover:text-white rounded-xl transition-all shadow-sm border border-indigo-100"
-                                        title="Chỉnh sửa">
-                                        <i class="fa-solid fa-pen-nib text-sm"></i>
-                                    </a>
-
-                                    <form action="{{ route('admin.articles.destroy', $article->article_id) }}" method="POST"
-                                        class="inline" onsubmit="return confirm('Xóa bài viết này?');">
+                                    {{-- Nút sửa --}}
+                                    <a href="{{ route('admin.articles.edit', $article->article_id) }}" class="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition" title="Chỉnh sửa"><i class="fa-solid fa-pen-nib"></i></a>
+                                    {{-- Nút xem chi tiết --}}
+                                    <a href="{{ route('articles.show', $article->slug) }}" target="_blank" class="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition" title="Xem trước"><i class="fa-solid fa-eye"></i></a>
+                                    {{-- Form xóa bài viết --}}
+                                    <form action="{{ route('admin.articles.destroy', $article->article_id) }}" method="POST" onsubmit="return confirm('Xóa bài viết này?');">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit"
-                                            class="flex items-center justify-center w-9 h-9 text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white rounded-xl transition-all shadow-sm border border-rose-100"
-                                            title="Xóa">
-                                            <i class="fa-solid fa-trash text-sm"></i>
-                                        </button>
+                                        <button type="submit" class="w-10 h-10 inline-flex items-center justify-center rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition" title="Xóa"><i class="fa-solid fa-trash"></i></button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-16 text-center text-slate-500">
+                                <i class="fa-regular fa-newspaper text-4xl text-slate-300"></i>
+                                <div class="mt-4 font-bold">Chưa có bài viết nào</div>
+                                <div class="text-sm mt-1">Bắt đầu bằng cách tạo bài viết đầu tiên của bạn.</div>
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
-            <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                {{-- Nhóm thông tin bên trái --}}
-                <div class="text-[12px] font-bold text-gray-700 uppercase tracking-tight">
-                    Hiển thị {{ $articles->count() }} / {{ $articles->total() }} bài viết
-                </div>
+        </div>
 
-                {{-- Thanh phân trang bên phải --}}
-                <div class="custom-pagination">
-                    {{ $articles->links() }}
-                </div>
-            </div>
+        {{-- Phân trang của bảng danh sách quản lý --}}
+        <div class="mt-5 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+            <div class="font-semibold">Hiển thị {{ $articles->count() }} / {{ $articles->total() }} bài viết</div>
+            <div class="custom-pagination">{{ $articles->withQueryString()->links() }}</div>
         </div>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const triggers = document.querySelectorAll('.dropdown-trigger');
-
-            triggers.forEach(trigger => {
-                trigger.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const menu = this.nextElementSibling;
-
-                    // Close other menus
-                    document.querySelectorAll('.filter-dropdown-menu').forEach(m => {
-                        if (m !== menu) m.classList.remove('show');
-                    });
-
-                    menu.classList.toggle('show');
-                });
-            });
-
-            // Close when clicking outside
-            document.addEventListener('click', function () {
-                document.querySelectorAll('.filter-dropdown-menu').forEach(m => {
-                    m.classList.remove('show');
-                });
-            });
-
-            // Prevent closing when clicking inside menu
-            document.querySelectorAll('.filter-dropdown-menu').forEach(menu => {
-                menu.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                });
-            });
-        });
-    </script>
+</div>
 @endsection

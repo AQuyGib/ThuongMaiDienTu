@@ -64,7 +64,16 @@ class CashbookSeeder extends Seeder
         ];
 
         foreach ($data as $item) {
-            Cashbook::create($item);
+            Cashbook::updateOrCreate(
+                [
+                    'type' => $item['type'],
+                    'description' => $item['description']
+                ],
+                [
+                    'amount' => $item['amount'],
+                    'created_at' => $item['created_at']
+                ]
+            );
         }
     }
 }
