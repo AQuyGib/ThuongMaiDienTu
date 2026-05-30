@@ -45,6 +45,11 @@ return [
     'footer_return_policy'  => 'Chính sách đổi trả',
     'footer_privacy'        => 'Bảo mật thông tin',
     'footer_connect'        => 'Kết nối với chúng tôi',
+    'footer_subscribe'      => 'Đăng ký nhận khuyến mãi',
+    'footer_warranty_lookup'=> 'Tra cứu bảo hành',
+    'footer_compare'        => 'So sánh sản phẩm',
+    'footer_all_products'   => 'Tất cả sản phẩm',
+    'footer_rewards_history'=> 'Lịch sử tích điểm',
 
     // ===== MEGA MENU EXTRA =====
     'rewards_page'          => 'Trang đổi thưởng',

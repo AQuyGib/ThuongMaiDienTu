@@ -605,3 +605,54 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - **Hạ tầng & Seeders:**
   - Tạo mới `database/seeders/WishlistRecentlyViewedSeeder.php` để tự động gán ngẫu nhiên từ 3 đến 5 sản phẩm mẫu vào danh sách yêu thích (`type => 'Wishlist'`) cho tất cả người dùng trong hệ thống bằng phương thức `firstOrCreate` (idempotent).
   - Đăng ký seeder mới vào class list trong `database/seeders/DatabaseSeeder.php`.
+
+### 39. Sửa lỗi Sidebar xoay vô hạn, Cấu hình Thông số Sản phẩm & Di chuyển Khối Đăng ký Khuyến mãi xuống Footer (Sidebar Loading, Product Specs & Footer Subscribe Layout Migration)
+- **Sửa lỗi Admin Sidebar Loading vô hạn:**
+  - **Nguyên nhân:** File rác `public/hot` tồn tại trong thư mục `public` khiến cho chỉ thị `@vite` trong Laravel cố gắng tải các file tài nguyên React từ Vite Dev Server (cổng `5173`) trong khi server này không chạy, dẫn đến việc giao diện React Sidebar bị treo ở trạng thái `"Khởi tạo Sidebar..."`.
+  - **Cách xử lý:** Đã xóa bỏ file `public/hot` để Laravel tự động nhận diện và nạp các tệp tài nguyên tĩnh đã được build sẵn (production build) từ `public/build/assets/`.
+- **Cải tiến hiển thị Thông số sản phẩm (Product Specifications):**
+  - **Vấn đề:** Các sản phẩm do `LargeProductSeeder` tạo ra lưu thông số kỹ thuật dưới dạng cột JSON `specifications` thay vì bản ghi trong bảng `product_specifications`, khiến tab "Cấu hình chi tiết" bị ẩn do không tìm thấy bản ghi liên kết.
+  - **Cách xử lý:** Cập nhật view `resources/views/frontend/products/show.blade.php` để hỗ trợ hiển thị song song. Nếu không có bản ghi trong bảng liên kết, view sẽ tự động giải mã trường JSON `specifications` và lặp để hiển thị đầy đủ thông số kỹ thuật của sản phẩm.
+  - **Tính năng mở rộng (Xem chi tiết):** Thêm tính năng thu gọn / xem thêm thông số kỹ thuật. Bảng thông số được giới hạn chiều cao tối đa `260px` (khoảng 6 dòng đầu) kèm hiệu ứng mờ dần (gradient fade). Nếu thông số dài quá giới hạn này, một nút "Xem chi tiết cấu hình" sẽ xuất hiện để người dùng bấm và mở rộng/thu gọn mượt mà. Nếu thông số ngắn, nút này sẽ tự động ẩn thông qua kiểm tra thuộc tính `scrollHeight` bằng Javascript.
+- **Di chuyển Khối Đăng Ký Khuyến Mãi Xuống Footer:**
+  - **Mục tiêu:** Di chuyển khối Đăng ký nhận thông tin khuyến mãi từ chi tiết sản phẩm xuống dưới Footer của toàn bộ trang web làm cột (div) thứ 5.
+  - **Cách xử lý:** 
+    - Xóa bỏ khối đăng ký khuyến mãi và modal chúc mừng thành công cũ ở `resources/views/frontend/products/show.blade.php`.
+    - Thêm cột thứ 5 vào `resources/views/partials/footer.blade.php`, kèm theo mã nguồn HTML Modal thành công và Script điều phối chung `showPromoSuccess()` để tính năng hoạt động độc lập trên mọi trang web.
+    - Cập nhật số cột tối đa trên desktop của `.footer-grid` trong `resources/views/layouts/app.blade.php` từ `repeat(4, 1fr)` thành `repeat(5, 1fr)`. Dữ liệu hiển thị đáp ứng co giãn hoàn hảo (responsive) trên mọi kích thước màn hình.
+    - Khởi tạo thêm khóa dịch thuật `footer_subscribe` ở cả hai tệp `lang/vi/ui.php` và `lang/en/ui.php`.
+- **Sửa Lỗi Chèn/Đè Nội Dung Ở Footer (Sticky Bar Overlap Fix):**
+  - **Vấn đề:** Khi cuộn xuống cuối trang chi tiết sản phẩm, thanh tác vụ ghim dưới cùng (`bottom-action-bar` có giá trị `position: fixed; bottom: 0`) đè lên chân trang (footer) làm ẩn nút "Đăng ký nhận mã", ô checkbox, và che mất nút Chatbot AI.
+  - **Cách xử lý:**
+    - Cấu hình thêm CSS `padding-bottom: 110px !important;` cho `.footer` tại trang chi tiết sản phẩm, chừa một khoảng trống vừa đủ ở dưới để chân trang không bao giờ bị che lấp khi người dùng cuộn xuống đáy.
+    - Cải tiến Javascript bắt sự kiện cuộn chuột ở trang chi tiết sản phẩm: Khi thanh mua hàng nhanh (`bottom-action-bar`) trượt ra (`active.show`), hệ thống tự động đẩy nút Chatbot (`#chatbot-fab`), cửa sổ chat (`#ai-chat-window`), và thông báo giỏ hàng (`#pending-payment-alert`) lên cao thêm `75px` để tránh bị đè chồng lấp. Khi thanh này ẩn đi, các vị trí lại tự động khôi phục bình thường.
+- **Tích Hợp Đường Dẫn Động Vào Chân Trang (Footer Links Integration):**
+  - **Mục tiêu:** Cấu hình các đường liên kết thực tế thay thế cho các ký tự `#` ở Footer.
+  - **Các liên kết đã tích hợp:**
+    - Cột 2 (Về công ty): Tích hợp **Tất cả sản phẩm** (`route('products.index')`), **Tin công nghệ** (`route('articles.index')`), và **Góc video** (`route('videos.index')`).
+    - Cột 3 (Chính sách & Tra cứu): Tích hợp **Lịch sử tích điểm** (`route('rewards.history')`), **Tra cứu bảo hành** (`route('warranty.index')`), **Tra cứu đơn hàng** (`route('cart.tracking')`), **So sánh sản phẩm** (`route('compare.index')`), và **Bảo mật thông tin** (`route('security')`).
+    - Khởi tạo các khóa ngôn ngữ tương ứng (`footer_warranty_lookup`, `footer_compare`, `footer_all_products`, `footer_rewards_history`) để hỗ trợ chuyển đổi ngôn ngữ trọn vẹn.
+  - **Hàng liên kết nhanh sản phẩm phổ biến ở đáy Footer (Quick links):**
+    - Thiết kế thêm 1 hàng lưới 4 cột ở cuối Footer hiển thị các mẫu iPhone, Điện thoại, Laptop, Tivi, Đồ gia dụng và thiết bị thông minh phổ biến (theo giao diện CellphoneS).
+    - Tất cả liên kết được ánh xạ động: Các danh mục thực tế trỏ đến `route('products.category', $slug)` và các từ khóa cụ thể trỏ đến `route('search.index', ['query' => $keyword])`.
+  - **Tích hợp Favicon Logo Sét (Lightning Bolt SVG Favicon):**
+    - Bổ sung chỉ thị `<link rel="icon" type="image/svg+xml">` với dữ liệu hình ảnh dạng inline SVG (FontAwesome 6 Bolt icon có màu xanh chủ đạo `#0046ab` đồng bộ với tông màu chủ đạo của website) vào thẻ `<head>` của các layout chính:
+      - `resources/views/layouts/app.blade.php` (Giao diện khách hàng)
+      - `resources/views/Auth/login_register.blade.php` (Giao diện đăng nhập/đăng ký)
+      - `resources/views/admin/layouts/master.blade.php` (Giao diện quản trị hệ thống mẫu cũ)
+      - `resources/views/Dashboard/Dashboard.blade.php` (Giao diện Dashboard chính)
+    - Khắc phục hoàn toàn tình trạng tab trình duyệt hiển thị favicon mặc định là khối hộp đỏ của Laravel.
+
+### 40. Tài liệu hóa và Chú thích chi tiết hệ thống Chi tiết sản phẩm (Product Detail Walkthrough & Comments)
+- **Tài liệu hóa chi tiết:**
+  - Tạo mới file walkthrough hệ thống chi tiết sản phẩm (`artifacts/product_detail_walkthrough.md`) bao gồm:
+    - Sơ đồ kiến trúc luồng dữ liệu (Route → Controller → Services/Models → Views/Partials → JS).
+    - Phân tích chi tiết 10 khối giao diện chính và cấu trúc CSS tùy biến.
+    - Sơ đồ ER Database liên quan đến sản phẩm (Variants, Specs, Reviews, Cross-sells, Combos, Flash Sales).
+    - Phân tích 20+ hàm Javascript phục vụ Gallery, chọn biến thể, AJAX mua hàng, Countdown Flash Sale, Trả góp, Sticky Bar, Specs Toggle.
+- **Bổ sung chú thích mã nguồn (Comments):**
+  - **`app/Models/Product.php`**: Bổ sung PHPDoc và chú thích chi tiết tiếng Việt cho các mối quan hệ (`category`, `productSpecifications`, `variants`, `flashSaleProducts`, `wishlistRecentlyViewed`) và các query scopes (`filterCategory`, `finalPriceBetween`, `searchKeyword`, `filterBySpecs`, `sortBy`) giúp dễ dàng bảo trì.
+  - **`routes/web.php`**: Bổ sung chú thích phân nhóm các route liên quan đến sản phẩm ngoài frontend bao gồm lọc nâng cao, route sản phẩm di sản (legacy redirect) và chi tiết sản phẩm.
+
+
+

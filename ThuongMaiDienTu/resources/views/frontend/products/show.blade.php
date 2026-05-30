@@ -78,11 +78,16 @@
 /* Khung cấu hình chi tiết (Specs) */
 .pd-specs { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; height: fit-content;}
 .pd-specs h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
+.specs-table-wrapper { position: relative; max-height: 260px; overflow: hidden; transition: max-height 0.4s ease; }
+.specs-table-wrapper.expanded { max-height: 1200px; }
+.specs-table-wrapper:not(.expanded)::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1)); pointer-events: none; }
 .specs-table { width:100%; border-collapse:collapse; font-size:13px; }
 .specs-table tr:nth-child(even) td { background:#f8f9fa; }
 .specs-table td { padding:10px 14px; border-bottom:1px solid #f0f0f0; vertical-align:top; }
 .specs-table td:first-child { width:40%; font-weight:600; color:#555; }
 .specs-table td:last-child { color:#222; }
+.btn-show-more-specs { display: block; width: 100%; margin-top: 15px; padding: 10px; border: 1px solid #0046ab; background: #fff; color: #0046ab; font-size: 13px; font-weight: 700; border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.2s ease; }
+.btn-show-more-specs:hover { background: #0046ab; color: #fff; }
 
 /* Khu vực hiển thị sản phẩm liên quan (Sản phẩm tương tự) */
 .pd-related { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
@@ -111,6 +116,11 @@
     visibility: hidden; pointer-events: none;
 }
 .bottom-action-bar.show { transform: translateY(0); visibility: visible; pointer-events: auto; }
+
+/* Tránh đè lên footer ở trang chi tiết sản phẩm */
+.footer {
+    padding-bottom: 110px !important;
+}
 
 /* Khung giao diện Modal tính toán trả góp (Installment Modal) */
 #installmentModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10002; align-items: center; justify-content: center; pointer-events: none; }
@@ -391,29 +401,51 @@
         </div>
 
         {{-- Bảng thông số kỹ thuật chi tiết --}}
-        @if($product->productSpecifications->count())
+        @php
+            $specsArray = [];
+            if (!empty($product->specifications)) {
+                $specsArray = is_string($product->specifications) ? json_decode($product->specifications, true) : $product->specifications;
+            }
+            $hasSpecsTable = $product->productSpecifications->count() > 0;
+            $hasSpecsJson = !empty($specsArray) && is_array($specsArray) && count($specsArray) > 0;
+        @endphp
+
+        @if($hasSpecsTable || $hasSpecsJson)
             <div class="pd-specs">
                 <h2><i class="fa-solid fa-microchip" style="color:#0046ab"></i> Cấu hình chi tiết</h2>
-                <table class="specs-table">
-                    @php $spec = $product->productSpecifications->first(); @endphp
-                    @if($spec->cpu_chip)
-                        <tr><td>Vi xử lý (CPU)</td><td>{{ $spec->cpu_chip }}</td></tr>
-                    @endif
-                    @if($spec->ram_capacity)
-                        <tr><td>RAM</td><td>{{ $spec->ram_capacity }}</td></tr>
-                    @endif
-                    @if($spec->screen_size)
-                        <tr><td>Màn hình</td><td>{{ $spec->screen_size }}</td></tr>
-                    @endif
-                    @if($spec->battery)
-                        <tr><td>Pin</td><td>{{ $spec->battery }}</td></tr>
-                    @endif
-                    @if($roms->count())
-                        <tr><td>Bộ nhớ trong</td><td>{{ $roms->implode(' / ') }}</td></tr>
-                    @endif
-                    <tr><td>Hệ điều hành</td><td>Bản mới nhất</td></tr>
-                    <tr><td>Trọng lượng</td><td>Tiêu chuẩn</td></tr>
-                </table>
+                <div class="specs-table-wrapper" id="specsWrapper">
+                    <table class="specs-table">
+                        @if($hasSpecsTable)
+                            @php $spec = $product->productSpecifications->first(); @endphp
+                            @if($spec->cpu_chip)
+                                <tr><td>Vi xử lý (CPU)</td><td>{{ $spec->cpu_chip }}</td></tr>
+                            @endif
+                            @if($spec->ram_capacity)
+                                <tr><td>RAM</td><td>{{ $spec->ram_capacity }}</td></tr>
+                            @endif
+                            @if($spec->screen_size)
+                                <tr><td>Màn hình</td><td>{{ $spec->screen_size }}</td></tr>
+                            @endif
+                            @if($spec->battery)
+                                <tr><td>Pin</td><td>{{ $spec->battery }}</td></tr>
+                            @endif
+                            @if($roms->count())
+                                <tr><td>Bộ nhớ trong</td><td>{{ $roms->implode(' / ') }}</td></tr>
+                            @endif
+                            <tr><td>Hệ điều hành</td><td>Bản mới nhất</td></tr>
+                            <tr><td>Trọng lượng</td><td>Tiêu chuẩn</td></tr>
+                        @else
+                            @foreach($specsArray as $key => $val)
+                                @if(!in_array(strtolower($key), ['eco_friendly']))
+                                    <tr><td>{{ $key }}</td><td>{{ is_array($val) ? implode(', ', $val) : $val }}</td></tr>
+                                @endif
+                            @endforeach
+                        @endif
+                    </table>
+                </div>
+                <button type="button" class="btn-show-more-specs" id="btnShowMoreSpecs" onclick="toggleSpecs()">
+                    Xem chi tiết cấu hình <i class="fa-solid fa-chevron-down"></i>
+                </button>
             </div>
         @endif
     </div>
@@ -598,37 +630,7 @@
     <span id="toastMsg">Thêm vào giỏ hàng thành công!</span>
 </div>
 
-{{-- Đăng ký nhận khuyến mãi --}}
-<div style="background: #eef2ff; padding: 40px 0; border-top: 1px solid #ddd; margin-top: 50px;">
-    <div class="container" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:30px;">
-        <div style="flex:1; min-width:300px;">
-            <h3 style="color:#0046ab; font-size:22px; font-weight:800; margin-bottom:10px;"><i class="fa-solid fa-envelope-open-text"></i> Đăng ký nhận thông tin khuyến mãi</h3>
-            <p style="font-size:15px; color:#555; line-height:1.5;">Đăng ký ngay để nhận ưu đãi <strong>giảm 10%</strong> cho đơn hàng đầu tiên và thông tin sản phẩm mới nhất từ DienMayPro!</p>
-        </div>
-        <div style="flex:1; min-width:300px; background:#fff; padding:20px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05);">
-            <form action="#" method="POST" style="display:flex; flex-direction:column; gap:15px;" onsubmit="event.preventDefault(); showPromoSuccess();">
-                <div style="display:flex; gap:10px;">
-                    <input type="email" placeholder="Email của bạn *" required style="flex:1; padding:12px 15px; border:1px solid #ccc; border-radius:8px; font-size:14px; outline:none;">
-                    <input type="tel" placeholder="Số điện thoại *" required style="flex:1; padding:12px 15px; border:1px solid #ccc; border-radius:8px; font-size:14px; outline:none;">
-                </div>
-                <div style="display:flex; align-items:flex-start; gap:8px;">
-                    <input type="checkbox" id="agreeTerms" required style="margin-top:3px; cursor:pointer;">
-                    <label for="agreeTerms" style="font-size:13px; color:#555; cursor:pointer;">Tôi đồng ý với các <a href="#" style="color:#0046ab; text-decoration:underline;">điều kiện và điều khoản</a> của DienMayPro</label>
-                </div>
-                <button type="submit" style="background:linear-gradient(135deg, #0046ab, #003380); color:#fff; border:none; padding:14px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:15px; text-transform:uppercase; transition:0.2s;">Đăng ký nhận mã</button>
-            </form>
-        </div>
-    </div>
-</div>
 
-{{-- Promo Success Modal --}}
-<div id="promoSuccessModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10001; justify-content: center; align-items: center; display: none;">
-    <div style="background: #fff; padding: 40px; border-radius: 12px; text-align: center; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
-        <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #16a34a; margin-bottom: 20px;"></i>
-        <h3 style="font-size: 22px; color: #333; margin-bottom: 10px;">Cảm ơn quý khách!</h3>
-        <p style="font-size: 15px; color: #555; line-height: 1.5; margin-bottom: 0;">Đăng ký nhận khuyến mãi thành công. Chúng tôi sẽ gửi mã giảm giá 10% qua Email và Số điện thoại của quý khách.</p>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
@@ -1081,26 +1083,51 @@ function updateInstallmentTable() {
     document.getElementById('instDiff').innerText = format(diff > 0 ? diff : 0);
 }
 
-// Hiển thị modal đăng ký thành công ưu đãi nhận mã giảm giá
-function showPromoSuccess() {
-    const modal = document.getElementById('promoSuccessModal');
-    modal.style.display = 'flex';
-    const form = document.querySelector('form[action="#"]');
-    if(form) form.reset();
-    
-    setTimeout(() => {
-        modal.style.display = 'none';
-    }, 2500);
-}
-
 // Tự động ẩn/hiện thanh ghim mua nhanh (Sticky Bottom Bar) khi người dùng cuộn qua vùng ảnh đại diện sản phẩm (400px)
 window.addEventListener('scroll', function() {
     const bottomBar = document.getElementById('bottomActionBar');
     if (bottomBar) {
+        const fab = document.getElementById('chatbot-fab');
+        const chatWin = document.getElementById('ai-chat-window');
+        const alertBox = document.getElementById('pending-payment-alert');
         if (window.scrollY > 400) {
             bottomBar.classList.add('show');
+            if (fab) fab.style.bottom = '90px';
+            if (chatWin) chatWin.style.bottom = '155px';
+            if (alertBox) alertBox.style.bottom = '155px';
         } else {
             bottomBar.classList.remove('show');
+            if (fab) fab.style.removeProperty('bottom');
+            if (chatWin) chatWin.style.removeProperty('bottom');
+            if (alertBox) alertBox.style.removeProperty('bottom');
+        }
+    }
+});
+
+// --- PHÂN HỆ THU GỌN / XEM CHI TIẾT THÔNG SỐ KỸ THUẬT ---
+function toggleSpecs() {
+    const wrapper = document.getElementById('specsWrapper');
+    const btn = document.getElementById('btnShowMoreSpecs');
+    if (wrapper && btn) {
+        if (wrapper.classList.contains('expanded')) {
+            wrapper.classList.remove('expanded');
+            btn.innerHTML = 'Xem chi tiết cấu hình <i class="fa-solid fa-chevron-down"></i>';
+            wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            wrapper.classList.add('expanded');
+            btn.innerHTML = 'Thu gọn <i class="fa-solid fa-chevron-up"></i>';
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const wrapper = document.getElementById('specsWrapper');
+    const btn = document.getElementById('btnShowMoreSpecs');
+    if (wrapper && btn) {
+        // Nếu chiều cao thực tế của bảng nhỏ hơn hoặc bằng giới hạn tối đa (khoảng 6 dòng), ẩn nút xem thêm
+        if (wrapper.scrollHeight <= 265) {
+            btn.style.display = 'none';
+            wrapper.style.maxHeight = 'none';
         }
     }
 });
