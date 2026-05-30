@@ -617,7 +617,7 @@
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        transition: transform 0.3s, box-shadow 0.3s;
+        transition: transform 0.3s, box-shadow 0.3s, opacity 0.3s;
         border: 1px solid #eee;
         position: relative;
     }
@@ -1266,56 +1266,56 @@
             <div id="wishlist-tab" class="profile-tab">
                 <div class="info-form-wrap">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                        <h3 style="margin: 0;">Danh sách yêu thích ({{ count($wishlist) }})</h3>
-                        @if(count($wishlist) > 0)
-                            <form action="{{ route('wishlist.clear') }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn-outline" style="color: #d70018; border-color: #d70018;">
+                        <h3 style="margin: 0;">Danh sách yêu thích (<span id="wishlist-title-count">{{ count($wishlist) }}</span>)</h3>
+                        <div id="wishlist-clear-btn-wrapper">
+                            @if(count($wishlist) > 0)
+                                <button type="button" class="btn-outline" style="color: #d70018; border-color: #d70018;" onclick="clearWishlist()">
                                     <i class="fa-solid fa-trash-can"></i> Xóa tất cả
                                 </button>
-                            </form>
-                        @endif
+                            @endif
+                        </div>
                     </div>
 
-                    @if(count($wishlist) > 0)
-                        <div class="wishlist-grid">
-                            @foreach($wishlist as $item)
-                                @if($item->product)
-                                    <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
-                                        <div class="wishlist-item-img">
-                                            <a href="{{ route('product.show', $item->product->product_id) }}">
-                                                <img src="{{ $item->product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}" alt="{{ $item->product->name }}">
-                                            </a>
-                                            <button class="remove-btn" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
-                                                <i class="fa-solid fa-xmark"></i>
-                                            </button>
-                                        </div>
-                                        <div class="wishlist-item-info">
-                                            <a href="{{ route('product.show', $item->product->product_id) }}" class="wishlist-item-name">{{ $item->product->name }}</a>
-                                            <div class="wishlist-item-price">{{ number_format($item->product->base_price, 0, ',', '.') }}đ</div>
-                                            <button class="btn-add-cart-wishlist" onclick="addToCart('{{ $item->product->product_id }}')">
-                                                <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
-                                            </button>
-                                            <div style="margin-top: 10px; text-align: center;">
-                                                <a href="javascript:void(0)" onclick="addToCompare('{{ $item->product->product_id }}')" 
-                                                   style="font-size: 11px; color: #666; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 500;"
-                                                   onmouseover="this.style.color='#0046ab'" onmouseout="this.style.color='#666'">
-                                                    <i class="fa-solid fa-scale-balanced"></i> So sánh
+                    <div id="wishlist-content-area">
+                        @if(count($wishlist) > 0)
+                            <div class="wishlist-grid">
+                                @foreach($wishlist as $item)
+                                    @if($item->product)
+                                        <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
+                                            <div class="wishlist-item-img">
+                                                <a href="{{ route('product.show', $item->product->product_id) }}">
+                                                    <img src="{{ $item->product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}" alt="{{ $item->product->name }}">
                                                 </a>
+                                                <button class="remove-btn" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                            <div class="wishlist-item-info">
+                                                <a href="{{ route('product.show', $item->product->product_id) }}" class="wishlist-item-name">{{ $item->product->name }}</a>
+                                                <div class="wishlist-item-price">{{ number_format($item->product->base_price, 0, ',', '.') }}đ</div>
+                                                <button class="btn-add-cart-wishlist" onclick="addToCart('{{ $item->product->product_id }}')">
+                                                    <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
+                                                </button>
+                                                <div style="margin-top: 10px; text-align: center;">
+                                                    <a href="javascript:void(0)" onclick="addToCompare('{{ $item->product->product_id }}')" 
+                                                       style="font-size: 11px; color: #666; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 500;"
+                                                       onmouseover="this.style.color='#0046ab'" onmouseout="this.style.color='#666'">
+                                                        <i class="fa-solid fa-scale-balanced"></i> So sánh
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="dash-empty" style="padding: 50px 0;">
-                            <i class="fa-solid fa-heart-crack" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
-                            <p>Danh sách yêu thích của bạn đang trống.</p>
-                            <a href="{{ route('home') }}" class="btn-outline">Khám phá sản phẩm</a>
-                        </div>
-                    @endif
+                                    @endif
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="dash-empty" style="padding: 50px 0;">
+                                <i class="fa-solid fa-heart-crack" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
+                                <p>Danh sách yêu thích của bạn đang trống.</p>
+                                <a href="{{ route('home') }}" class="btn-outline">Khám phá sản phẩm</a>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 
@@ -2659,7 +2659,7 @@
 
     // Cập nhật số lượng sản phẩm hiển thị trên tab yêu thích
     function updateWishlistCount(count) {
-        const countEl = document.getElementById('wishlist-count');
+        const countEl = document.getElementById('wishlist-title-count');
         if (countEl) countEl.textContent = count;
     }
 
@@ -2687,7 +2687,18 @@
                             const remaining = document.querySelectorAll('.wishlist-item').length;
                             updateWishlistCount(remaining);
                             if(remaining === 0) {
-                                window.location.reload();
+                                const clearBtnWrapper = document.getElementById('wishlist-clear-btn-wrapper');
+                                if (clearBtnWrapper) clearBtnWrapper.innerHTML = '';
+                                const contentArea = document.getElementById('wishlist-content-area');
+                                if (contentArea) {
+                                    contentArea.innerHTML = `
+                                        <div class="dash-empty" style="padding: 50px 0;">
+                                            <i class="fa-solid fa-heart-crack" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
+                                            <p>Danh sách yêu thích của bạn đang trống.</p>
+                                            <a href="{{ route('home') }}" class="btn-outline">Khám phá sản phẩm</a>
+                                        </div>
+                                    `;
+                                }
                             }
                         }, 300);
                     }
@@ -2717,7 +2728,27 @@
                 closeConfirmModal();
                 if(data.success) {
                     showToast('Thành công', 'Đã xóa toàn bộ danh sách yêu thích.', 'success');
-                    setTimeout(() => window.location.reload(), 1000);
+                    const items = document.querySelectorAll('.wishlist-item');
+                    items.forEach(item => {
+                        item.style.opacity = '0';
+                        item.style.transform = 'scale(0.8)';
+                    });
+                    setTimeout(() => {
+                        items.forEach(item => item.remove());
+                        updateWishlistCount(0);
+                        const clearBtnWrapper = document.getElementById('wishlist-clear-btn-wrapper');
+                        if (clearBtnWrapper) clearBtnWrapper.innerHTML = '';
+                        const contentArea = document.getElementById('wishlist-content-area');
+                        if (contentArea) {
+                            contentArea.innerHTML = `
+                                <div class="dash-empty" style="padding: 50px 0;">
+                                    <i class="fa-solid fa-heart-crack" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
+                                    <p>Danh sách yêu thích của bạn đang trống.</p>
+                                    <a href="{{ route('home') }}" class="btn-outline">Khám phá sản phẩm</a>
+                                </div>
+                            `;
+                        }
+                    }, 300);
                 } else {
                     showToast('Lỗi', data.error || 'Không thể xóa danh sách lúc này.', 'error');
                 }

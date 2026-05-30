@@ -595,3 +595,13 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Nhận diện cấu trúc dự án Thương mại điện tử hiện tại (`ThuongMaiDienTu`) với 5 thành viên phát triển: Anh Quý, Vinh Em, Thanh Hiền, Xuân Hòa, Đăng Nguyên dựa theo các branch trong Git.
   - Tạo tệp Word mới chi tiết: **`d:\HOC\Hoc 4\pywword\Mapping_Chuc_Nng_Theo_Thanh_Vien.docx`** chứa bảng ánh xạ cặn kẽ 100% tất cả các tệp mã nguồn tương ứng (từ Controller, Service, Model, View, Migration, Route cho đến Script JS/CSS phụ trợ) cho từng nhánh tính năng của từng thành viên.
   - Định dạng tệp Word thẩm mỹ cao, lề chuẩn 1 inch, sử dụng font *Times New Roman* kết hợp *Consolas* cho tên tệp code, và đổ màu tiêu đề phân cấp trực quan cho phần việc của mỗi người để chuẩn bị bảo vệ đồ án trước Hội đồng chấm thi.
+
+### 38. Sửa lỗi Xóa tất cả & Tối ưu hóa hiệu năng Danh sách yêu thích (Wishlist AJAX & Dynamic UI Optimization)
+- **Giao diện Khách hàng (Frontend):**
+  - Cải tiến view `resources/views/frontend/profile.blade.php` ở tab Danh sách yêu thích.
+  - Thay thế thẻ `<form>` thực hiện hành động DELETE trực tiếp (gây ra tình trạng chuyển hướng trình duyệt đến trang xuất JSON thô `{"success":true}`) bằng một nút bấm gọi AJAX qua `onclick="clearWishlist()"`.
+  - Tối ưu hóa UI/UX: Loại bỏ hoàn toàn cơ chế reload toàn bộ trang (`window.location.reload()`) khi xóa một sản phẩm hoặc xóa toàn bộ wishlist để tránh tải chậm (do trang Profile phải gánh rất nhiều câu truy vấn nặng).
+  - Tích hợp hiệu ứng CSS transition (`opacity 0.3s`, `transform 0.3s`) để các item biến mất mượt mà, đồng thời tự động cập nhật số lượng badge hiển thị trên tiêu đề tab và render giao diện trống (empty state) bằng JS ngay trên client.
+- **Hạ tầng & Seeders:**
+  - Tạo mới `database/seeders/WishlistRecentlyViewedSeeder.php` để tự động gán ngẫu nhiên từ 3 đến 5 sản phẩm mẫu vào danh sách yêu thích (`type => 'Wishlist'`) cho tất cả người dùng trong hệ thống bằng phương thức `firstOrCreate` (idempotent).
+  - Đăng ký seeder mới vào class list trong `database/seeders/DatabaseSeeder.php`.

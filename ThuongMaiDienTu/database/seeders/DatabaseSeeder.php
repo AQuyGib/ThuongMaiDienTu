@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             CashbookSeeder::class,
             FlashSaleSeeder::class,
             LargeProductSeeder::class,
+            WishlistRecentlyViewedSeeder::class,
         ]);
     }
 }
