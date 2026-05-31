@@ -6,6 +6,7 @@ use App\Models\FlashSale;
 use App\Models\Product;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * CrossSellService - Dịch vụ Gợi ý Bán chéo và Cá nhân hóa Sản phẩm (Cross-sell & Recommendation Engine).
@@ -301,5 +302,234 @@ class CrossSellService
                 $product->flash_sale_price = $flashPriceMap[$product->product_id];
             }
         }
+    }
+
+    /**
+     * Lấy danh sách Combo sản phẩm mua kèm thông minh cá nhân hóa bằng AI (AI Recommendation & Dynamic Pricing).
+     */
+    public function getAICrossSellCombos(Product $product, ?\App\Models\User $user, array $cartItems = []): Collection
+    {
+        $apiKey = config('services.gemini.api_key');
+        if (!$apiKey) {
+            Log::warning('Gemini API key is not configured. Falling back to static comboProducts.');
+            return $product->comboProducts;
+        }
+
+        $userKey = $user ? $user->user_id : (session()->getId() ?? 'guest');
+        $cacheKey = "ai_combo_recs_{$userKey}_{$product->product_id}";
+
+        // Thử lấy từ Cache trước (trong vòng 15 phút) để tăng tốc tải trang
+        $cachedCombos = cache()->get($cacheKey);
+        if (is_array($cachedCombos)) {
+            return $this->buildComboCollection($cachedCombos);
+        }
+
+        // 1. Thu thập dữ liệu ngữ cảnh
+        $memberTier = $user ? ($user->member_tier ?: 'Dong') : 'Dong';
+
+        // Lịch sử xem sản phẩm gần đây
+        $viewedProductNames = [];
+        if ($user) {
+            $viewedProductNames = DB::table('wishlists_recently_viewed')
+                ->join('products', 'wishlists_recently_viewed.product_id', '=', 'products.product_id')
+                ->where('wishlists_recently_viewed.user_id', $user->user_id)
+                ->where('wishlists_recently_viewed.type', 'Viewed')
+                ->orderByDesc('wishlists_recently_viewed.id')
+                ->limit(5)
+                ->pluck('products.name')
+                ->toArray();
+        }
+
+        // Lịch sử mua hàng
+        $purchasedProductNames = [];
+        if ($user) {
+            $purchasedProductNames = DB::table('orders')
+                ->join('order_details', 'orders.order_id', '=', 'order_details.order_id')
+                ->where('orders.user_id', $user->user_id)
+                ->whereIn('orders.status', ['Processing', 'Completed'])
+                ->orderByDesc('orders.order_id')
+                ->limit(5)
+                ->pluck('order_details.product_name')
+                ->toArray();
+        }
+
+        // Các sản phẩm trong giỏ hàng hiện tại
+        $cartProductNames = [];
+        foreach ($cartItems as $cItem) {
+            if (isset($cItem['name'])) {
+                $cartProductNames[] = $cItem['name'];
+            }
+        }
+
+        // 2. Thu thập danh sách ứng viên đề xuất (Candidates)
+        // Ứng viên cùng danh mục
+        $sameCat = Product::where('category_id', $product->category_id)
+            ->where('product_id', '<>', $product->product_id)
+            ->whereNull('deleted_at')
+            ->limit(10)
+            ->get(['product_id', 'name', 'base_price', 'brand']);
+
+        // Ứng viên là các mặt hàng phụ kiện phổ biến
+        $accessories = Product::whereIn('category_id', self::ACCESSORY_CATEGORY_IDS)
+            ->where('product_id', '<>', $product->product_id)
+            ->whereNull('deleted_at')
+            ->limit(10)
+            ->get(['product_id', 'name', 'base_price', 'brand']);
+
+        $candidates = $sameCat->concat($accessories)->unique('product_id')->take(15);
+
+        if ($candidates->isEmpty()) {
+            return $product->comboProducts;
+        }
+
+        $candidatesText = "";
+        foreach ($candidates as $cand) {
+            $candidatesText .= "- ID: {$cand->product_id} | Tên: {$cand->name} | Giá: " . number_format($cand->base_price, 0, ',', '.') . "đ | Thương hiệu: {$cand->brand}\n";
+        }
+
+        // 3. Xây dựng prompt gửi tới Gemini
+        $prompt = "Bạn là chuyên gia gợi ý bán kèm (Cross-sell Recommendation) và tối ưu hóa giá bán (Dynamic Pricing) cho website thương mại điện tử Điện Máy.
+Nhiệm vụ của bạn là phân tích thông tin khách hàng và sản phẩm hiện tại để đề xuất gói combo 2-3 phụ kiện hoặc sản phẩm bổ sung tối ưu nhất từ danh sách ứng viên được cung cấp.
+
+THÔNG TIN SẢN PHẨM HIỆN TẠI ĐANG XEM:
+- Tên sản phẩm: {$product->name}
+- Giá bán: " . number_format($product->base_price, 0, ',', '.') . "đ
+- Thương hiệu: {$product->brand}
+- Danh mục ID: {$product->category_id}
+
+THÔNG TIN KHÁCH HÀNG & NGỮ CẢNH:
+- Hạng thành viên (Member Tier): {$memberTier} (Cực kỳ quan trọng để định giá)
+- Lịch sử xem sản phẩm gần đây: " . (empty($viewedProductNames) ? "Không có" : implode(', ', $viewedProductNames)) . "
+- Lịch sử mua hàng đã hoàn thành: " . (empty($purchasedProductNames) ? "Không có" : implode(', ', $purchasedProductNames)) . "
+- Các sản phẩm hiện có trong giỏ hàng: " . (empty($cartProductNames) ? "Trống" : implode(', ', $cartProductNames)) . "
+
+DANH SÁCH ỨNG VIÊN SẢN PHẨM ĐỀ XUẤT (CÓ THỂ DÙNG ĐỂ BÁN KÈM):
+{$candidatesText}
+
+QUY TẮC ĐỀ XUẤT VÀ ĐỊNH GIÁ (AI DYNAMIC PRICING):
+1. Bạn phải chọn ra chính xác từ 2 đến 3 sản phẩm phù hợp nhất làm phụ kiện hoặc combo mua kèm từ danh sách ứng viên trên.
+2. Không đề xuất sản phẩm trùng với sản phẩm đang xem hoặc không có trong danh sách ứng viên.
+3. Tính toán mức chiết khấu thông minh (discount_type là 'percentage' hoặc 'fixed') cho từng sản phẩm được chọn:
+   - Hãy điều chỉnh mức chiết khấu dựa trên hạng thành viên của khách hàng:
+     + Khách vãng lai hoặc hạng Đồng (Dong): Ưu đãi chiết khấu cơ bản (ví dụ: giảm 5% - 8% hoặc từ 30.000đ - 70.000đ).
+     + Hạng Bạc (Bac): Ưu đãi trung bình (ví dụ: giảm 8% - 10% hoặc từ 70.000đ - 120.000đ).
+     + Hạng Vàng (Vang): Ưu đãi cao (ví dụ: giảm 10% - 12% hoặc từ 120.000đ - 180.000đ).
+     + Hạng Kim Cương (KimCuong): Ưu đãi tối đa (ví dụ: giảm 12% - 15% hoặc từ 180.000đ - 250.000đ).
+   - Hãy đảm bảo mức chiết khấu hợp lý để tăng AOV (giá trị trung bình đơn hàng) nhưng vẫn bảo toàn biên lợi nhuận (không giảm giá quá sâu, không giảm quá 20% hoặc không quá 300.000đ).
+4. Cung cấp một câu giải thích bằng tiếng Việt (reason) ngắn gọn, thuyết phục và hướng tới khách hàng một cách lịch sự, thân thiện. Tuyệt đối KHÔNG nêu rõ tên hạng thành viên cụ thể (như 'hạng Đồng', 'hạng Bạc', 'hạng Vàng', 'hạng Kim Cương') trong câu giải thích để tránh cảm giác phân biệt đối xử gây khó chịu cho khách hàng. Hãy viết theo dạng ấm áp, cá nhân hóa hướng đến người dùng, ví dụ: 'Ưu đãi đặc biệt dành riêng cho bạn: Giảm 12% tai nghe AirPods Pro để đồng bộ trải nghiệm âm thanh chất lượng cao của bạn'.
+
+ĐỊNH DẠNG ĐẦU RA BẮT BUỘC:
+Bạn bắt buộc phải phản hồi bằng một chuỗi định dạng JSON duy nhất. KHÔNG bao gồm các thẻ markdown như ```json hay ```, KHÔNG viết thêm bất kỳ ký tự nào ngoài chuỗi JSON.
+Cấu trúc JSON chính xác như sau:
+{
+  \"combos\": [
+    {
+      \"product_id\": <ID sản phẩm được chọn>,
+      \"discount_type\": \"percentage\" | \"fixed\",
+      \"discount_value\": <giá trị giảm giá, là số nguyên hoặc số thập phân>,
+      \"reason\": \"<Lý do đề xuất & ưu đãi cá nhân hóa ngắn gọn bằng tiếng Việt>\"
+    }
+  ]
+}
+";
+
+        // 4. Gọi API Gemini
+        $responseJson = $this->callGeminiApiForRecommendation($apiKey, $prompt);
+        if (!$responseJson) {
+            Log::warning('Gemini API call returned null for AI recommendation. Falling back.');
+            return $product->comboProducts;
+        }
+
+        try {
+            $cleanJson = preg_replace('/^```(?:json)?\s*|```\s*$/', '', trim($responseJson));
+            $data = json_decode($cleanJson, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE || !isset($data['combos']) || !is_array($data['combos'])) {
+                throw new \Exception('JSON không hợp lệ hoặc thiếu trường combos: ' . $responseJson);
+            }
+
+            // Lưu vào Cache 15 phút
+            cache()->put($cacheKey, $data['combos'], now()->addMinutes(15));
+
+            return $this->buildComboCollection($data['combos']);
+        } catch (\Throwable $e) {
+            Log::error('Error parsing AI recommendation: ' . $e->getMessage() . '. Raw response: ' . $responseJson);
+            return $product->comboProducts;
+        }
+    }
+
+    /**
+     * Xây dựng tập hợp sản phẩm kèm thuộc tính pivot giả lập từ mảng combo được đề xuất.
+     */
+    private function buildComboCollection(array $combos): Collection
+    {
+        $productIds = collect($combos)->pluck('product_id')->toArray();
+        $products = Product::whereIn('product_id', $productIds)
+            ->whereNull('deleted_at')
+            ->get();
+
+        $result = collect();
+        foreach ($combos as $combo) {
+            $prod = $products->firstWhere('product_id', $combo['product_id']);
+            if ($prod) {
+                // Tạo pivot giả lập dạng stdClass
+                $pivot = new \stdClass();
+                $pivot->discount_type = $combo['discount_type'];
+                $pivot->discount_value = (float) $combo['discount_value'];
+                $pivot->is_ai_optimized = true;
+                $pivot->ai_reason = $combo['reason'] ?? '';
+
+                $prod->pivot = $pivot;
+                $result->push($prod);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Gọi Gemini API phục vụ gợi ý sản phẩm
+     */
+    private function callGeminiApiForRecommendation(string $apiKey, string $prompt): ?string
+    {
+        $models = [
+            'gemini-3.1-flash-lite',
+            'gemini-3.5-flash',
+            'gemini-3-flash-preview',
+            'gemini-2.5-flash',
+        ];
+
+        foreach ($models as $model) {
+            $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . trim($apiKey);
+            $postData = json_encode([
+                'contents' => [
+                    ['parts' => [['text' => $prompt]]],
+                ],
+            ]);
+
+            $ch = curl_init($apiUrl);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => $postData,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_TIMEOUT => 15,
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($response !== false && $httpCode === 200) {
+                $resData = json_decode($response, true);
+                if (isset($resData['candidates'][0]['content']['parts'][0]['text'])) {
+                    return $resData['candidates'][0]['content']['parts'][0]['text'];
+                }
+            }
+        }
+
+        return null;
     }
 }

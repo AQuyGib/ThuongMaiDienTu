@@ -21,6 +21,25 @@
     padding: 24px;
     margin-bottom: 24px;
     border: 1px solid #eef2ff;
+    transition: all 0.3s ease;
+}
+
+.ai-optimized-section {
+    border: 2px solid #818cf8 !important;
+    background: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%) !important;
+    animation: ai-glow 3s infinite;
+}
+
+@keyframes ai-glow {
+    0% { box-shadow: 0 4px 15px rgba(124, 58, 237, 0.15); }
+    50% { box-shadow: 0 4px 25px rgba(99, 102, 241, 0.35); }
+    100% { box-shadow: 0 4px 15px rgba(124, 58, 237, 0.15); }
+}
+
+@keyframes shine {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 .combo-header {
@@ -185,13 +204,34 @@
 </style>
 @endpush
 
-<div class="combo-section">
+@php
+    $isAiOptimized = false;
+    foreach($bundleItems as $item) {
+        if (isset($item->pivot->is_ai_optimized) && $item->pivot->is_ai_optimized) {
+            $isAiOptimized = true;
+            break;
+        }
+    }
+@endphp
+
+<div class="combo-section {{ $isAiOptimized ? 'ai-optimized-section' : '' }}">
     <div class="combo-header">
-        <h2 class="combo-title">
+        <h2 class="combo-title" style="display: flex; align-items: center; flex-wrap: wrap;">
             <i class="fa-solid fa-layer-group"></i>
             Mua kèm Combo tiết kiệm
+            @if($isAiOptimized)
+                <span class="ai-badge" style="background: linear-gradient(135deg, #7c3aed, #2563eb, #7c3aed); background-size: 200% 200%; color: #fff; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px; animation: shine 3s infinite linear; margin-left: 10px; text-transform: none; box-shadow: 0 2px 8px rgba(37,99,235,0.3); border: 1px solid rgba(255,255,255,0.2);">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Gợi Ý Tối Ưu
+                </span>
+            @endif
         </h2>
-        <p style="font-size: 13px; color: #666; margin-top: 4px;">Tiết kiệm hơn khi mua trọn bộ phụ kiện chính hãng</p>
+        <p style="font-size: 13px; color: #666; margin-top: 4px;">
+            @if($isAiOptimized)
+                ✨ AI đã phân tích hành vi và phân hạng thành viên của bạn để đề xuất & áp dụng định giá ưu đãi đặc biệt!
+            @else
+                Tiết kiệm hơn khi mua trọn bộ phụ kiện chính hãng
+            @endif
+        </p>
     </div>
 
     <div class="combo-wrapper">
@@ -266,7 +306,7 @@
         <div class="combo-equal"><i class="fa-solid fa-equals"></i></div>
 
         <!-- 3. HỘP TỔNG KẾT COMBO (SUMMARY CARD) -->
-        <div class="combo-summary">
+        <div class="combo-summary" style="display: flex; flex-direction: column;">
             <div class="combo-total-label">Tổng cộng <span id="comboCount">3</span> sản phẩm:</div>
             <div class="combo-total-price" id="comboTotalPrice">0đ</div>
             <!-- Khối hiển thị số tiền tiết kiệm được (Chỉ hiển thị khi tổng tiền tiết kiệm lớn hơn 0) -->
@@ -278,7 +318,32 @@
             <button class="btn-combo-buy" onclick="buyCombo()">
                 <i class="fa-solid fa-cart-shopping"></i> THÊM COMBO VÀO GIỎ
             </button>
-            <div class="combo-saving-badge">Combo ưu đãi chính hãng</div>
+            <div class="combo-saving-badge" style="align-self: flex-start;">Combo ưu đãi chính hãng</div>
+
+            @php
+                $aiReasons = [];
+                foreach($bundleItems as $item) {
+                    if (isset($item->pivot->is_ai_optimized) && $item->pivot->is_ai_optimized && !empty($item->pivot->ai_reason)) {
+                        $aiReasons[] = [
+                            'name' => $item->name,
+                            'reason' => $item->pivot->ai_reason
+                        ];
+                    }
+                }
+            @endphp
+            @if(count($aiReasons) > 0)
+                <div class="ai-reasons-block" style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed #7c3aed; text-align: left;">
+                    <div style="font-size: 12px; font-weight: 700; color: #7c3aed; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+                        <i class="fa-solid fa-brain"></i> Nhận định tối ưu từ AI:
+                    </div>
+                    @foreach($aiReasons as $ar)
+                        <div style="font-size: 11px; color: #4b5563; line-height: 1.4; margin-bottom: 8px; display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-weight: 700; color: #1e1b4b;">• {{ mb_strimwidth($ar['name'], 0, 25, '...') }}</span>
+                            <span style="color: #6b21a8; font-style: italic; padding-left: 8px;">"{{ $ar['reason'] }}"</span>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 </div>

@@ -54,8 +54,11 @@ Route::delete('/videos/comments/{comment}', [VideoManagementController::class, '
 
 
 // ===== Quản lý Đơn hàng =====
+Route::get('orders/ai-logs', [OrderController::class, 'aiLogs'])->name('orders.aiLogs');
+Route::post('orders/batch-get-ids', [OrderController::class, 'batchGetIds'])->name('orders.batchGetIds');
 Route::resource('orders', OrderController::class);
 Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+Route::post('orders/{id}/reanalyze', [OrderController::class, 'reanalyze'])->name('orders.reanalyze');
 
 // CRUD Quyền hạn & Tài khoản (Permissions)
 Route::resource('permissions', UserController::class)->names([

@@ -595,3 +595,58 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Nhận diện cấu trúc dự án Thương mại điện tử hiện tại (`ThuongMaiDienTu`) với 5 thành viên phát triển: Anh Quý, Vinh Em, Thanh Hiền, Xuân Hòa, Đăng Nguyên dựa theo các branch trong Git.
   - Tạo tệp Word mới chi tiết: **`d:\HOC\Hoc 4\pywword\Mapping_Chuc_Nng_Theo_Thanh_Vien.docx`** chứa bảng ánh xạ cặn kẽ 100% tất cả các tệp mã nguồn tương ứng (từ Controller, Service, Model, View, Migration, Route cho đến Script JS/CSS phụ trợ) cho từng nhánh tính năng của từng thành viên.
   - Định dạng tệp Word thẩm mỹ cao, lề chuẩn 1 inch, sử dụng font *Times New Roman* kết hợp *Consolas* cho tên tệp code, và đổ màu tiêu đề phân cấp trực quan cho phần việc của mỗi người để chuẩn bị bảo vệ đồ án trước Hội đồng chấm thi.
+
+### 38. Tích hợp AI Tự động xử lý đơn hàng (AI Order Auto-Processing)
+- **Hạ tầng & Cơ sở dữ liệu:**
+  - Tạo file migration `2026_05_30_233351_add_ai_fields_to_orders_table.php` bổ sung các cột `ai_status`, `ai_risk_score`, và `ai_analysis` vào bảng `orders`.
+  - Tạo file migration `2026_05_30_235500_create_ai_order_logs_table.php` định nghĩa bảng `ai_order_logs` lưu trữ lịch sử quét AI.
+  - Tạo Model `App\Models\AIOrderLog.php` liên kết với bảng `ai_order_logs`.
+  - Tạo file seeder `database/seeders/AITestOrderSeeder.php` tạo 10 đơn hàng thử nghiệm có ngày tạo từ `2026-05-29` đến `2026-05-31` cùng các thông tin/ghi chú đặc thù (bao gồm đơn thường, đơn rác, SĐT ảo...) để thử nghiệm quét rủi ro AI hàng loạt. Hoạt động qua lệnh `php artisan db:seed --class=AITestOrderSeeder`.
+- **Dịch vụ AI & Queue Job:**
+  - Thiết kế `app/Services/AIOrderService.php` kết nối trực tiếp với Google Gemini API (sử dụng model fallback linh hoạt `gemini-3.1-flash-lite`, `gemini-3.5-flash` và cơ chế parse JSON an toàn) để đánh giá rủi ro đơn hàng dựa trên thông tin người nhận, SĐT, địa chỉ và ghi chú.
+  - Tích hợp thêm logic tự động xử lý trạng thái đơn hàng: tự động chuyển sang `Processing` (Duyệt đơn) nếu điểm rủi ro `risk_score < 30`, hoặc chuyển sang `Cancelled` (Hủy đơn) nếu điểm rủi ro `risk_score >= 80`.
+  - Lưu vết lịch sử phân tích AI vào bảng `ai_order_logs` với cách kích hoạt tương ứng (`auto` / `manual`).
+  - Gửi thông báo tự động cho Quản trị viên (qua `NotificationService`) khi AI hoàn tất phân tích và đưa ra quyết định xử lý đơn hàng.
+  - Tạo Queue Job `app/Jobs/ProcessOrderWithAI.php` để xử lý phân tích đơn hàng ngầm dưới background, bảo toàn tốc độ giao dịch cho người dùng.
+- **Controller & Router:**
+  - Nâng cấp `show` method trong `OrderController.php` để trả thêm các trường thông tin AI dạng JSON phục vụ Modal chi tiết.
+  - Xây dựng phương thức `reanalyze` trong `OrderController.php` xử lý yêu cầu quét lại rủi ro đơn hàng thủ công từ Admin qua AJAX (truyền triggerType `manual`).
+  - Xây dựng phương thức `aiLogs` để xử lý phân trang và hiển thị danh sách nhật ký quét của AI.
+  - Tích hợp bộ lọc khoảng ngày tạo đơn hàng (`start_date` và `end_date` qua `whereDate`) vào phương thức `index` trong `OrderController.php`.
+  - Xây dựng phương thức `batchGetIds` trong `OrderController.php` lấy danh sách ID đơn hàng cần quét trong một khoảng thời gian tạo đơn nhất định và tiêu chí lọc (Tất cả / Chưa quét).
+  - Khai báo các route POST `/orders/{id}/reanalyze`, GET `/orders/ai-logs`, và POST `/orders/batch-get-ids` trong `routes/admin.php`.
+- **Giao diện Admin (Frontend):**
+  - Cập nhật view `resources/views/admin/orders/index.blade.php`:
+    - Hiển thị badge trạng thái AI màu sắc tương ứng dưới mã đơn hàng (`Approved`, `Flagged`, `Risk`, `Checking`) ở bảng danh sách.
+    - Bổ sung nút **Lịch sử quét AI** bên cạnh tiêu đề trang để truy cập nhanh trang log.
+    - Bổ sung nút **Quét AI hàng loạt** hiển thị popup chọn ngày (từ ngày...đến ngày...) và thực hiện quét tuần tự AJAX thông minh kèm progress bar và logging console động thời gian thực.
+    - Tích hợp form bộ lọc hợp nhất gồm ô Tìm kiếm, ô chọn **Từ ngày** và **Đến ngày** ngay phía trên danh sách tab trạng thái đơn hàng giúp lọc đơn nhanh chóng và lưu trạng thái lọc khi chuyển tab.
+    - Bổ sung card phân tích rủi ro AI động trong Modal chi tiết đơn hàng (gồm Nhãn đánh giá, Thanh đo mức độ rủi ro, và Nhận định chi tiết).
+    - Tích hợp nút **Quét lại** kèm AJAX gọi API `reanalyze`, tải spinner động và cập nhật dữ liệu phản hồi tức thì lên Modal qua SweetAlert2 mà không cần reload trang.
+  - Thiết kế mới view `resources/views/admin/orders/ai_logs.blade.php` hiển thị bảng lịch sử làm việc chi tiết của AI với bộ lọc trạng thái và cách kích hoạt chuyên nghiệp, kèm theo nút **Quét AI hàng loạt** đồng bộ.
+
+## 6. Phân Hệ Gợi Ý Sản Phẩm & Bán Chéo Cá Nhân Hóa (AI Recommendation & Dynamic Pricing)
+- **Kiến trúc & Cấu hình:**
+  - Tích hợp **Google Gemini API** (sử dụng API key sẵn có `GEMINI_API_KEY` từ file cấu hình `.env`).
+  - Hỗ trợ cơ chế **Fallback (Safe-mode)**: Tự động dùng danh sách combo tĩnh từ cơ sở dữ liệu (`product_combos`) nếu không có cấu hình API key, API quá tải hoặc lỗi định dạng phản hồi từ AI.
+  - Áp dụng cơ chế **Caching**: Cache kết quả gợi ý và định giá combo theo cặp (User/Session ID + Product ID) trong vòng 15 phút, giúp tăng tốc độ tải trang chi tiết sản phẩm và tiết kiệm lượt gọi API.
+- **Backend Services & Logic:**
+  - **CrossSellService.php:**
+    - Xây dựng phương thức `getAICrossSellCombos($product, $user, $cartItems)` gửi prompt phân tích ngữ cảnh (thông tin sản phẩm đang xem, hạng thành viên của khách hàng, lịch sử xem sản phẩm gần đây, lịch sử mua hàng, và các sản phẩm đang có trong giỏ hàng) tới Gemini API.
+    - Cung cấp danh sách ứng viên đề xuất gồm tối đa 15 sản phẩm cùng danh mục và sản phẩm phụ kiện thuộc `ACCESSORY_CATEGORY_IDS`.
+    - AI trả về câu lý do gợi ý cá nhân hóa lịch sự và thân thiện (`ai_reason`) để thuyết phục khách hàng mà không trực tiếp nhắc đến tên hạng thành viên để tránh gây cảm nhận phân biệt giai cấp (ví dụ: trả về "ưu đãi đặc biệt dành riêng cho bạn" thay vì "dành cho hạng Đồng").
+  - **ProductController.php (Frontend):**
+    - Cập nhật phương thức `show` gọi hàm `getAICrossSellCombos` từ `CrossSellService` để lấy danh sách combo được tối ưu bằng AI thay cho cách lấy tĩnh cũ.
+  - **CartController.php (Admin/Cart):**
+    - Tích hợp xác thực bảo mật giá trị giảm giá combo ở phía Server trong phương thức `add`.
+    - Khi thêm sản phẩm mua kèm vào giỏ hàng, server sẽ kiểm tra chéo giá trị ưu đãi từ Cache Combo AI của user đó. Nếu không tìm thấy, hệ thống tự động fallback kiểm tra mối quan hệ combo tĩnh từ database, ngăn chặn hoàn toàn việc can thiệp giá từ phía Client-side.
+- **Frontend UI & Trải nghiệm người dùng:**
+  - **_combo_bundle.blade.php:**
+    - Bổ sung CSS tùy chỉnh cho hiệu ứng viền phát sáng gradient lấp lánh `.ai-optimized-section` khi combo được AI tối ưu.
+    - Gắn nhãn AI Badge lấp lánh (`AI Gợi Ý Tối Ưu`) trên tiêu đề mục combo.
+    - Hiển thị thông báo giải thích ngắn gọn về định giá ưu đãi từ AI.
+    - Tích hợp khối **Nhận định tối ưu từ AI** hiển thị lý do cá nhân hóa ngắn gọn ngay bên trong hộp tổng kết Combo (`combo-summary`) giúp tăng tỷ lệ chuyển đổi.
+- **Kiểm thử:**
+  - Viết file script chạy thử nghiệm `scratch_test_ai_recommendation.php` để giả lập quá trình gọi API gợi ý cho User hạng Vàng và hạng Đồng/Khách vãng lai, kiểm chứng tốc độ phản hồi và độ chính xác của logic định giá động.
+
+

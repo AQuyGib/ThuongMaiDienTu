@@ -537,18 +537,18 @@
 
     /**
      * 9. ĐIỀU HƯỚNG SANG TRANG THANH TOÁN (PROCEED TO CHECKOUT)
-     * Kiểm tra đăng nhập bằng directive `@auth` của Blade.
+     * Kiểm tra đăng nhập bằng directive auth của Blade.
      * Nếu đã đăng nhập chuyển đến trang nhập địa chỉ thanh toán (`cart.pay`).
      * Ngược lại chuyển đến màn hình đăng nhập/đăng ký (`login_register`).
      */
     window.proceedToCheckout = () => {
         const selectedItems = window.cartData.filter(i => i.selected);
         if (selectedItems.length > 0) {
-            @auth
+            @if(Auth::check())
                 window.location.href = `{{ route('cart.pay') }}`;
             @else
                 window.location.href = `{{ route('login_register') }}`;
-            @endauth
+            @endif
         }
     };
 
