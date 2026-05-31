@@ -471,88 +471,7 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Thêm chỉ dẫn cực kỳ nghiêm ngặt tại cả hai phiên bản Prompt (tiếng Anh & tiếng Việt), yêu cầu AI giữ nguyên 100% các đường dẫn URL nội bộ của hệ thống:
     - Chi tiết sản phẩm: luôn dùng `/san-pham/{id}`, không dịch thành `/product/{id}` hay `/en/san-pham/`.
     - Tìm kiếm/Thương hiệu/Danh mục: luôn dùng `/search?q={từ_khóa}`.
-    - Trang chính sách: giữ nguyên `/warranty`, `/rewards`, `/chinh-sach-bao-hanh`, `/chinh-sach-doi-tra`, tuyệt đối không dịch sang `/return-policy` hay `/warranty-policy`.
-- **Tối ưu hóa RAG và Lọc từ khóa tiếng Anh:**
-  - Mở rộng danh sách từ dừng `$stopwords` bao gồm các từ tiếng Anh phổ biến (`cheap`, `under`, `recommend`, `which`, `suitable`, `for`, `student`, `students`, v.v.).
-  - Bổ dung thuật toán chuẩn hóa từ số nhiều sang số ít tiếng Anh (singularization algorithm) in `searchProducts` để trích xuất đúng từ khóa gốc (ví dụ: `phones` -> `phone`, `laptops` -> `laptop`, `accessories` -> `accessory`), đảm bảo tìm kiếm chính xác các sản phẩm tương ứng trong database.
-  - Bản địa hóa kết quả tìm kiếm kho hàng (Inventory context) động trong prompt dựa trên locale để tránh gây nhiễu ngôn ngữ cho AI.
-- **Các file sửa đổi:**
-  - `app/Http/Controllers/ChatbotController.php`
-
-### 27. Bản địa hóa động cho Chatbot độc lập với Locale của trang web (Bilingual Autodetect Chatbot)
-- **Tự động nhận diện ngôn ngữ của câu hỏi:**
-  - Triển khai phương thức `detectLanguage` trong `ChatbotController.php` để tự động phát hiện ngôn ngữ dựa trên nội dung tin nhắn (`prompt`) của khách hàng (không phụ thuộc vào locale hiện tại của website).
-  - Sử dụng regex kiểm tra ký tự có dấu đặc trưng của Tiếng Việt và thuật toán so sánh tần suất xuất hiện của các từ khóa đặc trưng tiếng Anh/tiếng Việt (bao gồm cả tiếng Việt không dấu).
-- **RAG & Hệ thống Prompt đồng bộ theo ngôn ngữ phát hiện:**
-  - Khi phát hiện người dùng hỏi bằng tiếng Anh, chatbot tự động kích hoạt bộ System Prompt tiếng Anh, gọi phương thức `$p->translateTo('en')` để lấy tên sản phẩm tiếng Anh làm bối cảnh RAG và trả về câu trả lời tiếng Anh.
-  - Khi phát hiện người dùng hỏi bằng tiếng Việt, chatbot kích hoạt bộ System Prompt tiếng Việt, lấy tên sản phẩm tiếng Việt làm bối cảnh RAG và trả về câu trả lời tiếng Việt.
-- **Cô lập hoàn toàn khỏi Middleware dịch thuật:**
-  - Xác nhận Middleware `TranslateHtmlResponse` không ảnh hưởng tới chatbot nhờ cấu trúc lọc route bypass `/chatbot` ở đầu middleware, giúp dữ liệu AI phản hồi bằng mọi ngôn ngữ luôn giữ nguyên cấu trúc HTML và link chính xác.
-- **Các file sửa đổi:**
-  - `app/Http/Controllers/ChatbotController.php`
-
-### 28. Khắc phục lỗi Call to unknown method: DOMNode::getAttribute()
-- **Nguyên nhân:** Trong PHP DOM Document, lớp cơ sở `DOMNode` không định nghĩa phương thức `getAttribute()` (chỉ có trên lớp con `DOMElement`). Trong quá trình duyệt đệ quy cây DOM, một số node đại diện cho phần tử `<input>` có thể được định kiểu hoặc khởi tạo là `DOMNode` thông thường bởi PHP parser làm chương trình ném ra ngoại lệ chí mạng.
-- **Khắc phục:** 
-  - Thêm kiểm tra kiểu `$node instanceof \DOMElement` trước khi gọi trực tiếp `getAttribute('type')`.
-  - Nếu không phải `DOMElement` nhưng vẫn có thuộc tính, sử dụng `$node->attributes->getNamedItem('type')` lấy từ bản đồ `DOMNamedNodeMap` một cách an toàn.
-  - Sửa lỗi đồng bộ ở cả hai nơi: hàm trích xuất thuộc tính `collectUntranslatedStrings` và hàm dịch thực tế `translateNode`.
-- **Các file sửa đổi:**
-  - `app/Http/Middleware/TranslateHtmlResponse.php`
-
-### 29. Khắc phục lỗi Call to unknown method: stdClass::translateTo()
-- **Nguyên nhân:** Khi chạy ứng dụng, trong một số điều kiện (như trong các trường hợp test case chạy trên sqlite, mock dữ liệu, hoặc các truy vấn raw), các bản ghi sản phẩm trả về có thể là các đối tượng `stdClass` thay vì các thực thể Eloquent Model `Product`. Do đó, việc gọi trực tiếp hàm `translateTo()` từ trait đa ngôn ngữ gây ra lỗi Fatal Error vì `stdClass` không chứa phương thức này.
-- **Khắc phục:**
-  - Trong phương thức `searchProducts()` của `ChatbotController.php`, bổ sung kiểm tra kiểu đối tượng `$p instanceof \App\Models\Product` trước khi gọi `translateTo()`.
-  - Nếu đối tượng là `stdClass`, thiết lập cơ chế dự phòng an toàn bằng cách thực hiện truy vấn Query Builder trực tiếp (`DB::table('product_translations')`) tìm kiếm bản dịch tương ứng của sản phẩm đó để lấy tên sản phẩm bằng Tiếng Anh.
-- **Các file sửa đổi:**
-  - `app/Http/Controllers/ChatbotController.php`
-
-### 30. Tối ưu hóa chỉ dẫn ngôn ngữ trong System Prompt cho Gemini
-- **Nguyên nhân:** Mặc dù backend đã tự động nhận diện ngôn ngữ và gửi Prompt tương ứng (Tiếng Anh/Tiếng Việt), chỉ dẫn cũ trong Prompt sử dụng câu lệnh tổng quát: "You MUST automatically detect the language...". Điều này khiến mô hình AI đôi lúc bị nhầm lẫn bởi các ngữ cảnh hỗn hợp hoặc thương hiệu tiếng Việt, dẫn đến việc chọn sai ngôn ngữ trả về (ví dụ người dùng hỏi bằng Tiếng Anh nhưng AI trả lời Tiếng Việt).
-- **Khắc phục:** 
-  - Điều chỉnh trực tiếp và cụ thể trong cả hai phiên bản Prompt:
-    - Trong Prompt Tiếng Anh: Chỉ định rõ câu lệnh **"The customer is querying in English. You MUST respond 100% in English."** kèm yêu cầu cấm viết tiếng Việt.
-    - Trong Prompt Tiếng Việt: Chỉ định rõ câu lệnh **"Khách hàng đang hỏi bằng Tiếng Việt. Bạn BẮT BUỘC phải phản hồi 100% bằng Tiếng Việt."** kèm yêu cầu cấm viết tiếng Anh.
-  - Loại bỏ hoàn toàn sự tự lựa chọn của mô hình AI, buộc AI tuân thủ tuyệt đối ngôn ngữ đích đã được backend PHP phân tích trước đó.
-- **Các file sửa đổi:**
-  - `app/Http/Controllers/ChatbotController.php`
-
-### 31. Khắc phục lỗi nhân đôi backslashes trong thẻ script khi dịch trang EN & Tối ưu chèn link sản phẩm trong chatbot
-- **Sửa lỗi nhân đôi dấu gạch chéo ngược (`\`) trong Regex JS của Chatbot:**
-  - **Nguyên nhân:** Khi người dùng đổi sang giao diện Tiếng Anh, Middleware `TranslateHtmlResponse` quét các chuỗi JS tĩnh nháy đơn/nháy kép để gửi dịch. Do regex cũ quét chuỗi lỏng lẻo, nó quét nhầm luôn các chuỗi Regex Javascript chứa dấu gạch chéo ngược (`\`) trên nhiều dòng (multiline). Khi chèn lại bằng `addcslashes`, nó nhân đôi tất cả các dấu `\` thành `\\`, làm hỏng logic replace Markdown và replace xuống dòng của Client-side.
-  - **Khắc phục:** Cấu trúc lại biểu thức chính quy quét chuỗi trong `TranslateHtmlResponse.php` ở cả hai phương thức `collectUntranslatedJsStrings` và `translateJavascriptStrings` thành `/"([^"\\\\\r\n]*(?:\\\\.[^"\\\\\r\n]*)*)"/u` (bổ sung loại trừ ký tự xuống dòng `\r`, `\n`). Giải pháp giúp giới hạn quét chuỗi trong phạm vi 1 dòng đơn, giải quyết triệt để hiện tượng match nhầm multiline và loại bỏ hoàn toàn lỗi nhân đôi backslashes.
-- **Tối ưu chèn link sản phẩm dưới dạng HTML đầy đủ:**
-  - **Khắc phục:** Nâng cấp luật chèn link `LINK INSERTION RULES` trong cả hai bộ System Prompt (Tiếng Việt & Tiếng Anh) tại `ChatbotController.php`, yêu cầu Gemini AI chèn thẳng tên sản phẩm đầy đủ vào thẻ HTML liên kết có class `chatbot-product-link` thay vì dùng link thô hoặc điền URL làm text hiển thị (Ví dụ: `<a href="/san-pham/16" class="chatbot-product-link">ASUS ROG Strix G16 2024</a>`).
-  - **Kết quả:** Kiểm thử tự động qua `scratch/test_chatbot.php` trả về phản hồi chatbot cực kỳ đẹp mắt, định dạng link HTML sản phẩm/chính sách và các dòng text hiển thị trơn tru, mượt mà ở cả hai ngôn ngữ.
-- **Các file sửa đổi:**
-  - `app/Http/Middleware/TranslateHtmlResponse.php`
-  - `app/Http/Controllers/ChatbotController.php`
-
-### 32. Ngăn chặn cập nhật thông tin cá nhân trùng lặp (Prevent Unchanged Profile Updates)
-- **Controller (`app/Http/Controllers/ProfileController.php`):**
-  - Thêm logic kiểm tra xem dữ liệu gửi từ form cập nhật thông tin cá nhân có khác biệt so với dữ liệu hiện tại trong Database hay không (so sánh `full_name`, `gender`, `dob`, `phone_number`, `address` sau khi chuẩn hóa khoảng trắng).
-  - Trả về thông báo lỗi `'no_change'` với nội dung `"Không có thông tin nào thay đổi so với dữ liệu cũ."` nếu tất cả thông tin trùng khớp, giúp ngăn chặn ghi đè database dư thừa.
-  - Chuyển đổi các quy tắc Validate (validation rules) dạng chuỗi nối nhau bằng ký tự ống (`|`) sang dạng mảng (`array`) để khắc phục triệt để lỗi Laravel phân tích sai ký tự đặc biệt `|` bên trong Regex của trường `full_name` và `address`.
-- **View (`resources/views/frontend/profile.blade.php`):**
-  - Khai báo biến kiểm tra lỗi profile `$hasProfileError` để tự động duy trì trạng thái hiển thị của Form chỉnh sửa (`editProfileForm`) và ẩn giao diện thông tin tĩnh khi trang tải lại kèm lỗi validation.
-  - Hiển thị trực quan thông báo lỗi `'no_change'` và lỗi validation riêng của từng trường ngay dưới ô nhập liệu.
-  - Triển khai chức năng Hủy (Cancel) bằng cách gọi hàm `resetProfileForm()` để phục hồi lại dữ liệu ban đầu trên form qua Javascript và xóa sạch các trạng thái lỗi/cảnh báo validation cũ.
-  - Tích hợp sự kiện `submit` kiểm tra trước trên Client-side. Nếu toàn bộ dữ liệu khớp với giá trị ban đầu, form sẽ hủy gửi và hiển thị Toast cảnh báo *"Không có thông tin nào thay đổi so với dữ liệu cũ!"* nhanh chóng, cải thiện trải nghiệm người dùng (UX).
-
-### 33. Sửa lỗi lưu/cập nhật địa chỉ mới (Fix Address Store/Update Validation Error)
-- **Nguyên nhân lỗi:**
-  - Quy tắc xác thực (validation rules) của trường `street` và `name` trong `addAddress` và `updateAddress` có chứa ký tự ống `|` trong Regex (phân loại ký tự đặc biệt). Do viết ở dạng chuỗi nên Laravel phân tích nhầm ký tự `|` này làm dấu phân tách quy tắc, gây ra ngoại lệ `preg_match(): No ending delimiter` và sập trang.
-  - Phía Client sử dụng request `fetch` không truyền Header `Accept: application/json` khiến Laravel tự động phản hồi bằng HTML (redirect hoặc báo lỗi hệ thống dạng web) thay vì JSON khi xảy ra lỗi validation. Trình duyệt không thể phân tích HTML này thành JSON (`res.json()`), làm phát sinh exception JS rồi nhảy vào block `.catch` hiển thị cảnh báo sai lệch: *"Lỗi kết nối / Vui lòng kiểm tra lại đường truyền mạng."*.
-- **Giải pháp xử lý:**
-  - Chuyển toàn bộ quy tắc xác thực của `addAddress` và `updateAddress` trong `ProfileController.php` sang dạng mảng (`array`) để bảo toàn ký tự `|` trong Regex.
-  - Loại bỏ hoàn toàn ràng buộc độ dài tối thiểu 10 ký tự (`min:10`) đối với trường địa chỉ (`street`) theo mong muốn của người dùng.
-  - Cập nhật headers của fetch lưu/sửa địa chỉ trong `profile.blade.php` truyền thêm `'Accept': 'application/json'`.
-  - Nâng cấp phần xử lý xác thực trên Client-side: Khi người dùng bỏ trống hoặc dữ liệu không hợp lệ, hệ thống sẽ hiển thị dòng thông báo nhắc nhở màu đỏ trực quan ngay dưới từng ô nhập liệu tương ứng, thay vì chỉ hiển thị Toast thông báo chung.
-  - Xử lý fallback cho trường "Tên gợi nhớ" (`name`): Nếu để trống, hệ thống sẽ tự động lấy thông tin từ "Họ và tên" của tài khoản (`$user->full_name`). Đã cấu hình trên Controller để chuẩn hóa khoảng trắng thừa & lưu `null` nếu chuỗi trống, đồng thời dùng toán tử Elvis `?:` trên Blade để đảm bảo giao diện fallback đúng chuẩn.
-  - Thêm chú thích và comment code chi tiết (JSDoc cho Javascript, Docblock cho PHP) giải thích cặn kẽ mục đích và luồng xử lý của từng hàm/chức năng vừa thay đổi.
-
-### 34. Tài liệu hóa & Chú thích chi tiết hệ thống Thông báo (Notification System Documentation)
+    - Trang chính sách: giữ nguyên `/warranty`, `/rewards`, ### 34. Tài liệu hóa & Chú thích chi tiết hệ thống Thông báo (Notification System Documentation)
 - **Tài liệu hóa Backend:**
   - `app/Http/Controllers/NotificationController.php`: Bổ sung chú thích tiếng Việt làm rõ logic endpoint đánh dấu đã đọc của User và kiểm tra bảo mật ngăn chặn xem trộm thông báo.
   - `app/Services/NotificationService.php`: Bổ sung chú thích giải thích cơ chế chunking (1000 bản ghi) để tối ưu hóa việc tạo thông báo hàng loạt mà không gây quá tải bộ nhớ.
@@ -654,5 +573,134 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - **`app/Models/Product.php`**: Bổ sung PHPDoc và chú thích chi tiết tiếng Việt cho các mối quan hệ (`category`, `productSpecifications`, `variants`, `flashSaleProducts`, `wishlistRecentlyViewed`) và các query scopes (`filterCategory`, `finalPriceBetween`, `searchKeyword`, `filterBySpecs`, `sortBy`) giúp dễ dàng bảo trì.
   - **`routes/web.php`**: Bổ sung chú thích phân nhóm các route liên quan đến sản phẩm ngoài frontend bao gồm lọc nâng cao, route sản phẩm di sản (legacy redirect) và chi tiết sản phẩm.
 
+### 41. Nâng cấp hệ thống khởi tạo dự án - Smart Setup Wizard (Orchestrator v8.0 INITIALIZE)
+- **Mục tiêu:** Nâng cấp chức năng khởi tạo dự án `[6] INITIALIZE` từ một chuỗi lệnh gộp đơn giản thành một bộ công cụ **Smart Setup Wizard** có giao diện tương tác trực quan cao, nhiều lựa chọn linh hoạt và có khả năng phát hiện lỗi tự động.
+- **Tính năng triển khai:**
+  - **[1] FAST SETUP (Cài đặt nhanh):** Tự động phát hiện và đề xuất bỏ qua `composer install` / `npm install` nếu thư mục `vendor` / `node_modules` đã có sẵn nhằm tối ưu hóa thời gian chờ đợi. Kiểm tra và tự động sao chép cấu hình `.env`, tự tạo `APP_KEY`, tự động đồng bộ hóa liên kết thư mục `public/storage` (Storage Link), và cho phép thực thi migration + seeders dữ liệu mẫu ngay lập tức.
+  - **[2] DRIVER SETUP (Thiết lập CSDL):** Chuyển đổi và thiết lập cơ sở dữ liệu động:
+    - **SQLite:** Tự tạo tệp tin `database/database.sqlite` (nếu thiếu), tự cập nhật `.env` sang `DB_CONNECTION=sqlite`, đồng thời ẩn/comment-out toàn bộ cấu hình MySQL không cần thiết bằng Powershell in-place replacement siêu tốc.
+    - **MySQL:** Hỗ trợ giao diện nhập cấu hình trực quan, tự lưu giá trị mặc định (Host: `127.0.0.1`, Port: `3306`, Database: `dienmay_pro`, Username: `root`) nếu người dùng chỉ nhấn Enter. Sử dụng Powershell động cập nhật chuẩn xác dữ liệu vào `.env`.
+  - **[3] CLEAN REBUILD (Cài đặt lại sạch):** Trình dọn dẹp hệ thống chuyên sâu, tự động xóa sạch `vendor/`, `node_modules/`, `.env`, `package-lock.json`, và `database.sqlite` cũ, sau đó tái thiết lập toàn bộ môi trường và tải lại thư viện hoàn toàn mới 100%.
+- **Các file sửa đổi:**
+  - `start.bat` (Thư mục gốc dự án)
+
+### 42. Hệ thống xác thực API Sanctum chuyên sâu (API Sanctum Authentication Suite)
+- **Mục tiêu:** Triển khai hệ thống xác thực API chuẩn bảo mật bằng Laravel Sanctum thay thế cho hệ thống lưu trữ session tùy chỉnh cũ, phục vụ kết nối di động và API tích hợp.
+- **Tính năng triển khai:**
+  - **Sanctum Trait Integration:** Bổ sung trait `Laravel\Sanctum\HasApiTokens` vào Model `User.php`. Thêm các PHPDoc và `@mixin` block vào `User.php` và `Role.php` để hỗ trợ IDE tối đa và loại bỏ cảnh báo lỗi linting.
+  - **Auth API Controller (`AuthController.php`):** Định nghĩa 3 phương thức API: `login()` (Xác thực thông tin đăng nhập, trả về Bearer Token, từ chối tài khoản Banned), `me()` (Trả về thông tin tài khoản hiện tại qua `UserResource`), và `logout()` (Thu hồi token hiện tại `currentAccessToken()->delete()`).
+  - **Custom Guard Middleware (`ApiAuthMiddleware.php`):** Middleware lọc quyền truy cập API qua Sanctum guard, kiểm tra trạng thái cấm hoạt động của tài khoản (`is_banned`). Nếu bị khóa, hệ thống lập tức thu hồi toàn bộ token hoạt động của user và trả về lỗi `403 Forbidden`.
+  - **Automated API Testing Suite (`ApiAuthTest.php`):** Viết đầy đủ các ca kiểm thử tự động (Feature Tests) bao gồm: Đăng nhập thành công, Đăng nhập thất bại (sai mật khẩu/email), Lỗi kiểm duyệt dữ liệu đầu vào (Validation errors), Đăng nhập bằng tài khoản bị khóa (Banned), Truy cập profile hợp lệ/không hợp lệ, và Thu hồi token hoàn chỉnh khi Logout.
+  - **Postman API Collection (`DienMayPro_Auth_API.postman_collection.json`):** Cung cấp bộ sưu tập Postman hoàn chỉnh được lưu trong thư mục `scratch`, tích hợp sẵn Test Script tự động trích xuất token lưu vào biến môi trường để gọi các API tiếp theo.
+- **Các file sửa đổi / tạo mới:**
+  - `app/Models/User.php` (Sửa đổi)
+  - `app/Models/Role.php` (Sửa đổi)
+  - `app/Http/Controllers/Api/AuthController.php` (Tạo mới)
+  - `app/Http/Middleware/ApiAuthMiddleware.php` (Tạo mới)
+  - `bootstrap/app.php` (Sửa đổi)
+  - `routes/api.php` (Sửa đổi)
+  - `tests/Feature/ApiAuthTest.php` (Tạo mới)
+  - `scratch/DienMayPro_Auth_API.postman_collection.json` (Tạo mới)ripts):**
+  - `resources/views/frontend/rewards/index.blade.php`: Chú thích toàn bộ hệ thống Canvas vẽ đĩa quay 3D, vòng LED nhấp nháy, thuật toán xoay đĩa dừng đúng góc quà trúng ở kim chỉ góc 270 độ, AJAX đổi quà và spin.
+  - `resources/views/frontend/rewards/show.blade.php` & `resources/views/frontend/rewards/history.blade.php`: Chú thích hệ thống lọc lịch sử, định dạng hiển thị timeline tiến trình và xử lý AJAX đổi voucher đơn lẻ.
+  - `resources/views/admin/rewards/index.blade.php` (Giao diện Quản trị): Chú thích toàn bộ logic bật/tắt hiển thị vòng quay ở client, logic form thêm/sửa linh động ẩn hiện các trường đầu vào VND/Freeship/Rate theo chủng loại quà, và modal test spin offline.
+
+### 37. Tích hợp nhánh Tối ưu & Cập nhật Báo cáo phân chia chức năng theo Thành viên
+- **Merge nhánh Git:**
+  - Thực hiện chuyển sang nhánh `master` và tích hợp nhánh phát triển `AnhQuy/ToiUu` (chứa toàn bộ nội dung cải tiến mã nguồn, comment Docblock và tối ưu hóa hệ thống) vào nhánh `master` dạng Fast-forward không có conflict.
+  - Tiến hành dọn dẹp Git repository: Xóa bỏ tệp tin tạm `docx_content.txt` khỏi Git tracking và thực tế trên đĩa cứng của `master`.
+- **Tài liệu hóa & Phân chia chức năng dự án mới:**
+  - Nhận diện cấu trúc dự án Thương mại điện tử hiện tại (`ThuongMaiDienTu`) với 5 thành viên phát triển: Anh Quý, Vinh Em, Thanh Hiền, Xuân Hòa, Đăng Nguyên dựa theo các branch trong Git.
+  - Tạo tệp Word mới chi tiết: **`d:\HOC\Hoc 4\pywword\Mapping_Chuc_Nng_Theo_Thanh_Vien.docx`** chứa bảng ánh xạ cặn kẽ 100% tất cả các tệp mã nguồn tương ứng (từ Controller, Service, Model, View, Migration, Route cho đến Script JS/CSS phụ trợ) cho từng nhánh tính năng của từng thành viên.
+  - Định dạng tệp Word thẩm mỹ cao, lề chuẩn 1 inch, sử dụng font *Times New Roman* kết hợp *Consolas* cho tên tệp code, và đổ màu tiêu đề phân cấp trực quan cho phần việc của mỗi người để chuẩn bị bảo vệ đồ án trước Hội đồng chấm thi.
+
+### 38. Sửa lỗi Xóa tất cả & Tối ưu hóa hiệu năng Danh sách yêu thích (Wishlist AJAX & Dynamic UI Optimization)
+- **Giao diện Khách hàng (Frontend):**
+  - Cải tiến view `resources/views/frontend/profile.blade.php` ở tab Danh sách yêu thích.
+  - Thay thế thẻ `<form>` thực hiện hành động DELETE trực tiếp (gây ra tình trạng chuyển hướng trình duyệt đến trang xuất JSON thô `{"success":true}`) bằng một nút bấm gọi AJAX qua `onclick="clearWishlist()"`.
+  - Tối ưu hóa UI/UX: Loại bỏ hoàn toàn cơ chế reload toàn bộ trang (`window.location.reload()`) khi xóa một sản phẩm hoặc xóa toàn bộ wishlist để tránh tải chậm (do trang Profile phải gánh rất nhiều câu truy vấn nặng).
+  - Tích hợp hiệu ứng CSS transition (`opacity 0.3s`, `transform 0.3s`) để các item biến mất mượt mà, đồng thời tự động cập nhật số lượng badge hiển thị trên tiêu đề tab và render giao diện trống (empty state) bằng JS ngay trên client.
+- **Hạ tầng & Seeders:**
+  - Tạo mới `database/seeders/WishlistRecentlyViewedSeeder.php` để tự động gán ngẫu nhiên từ 3 đến 5 sản phẩm mẫu vào danh sách yêu thích (`type => 'Wishlist'`) cho tất cả người dùng trong hệ thống bằng phương thức `firstOrCreate` (idempotent).
+  - Đăng ký seeder mới vào class list trong `database/seeders/DatabaseSeeder.php`.
+
+### 39. Sửa lỗi Sidebar xoay vô hạn, Cấu hình Thông số Sản phẩm & Di chuyển Khối Đăng ký Khuyến mãi xuống Footer (Sidebar Loading, Product Specs & Footer Subscribe Layout Migration)
+- **Sửa lỗi Admin Sidebar Loading vô hạn:**
+  - **Nguyên nhân:** File rác `public/hot` tồn tại trong thư mục `public` khiến cho chỉ thị `@vite` trong Laravel cố gắng tải các file tài nguyên React từ Vite Dev Server (cổng `5173`) trong khi server này không chạy, dẫn đến việc giao diện React Sidebar bị treo ở trạng thái `"Khởi tạo Sidebar..."`.
+  - **Cách xử lý:** Đã xóa bỏ file `public/hot` để Laravel tự động nhận diện và nạp các tệp tài nguyên tĩnh đã được build sẵn (production build) từ `public/build/assets/`.
+- **Cải tiến hiển thị Thông số sản phẩm (Product Specifications):**
+  - **Vấn đề:** Các sản phẩm do `LargeProductSeeder` tạo ra lưu thông số kỹ thuật dưới dạng cột JSON `specifications` thay vì bản ghi trong bảng `product_specifications`, khiến tab "Cấu hình chi tiết" bị ẩn do không tìm thấy bản ghi liên kết.
+  - **Cách xử lý:** Cập nhật view `resources/views/frontend/products/show.blade.php` để hỗ trợ hiển thị song song. Nếu không có bản ghi trong bảng liên kết, view sẽ tự động giải mã trường JSON `specifications` và lặp để hiển thị đầy đủ thông số kỹ thuật của sản phẩm.
+  - **Tính năng mở rộng (Xem chi tiết):** Thêm tính năng thu gọn / xem thêm thông số kỹ thuật. Bảng thông số được giới hạn chiều cao tối đa `260px` (khoảng 6 dòng đầu) kèm hiệu ứng mờ dần (gradient fade). Nếu thông số dài quá giới hạn này, một nút "Xem chi tiết cấu hình" sẽ xuất hiện để người dùng bấm và mở rộng/thu gọn mượt mà. Nếu thông số ngắn, nút này sẽ tự động ẩn thông qua kiểm tra thuộc tính `scrollHeight` bằng Javascript.
+- **Di chuyển Khối Đăng Ký Khuyến Mãi Xuống Footer:**
+  - **Mục tiêu:** Di chuyển khối Đăng ký nhận thông tin khuyến mãi từ chi tiết sản phẩm xuống dưới Footer của toàn bộ trang web làm cột (div) thứ 5.
+  - **Cách xử lý:** 
+    - Xóa bỏ khối đăng ký khuyến mãi và modal chúc mừng thành công cũ ở `resources/views/frontend/products/show.blade.php`.
+    - Thêm cột thứ 5 vào `resources/views/partials/footer.blade.php`, kèm theo mã nguồn HTML Modal thành công và Script điều phối chung `showPromoSuccess()` để tính năng hoạt động độc lập trên mọi trang web.
+    - Cập nhật số cột tối đa trên desktop của `.footer-grid` trong `resources/views/layouts/app.blade.php` từ `repeat(4, 1fr)` thành `repeat(5, 1fr)`. Dữ liệu hiển thị đáp ứng co giãn hoàn hảo (responsive) trên mọi kích thước màn hình.
+    - Khởi tạo thêm khóa dịch thuật `footer_subscribe` ở cả hai tệp `lang/vi/ui.php` và `lang/en/ui.php`.
+- **Sửa Lỗi Chèn/Đè Nội Dung Ở Footer (Sticky Bar Overlap Fix):**
+  - **Vấn đề:** Khi cuộn xuống cuối trang chi tiết sản phẩm, thanh tác vụ ghim dưới cùng (`bottom-action-bar` có giá trị `position: fixed; bottom: 0`) đè lên chân trang (footer) làm ẩn nút "Đăng ký nhận mã", ô checkbox, và che mất nút Chatbot AI.
+  - **Cách xử lý:**
+    - Cấu hình thêm CSS `padding-bottom: 110px !important;` cho `.footer` tại trang chi tiết sản phẩm, chừa một khoảng trống vừa đủ ở dưới để chân trang không bao giờ bị che lấp khi người dùng cuộn xuống đáy.
+    - Cải tiến Javascript bắt sự kiện cuộn chuột ở trang chi tiết sản phẩm: Khi thanh mua hàng nhanh (`bottom-action-bar`) trượt ra (`active.show`), hệ thống tự động đẩy nút Chatbot (`#chatbot-fab`), cửa sổ chat (`#ai-chat-window`), và thông báo giỏ hàng (`#pending-payment-alert`) lên cao thêm `75px` để tránh bị đè chồng lấp. Khi thanh này ẩn đi, các vị trí lại tự động khôi phục bình thường.
+- **Tích Hợp Đường Dẫn Động Vào Chân Trang (Footer Links Integration):**
+  - **Mục tiêu:** Cấu hình các đường liên kết thực tế thay thế cho các ký tự `#` ở Footer.
+  - **Các liên kết đã tích hợp:**
+    - Cột 2 (Về công ty): Tích hợp **Tất cả sản phẩm** (`route('products.index')`), **Tin công nghệ** (`route('articles.index')`), và **Góc video** (`route('videos.index')`).
+    - Cột 3 (Chính sách & Tra cứu): Tích hợp **Lịch sử tích điểm** (`route('rewards.history')`), **Tra cứu bảo hành** (`route('warranty.index')`), **Tra cứu đơn hàng** (`route('cart.tracking')`), **So sánh sản phẩm** (`route('compare.index')`), và **Bảo mật thông tin** (`route('security')`).
+    - Khởi tạo các khóa ngôn ngữ tương ứng (`footer_warranty_lookup`, `footer_compare`, `footer_all_products`, `footer_rewards_history`) để hỗ trợ chuyển đổi ngôn ngữ trọn vẹn.
+  - **Hàng liên kết nhanh sản phẩm phổ biến ở đáy Footer (Quick links):**
+    - Thiết kế thêm 1 hàng lưới 4 cột ở cuối Footer hiển thị các mẫu iPhone, Điện thoại, Laptop, Tivi, Đồ gia dụng và thiết bị thông minh phổ biến (theo giao diện CellphoneS).
+    - Tất cả liên kết được ánh xạ động: Các danh mục thực tế trỏ đến `route('products.category', $slug)` và các từ khóa cụ thể trỏ đến `route('search.index', ['query' => $keyword])`.
+  - **Tích hợp Favicon Logo Sét (Lightning Bolt SVG Favicon):**
+    - Bổ sung chỉ thị `<link rel="icon" type="image/svg+xml">` với dữ liệu hình ảnh dạng inline SVG (FontAwesome 6 Bolt icon có màu xanh chủ đạo `#0046ab` đồng bộ với tông màu chủ đạo của website) vào thẻ `<head>` của các layout chính:
+      - `resources/views/layouts/app.blade.php` (Giao diện khách hàng)
+      - `resources/views/Auth/login_register.blade.php` (Giao diện đăng nhập/đăng ký)
+      - `resources/views/admin/layouts/master.blade.php` (Giao diện quản trị hệ thống mẫu cũ)
+      - `resources/views/Dashboard/Dashboard.blade.php` (Giao diện Dashboard chính)
+    - Khắc phục hoàn toàn tình trạng tab trình duyệt hiển thị favicon mặc định là khối hộp đỏ của Laravel.
+
+### 40. Tài liệu hóa và Chú thích chi tiết hệ thống Chi tiết sản phẩm (Product Detail Walkthrough & Comments)
+- **Tài liệu hóa chi tiết:**
+  - Tạo mới file walkthrough hệ thống chi tiết sản phẩm (`artifacts/product_detail_walkthrough.md`) bao gồm:
+    - Sơ đồ kiến trúc luồng dữ liệu (Route → Controller → Services/Models → Views/Partials → JS).
+    - Phân tích chi tiết 10 khối giao diện chính và cấu trúc CSS tùy biến.
+    - Sơ đồ ER Database liên quan đến sản phẩm (Variants, Specs, Reviews, Cross-sells, Combos, Flash Sales).
+    - Phân tích 20+ hàm Javascript phục vụ Gallery, chọn biến thể, AJAX mua hàng, Countdown Flash Sale, Trả góp, Sticky Bar, Specs Toggle.
+- **Bổ sung chú thích mã nguồn (Comments):**
+  - **`app/Models/Product.php`**: Bổ sung PHPDoc và chú thích chi tiết tiếng Việt cho các mối quan hệ (`category`, `productSpecifications`, `variants`, `flashSaleProducts`, `wishlistRecentlyViewed`) và các query scopes (`filterCategory`, `finalPriceBetween`, `searchKeyword`, `filterBySpecs`, `sortBy`) giúp dễ dàng bảo trì.
+  - **`routes/web.php`**: Bổ sung chú thích phân nhóm các route liên quan đến sản phẩm ngoài frontend bao gồm lọc nâng cao, route sản phẩm di sản (legacy redirect) và chi tiết sản phẩm.
+
+=======
+### 34. Nâng cấp hệ thống khởi tạo dự án - Smart Setup Wizard (Orchestrator v8.0 INITIALIZE)
+- **Mục tiêu:** Nâng cấp chức năng khởi tạo dự án `[6] INITIALIZE` từ một chuỗi lệnh gộp đơn giản thành một bộ công cụ **Smart Setup Wizard** có giao diện tương tác trực quan cao, nhiều lựa chọn linh hoạt và có khả năng phát hiện lỗi tự động.
+- **Tính năng triển khai:**
+  - **[1] FAST SETUP (Cài đặt nhanh):** Tự động phát hiện và đề xuất bỏ qua `composer install` / `npm install` nếu thư mục `vendor` / `node_modules` đã có sẵn nhằm tối ưu hóa thời gian chờ đợi. Kiểm tra và tự động sao chép cấu hình `.env`, tự tạo `APP_KEY`, tự động đồng bộ hóa liên kết thư mục `public/storage` (Storage Link), và cho phép thực thi migration + seeders dữ liệu mẫu ngay lập tức.
+  - **[2] DRIVER SETUP (Thiết lập CSDL):** Chuyển đổi và thiết lập cơ sở dữ liệu động:
+    - **SQLite:** Tự tạo tệp tin `database/database.sqlite` (nếu thiếu), tự cập nhật `.env` sang `DB_CONNECTION=sqlite`, đồng thời ẩn/comment-out toàn bộ cấu hình MySQL không cần thiết bằng Powershell in-place replacement siêu tốc.
+    - **MySQL:** Hỗ trợ giao diện nhập cấu hình trực quan, tự lưu giá trị mặc định (Host: `127.0.0.1`, Port: `3306`, Database: `dienmay_pro`, Username: `root`) nếu người dùng chỉ nhấn Enter. Sử dụng Powershell động cập nhật chuẩn xác dữ liệu vào `.env`.
+  - **[3] CLEAN REBUILD (Cài đặt lại sạch):** Trình dọn dẹp hệ thống chuyên sâu, tự động xóa sạch `vendor/`, `node_modules/`, `.env`, `package-lock.json`, và `database.sqlite` cũ, sau đó tái thiết lập toàn bộ môi trường và tải lại thư viện hoàn toàn mới 100%.
+- **Các file sửa đổi:**
+  - `start.bat` (Thư mục gốc dự án)
+
+### 35. Hệ thống xác thực API Sanctum chuyên sâu (API Sanctum Authentication Suite)
+- **Mục tiêu:** Triển khai hệ thống xác thực API chuẩn bảo mật bằng Laravel Sanctum thay thế cho hệ thống lưu trữ session tùy chỉnh cũ, phục vụ kết nối di động và API tích hợp.
+- **Tính năng triển khai:**
+  - **Sanctum Trait Integration:** Bổ sung trait `Laravel\Sanctum\HasApiTokens` vào Model `User.php`. Thêm các PHPDoc và `@mixin` block vào `User.php` và `Role.php` để hỗ trợ IDE tối đa và loại bỏ cảnh báo lỗi linting.
+  - **Auth API Controller (`AuthController.php`):** Định nghĩa 3 phương thức API: `login()` (Xác thực thông tin đăng nhập, trả về Bearer Token, từ chối tài khoản Banned), `me()` (Trả về thông tin tài khoản hiện tại qua `UserResource`), và `logout()` (Thu hồi token hiện tại `currentAccessToken()->delete()`).
+  - **Custom Guard Middleware (`ApiAuthMiddleware.php`):** Middleware lọc quyền truy cập API qua Sanctum guard, kiểm tra trạng thái cấm hoạt động của tài khoản (`is_banned`). Nếu bị khóa, hệ thống lập tức thu hồi toàn bộ token hoạt động của user và trả về lỗi `403 Forbidden`.
+  - **Automated API Testing Suite (`ApiAuthTest.php`):** Viết đầy đủ các ca kiểm thử tự động (Feature Tests) bao gồm: Đăng nhập thành công, Đăng nhập thất bại (sai mật khẩu/email), Lỗi kiểm duyệt dữ liệu đầu vào (Validation errors), Đăng nhập bằng tài khoản bị khóa (Banned), Truy cập profile hợp lệ/không hợp lệ, và Thu hồi token hoàn chỉnh khi Logout.
+  - **Postman API Collection (`DienMayPro_Auth_API.postman_collection.json`):** Cung cấp bộ sưu tập Postman hoàn chỉnh được lưu trong thư mục `scratch`, tích hợp sẵn Test Script tự động trích xuất token lưu vào biến môi trường để gọi các API tiếp theo.
+- **Các file sửa đổi / tạo mới:**
+  - `app/Models/User.php` (Sửa đổi)
+  - `app/Models/Role.php` (Sửa đổi)
+  - `app/Http/Controllers/Api/AuthController.php` (Tạo mới)
+  - `app/Http/Middleware/ApiAuthMiddleware.php` (Tạo mới)
+  - `bootstrap/app.php` (Sửa đổi)
+  - `routes/api.php` (Sửa đổi)
+  - `tests/Feature/ApiAuthTest.php` (Tạo mới)
+  - `scratch/DienMayPro_Auth_API.postman_collection.json` (Tạo mới)
+>>>>>>> xuanhoa/Login
 
 
