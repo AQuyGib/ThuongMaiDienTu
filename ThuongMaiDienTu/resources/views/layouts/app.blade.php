@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Hệ thống bán lẻ điện thoại di động, máy tính')</title>
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Hệ thống bán lẻ điện thoại, laptop, phụ kiện chính hãng, giá tốt nhất thị trường. Mua trả góp 0%, giao hàng nhanh toàn quốc.">
-    <meta name="keywords" content="điện thoại, laptop, tablet, phụ kiện công nghệ, apple, samsung">
+    <meta name="description" content="@yield('meta_description', 'Hệ thống bán lẻ điện thoại, laptop, phụ kiện chính hãng, giá tốt nhất thị trường. Mua trả góp 0%, giao hàng nhanh toàn quốc.')">
+    <meta name="keywords" content="@yield('meta_keywords', 'điện thoại, laptop, tablet, phụ kiện công nghệ, apple, samsung')">
     <meta name="robots" content="index, follow">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Font Awesome -->

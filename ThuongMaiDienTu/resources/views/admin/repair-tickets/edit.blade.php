@@ -106,9 +106,24 @@
                 </div>
             </div>
 
-            <div>
-                <label class="mb-1 block text-sm font-medium text-gray-700">Mô tả lỗi / Yêu cầu sửa chữa <span class="text-red-500">*</span></label>
-                <textarea name="issue_desc" rows="3" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required placeholder="Nhập chi tiết lỗi máy...">{{ old('issue_desc', $repairTicket->issue_desc) }}</textarea>
+            <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Mô tả lỗi / Yêu cầu sửa chữa <span class="text-red-500">*</span></label>
+                    <textarea name="issue_desc" rows="5" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required placeholder="Nhập chi tiết lỗi máy...">{{ old('issue_desc', $repairTicket->issue_desc) }}</textarea>
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Ảnh chụp thiết bị lỗi (khách hàng tải lên)</label>
+                    @if ($repairTicket->device_image)
+                        <div class="mt-1 border border-gray-200 rounded-lg p-2 bg-gray-50 flex justify-center">
+                            <img src="{{ asset($repairTicket->device_image) }}" class="max-h-40 rounded-lg shadow-sm border border-gray-200" alt="Device Error Image">
+                        </div>
+                    @else
+                        <div class="mt-1 border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 flex flex-col items-center justify-center text-gray-400 h-[126px]">
+                            <i class="fa-regular fa-image text-2xl mb-1"></i>
+                            <span class="text-xs">Không có ảnh chụp đính kèm</span>
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -152,6 +167,85 @@
                 @error('status') <p class="mt-1 text-xs text-red-600"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</p> @enderror
             </div>
         </div>
+
+        @if ($repairTicket->ai_diagnosed)
+        <!-- Card AI: Kết quả phân tích tự động bằng AI -->
+        <div class="rounded-xl border border-purple-200 bg-purple-50/50 p-6 shadow-sm space-y-4">
+            <div class="border-b border-purple-100 pb-3 flex justify-between items-center">
+                <h2 class="text-base font-semibold text-purple-950 flex items-center gap-2">
+                    <i class="fa-solid fa-robot text-purple-600"></i> Kết quả chẩn đoán tự động bằng AI (Google Gemini)
+                </h2>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-0.5 text-xs font-semibold text-purple-800 animate-pulse">
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Gemini Active
+                </span>
+            </div>
+            
+            <div class="grid gap-4 md:grid-cols-3">
+                <div class="bg-white p-4 rounded-lg border border-purple-100 shadow-sm">
+                    <span class="text-xs text-purple-500 font-medium block">Loại lỗi dự đoán</span>
+                    <strong class="text-sm text-purple-950 mt-1 block">{{ $repairTicket->ai_fault_type ?? 'N/A' }}</strong>
+                </div>
+                <div class="bg-white p-4 rounded-lg border border-purple-100 shadow-sm">
+                    <span class="text-xs text-purple-500 font-medium block">Mức độ phức tạp</span>
+                    <strong class="text-sm text-purple-950 mt-1 block">{{ $repairTicket->ai_complexity_level ?? 'N/A' }}</strong>
+                </div>
+                <div class="bg-white p-4 rounded-lg border border-purple-100 shadow-sm">
+                    <span class="text-xs text-purple-500 font-medium block">Ước lượng khoảng giá</span>
+                    <strong class="text-sm text-purple-950 mt-1 block">{{ number_format($repairTicket->ai_estimated_cost_min ?? 0, 0, ',', '.') }} đ - {{ number_format($repairTicket->ai_estimated_cost_max ?? 0, 0, ',', '.') }} đ</strong>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg border border-purple-100 shadow-sm">
+                <span class="text-xs text-purple-500 font-medium block">Linh kiện / Giải pháp đề xuất</span>
+                <p class="text-sm text-purple-950 font-semibold mt-1">{{ $repairTicket->ai_replacement_parts ?? 'N/A' }}</p>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="bg-white p-4 rounded-lg border border-purple-100 shadow-sm space-y-2">
+                    <span class="text-xs text-purple-500 font-bold block"><i class="fa-solid fa-circle-notch text-purple-500"></i> Nguyên nhân có thể xảy ra</span>
+                    <ul class="list-disc list-inside text-xs text-purple-900 space-y-1">
+                        @php
+                            $causes = is_string($repairTicket->ai_probable_causes) ? json_decode($repairTicket->ai_probable_causes, true) : $repairTicket->ai_probable_causes;
+                        @endphp
+                        @if (is_array($causes) && count($causes) > 0)
+                            @foreach ($causes as $cause)
+                                <li>{{ $cause }}</li>
+                            @endforeach
+                        @else
+                            <li class="text-gray-400 italic">Không có thông tin nguyên nhân</li>
+                        @endif
+                    </ul>
+                </div>
+                
+                <div class="bg-red-50/50 p-4 rounded-lg border border-red-100 shadow-sm space-y-2">
+                    <span class="text-xs text-red-600 font-bold block"><i class="fa-solid fa-circle-exclamation text-red-500"></i> Khuyến cáo & Cảnh báo rủi ro từ AI</span>
+                    <ul class="list-disc list-inside text-xs text-red-900 space-y-1">
+                        @php
+                            $warnings = is_string($repairTicket->ai_risk_warnings) ? json_decode($repairTicket->ai_risk_warnings, true) : $repairTicket->ai_risk_warnings;
+                        @endphp
+                        @if (is_array($warnings) && count($warnings) > 0)
+                            @foreach ($warnings as $warning)
+                                <li>{{ $warning }}</li>
+                            @endforeach
+                        @else
+                            <li class="text-gray-400 italic">Không có rủi ro nào đáng lo ngại</li>
+                        @endif
+                    </ul>
+                </div>
+            </div>
+
+            <div class="bg-blue-50/60 p-4 rounded-lg border border-blue-100 shadow-sm flex gap-3 items-start">
+                <i class="fa-solid fa-user-gear text-blue-600 text-lg mt-0.5 animate-bounce"></i>
+                <div class="space-y-1">
+                    <span class="text-xs text-blue-700 font-semibold block">Phân công kỹ thuật viên đề xuất</span>
+                    <p class="text-sm text-blue-950 font-bold">{{ optional($repairTicket->technician)->full_name ?? 'Chưa gán' }}</p>
+                    <p class="text-xs text-blue-800 italic mt-1 leading-relaxed">
+                        <strong>Lý do điều phối:</strong> {{ $repairTicket->ai_dispatch_reason ?? 'Chưa xác định lý do' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        @endif
 
         <div class="flex items-center gap-3">
             <x-ui.button

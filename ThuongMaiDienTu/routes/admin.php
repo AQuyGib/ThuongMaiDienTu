@@ -86,8 +86,10 @@ Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.qr');
 
 // ===== Quản lý Bài viết (Articles / Ecosystem) =====
+Route::post('articles/bulk-approve-ai', [ArticleController::class, 'bulkApproveAi'])->name('articles.bulk-approve-ai');
 Route::resource('articles', ArticleController::class);
 Route::post('articles/{id}/approve', [ArticleController::class, 'approve'])->name('articles.approve');
+Route::post('articles/{id}/reject', [ArticleController::class, 'reject'])->name('articles.reject');
 
 // ===== Quản lý Nhà Cung Cấp =====
 Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');

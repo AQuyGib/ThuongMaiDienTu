@@ -1838,7 +1838,7 @@
             <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 18px;" onclick="closeRepairModal()"></i>
         </div>
         <div class="student-modal-body" style="max-height: 75vh; overflow-y: auto;">
-            <form id="repairRegistrationForm" action="{{ route('profile.repair-tickets.store') }}" method="POST">
+            <form id="repairRegistrationForm" action="{{ route('profile.repair-tickets.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="grid-2-cols">
                     <!-- SECTION 1: CONTACT INFO -->
@@ -1895,16 +1895,89 @@
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="form-group" style="margin-bottom: 0;">
+                        <div class="form-group" style="margin-bottom: 12px;">
                             <label>Mô tả tình trạng lỗi *</label>
                             <textarea name="issue_desc" id="repIssueDesc" class="form-control @error('issue_desc') is-invalid @enderror" rows="4" placeholder="Mô tả chi tiết tình trạng máy lỗi và linh kiện cần thay thế..." style="resize: none;" required maxlength="500">{{ old('issue_desc') }}</textarea>
                             @error('issue_desc')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
                         </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Ảnh chụp tình trạng / lỗi (AI Vision)</label>
+                            <input type="file" name="device_image" id="repDeviceImage" accept="image/*" class="form-control" onchange="previewRepairImage(this)">
+                            <div id="repairImagePreviewWrap" style="display: none; margin-top: 8px; text-align: center; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 5px; position: relative;">
+                                <img id="repairImagePreview" src="" style="max-height: 120px; border-radius: 6px;">
+                                <button type="button" onclick="removeRepairImage()" style="position: absolute; top: 5px; right: 5px; background: rgba(226, 16, 51, 0.8); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
+
+                <!-- AI DIAGNOSIS INTERACTIVE SECTION -->
+                <div style="margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+                    <button type="button" id="btnAIDiagnose" class="btn-update" style="margin: 0; width: 100%; background: linear-gradient(135deg, #7c3aed, #0046ab); display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; border: none; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.25);">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> ✨ Phân tích & Chẩn đoán lỗi bằng AI
+                    </button>
+
+                    <!-- AI Diagnosis Report Card -->
+                    <div id="aiDiagnosisReport" style="display: none; background: rgba(243, 244, 246, 0.75); border: 1px solid #7c3aed; border-radius: 12px; padding: 15px; margin-top: 15px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); backdrop-filter: blur(4px);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 10px;">
+                            <strong style="color: #7c3aed; font-size: 14px; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-robot"></i> KẾT QUẢ CHẨN ĐOÁN & TƯ VẤN AI</strong>
+                            <span id="aiComplexityBadge" class="status-badge" style="font-size: 11px; background: #f3e8ff; color: #7c3aed; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Trung bình</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 10px; font-size: 13px;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
+                                <span><strong>Loại lỗi dự đoán:</strong></span>
+                                <strong id="aiFaultType" style="color: #1e293b;">-</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
+                                <span><strong>Giải pháp / Linh kiện dự kiến:</strong></span>
+                                <strong id="aiReplacementParts" style="color: #1e293b;">-</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; align-items: center;">
+                                <span><strong>Khoảng giá dự toán:</strong></span>
+                                <strong id="aiEstimatedCostRange" style="color: #e21033; font-size: 15px;">-</strong>
+                            </div>
+                            
+                            <!-- Cảnh báo rủi ro -->
+                            <div id="aiRiskWarningsBox" style="background: #fff5f5; border-left: 4px solid #f87171; border-radius: 4px; padding: 8px; margin-top: 5px;">
+                                <strong style="color: #c53030; font-size: 12px; display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-circle-exclamation"></i> CẢNH BÁO RỦI RO:</strong>
+                                <ul id="aiRiskWarningsList" style="margin: 4px 0 0 15px; padding: 0; color: #9b2c2c; font-size: 12px; list-style-type: disc;">
+                                </ul>
+                            </div>
+
+                            <!-- Nguyên nhân -->
+                            <div style="margin-top: 5px;">
+                                <strong>Nguyên nhân có thể xảy ra:</strong>
+                                <ul id="aiProbableCausesList" style="margin: 4px 0 0 15px; padding: 0; color: #475569; list-style-type: circle; line-height: 1.4;">
+                                </ul>
+                            </div>
+
+                            <!-- Phân công kỹ thuật viên -->
+                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px; margin-top: 8px; display: flex; align-items: flex-start; gap: 10px;">
+                                <i class="fa-solid fa-user-gear" style="font-size: 20px; color: #0284c7; margin-top: 2px;"></i>
+                                <div>
+                                    <strong style="color: #1e3a8a;">Kỹ thuật viên phụ trách đề xuất:</strong> <span id="aiAssignedTech" style="color: #0284c7; font-weight: bold;">-</span>
+                                    <p id="aiDispatchReason" style="margin: 4px 0 0 0; font-size: 12px; color: #4b5563; font-style: italic; line-height: 1.4;"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs for AI diagnostic results -->
+                <input type="hidden" name="ai_diagnosed" id="hidAiDiagnosed" value="0">
+                <input type="hidden" name="ai_fault_type" id="hidAiFaultType">
+                <input type="hidden" name="ai_probable_causes" id="hidAiProbableCauses">
+                <input type="hidden" name="ai_risk_warnings" id="hidAiRiskWarnings">
+                <input type="hidden" name="ai_replacement_parts" id="hidAiReplacementParts">
+                <input type="hidden" name="ai_estimated_cost_min" id="hidAiEstimatedCostMin">
+                <input type="hidden" name="ai_estimated_cost_max" id="hidAiEstimatedCostMax">
+                <input type="hidden" name="ai_complexity_level" id="hidAiComplexityLevel">
+                <input type="hidden" name="ai_recommended_skills" id="hidAiRecommendedSkills">
+                <input type="hidden" name="ai_dispatch_reason" id="hidAiDispatchReason">
+                <input type="hidden" name="assigned_technician_id" id="hidAssignedTechnicianId">
+
                 <div style="font-size: 11px; color: #64748b; font-style: italic; margin-top: 15px;">
                     * Lưu ý: Quý khách vui lòng mang thiết bị đến cửa hàng theo đúng ngày hẹn để được nhân viên hỗ trợ kiểm tra nhanh nhất.
                 </div>
@@ -1933,6 +2006,26 @@
                     <div><span id="track-date-label" style="color: #64748b;">{{ __('ui.repair_date_received_label') }}</span> <strong id="track-date">-</strong></div>
                     <div style="grid-column: 1 / -1;"><span style="color: #64748b;">{{ __('ui.repair_error_desc') }}</span> <span id="track-desc">-</span></div>
                     <div style="grid-column: 1 / -1;"><span style="color: #64748b;">{{ __('ui.repair_technician') }}</span> <strong id="track-tech" style="color: #0046ab;">{{ __('ui.repair_tech_assigning') }}</strong></div>
+                </div>
+            </div>
+
+            <!-- Ảnh chụp thiết bị thực tế -->
+            <div id="track-image-container" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; text-align: center;">
+                <span style="color: #64748b; font-size: 13px; display: block; margin-bottom: 8px; text-align: left; font-weight: 600;"><i class="fa-regular fa-image"></i> Hình ảnh thiết bị:</span>
+                <img id="track-device-image" src="" style="max-height: 180px; border-radius: 8px; border: 1px solid #cbd5e1; display: inline-block;">
+            </div>
+
+            <!-- Bản tin tư vấn & Chẩn đoán AI -->
+            <div id="track-ai-report" style="display: none; background: rgba(124, 58, 237, 0.06); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 12px; padding: 15px; margin-bottom: 20px; font-size: 13px;">
+                <div style="color: #7c3aed; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-robot"></i> Chẩn đoán & Khuyến nghị từ AI</div>
+                <div style="display: grid; gap: 6px;">
+                    <div><span style="color: #64748b;">Chẩn đoán loại lỗi:</span> <strong id="track-ai-fault-type" style="color: #1e293b;">-</strong></div>
+                    <div><span style="color: #64748b;">Linh kiện/Giải pháp dự kiến:</span> <strong id="track-ai-parts" style="color: #1e293b;">-</strong></div>
+                    <div><span style="color: #64748b;">Chi phí dự toán:</span> <strong id="track-ai-cost" style="color: #e21033;">-</strong></div>
+                    <div id="track-ai-warnings-box" style="background: #fff5f5; border-left: 3px solid #ef4444; padding: 8px; border-radius: 4px; margin-top: 5px;">
+                        <div style="color: #b91c1c; font-weight: bold; font-size: 12px; margin-bottom: 4px;"><i class="fa-solid fa-circle-exclamation"></i> Khuyến cáo phòng ngừa từ AI:</div>
+                        <ul id="track-ai-warnings" style="margin: 0 0 0 15px; padding: 0; color: #7f1d1d; font-size: 12px; list-style-type: disc;"></ul>
+                    </div>
                 </div>
             </div>
 
@@ -2802,10 +2895,149 @@
     function closeRepairModal() {
         document.getElementById('repairModal').classList.remove('active');
         document.getElementById('repairRegistrationForm').reset();
+        removeRepairImage();
+        document.getElementById('aiDiagnosisReport').style.display = 'none';
+        document.getElementById('hidAiDiagnosed').value = '0';
     }
     function closeTrackingModal() {
         document.getElementById('trackingModal').classList.remove('active');
     }
+
+    // Xử lý ảnh chụp xem trước
+    function previewRepairImage(input) {
+        const previewWrap = document.getElementById('repairImagePreviewWrap');
+        const previewImg = document.getElementById('repairImagePreview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewWrap.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function removeRepairImage() {
+        const fileInput = document.getElementById('repDeviceImage');
+        const previewWrap = document.getElementById('repairImagePreviewWrap');
+        const previewImg = document.getElementById('repairImagePreview');
+        if (fileInput) fileInput.value = '';
+        if (previewImg) previewImg.src = '';
+        if (previewWrap) previewWrap.style.display = 'none';
+    }
+
+    // AJAX Gọi AI chẩn đoán lỗi & dispatch
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnAIDiagnose = document.getElementById('btnAIDiagnose');
+        if (btnAIDiagnose) {
+            btnAIDiagnose.addEventListener('click', function() {
+                const issueDescInput = document.getElementById('repIssueDesc');
+                const issueDesc = issueDescInput.value.trim();
+
+                if (!issueDesc || issueDesc.length < 10) {
+                    showToast('Cảnh báo', 'Vui lòng điền mô tả lỗi chi tiết hơn (tối thiểu 10 ký tự) để AI phân tích chính xác.', 'warning');
+                    issueDescInput.focus();
+                    return;
+                }
+
+                const originalHTML = btnAIDiagnose.innerHTML;
+                btnAIDiagnose.disabled = true;
+                btnAIDiagnose.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích và chẩn đoán lỗi...';
+
+                const formData = new FormData();
+                formData.append('issue_desc', issueDesc);
+                
+                const fileInput = document.getElementById('repDeviceImage');
+                if (fileInput && fileInput.files && fileInput.files[0]) {
+                    formData.append('device_image', fileInput.files[0]);
+                }
+
+                fetch('{{ route("profile.repair-tickets.ai-diagnose") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                })
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(err => { throw new Error(err.error || err.message || 'Lỗi hệ thống'); });
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    btnAIDiagnose.disabled = false;
+                    btnAIDiagnose.innerHTML = originalHTML;
+
+                    document.getElementById('aiDiagnosisReport').style.display = 'block';
+                    document.getElementById('aiFaultType').innerText = data.ai_fault_type;
+                    document.getElementById('aiReplacementParts').innerText = data.ai_replacement_parts;
+                    
+                    const costMin = new Intl.NumberFormat('vi-VN').format(data.ai_estimated_cost_min);
+                    const costMax = new Intl.NumberFormat('vi-VN').format(data.ai_estimated_cost_max);
+                    document.getElementById('aiEstimatedCostRange').innerText = `${costMin} đ - ${costMax} đ`;
+
+                    const compBadge = document.getElementById('aiComplexityBadge');
+                    compBadge.innerText = data.ai_complexity_level;
+                    if (data.ai_complexity_level === 'Dễ') {
+                        compBadge.style.background = '#dcfce7';
+                        compBadge.style.color = '#15803d';
+                    } else if (data.ai_complexity_level === 'Khó') {
+                        compBadge.style.background = '#fee2e2';
+                        compBadge.style.color = '#b91c1c';
+                    } else {
+                        compBadge.style.background = '#f3e8ff';
+                        compBadge.style.color = '#7c3aed';
+                    }
+
+                    const riskList = document.getElementById('aiRiskWarningsList');
+                    riskList.innerHTML = '';
+                    if (data.ai_risk_warnings && data.ai_risk_warnings.length > 0) {
+                        data.ai_risk_warnings.forEach(risk => {
+                            const li = document.createElement('li');
+                            li.innerText = risk;
+                            riskList.appendChild(li);
+                        });
+                        document.getElementById('aiRiskWarningsBox').style.display = 'block';
+                    } else {
+                        document.getElementById('aiRiskWarningsBox').style.display = 'none';
+                    }
+
+                    const causeList = document.getElementById('aiProbableCausesList');
+                    causeList.innerHTML = '';
+                    if (data.ai_probable_causes && data.ai_probable_causes.length > 0) {
+                        data.ai_probable_causes.forEach(cause => {
+                            const li = document.createElement('li');
+                            li.innerText = cause;
+                            causeList.appendChild(li);
+                        });
+                    }
+
+                    document.getElementById('aiAssignedTech').innerText = data.technician_name;
+                    document.getElementById('aiDispatchReason').innerText = data.ai_dispatch_reason;
+
+                    document.getElementById('hidAiDiagnosed').value = '1';
+                    document.getElementById('hidAiFaultType').value = data.ai_fault_type;
+                    document.getElementById('hidAiProbableCauses').value = JSON.stringify(data.ai_probable_causes);
+                    document.getElementById('hidAiRiskWarnings').value = JSON.stringify(data.ai_risk_warnings);
+                    document.getElementById('hidAiReplacementParts').value = data.ai_replacement_parts;
+                    document.getElementById('hidAiEstimatedCostMin').value = data.ai_estimated_cost_min;
+                    document.getElementById('hidAiEstimatedCostMax').value = data.ai_estimated_cost_max;
+                    document.getElementById('hidAiComplexityLevel').value = data.ai_complexity_level;
+                    document.getElementById('hidAiRecommendedSkills').value = JSON.stringify(data.ai_recommended_skills);
+                    document.getElementById('hidAiDispatchReason').value = data.ai_dispatch_reason;
+                    document.getElementById('hidAssignedTechnicianId').value = data.assigned_technician_id;
+
+                    showToast('Thành công', 'AI đã chẩn đoán lỗi thiết bị và đề xuất kỹ thuật viên phù hợp!', 'success');
+                })
+                .catch(err => {
+                    btnAIDiagnose.disabled = false;
+                    btnAIDiagnose.innerHTML = originalHTML;
+                    showToast('Lỗi', err.message || 'Lỗi kết nối máy chủ khi gọi AI chẩn đoán.', 'error');
+                });
+            });
+        }
+    });
 
     /**
      * ĐỌC VÀ HIỂN THỊ TIẾN TRÌNH SỬA CHỮA THIẾT BỊ LÊN TRỤC BẬC THANG (STEPPER PROGRESS)
@@ -2820,6 +3052,46 @@
         document.getElementById('track-id').innerText = ticket.ticket_id;
         document.getElementById('track-imei').innerText = ticket.imei_serial;
         document.getElementById('track-desc').innerText = ticket.issue_desc;
+        
+        // Cập nhật ảnh chụp thiết bị trong tracking modal
+        const trackImgContainer = document.getElementById('track-image-container');
+        const trackImg = document.getElementById('track-device-image');
+        if (ticket.device_image) {
+            trackImg.src = '/' + ticket.device_image;
+            trackImgContainer.style.display = 'block';
+        } else {
+            trackImg.src = '';
+            trackImgContainer.style.display = 'none';
+        }
+
+        // Cập nhật chẩn đoán AI trong tracking modal
+        const trackAiReport = document.getElementById('track-ai-report');
+        if (ticket.ai_diagnosed) {
+            document.getElementById('track-ai-fault-type').innerText = ticket.ai_fault_type || 'Phần cứng';
+            document.getElementById('track-ai-parts').innerText = ticket.ai_replacement_parts || 'Cần kiểm tra trực tiếp';
+            
+            const costRange = (ticket.ai_estimated_cost_min && ticket.ai_estimated_cost_max)
+                ? `${new Intl.NumberFormat('vi-VN').format(ticket.ai_estimated_cost_min)} đ - ${new Intl.NumberFormat('vi-VN').format(ticket.ai_estimated_cost_max)} đ`
+                : 'Chưa ước lượng';
+            document.getElementById('track-ai-cost').innerText = costRange;
+
+            const warningsList = document.getElementById('track-ai-warnings');
+            warningsList.innerHTML = '';
+            const warnings = typeof ticket.ai_risk_warnings === 'string' ? JSON.parse(ticket.ai_risk_warnings) : ticket.ai_risk_warnings;
+            if (warnings && warnings.length > 0) {
+                warnings.forEach(w => {
+                    const li = document.createElement('li');
+                    li.innerText = w;
+                    warningsList.appendChild(li);
+                });
+                document.getElementById('track-ai-warnings-box').style.display = 'block';
+            } else {
+                document.getElementById('track-ai-warnings-box').style.display = 'none';
+            }
+            trackAiReport.style.display = 'block';
+        } else {
+            trackAiReport.style.display = 'none';
+        }
         
         const scheduleDate = new Date(ticket.schedule_date);
         const day = String(scheduleDate.getDate()).padStart(2, '0');

@@ -210,9 +210,51 @@
                         <div class="tiny-label">04 — UGC & Gamification</div>
                         <h2 class="text-xl font-black text-slate-900">Duyệt bài & điểm thưởng</h2>
                         <div class="text-sm text-slate-600 space-y-1">
-                            <p><span class="font-bold">Trạng thái hiện tại:</span> {{ $article->status }}</p>
+                            <p><span class="font-bold">Trạng thái hiện tại:</span> 
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold
+                                    @if($article->status === 'approved') bg-emerald-100 text-emerald-800
+                                    @elseif($article->status === 'rejected') bg-rose-100 text-rose-800
+                                    @else bg-amber-100 text-amber-800 @endif">
+                                    {{ $article->status }}
+                                </span>
+                            </p>
                             <p><span class="font-bold">Khách hàng viết bài:</span> {{ $article->author->full_name ?? 'Không xác định' }}</p>
                         </div>
+
+                        {{-- Hiển thị thông tin nhận định từ AI nếu có --}}
+                        @if($article->ai_checked)
+                            <div class="rounded-[1.5rem] bg-slate-50 border border-slate-200 p-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500 animate-pulse"></i>
+                                        Nhận định từ AI
+                                    </div>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider
+                                        @if($article->ai_moderation_verdict === 'approved') bg-emerald-50 text-emerald-700 border border-emerald-200
+                                        @elseif($article->ai_moderation_verdict === 'flagged') bg-amber-50 text-amber-700 border border-amber-200
+                                        @else bg-rose-50 text-rose-700 border border-rose-200 @endif">
+                                        {{ $article->ai_moderation_verdict === 'approved' ? 'AN TOÀN' : ($article->ai_moderation_verdict === 'flagged' ? 'CẦN XEM XÉT' : 'VI PHẠM') }}
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-center text-[11px]">
+                                    <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                        <div class="text-[9px] text-slate-400 font-bold uppercase">Chất lượng</div>
+                                        <div class="font-extrabold text-slate-800 mt-0.5">{{ $article->ai_quality_score }}/100</div>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                        <div class="text-[9px] text-slate-400 font-bold uppercase">Điểm SEO</div>
+                                        <div class="font-extrabold text-slate-800 mt-0.5">{{ $article->seo_score }}/100</div>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                        <div class="text-[9px] text-slate-400 font-bold uppercase">Gợi ý thưởng</div>
+                                        <div class="font-extrabold text-amber-600 mt-0.5">+{{ $article->ai_analysis['recommended_reward_points'] ?? 20 }}đ</div>
+                                    </div>
+                                </div>
+                                <p class="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-100 leading-relaxed">
+                                    <strong>Chi tiết:</strong> {{ $article->ai_analysis['moderation_reason'] ?? 'Không có lý do chi tiết.' }}
+                                </p>
+                            </div>
+                        @endif
 
                         {{-- Nếu bài viết đang ở trạng thái chờ duyệt --}}
                         @if($article->status === 'pending')
@@ -220,14 +262,21 @@
                                 <p class="text-sm font-medium text-slate-700">Duyệt bài và tiến hành cộng điểm thưởng tích lũy cho thành viên.</p>
                                 <div class="flex gap-3">
                                     {{-- Ô nhập số điểm thưởng --}}
-                                    <input type="number" form="approve_form" name="points" class="w-28 px-4 py-3 rounded-2xl border border-slate-200 bg-white outline-none focus:ring-4 focus:ring-amber-500/10" placeholder="500">
-                                    <button type="submit" form="approve_form" class="flex-1 rounded-2xl bg-amber-500 text-white font-black hover:bg-amber-600 transition px-4 py-3">Duyệt & Cộng điểm</button>
+                                    <input type="number" form="approve_form" name="points" value="{{ old('points', $article->ai_analysis['recommended_reward_points'] ?? '') }}" class="w-28 px-4 py-3 rounded-2xl border border-slate-200 bg-white outline-none focus:ring-4 focus:ring-amber-500/10 text-slate-800 font-bold text-center" placeholder="Điểm...">
+                                    <button type="submit" form="approve_form" class="flex-1 rounded-2xl bg-amber-500 text-white font-black hover:bg-amber-600 transition px-4 py-3 shadow-md shadow-amber-200">Duyệt & Cộng điểm</button>
+                                </div>
+                                <div class="pt-2 border-t border-amber-100/50">
+                                    <button type="submit" form="reject_form" class="w-full rounded-2xl bg-rose-500 text-white font-black hover:bg-rose-600 transition px-4 py-3 shadow-md shadow-rose-100">Từ chối bài viết</button>
                                 </div>
                             </div>
                         {{-- Nếu bài viết đã được duyệt thành công trước đó --}}
                         @elseif($article->status === 'approved')
-                            <div class="rounded-[1.5rem] bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 font-semibold">
+                            <div class="rounded-[1.5rem] bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 font-semibold text-center">
                                 Đã duyệt thành công và đã cộng {{ $article->reward_points_awarded }} điểm vào ví tích điểm của khách hàng.
+                            </div>
+                        @elseif($article->status === 'rejected')
+                            <div class="rounded-[1.5rem] bg-rose-50 border border-rose-100 p-4 text-rose-700 font-semibold text-center">
+                                Bài viết đã bị từ chối phê duyệt.
                             </div>
                         @endif
                     </div>
@@ -249,9 +298,10 @@
         </div>
     </form>
 
-    {{-- Form phụ dùng để submit request duyệt bài viết UGC --}}
+    {{-- Form phụ dùng để submit request duyệt/từ chối bài viết UGC --}}
     @if($article->exists && $article->author_type === 'customer' && $article->status === 'pending')
         <form id="approve_form" action="{{ route('admin.articles.approve', $article->article_id) }}" method="POST" class="hidden">@csrf</form>
+        <form id="reject_form" action="{{ route('admin.articles.reject', $article->article_id) }}" method="POST" class="hidden">@csrf</form>
     @endif
 
     {{-- PHẦN REAL-TIME LIVE PREVIEW MÔ PHỎNG HIỂN THỊ TRÊN CÁC DÒNG THIẾT BỊ --}}

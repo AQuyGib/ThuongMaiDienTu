@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
-@section('title', $article->title . ' - Lifestyle DIENMAY PRO')
+@section('title', ($article->seo_title ?: $article->title) . ' - Lifestyle DIENMAY PRO')
+@section('meta_description', $article->seo_description ?: $article->summary ?: 'Xem chi tiết bài viết công nghệ mới nhất tại DIENMAY PRO.')
+@section('meta_keywords', is_array($article->seo_keywords) ? implode(', ', array_column($article->seo_keywords, 'keyword')) : ($article->tags ? implode(', ', $article->tags) : 'lifestyle, dienmay pro'))
 
 @push('styles')
 <style>
@@ -117,6 +119,20 @@
             <article class="article-content prose prose-slate max-w-none">
                 {!! $article->content !!}
             </article>
+
+            {{-- Thẻ tags động gợi ý bởi AI --}}
+            @if(is_array($article->tags) && count($article->tags) > 0)
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">Từ khóa bài viết:</div>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach($article->tags as $tag)
+                            <a href="{{ route('articles.index', ['tag' => ltrim($tag, '#')]) }}" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-wider transition">
+                                {{ str_starts_with($tag, '#') ? $tag : '#' . $tag }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             {{-- LIÊN KẾT HỆ SINH THÁI (ECOSYSTEM): Hiển thị nếu bài viết này được đính kèm liên kết với một Đơn Sửa Chữa (Repair Ticket) --}}
             @if($relatedTicket)

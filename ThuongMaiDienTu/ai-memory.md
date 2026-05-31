@@ -649,4 +649,103 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - **Kiểm thử:**
   - Viết file script chạy thử nghiệm `scratch_test_ai_recommendation.php` để giả lập quá trình gọi API gợi ý cho User hạng Vàng và hạng Đồng/Khách vãng lai, kiểm chứng tốc độ phản hồi và độ chính xác của logic định giá động.
 
+### 39. Tích hợp AI vào Phân hệ Đăng bài & Duyệt bài cộng điểm (Article UGC Moderation & SEO Assistant)
+- **Database & Model:**
+  - Thêm migration `2026_05_31_130000_add_ai_and_seo_fields_to_articles_table.php` bổ sung các trường lưu trữ tag động (`tags`), thông tin SEO (`seo_title`, `seo_description`, `seo_keywords`, `seo_score`) và điểm số AI (`ai_quality_score`, `ai_moderation_verdict`, `ai_analysis`, `ai_checked`).
+  - Cập nhật model `Article.php` cast JSON sang mảng cho các trường `tags`, `seo_keywords`, `ai_analysis`.
+- **Dịch vụ AI:**
+  - Xây dựng `ArticleAIService.php` tích hợp Google Gemini API để phân tích chất lượng bài viết, kiểm duyệt nội dung (spam, nhạy cảm, đạo văn), sinh hashtag động và gợi ý tối ưu SEO.
+- **Controller & Router:**
+  - Cập nhật `ArticleFrontendController.php` để gọi `ArticleAIService` khi tạo/sửa bài viết.
+  - Tự động duyệt bài viết và tặng 20 điểm thưởng tích lũy ví nếu bài viết đạt điểm chất lượng cao (`quality_score >= 80`) và an toàn (`approved`).
+  - Xây dựng route POST `/lifestyle/ai-assist` nhận AJAX kiểm tra SEO và chất lượng nội dung theo thời gian thực.
+- **Frontend Views:**
+  - `create.blade.php`: Tích hợp widget Trợ lý AI & SEO ở cột bên phải cho phép chạy phân tích và áp dụng nhanh đề xuất tiêu đề/meta. Loại bỏ hoàn toàn các thông báo alert() mặc định của trình duyệt, thay thế bằng hộp thoại cảnh báo SweetAlert2 và thông báo Toast góc trên cùng bên phải siêu đẹp, tăng tính đồng bộ và trải nghiệm người dùng cao cấp.
+  - `show.blade.php`: Tích hợp hiển thị danh sách dynamic tags ở chân bài viết và tối ưu hóa thẻ title/meta SEO động.
+  - `index.blade.php`: Cập nhật bộ lọc tag để hiển thị thêm các hashtag động thịnh hành từ DB và hiển thị tag trên mỗi card bài viết.
+- **Kiểm thử:**
+  - Viết file script chạy thử nghiệm `scratch_test_article_ai.php` để boot Laravel, gọi AI phân tích bài viết mẫu độc lập và kiểm chứng cấu trúc JSON phản hồi từ Gemini API.
+
+### 40. Tích hợp Lịch sử Kiểm duyệt AI vào trang quản lý bài viết Admin (Admin Articles AI Audit History)
+- **Backend Controller:**
+  - Cập nhật `App\Http\Controllers\Admin\ArticleController.php` để tính toán chính xác số liệu thống kê toàn cục (`total`, `approved`, `pending`, `rejected`, `ai_checked`).
+  - Hỗ trợ tham số truy vấn bộ lọc `status = 'ai_checked'` để lọc nhanh danh sách các bài viết đã được AI kiểm duyệt và quét nội dung.
+- **Frontend Admin Panel (`resources/views/admin/articles/index.blade.php`):**
+  - **KPI Cards Grid:** Nâng cấp từ 4 cột lên 5 cột, bổ sung thêm card thống kê số lượng bài viết **Đã quét AI**.
+  - **Filter Chips:** Bổ sung chip lọc trạng thái **Đã quét AI**.
+  - **Cột Kiểm duyệt AI:** Thêm cột mới hiển thị nhãn nhận định của AI (`An toàn`, `Xem xét`, `Vi phạm`) kèm chất lượng/SEO score dạng tóm tắt.
+  - **SweetAlert2 Audit Details Popup:** Tích hợp mã script AJAX/Event hiển thị popup chi tiết Nhật ký kiểm duyệt AI: điểm số, báo cáo spam, độ trùng lặp (đạo văn), từ ngữ nhạy cảm và danh sách dynamic tags được tạo bởi AI.
+- **Kiểm thử:**
+  - Sử dụng browser subagent để truy cập quản trị `/admin/articles` và xác nhận hoạt động của card thống kê, bộ lọc và popup chi tiết kiểm duyệt AI SweetAlert2.
+
+### 41. Hoàn thiện Hệ thống Kiểm duyệt và Từ chối bài viết AI (AI UGC Article Moderation & Rejection Finalized)
+- **Backend & Controllers:**
+  - Bổ sung phương thức `reject(string $id)` vào `Admin\ArticleController` để quản trị viên từ chối trực tiếp các bài viết UGC đang ở trạng thái `pending`.
+  - Tích hợp xử lý tự động từ chối bài viết (cập nhật trạng thái `rejected` khi `moderation_verdict === 'rejected'`) trong phương thức `store` và `update` của `ArticleFrontendController.php` khi khách hàng đăng hoặc sửa bài viết.
+  - Sửa đổi cơ chế cộng điểm thưởng của `update` để kiểm tra chính xác bài viết đã từng được cộng điểm trước đây (`hadPointsBefore = $article->reward_points_awarded > 0`) nhằm tránh việc cộng trùng lặp điểm khi người dùng chỉnh sửa bài viết nhiều lần.
+- **Frontend Views:**
+  - Đăng ký form ẩn `reject_form` trong `resources/views/admin/articles/form.blade.php` phục vụ nút "Từ chối bài viết" của Admin hoạt động chuẩn xác.
+  - Tối ưu hóa UI client-side trong `resources/views/articles/create.blade.php`: cập nhật layout grid hiển thị 3 cột điểm (Chất lượng bài, Điểm SEO, và Điểm thưởng AI đề xuất), tối ưu hiển thị tag, và trích xuất logic render AI sang hàm `renderAiResult(data)` để tái sử dụng.
+  - Tự động hiển thị kết quả phân tích AI đã lưu khi khách hàng chỉnh sửa bài viết cũ bằng cách pre-load `preloadedData` và render lên UI trong sự kiện `DOMContentLoaded`.
+- **Kiểm thử & Đánh giá:**
+  - Viết file test Feature hoàn chỉnh tại `tests/Feature/ArticleModerationTest.php` kiểm chứng: tự động duyệt bài viết chất lượng cao, tự động từ chối bài viết vi phạm của khách hàng, admin duyệt bài cộng điểm, admin từ chối bài viết, và cơ chế chống cộng điểm thưởng trùng lặp khi edit bài viết.
+  - Chạy thử nghiệm thành công 6/6 test cases của `ArticleModerationTest` đạt trạng thái OK (bao gồm cả test case duyệt hàng loạt đạt chuẩn AI).
+
+### 42. Bổ sung nút Duyệt hàng loạt bài viết đạt chuẩn AI (Bulk Approve AI-Qualified Articles)
+- **Backend & Controller & Routes:**
+  - Xây dựng phương thức `bulkApproveAi()` trong `Admin\ArticleController.php` để lấy toàn bộ các bài viết UGC đang ở trạng thái `pending`, đã được AI quét (`ai_checked = 1`) và được AI đánh giá là an toàn/hợp lệ (`ai_moderation_verdict = 'approved'`).
+  - Lặp qua từng bài viết, trích xuất điểm thưởng đề xuất trong `ai_analysis` (hoặc mặc định là 20 điểm nếu thiếu) và thực hiện gọi hàm nghiệp vụ `$article->approveAndReward($points)`.
+  - Khai báo route POST `/admin/articles/bulk-approve-ai` ánh xạ vào hàm `bulkApproveAi` trong `routes/admin.php`.
+- **Frontend View (Admin Articles Index):**
+  - Cập nhật `resources/views/admin/articles/index.blade.php`: Bổ sung kiểm tra sự tồn tại của các bài viết chờ duyệt đạt chuẩn AI. Nếu có, hiển thị một nút bấm/form màu emerald đẹp mắt **"Duyệt bài đạt chuẩn AI hàng loạt"** tích hợp hiệu ứng icon lấp lánh và SweetAlert2 xác nhận hành động trước khi submit.
+  - Tích hợp SweetAlert2 thay thế hoàn toàn hộp thoại xác nhận gốc (`confirm()`) cho cả hành động **Duyệt bài đạt chuẩn AI hàng loạt** và hành động **Xóa bài viết** giúp nâng cao đáng kể thẩm mỹ giao diện quản trị.
+  - Cập nhật `resources/views/admin/layouts/master.blade.php`: Tích hợp hiển thị Toast thông báo thành công / lỗi bằng SweetAlert2 tự động ở góc trên bên phải màn hình khi phát hiện có dữ liệu flash session từ server trả về.
+- **Kiểm thử:**
+  - Bổ sung test case `test_admin_bulk_approve_ai_articles` trong `tests/Feature/ArticleModerationTest.php` kiểm tra duyệt hàng loạt chính xác các bài viết đạt chuẩn AI, trong khi vẫn bỏ qua các bài viết bị gắn cờ (`flagged`) hoặc chưa được AI phân tích. Chạy kiểm thử thành công tuyệt đối.
+
+### 43. Tạo Seeder dữ liệu mẫu cho bài viết (AI UGC Articles Test Seeder)
+- **Hạ tầng & Dữ liệu mẫu:**
+  - Tạo file seeder `database/seeders/AITestArticleSeeder.php` tự động khởi tạo 10 bài viết mẫu với đầy đủ các trạng thái thực tế phục vụ quá trình kiểm thử giao diện Admin:
+    - 4 bài viết chờ duyệt đạt chuẩn AI (`moderation_verdict = 'approved'`), chất lượng từ 80% trở lên kèm điểm thưởng đề xuất phong phú (iPhone 15, Laptop văn phòng, Samsung S24 Ultra, Pin máy hút bụi).
+    - 2 bài viết bị gắn cờ cần xem xét (`moderation_verdict = 'flagged'`) do chia sẻ link bẻ khóa phần mềm hoặc phần mềm theo dõi điện thoại.
+    - 1 bài viết bị AI từ chối trực tiếp (`moderation_verdict = 'rejected'`) do nội dung spam viết hoa vô nghĩa.
+    - 2 bài viết chưa từng được quét qua bởi AI (`ai_checked = 0`).
+    - 1 bài viết đã được duyệt trước đó (`status = 'approved'`).
+  - Chạy lệnh `php artisan db:seed --class=AITestArticleSeeder` thành công để nạp ngay dữ liệu mẫu vào database.
+
+### 44. Tích hợp AI Chẩn đoán lỗi Thiết bị & Phân công kỹ thuật viên tự động (Phân hệ Sửa chữa & Bảo hành)
+- **Hạ tầng & Cơ sở dữ liệu:**
+  - Tạo migration `2026_05_31_140000_add_ai_fields_to_repair_tickets_table.php` bổ sung các trường thông tin chẩn đoán lỗi bằng AI (JSON & văn bản) và ảnh đính kèm của thiết bị vào bảng `repair_tickets`.
+  - Cập nhật Model `RepairTicket.php` để cast các trường JSON sang mảng (`ai_probable_causes`, `ai_risk_warnings`, `ai_dispatch_reason`, v.v.) và khai báo đầy đủ `$fillable`.
+- **Dịch vụ AI:**
+  - Xây dựng `RepairAIService.php` tích hợp Google Gemini API (model `gemini-2.0-flash`) hỗ trợ phân tích tình trạng lỗi của thiết bị từ mô tả văn bản kết hợp với AI Vision phân tích hình ảnh (sọc màn hình, vỡ kính, lỗi hệ điều hành...).
+  - Tự động gợi ý phân công kỹ thuật viên phù hợp dựa trên mô tả lỗi, mức độ phức tạp và tay nghề/lịch sử của kỹ thuật viên trong hệ thống (Smart Job Dispatching).
+- **Controller & Router:**
+  - Đăng ký API AJAX `/profile/repair-tickets/ai-diagnose` hỗ trợ khách hàng chẩn đoán lỗi thiết bị trực tiếp trên giao diện Client.
+  - Cập nhật phương thức `storeRepairTicket` trong `ProfileController.php` để lưu vết đầy đủ các trường thông tin chẩn đoán AI cùng ảnh thiết bị lên database khi gửi form đăng ký.
+- **Giao diện Client (Frontend):**
+  - Cập nhật view `profile.blade.php`:
+    - Tải ảnh thiết bị kèm preview trực quan thời gian thực bằng JS (`FileReader`).
+    - Nút bấm **Phân tích & Chẩn đoán lỗi bằng AI** với hiệu ứng loading và hiển thị **AI Report Card** cực đẹp (Chẩn đoán lỗi, khoảng giá dự kiến, nguyên nhân, khuyến cáo, và kỹ thuật viên gợi ý).
+    - Cập nhật timeline theo dõi trong **Tracking Modal** hiển thị chi tiết hình ảnh thiết bị lỗi và báo cáo chẩn đoán AI.
+- **Giao diện Admin (Quản trị):**
+  - Cập nhật view danh sách `admin/repair-tickets/index.blade.php`: Hiển thị badge màu tím **AI Chẩn Đoán** tinh tế bên cạnh mã phiếu giúp phân biệt phiếu được AI phân tích.
+  - Cập nhật view chỉnh sửa `admin/repair-tickets/edit.blade.php`:
+    - Thiết kế bố cục 2 cột hiển thị mô tả lỗi song song với hình ảnh thiết bị thực tế do khách hàng gửi lên.
+    - Bổ sung khối **Kết quả chẩn đoán tự động bằng AI (Google Gemini)** cực kỳ chuyên nghiệp và trực quan giúp Admin/Kỹ thuật viên đưa ra quyết định nhanh chóng.
+
+### 45. Nâng cấp các tính năng AI Chatbot nâng cao (Tư vấn tồn kho theo biến thể, Dynamic Couponing & Auto Repair Booking)
+- **Frontend & View:**
+  - Cập nhật `resources/views/partials/chatbot.blade.php`: Truyền thêm tham số `message_count` lấy từ độ dài của danh sách tin nhắn hiện tại `messageList.length` trong AJAX payload của `callBackend` để theo dõi thời gian tương tác của khách hàng.
+- **Backend & Controller (ChatbotController.php):**
+  - **Tư vấn kho hàng theo biến thể:** Tích hợp eager loading quan hệ `variants.inventoryItems` trong phương thức `searchProducts`. Trích xuất thông tin tồn kho thực tế của từng biến thể (màu sắc, dung lượng) để bổ sung vào dữ liệu RAG cho AI tư vấn chính xác.
+  - **Dynamic Couponing:** Triển khai cơ chế tự động phát hành mã giảm giá 5% độc quyền (`CouponFlashSale`) khi `message_count >= 5` và lưu mã giảm giá vào session để tránh trùng lặp. Prompt của AI được bổ sung chỉ thị giới thiệu mã giảm giá này khi người dùng đắn đo hoặc hỏi về ưu đãi.
+  - **Đặt lịch sửa chữa tự động qua chat (Auto Repair Booking):** Huấn luyện AI trích xuất thông tin người dùng cung cấp (tên, số điện thoại, email, mô tả lỗi, IMEI/Serial và ngày hẹn) dưới dạng thẻ JSON đặc biệt `[[CREATE_REPAIR_TICKET: {...}]]`. Backend tự động parse thẻ này để tạo bản ghi nháp `RepairTicket` trong database, đồng thời thay thế thẻ này bằng thông tin xác nhận đặt lịch hẹn rõ ràng (ví dụ: mã số phiếu, giờ hẹn cụ thể).
+- **Kiểm thử:**
+  - Tạo script kiểm thử độc lập `C:\Users\ANH QUY\.gemini\antigravity\brain\23a894ae-d308-45b4-8241-d38e49982684\scratch\test_chatbot_logic.php` mô phỏng hành trình đặt lịch và nhận ưu đãi qua Chatbot. Script chạy thành công tuyệt đối và tạo thành công phiếu sửa chữa trong DB.
+
+### 46. Tổng hợp toàn bộ các tính năng AI trong dự án
+- **Tài liệu hóa:** Tạo file `tong_hop_tich_hop_ai.md` tại thư mục gốc của dự án, tổng hợp đầy đủ 5 phân hệ tích hợp AI bao gồm: (1) Quét rủi ro đơn hàng tự động, (2) Gợi ý bán chéo cá nhân hóa, (3) Đăng & Kiểm duyệt bài viết UGC kèm tối ưu SEO và tặng điểm thưởng, (4) Chẩn đoán lỗi thiết bị & gợi ý phân công kỹ thuật viên tự động, (5) Chatbot hỗ trợ khách hàng nâng cao.
+
+
 

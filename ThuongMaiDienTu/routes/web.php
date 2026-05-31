@@ -123,6 +123,7 @@ Route::middleware('auth')->group(function() {
     Route::get('/lifestyle/{id}/edit', [\App\Http\Controllers\ArticleFrontendController::class, 'edit'])->name('articles.edit');
     Route::put('/lifestyle/{id}', [\App\Http\Controllers\ArticleFrontendController::class, 'update'])->name('articles.update');
     Route::delete('/lifestyle/{id}', [\App\Http\Controllers\ArticleFrontendController::class, 'destroy'])->name('articles.destroy');
+    Route::post('/lifestyle/ai-assist', [\App\Http\Controllers\ArticleFrontendController::class, 'aiAssist'])->name('articles.ai-assist');
 });
 Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController::class, 'show'])->name('articles.show');
 
@@ -195,6 +196,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::post('/profile/repair-tickets/ai-diagnose', [ProfileController::class, 'aiDiagnoseRepairTicket'])->name('profile.repair-tickets.ai-diagnose');
     Route::post('/profile/repair-tickets', [ProfileController::class, 'storeRepairTicket'])->name('profile.repair-tickets.store');
     Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name('profile.address.store');
     Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');

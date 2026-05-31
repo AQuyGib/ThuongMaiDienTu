@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             ServiceInvoiceSeeder::class,
             RepairTicketSeeder::class,
             ArticleSeeder::class,
+            AITestArticleSeeder::class,
             CashbookSeeder::class,
             FlashSaleSeeder::class,
             LargeProductSeeder::class,

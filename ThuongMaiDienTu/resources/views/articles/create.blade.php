@@ -276,6 +276,91 @@
                     </div>
                 </div>
 
+                {{-- Khối Trợ lý AI & SEO --}}
+                <div class="glass-card rounded-[2rem] p-6 md:p-7 space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div class="tiny-label">AI Optimization</div>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[9px] font-black uppercase tracking-wider border border-red-100 animate-pulse">
+                            <i class="fa-solid fa-sparkles"></i> Active
+                        </span>
+                    </div>
+                    <h2 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-red-600"></i> Trợ lý AI & SEO
+                    </h2>
+                    
+                    <button type="button" id="btnAiAnalyze" class="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 text-white font-extrabold py-3.5 hover:bg-slate-800 hover:-translate-y-0.5 transition shadow-lg text-sm">
+                        <i class="fa-solid fa-microchip"></i>
+                        <span>Phân tích & Tối ưu SEO</span>
+                    </button>
+
+                    {{-- Khung hiển thị kết quả phân tích AI --}}
+                    <div id="aiAnalysisResult" class="hidden space-y-4 pt-3 border-t border-slate-100 text-slate-700 text-xs">
+                        {{-- Thước đo điểm chất lượng, điểm SEO & điểm thưởng đề xuất --}}
+                        <div class="grid grid-cols-3 gap-2">
+                            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-center">
+                                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Chất lượng</div>
+                                <div class="text-base font-black text-indigo-600" id="aiQualityScore">--</div>
+                                <div class="text-[8px] text-slate-400 mt-1">Đánh giá chung</div>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-center">
+                                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Điểm SEO</div>
+                                <div class="text-base font-black text-emerald-600" id="aiSeoScore">--</div>
+                                <div class="text-[8px] text-slate-400 mt-1">Độ chuẩn SEO</div>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-100 text-center">
+                                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Điểm thưởng</div>
+                                <div class="text-base font-black text-amber-600" id="aiRewardPoints">--</div>
+                                <div class="text-[8px] text-slate-400 mt-1">AI đề xuất</div>
+                            </div>
+                        </div>
+
+                        {{-- Kết quả kiểm duyệt --}}
+                        <div class="p-3 rounded-2xl border" id="aiVerdictBox">
+                            <div class="flex items-center gap-2 font-bold mb-1">
+                                <i id="aiVerdictIcon" class="fa-solid"></i>
+                                <span id="aiVerdictLabel">--</span>
+                            </div>
+                            <p id="aiVerdictReason" class="text-[11px] text-slate-500 leading-relaxed"></p>
+                        </div>
+
+                        {{-- Thẻ Hashtag gợi ý --}}
+                        <div class="space-y-1.5">
+                            <div class="font-bold text-slate-800">Hashtag AI gợi ý:</div>
+                            <div class="flex flex-wrap gap-1.5" id="aiTagsContainer"></div>
+                        </div>
+
+                        {{-- Tiêu đề đề xuất --}}
+                        <div class="space-y-1 bg-rose-50/30 p-3 rounded-2xl border border-rose-100/50">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-slate-800">Tiêu đề chuẩn SEO:</span>
+                                <button type="button" id="btnApplyAiTitle" class="text-[10px] text-rose-600 font-black uppercase hover:underline">Áp dụng</button>
+                            </div>
+                            <div id="aiSuggestedTitle" class="text-[11px] text-slate-600 italic leading-snug">--</div>
+                        </div>
+
+                        {{-- Mô tả meta đề xuất --}}
+                        <div class="space-y-1 bg-blue-50/30 p-3 rounded-2xl border border-blue-100/50">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-slate-800">Mô tả Meta SEO:</span>
+                                <button type="button" id="btnApplyAiSummary" class="text-[10px] text-blue-600 font-black uppercase hover:underline">Áp dụng</button>
+                            </div>
+                            <div id="aiSuggestedSummary" class="text-[11px] text-slate-600 italic leading-relaxed">--</div>
+                        </div>
+
+                        {{-- Phân tích từ khóa --}}
+                        <div class="space-y-1.5">
+                            <div class="font-bold text-slate-800">Mật độ từ khóa chính:</div>
+                            <div class="space-y-1" id="aiKeywordsContainer"></div>
+                        </div>
+
+                        {{-- Lời khuyên tối ưu --}}
+                        <div class="space-y-1.5">
+                            <div class="font-bold text-slate-800">Lời khuyên chuẩn SEO:</div>
+                            <ul class="list-disc pl-4 space-y-1 text-slate-600 text-[11px]" id="aiTipsContainer"></ul>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- Khối nút hành động gửi bài viết --}}
                 <div class="glass-card rounded-[2rem] p-6 md:p-7 space-y-4 sticky top-24">
                     <div class="tiny-label">Xuất bản bài viết</div>
@@ -595,11 +680,210 @@
         }
     });
 
+    // --- TÍCH HỢP TRỢ LÝ AI & SEO ---
+    const btnAiAnalyze = document.getElementById('btnAiAnalyze');
+    const aiAnalysisResult = document.getElementById('aiAnalysisResult');
+    const aiQualityScore = document.getElementById('aiQualityScore');
+    const aiSeoScore = document.getElementById('aiSeoScore');
+    const aiVerdictBox = document.getElementById('aiVerdictBox');
+    const aiVerdictIcon = document.getElementById('aiVerdictIcon');
+    const aiVerdictLabel = document.getElementById('aiVerdictLabel');
+    const aiVerdictReason = document.getElementById('aiVerdictReason');
+    const aiTagsContainer = document.getElementById('aiTagsContainer');
+    const aiSuggestedTitle = document.getElementById('aiSuggestedTitle');
+    const aiSuggestedSummary = document.getElementById('aiSuggestedSummary');
+    const aiKeywordsContainer = document.getElementById('aiKeywordsContainer');
+    const aiTipsContainer = document.getElementById('aiTipsContainer');
+    const btnApplyAiTitle = document.getElementById('btnApplyAiTitle');
+    const btnApplyAiSummary = document.getElementById('btnApplyAiSummary');
+
+    let aiDataCache = null;
+
+    function renderAiResult(data) {
+        aiDataCache = data;
+
+        // Cập nhật điểm chất lượng & điểm SEO & điểm thưởng đề xuất
+        aiQualityScore.textContent = data.quality_score + '/100';
+        aiSeoScore.textContent = data.seo.seo_score + '/100';
+        const aiRewardPoints = document.getElementById('aiRewardPoints');
+        if (aiRewardPoints) {
+            aiRewardPoints.textContent = '+' + (data.recommended_reward_points ?? 20) + 'đ';
+        }
+
+        // Cập nhật kết quả kiểm duyệt
+        aiVerdictBox.className = 'p-3 rounded-2xl border';
+        if (data.moderation_verdict === 'approved') {
+            aiVerdictBox.classList.add('bg-emerald-50', 'border-emerald-100', 'text-emerald-800');
+            aiVerdictIcon.className = 'fa-solid fa-circle-check text-emerald-600';
+            aiVerdictLabel.textContent = 'An toàn - Đủ điều kiện duyệt';
+        } else if (data.moderation_verdict === 'flagged') {
+            aiVerdictBox.classList.add('bg-amber-50', 'border-amber-100', 'text-amber-800');
+            aiVerdictIcon.className = 'fa-solid fa-triangle-exclamation text-amber-600';
+            aiVerdictLabel.textContent = 'Cần xem xét - Chờ kiểm duyệt';
+        } else {
+            aiVerdictBox.classList.add('bg-rose-50', 'border-rose-100', 'text-rose-800');
+            aiVerdictIcon.className = 'fa-solid fa-circle-xmark text-rose-600';
+            aiVerdictLabel.textContent = 'Vi phạm chính sách nội dung';
+        }
+        aiVerdictReason.textContent = data.moderation_reason;
+
+        // Cập nhật tags gợi ý
+        aiTagsContainer.innerHTML = '';
+        if (data.tags && data.tags.length > 0) {
+            data.tags.forEach(tag => {
+                const badge = document.createElement('span');
+                badge.className = 'px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-wider cursor-pointer hover:bg-slate-200 transition';
+                badge.textContent = tag;
+                aiTagsContainer.appendChild(badge);
+            });
+        } else {
+            aiTagsContainer.innerHTML = '<span class="text-slate-400 italic">Không có tag gợi ý.</span>';
+        }
+
+        // Tiêu đề & Tóm tắt đề xuất
+        aiSuggestedTitle.textContent = data.seo.title_suggestion || titleInput.value.trim();
+        aiSuggestedSummary.textContent = data.seo.meta_description_suggestion || summaryInput.value.trim();
+
+        // Mật độ từ khóa
+        aiKeywordsContainer.innerHTML = '';
+        if (data.seo.keywords_analysis && data.seo.keywords_analysis.length > 0) {
+            data.seo.keywords_analysis.forEach(kw => {
+                const row = document.createElement('div');
+                row.className = 'flex justify-between text-[11px] text-slate-600';
+                row.innerHTML = `<span><strong>${kw.keyword}</strong></span> <span>${kw.count} lần (${kw.density})</span>`;
+                aiKeywordsContainer.appendChild(row);
+            });
+        } else {
+            aiKeywordsContainer.innerHTML = '<div class="text-slate-400 italic">Không trích xuất được từ khóa.</div>';
+        }
+
+        // Lời khuyên tối ưu
+        aiTipsContainer.innerHTML = '';
+        if (data.seo.optimization_tips && data.seo.optimization_tips.length > 0) {
+            data.seo.optimization_tips.forEach(tip => {
+                const li = document.createElement('li');
+                li.textContent = tip;
+                aiTipsContainer.appendChild(li);
+            });
+        } else {
+            aiTipsContainer.innerHTML = '<li>Bài viết đã được tối ưu hóa rất tốt!</li>';
+        }
+
+        // Hiển thị phần kết quả
+        aiAnalysisResult.classList.remove('hidden');
+    }
+
+    btnAiAnalyze?.addEventListener('click', async () => {
+        const title = titleInput.value.trim();
+        const summary = summaryInput.value.trim();
+        const editor = tinymce.get('content_editor');
+        const content = editor ? editor.getContent() : '';
+
+        if (!title || !content) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Thiếu thông tin',
+                text: 'Vui lòng điền Tiêu đề và Nội dung bài viết trước khi chạy phân tích AI.',
+                confirmButtonColor: '#d70018',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    confirmButton: 'rounded-xl'
+                }
+            });
+            return;
+        }
+
+        // Đổi trạng thái nút bấm thành Loading
+        btnAiAnalyze.disabled = true;
+        const originalBtnHtml = btnAiAnalyze.innerHTML;
+        btnAiAnalyze.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Đang phân tích...</span>`;
+
+        try {
+            const response = await fetch('{{ route("articles.ai-assist") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ title, summary, content })
+            });
+
+            if (!response.ok) {
+                throw new Error('Yêu cầu phân tích AI thất bại.');
+            }
+
+            const data = await response.json();
+            renderAiResult(data);
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi phân tích AI',
+                text: 'Có lỗi xảy ra trong quá trình gọi AI phân tích bài viết. Vui lòng thử lại.',
+                confirmButtonColor: '#d70018',
+                customClass: {
+                    popup: 'rounded-2xl',
+                    confirmButton: 'rounded-xl'
+                }
+            });
+        } finally {
+            btnAiAnalyze.disabled = false;
+            btnAiAnalyze.innerHTML = originalBtnHtml;
+        }
+    });
+
+    btnApplyAiTitle?.addEventListener('click', () => {
+        if (aiDataCache && aiDataCache.seo.title_suggestion) {
+            titleInput.value = aiDataCache.seo.title_suggestion;
+            syncPreview();
+            
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+            Toast.fire({
+                icon: 'success',
+                title: 'Đã áp dụng tiêu đề đề xuất chuẩn SEO!'
+            });
+        }
+    });
+
+    btnApplyAiSummary?.addEventListener('click', () => {
+        if (aiDataCache && aiDataCache.seo.meta_description_suggestion) {
+            summaryInput.value = aiDataCache.seo.meta_description_suggestion;
+            syncPreview();
+            
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true
+            });
+            Toast.fire({
+                icon: 'success',
+                title: 'Đã áp dụng tóm tắt đề xuất chuẩn SEO!'
+            });
+        }
+    });
+
     // Khởi tạo trang ban đầu
     document.addEventListener('DOMContentLoaded', () => {
         applyDeviceView('desktop');
         renderSidebarArticles();
         syncPreview();
+
+        // Nạp và hiển thị kết quả phân tích AI có sẵn (cho trường hợp chỉnh sửa bài viết)
+        @if(isset($article) && $article->exists && $article->ai_checked)
+            const preloadedData = @json($article->ai_analysis);
+            if (preloadedData) {
+                renderAiResult(preloadedData);
+            }
+        @endif
     });
 </script>
 @endsection

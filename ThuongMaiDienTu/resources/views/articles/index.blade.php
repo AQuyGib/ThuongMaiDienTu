@@ -62,6 +62,11 @@
         'lifestyle' => 'Lifestyle',
         'dienmay-pro' => 'DIENMAY PRO',
     ];
+    if (isset($topDynamicTags) && is_array($topDynamicTags)) {
+        foreach ($topDynamicTags as $dTag) {
+            $tagFilters[$dTag] = '#' . $dTag;
+        }
+    }
 @endphp
 <div class="lifestyle-shell space-y-6">
     {{-- PHẦN BANNER HERO ĐẦU TRANG - GIỚI THIỆU LIFESTYLE & BÀI VIẾT NỔI BẬT --}}
@@ -170,6 +175,17 @@
                             {{-- Tiêu đề và tóm tắt của bài viết --}}
                             <h3 class="font-black text-slate-900 leading-snug line-clamp-2">{{ $article->title }}</h3>
                             <p class="text-sm text-slate-500 line-clamp-3">{{ $article->summary }}</p>
+                            
+                            {{-- Tags --}}
+                            @if(is_array($article->tags) && count($article->tags) > 0)
+                                <div class="flex flex-wrap gap-1.5 pt-1">
+                                    @foreach(array_slice($article->tags, 0, 3) as $tag)
+                                        <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase tracking-wider">
+                                            {{ str_starts_with($tag, '#') ? $tag : '#' . $tag }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
                             
                             {{-- Metadata: Tác giả và ngày đăng --}}
                             <div class="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">

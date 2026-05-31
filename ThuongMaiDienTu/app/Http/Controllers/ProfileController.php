@@ -445,11 +445,54 @@ class ProfileController extends Controller
     }
 
     /**
+     * AJAX endpoint thực hiện chẩn đoán AI bằng Gemini.
+     */
+    public function aiDiagnoseRepairTicket(Request $request)
+    {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+        }
+
+        $request->validate([
+            'issue_desc' => ['required', 'string', 'min:10', 'max:500'],
+            'device_image' => ['nullable', 'image', 'max:5120'], // Max 5MB
+        ], [
+            'issue_desc.required' => 'Vui lòng nhập mô tả tình trạng lỗi.',
+            'issue_desc.min' => 'Mô tả lỗi phải từ 10 ký tự trở lên.',
+            'issue_desc.max' => 'Mô tả lỗi tối đa 500 ký tự.',
+            'device_image.image' => 'File tải lên phải là hình ảnh.',
+            'device_image.max' => 'Dung lượng ảnh tối đa 5MB.',
+        ]);
+
+        $tempImagePath = null;
+        if ($request->hasFile('device_image')) {
+            // Lưu ảnh tạm để gửi cho AI chẩn đoán
+            $file = $request->file('device_image');
+            $tempImagePath = $file->getRealPath();
+        }
+
+        $aiService = app(\App\Services\RepairAIService::class);
+        $result = $aiService->diagnoseFault($request->issue_desc, $tempImagePath);
+
+        // Lấy thông tin kỹ thuật viên được chỉ định để trả về tên hiển thị
+        $techName = 'Đang phân công';
+        if (!empty($result['assigned_technician_id'])) {
+            $tech = \App\Models\User::find($result['assigned_technician_id']);
+            if ($tech) {
+                $techName = $tech->full_name;
+            }
+        }
+        $result['technician_name'] = $techName;
+
+        return response()->json($result);
+    }
+
+    /**
      * Lưu thông tin đăng ký lịch hẹn sửa chữa trực tuyến từ khách hàng.
      * Logic này thực hiện các bước:
      * 1. Xác thực tài khoản khách hàng đã đăng nhập.
-     * 2. Validate dữ liệu đầu vào: thông tin khách hàng, số IMEI và mô tả lỗi thiết bị.
-     * 3. Tạo mới phiếu sửa chữa (RepairTicket) với trạng thái mặc định 'Received'.
+     * 2. Validate dữ liệu đầu vào: thông tin khách hàng, số IMEI, mô tả lỗi thiết bị và hình ảnh.
+     * 3. Tạo mới phiếu sửa chữa (RepairTicket) kèm thông tin chẩn đoán AI và kỹ thuật viên phụ trách thông minh.
      * 4. Chuyển hướng người dùng về tab quản lý sửa chữa kèm thông báo thành công.
      */
     public function storeRepairTicket(Request $request)
@@ -470,6 +513,7 @@ class ProfileController extends Controller
             'imei_serial' => ['required', 'string', 'min:5', 'max:50', 'unique:repair_tickets,imei_serial'], // Đảm bảo IMEI duy nhất
             'issue_desc' => ['required', 'string', 'min:10', 'max:500'],
             'schedule_date' => ['required', 'date', 'after_or_equal:today'], // Ngày hẹn mang tới phải >= ngày hiện tại
+            'device_image' => ['nullable', 'image', 'max:5120'], // Max 5MB
         ], [
             'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
             'customer_name.min' => 'Họ và tên khách hàng phải từ 2 ký tự trở lên.',
@@ -491,29 +535,108 @@ class ProfileController extends Controller
             'issue_desc.max' => 'Mô tả lỗi tối đa 500 ký tự.',
             'schedule_date.required' => 'Vui lòng chọn ngày hẹn mang máy tới.',
             'schedule_date.after_or_equal' => 'Ngày hẹn mang máy tới phải từ hôm nay trở đi.',
+            'device_image.image' => 'File tải lên phải là hình ảnh.',
+            'device_image.max' => 'Dung lượng ảnh tối đa 5MB.',
         ]);
 
-        // Bước 3: Tìm kỹ thuật viên phụ trách mặc định của cửa hàng (Quản trị viên hoặc quản lý hoặc kỹ thuật viên đầu tiên)
-        $defaultTech = \App\Models\User::whereIn('role_id', [1, 2, 4])->first();
-        $defaultTechId = $defaultTech ? $defaultTech->user_id : null;
+        // Xử lý upload ảnh thiết bị lỗi
+        $imagePath = null;
+        if ($request->hasFile('device_image')) {
+            try {
+                $file = $request->file('device_image');
+                $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('uploads/repairs'), $fileName);
+                $imagePath = 'uploads/repairs/' . $fileName;
+            } catch (\Throwable $e) {
+                \Log::error('Lỗi upload ảnh thiết bị sửa chữa: ' . $e->getMessage());
+            }
+        }
 
-        // Bước 4: Lưu bản ghi phiếu sửa chữa vào cơ sở dữ liệu
+        // Xử lý dữ liệu chẩn đoán AI
+        $aiDiagnosed = $request->boolean('ai_diagnosed', false);
+        $aiData = [];
+
+        if ($aiDiagnosed) {
+            $aiData = [
+                'ai_diagnosed' => true,
+                'ai_fault_type' => $request->ai_fault_type,
+                'ai_probable_causes' => json_decode($request->ai_probable_causes, true) ?: [],
+                'ai_risk_warnings' => json_decode($request->ai_risk_warnings, true) ?: [],
+                'ai_replacement_parts' => $request->ai_replacement_parts,
+                'ai_estimated_cost_min' => $request->filled('ai_estimated_cost_min') ? (int) $request->ai_estimated_cost_min : null,
+                'ai_estimated_cost_max' => $request->filled('ai_estimated_cost_max') ? (int) $request->ai_estimated_cost_max : null,
+                'ai_complexity_level' => $request->ai_complexity_level,
+                'ai_recommended_skills' => json_decode($request->ai_recommended_skills, true) ?: [],
+                'ai_dispatch_reason' => $request->ai_dispatch_reason,
+                'technician_id' => $request->filled('assigned_technician_id') ? $request->integer('assigned_technician_id') : null,
+                'ai_diagnosed_at' => now(),
+            ];
+        } else {
+            // Tự động chẩn đoán ở backend nếu client không gọi trước
+            try {
+                $aiService = app(\App\Services\RepairAIService::class);
+                $diagResult = $aiService->diagnoseFault($request->issue_desc, $imagePath ? public_path($imagePath) : null);
+                
+                $aiData = [
+                    'ai_diagnosed' => true,
+                    'ai_fault_type' => $diagResult['ai_fault_type'],
+                    'ai_probable_causes' => $diagResult['ai_probable_causes'],
+                    'ai_risk_warnings' => $diagResult['ai_risk_warnings'],
+                    'ai_replacement_parts' => $diagResult['ai_replacement_parts'],
+                    'ai_estimated_cost_min' => $diagResult['ai_estimated_cost_min'],
+                    'ai_estimated_cost_max' => $diagResult['ai_estimated_cost_max'],
+                    'ai_complexity_level' => $diagResult['ai_complexity_level'],
+                    'ai_recommended_skills' => $diagResult['ai_recommended_skills'],
+                    'ai_dispatch_reason' => $diagResult['ai_dispatch_reason'],
+                    'technician_id' => $diagResult['assigned_technician_id'],
+                    'ai_diagnosed_at' => $diagResult['ai_diagnosed_at'],
+                ];
+            } catch (\Throwable $e) {
+                \Log::error('Lỗi tự động chẩn đoán AI tại backend: ' . $e->getMessage());
+                // Fallback nếu có lỗi
+                $defaultTech = \App\Models\User::whereIn('role_id', [1, 2, 4])->first();
+                $aiData = [
+                    'ai_diagnosed' => false,
+                    'technician_id' => $defaultTech ? $defaultTech->user_id : null,
+                ];
+            }
+        }
+
+        // Tính chi phí dự toán (trung bình min và max) để gán cho cột estimated_cost cũ
+        $estimatedCost = 0;
+        if (isset($aiData['ai_estimated_cost_min']) && isset($aiData['ai_estimated_cost_max'])) {
+            $estimatedCost = (int) (($aiData['ai_estimated_cost_min'] + $aiData['ai_estimated_cost_max']) / 2);
+        }
+
+        // Bước 3: Tạo mới phiếu sửa chữa
         \App\Models\RepairTicket::create([
-            'user_id' => $user->user_id, // Liên kết phiếu với ID của tài khoản khách hàng
-            'technician_id' => $defaultTechId, // Gán kỹ thuật viên phụ trách mặc định để đảm bảo luôn có kỹ thuật viên phụ trách
+            'user_id' => $user->user_id,
+            'technician_id' => $aiData['technician_id'],
             'customer_name' => $request->customer_name,
             'customer_phone' => $request->customer_phone,
             'customer_email' => $request->customer_email,
             'customer_address' => $request->customer_address,
-            'customer_source' => 'Website', // Nguồn đăng ký từ giao diện Frontend Website
+            'customer_source' => 'Website',
             'imei_serial' => $request->imei_serial,
             'issue_desc' => $request->issue_desc,
             'schedule_date' => $request->schedule_date,
-            'status' => 'Received', // Gán trạng thái khởi tạo: Đã tiếp nhận (Received)
-            'estimated_cost' => 0,  // Chi phí dự kiến mặc định là 0 (kỹ thuật viên sẽ cập nhật khi kiểm tra trực tiếp)
+            'status' => 'Received',
+            'estimated_cost' => $estimatedCost,
+            'device_image' => $imagePath,
+            'ai_diagnosed' => $aiData['ai_diagnosed'] ?? false,
+            'ai_fault_type' => $aiData['ai_fault_type'] ?? null,
+            'ai_probable_causes' => $aiData['ai_probable_causes'] ?? null,
+            'ai_risk_warnings' => $aiData['ai_risk_warnings'] ?? null,
+            'ai_replacement_parts' => $aiData['ai_replacement_parts'] ?? null,
+            'ai_estimated_cost_min' => $aiData['ai_estimated_cost_min'] ?? null,
+            'ai_estimated_cost_max' => $aiData['ai_estimated_cost_max'] ?? null,
+            'ai_complexity_level' => $aiData['ai_complexity_level'] ?? null,
+            'ai_recommended_skills' => $aiData['ai_recommended_skills'] ?? null,
+            'ai_dispatch_reason' => $aiData['ai_dispatch_reason'] ?? null,
+            'ai_diagnosed_at' => $aiData['ai_diagnosed_at'] ?? null,
         ]);
 
-        // Bước 4: Điều hướng phản hồi về trang cá nhân của khách hàng, kích hoạt lại tab repair-tab
+        // Bước 4: Điều hướng phản hồi về trang cá nhân của khách hàng
         return redirect()->route('profile.index', ['tab' => 'repair-tab'])->with('repair_success', 'Đã đăng ký lịch hẹn sửa chữa trực tuyến thành công!');
     }
 }
