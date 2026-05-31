@@ -2,15 +2,21 @@
 
 namespace App\Models;
 
+use App\Services\NotificationService;
 use Illuminate\Database\Eloquent\Model;
 
 class Review extends Model
 {
-    protected $fillable = ['product_id', 'user_id', 'author_name', 'parent_id', 'rating', 'content', 'media'];
+    protected $fillable = ['product_id', 'user_id', 'author_name', 'parent_id', 'rating', 'content', 'media', 'is_approved', 'report_count'];
 
     protected $casts = [
         'media' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        // Removed notification when review is created as per user request
+    }
 
     public function product()
     {
@@ -19,7 +25,7 @@ class Review extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
     public function replies()

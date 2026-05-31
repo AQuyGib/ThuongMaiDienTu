@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { VercelTabs } from './ui/vercel-tabs';
 import {
-  Users, ShieldCheck, ShieldAlert, Trophy,
+  Users, User, Briefcase, ShieldCheck, ShieldAlert, Trophy,
   Search, Filter, Download, Plus,
   Edit, Trash2, Shield,
   Clock, CheckCircle2, XCircle, X, Loader2,
@@ -10,6 +10,7 @@ import {
   Eye, EyeOff
 } from 'lucide-react';
 import { Button } from './ui/button';
+import { t } from '../helpers';
 
 // --- CUSTOM SELECT COMPONENT (PREMIUM LOOK) ---
 interface SelectOption {
@@ -155,6 +156,14 @@ export default function UserManagement({ users: initialUsers, roles, stats: init
     page: new URLSearchParams(window.location.search).get('page') || '1',
   });
 
+  useEffect(() => {
+    if (isModalOpen || isRoleModalOpen) {
+      document.body.classList.add('admin-modal-open');
+    } else {
+      document.body.classList.remove('admin-modal-open');
+    }
+  }, [isModalOpen, isRoleModalOpen]);
+
   const fetchData = useCallback(async (newFilters = filters) => {
     setLoading(true);
     try {
@@ -201,19 +210,19 @@ export default function UserManagement({ users: initialUsers, roles, stats: init
       <div className="max-w-[1600px] mx-auto relative z-10 space-y-8 animate-in fade-in duration-500">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">Hệ thống Quyền hạn</h1>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">{t('Hệ thống Quyền hạn', 'Role & Permission System')}</h1>
             <div className="flex items-center gap-3">
               <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <p className="text-slate-500 dark:text-slate-400 font-bold uppercase text-xs tracking-widest">Hệ thống quản trị thời gian thực</p>
+              <p className="text-slate-500 dark:text-slate-400 font-bold uppercase text-xs tracking-widest">{t('Hệ thống quản trị thời gian thực', 'Real-time Administration System')}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <Button variant="outline" className="h-12 px-6 gap-2 font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-2xl" onClick={() => window.location.href = '?export=csv'}>
-              <Download size={18} /> Xuất dữ liệu
+              <Download size={18} /> {t('Xuất dữ liệu', 'Export Data')}
             </Button>
             <Button onClick={() => { setSelectedUser(null); setIsModalOpen(true); }} className="h-12 px-6 gap-2 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/20">
-              <Plus size={18} /> Thêm tài khoản
+              <Plus size={18} /> {t('Thêm tài khoản', 'Add Account')}
             </Button>
           </div>
         </div>
@@ -221,7 +230,7 @@ export default function UserManagement({ users: initialUsers, roles, stats: init
         <VercelTabs
           tabs={[
             {
-              label: 'Danh sách Người dùng',
+              label: t('Danh sách Người dùng', 'User List'),
               value: 'users',
               content: (
                 <UserDashboard
@@ -242,7 +251,7 @@ export default function UserManagement({ users: initialUsers, roles, stats: init
               )
             },
             {
-              label: 'Cấu hình Vai trò',
+              label: t('Cấu hình Vai trò', 'Role Settings'),
               value: 'roles',
               content: <RolesDashboard roles={roles} onAdd={() => { setSelectedRole(null); setIsRoleModalOpen(true); }} onEdit={(role: Role) => { setSelectedRole(role); setIsRoleModalOpen(true); }} />
             }
@@ -284,14 +293,14 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
     const Swal = (window as any).Swal;
 
     const result = await Swal.fire({
-      title: 'Xác nhận xóa?',
-      text: `Bạn có chắc chắn muốn xóa tài khoản "${user.full_name}"? Hành động này không thể hoàn tác!`,
+      title: t('Xác nhận xóa?', 'Confirm Delete?'),
+      text: t('Bạn có chắc chắn muốn xóa tài khoản', 'Are you sure you want to delete the account') + ` "${user.full_name}"? ` + t('Hành động này không thể hoàn tác!', 'This action cannot be undone!'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#e11d48', // rose-600
       cancelButtonColor: '#64748b', // slate-500
-      confirmButtonText: 'Đồng ý xóa',
-      cancelButtonText: 'Hủy bỏ',
+      confirmButtonText: t('Đồng ý xóa', 'Yes, delete it'),
+      cancelButtonText: t('Hủy bỏ', 'Cancel'),
       customClass: {
         popup: 'rounded-[2rem]',
         confirmButton: 'rounded-xl font-bold uppercase text-xs tracking-widest px-6 py-3',
@@ -309,8 +318,8 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
         onRefresh();
 
         Swal.fire({
-          title: 'Đã xóa!',
-          text: 'Tài khoản đã được gỡ khỏi hệ thống.',
+          title: t('Đã xóa!', 'Deleted!'),
+          text: t('Tài khoản đã được gỡ khỏi hệ thống.', 'The account has been removed from the system.'),
           icon: 'success',
           timer: 2000,
           showConfirmButton: false,
@@ -318,8 +327,8 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
         });
       } catch (error) {
         Swal.fire({
-          title: 'Lỗi!',
-          text: 'Không thể xóa người dùng này.',
+          title: t('Lỗi!', 'Error!'),
+          text: t('Không thể xóa người dùng này.', 'Cannot delete this user.'),
           icon: 'error',
           customClass: { popup: 'rounded-[2rem]' }
         });
@@ -328,31 +337,31 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
   };
 
   const roleOptions = [
-    { value: '', label: 'Tất cả vai trò' },
+    { value: '', label: t('Tất cả vai trò', 'All Roles') },
     ...roles.map((r: any) => ({ value: r.role_id.toString(), label: r.name, icon: <Shield size={14} /> }))
   ];
 
   const statusOptions = [
-    { value: '', label: 'Trạng thái' },
-    { value: 'Active', label: 'Hoạt động', icon: <CheckCircle2 size={14} className="text-emerald-500" /> },
-    { value: 'Banned', label: 'Bị khóa', icon: <XCircle size={14} className="text-rose-500" /> }
+    { value: '', label: t('Trạng thái', 'Status') },
+    { value: 'Active', label: t('Hoạt động', 'Active'), icon: <CheckCircle2 size={14} className="text-emerald-500" /> },
+    { value: 'Banned', label: t('Bị khóa', 'Banned'), icon: <XCircle size={14} className="text-rose-500" /> }
   ];
 
   const sortOptions = [
-    { value: 'newest', label: 'Mới nhất', icon: <Calendar size={14} /> },
-    { value: 'oldest', label: 'Cũ nhất', icon: <Calendar size={14} /> },
-    { value: 'name_az', label: 'Tên A-Z', icon: <Users size={14} /> },
-    { value: 'name_za', label: 'Tên Z-A', icon: <Users size={14} /> }
+    { value: 'newest', label: t('Mới nhất', 'Newest'), icon: <Calendar size={14} /> },
+    { value: 'oldest', label: t('Cũ nhất', 'Oldest'), icon: <Calendar size={14} /> },
+    { value: 'name_az', label: t('Tên A-Z', 'Name A-Z'), icon: <Users size={14} /> },
+    { value: 'name_za', label: t('Tên Z-A', 'Name Z-A'), icon: <Users size={14} /> }
   ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon={<Users className="text-blue-600" />} label="Tổng người dùng" value={stats.total} color="blue" description="Tất cả tài khoản" />
-        <StatCard icon={<ShieldCheck className="text-emerald-600" />} label="Đang hoạt động" value={stats.active} color="emerald" description="User đã xác minh" />
-        <StatCard icon={<ShieldAlert className="text-rose-600" />} label="Đã bị khóa" value={stats.banned} color="rose" description="Vi phạm chính sách" />
-        <StatCard icon={<Trophy className="text-amber-500" />} label="Thành viên VIP" value={stats.tiers.Vang} color="amber" description="Hạng thành viên Vàng" />
+        <StatCard icon={<Users className="text-blue-600" />} label={t('Tổng người dùng', 'Total Users')} value={stats.total} color="blue" description={t('Tất cả tài khoản', 'All Accounts')} />
+        <StatCard icon={<ShieldCheck className="text-emerald-600" />} label={t('Đang hoạt động', 'Active')} value={stats.active} color="emerald" description={t('User đã xác minh', 'Verified Users')} />
+        <StatCard icon={<ShieldAlert className="text-rose-600" />} label={t('Đã bị khóa', 'Banned')} value={stats.banned} color="rose" description={t('Vi phạm chính sách', 'Policy Violations')} />
+        <StatCard icon={<Trophy className="text-amber-500" />} label={t('Thành viên VIP', 'VIP Members')} value={stats.tiers.Vang} color="amber" description={t('Hạng thành viên Vàng', 'Gold Tier Members')} />
       </div>
 
       {/* Filters Bar */}
@@ -363,15 +372,15 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
             type="text"
             value={filters.search}
             onChange={(e) => onFilterChange('search', e.target.value)}
-            placeholder="Tìm kiếm người dùng..."
+            placeholder={t('Tìm kiếm người dùng...', 'Search users...')}
             className="w-full pl-12 pr-4 h-12 bg-slate-50 dark:bg-slate-800 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl text-base font-bold transition-all text-slate-900 dark:text-white outline-none"
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <CustomSelect options={roleOptions} value={filters.role_id} onChange={(val) => onFilterChange('role_id', val)} placeholder="Vai trò" icon={<Shield size={16} />} />
-          <CustomSelect options={statusOptions} value={filters.status} onChange={(val) => onFilterChange('status', val)} placeholder="Trạng thái" icon={<CheckCircle2 size={16} />} />
-          <CustomSelect options={sortOptions} value={filters.sort} onChange={(val) => onFilterChange('sort', val)} placeholder="Sắp xếp" icon={<Filter size={16} />} />
+          <CustomSelect options={roleOptions} value={filters.role_id} onChange={(val) => onFilterChange('role_id', val)} placeholder={t('Vai trò', 'Role')} icon={<Shield size={16} />} />
+          <CustomSelect options={statusOptions} value={filters.status} onChange={(val) => onFilterChange('status', val)} placeholder={t('Trạng thái', 'Status')} icon={<CheckCircle2 size={16} />} />
+          <CustomSelect options={sortOptions} value={filters.sort} onChange={(val) => onFilterChange('sort', val)} placeholder={t('Sắp xếp', 'Sort by')} icon={<Filter size={16} />} />
           <Button variant="ghost" className="h-12 w-12 rounded-2xl text-slate-400 hover:text-rose-500 hover:bg-rose-50" onClick={() => onFilterChange('search', '')}>
             {loading ? <Loader2 className="animate-spin" size={20} /> : <XCircle size={20} />}
           </Button>
@@ -384,10 +393,10 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
-                <th className="px-8 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Người dùng</th>
-                <th className="px-8 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Vai trò & Hạng</th>
-                <th className="px-8 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Trạng thái</th>
-                <th className="px-8 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                <th className="px-8 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('Người dùng', 'User')}</th>
+                <th className="px-8 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('Vai trò & Hạng', 'Role & Tier')}</th>
+                <th className="px-8 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t('Trạng thái', 'Status')}</th>
+                <th className="px-8 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">{t('Thao tác', 'Actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -403,7 +412,7 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
                         <div className="flex flex-col gap-1 mt-1">
                           <div className="flex items-center gap-1.5 text-sm text-slate-500 font-medium"><Mail size={12} /> {user.email}</div>
                           <div className="flex items-center gap-1.5 text-sm text-slate-500 font-medium">
-                            <Phone size={12} /> {user.phone_number || <span className="opacity-50 italic text-xs">Chưa cập nhật</span>}
+                            <Phone size={12} /> {user.phone_number || <span className="opacity-50 italic text-xs">{t('Chưa cập nhật', 'Not updated')}</span>}
                           </div>
                         </div>
                       </div>
@@ -420,7 +429,7 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
                   <td className="px-8 py-6">
                     <StatusBadge status={user.status} />
                     <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-slate-400">
-                      <Calendar size={12} /> {new Date(user.created_at).toLocaleDateString('vi-VN')}
+                      <Calendar size={12} /> {new Date(user.created_at).toLocaleDateString(t('vi-VN', 'en-US'))}
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
@@ -439,13 +448,13 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
         {/* Pagination */}
         <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-6 gap-6">
           <div className="flex items-center gap-4 text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-white dark:bg-slate-900 px-6 py-3 rounded-2xl border border-slate-100 dark:border-slate-800">
-            <span>Kết quả: <span className="text-slate-900 dark:text-white">{users.total}</span></span>
+            <span>{t('Kết quả:', 'Results:')} <span className="text-slate-900 dark:text-white">{users.total}</span></span>
             <div className="w-px h-3 bg-slate-200 dark:bg-slate-800" />
-            <span>Trang <span className="text-blue-600">{users.current_page}</span> / {users.last_page}</span>
+            <span>{t('Trang', 'Page')} <span className="text-blue-600">{users.current_page}</span> / {users.last_page}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="h-12 px-6 font-black uppercase text-[10px] tracking-widest rounded-2xl border-slate-200" disabled={users.current_page === 1} onClick={() => onPageChange(users.current_page - 1)}>Trước</Button>
-            <Button variant="outline" className="h-12 px-6 font-black uppercase text-[10px] tracking-widest rounded-2xl border-slate-200" disabled={users.current_page === users.last_page} onClick={() => onPageChange(users.current_page + 1)}>Tiếp</Button>
+            <Button variant="outline" className="h-12 px-6 font-black uppercase text-[10px] tracking-widest rounded-2xl border-slate-200" disabled={users.current_page === 1} onClick={() => onPageChange(users.current_page - 1)}>{t('Trước', 'Previous')}</Button>
+            <Button variant="outline" className="h-12 px-6 font-black uppercase text-[10px] tracking-widest rounded-2xl border-slate-200" disabled={users.current_page === users.last_page} onClick={() => onPageChange(users.current_page + 1)}>{t('Tiếp', 'Next')}</Button>
           </div>
         </div>
       </div>
@@ -473,18 +482,18 @@ function RolesDashboard({ roles, onAdd, onEdit }: { roles: Role[], onAdd: () => 
           <div className="relative z-10">
             <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-4 tracking-tight group-hover:text-blue-600 transition-colors">{role.name}</h3>
             <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8 min-h-[48px]">
-              {role.description || 'Quản trị viên hệ thống - có toàn quyền điều phối và quản lý mọi tài nguyên.'}
+              {role.description || t('Quản trị viên hệ thống - có toàn quyền điều phối và quản lý mọi tài nguyên.', 'System Administrator - has full authority to coordinate and manage all resources.')}
             </p>
 
             <div className="pt-6 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                {(role as any).permissions ? `${Object.keys((role as any).permissions).filter(k => (role as any).permissions[k]).length} Quyền hạn` : 'Toàn quyền hệ thống'}
+                {(role as any).permissions ? `${Object.keys((role as any).permissions).filter(k => (role as any).permissions[k]).length} ` + t('Quyền hạn', 'Permissions') : t('Toàn quyền hệ thống', 'Full system access')}
               </span>
               <button
                 onClick={() => onEdit(role)}
                 className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-2 group/link"
               >
-                Chi tiết <Plus size={14} className="group-hover/link:rotate-90 transition-transform" />
+                {t('Chi tiết', 'Details')} <Plus size={14} className="group-hover/link:rotate-90 transition-transform" />
               </button>
             </div>
           </div>
@@ -499,8 +508,8 @@ function RolesDashboard({ roles, onAdd, onEdit }: { roles: Role[], onAdd: () => 
           <Plus size={40} strokeWidth={1.5} />
         </div>
         <div className="text-center">
-          <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Thêm vai trò mới</h3>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tùy chỉnh quyền hạn chi tiết</p>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">{t('Thêm vai trò mới', 'Add New Role')}</h3>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t('Tùy chỉnh quyền hạn chi tiết', 'Customize detailed permissions')}</p>
         </div>
       </div>
     </div>
@@ -513,168 +522,272 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
   const [loading, setLoading] = useState(false);
   const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
 
-  // Local state for custom selects
   const [memberTier, setMemberTier] = useState(user?.member_tier || '');
   const [roleId, setRoleId] = useState(user?.role_id?.toString() || user?.role?.role_id?.toString() || '');
-  const [status, setStatus] = useState(user?.status || '');
-
-  // Password visibility state
+  const [status, setStatus] = useState(user?.status || 'Active');
   const [showPass, setShowPass] = useState(false);
-  const [showConfirmPass, setShowConfirmPass] = useState(false);
+
+  const formId = "user-management-form";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+    
     try {
-      await axios.post(isEdit ? `/admin/permissions/${user.user_id}` : '/admin/permissions', formData, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'multipart/form-data' }
+      const url = isEdit ? `/admin/permissions/${user.user_id}` : '/admin/permissions';
+      await axios.post(url, formData, {
+        headers: { 
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'multipart/form-data'
+        }
       });
+      
+      const Swal = (window as any).Swal;
+      await Swal.fire({
+        title: t('Thành công!', 'Success!'),
+        text: isEdit ? t('Đã cập nhật tài khoản.', 'Account updated.') : t('Đã tạo tài khoản mới.', 'New account created.'),
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false,
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      
       onSuccess();
     } catch (error: any) {
       const Swal = (window as any).Swal;
       Swal.fire({
-        title: 'Thất bại!',
-        text: error.response?.data?.message || 'Có lỗi xảy ra khi lưu dữ liệu!',
+        title: t('Thất bại!', 'Failed!'),
+        text: error.response?.data?.message || t('Không thể lưu dữ liệu tài khoản.', 'Could not save account data.'),
         icon: 'error',
         customClass: { popup: 'rounded-[2rem]' }
       });
+    } finally {
+      setLoading(false);
     }
-    finally { setLoading(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-300">
-        <div className="px-10 py-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-          <div>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{isEdit ? 'Cập nhật' : 'Tạo mới'} Tài khoản</h3>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto custom-scrollbar">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-6xl rounded-[3.5rem] shadow-[0_40px_160px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden animate-in zoom-in-95 duration-700 flex flex-col">
+        
+        {/* Master Header */}
+        <div className="px-12 py-10 relative overflow-hidden shrink-0 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-b border-slate-100 dark:border-slate-800">
+          <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] -mr-48 -mt-48" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 rounded-[1.75rem] bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-2xl shadow-blue-600/30 ring-4 ring-blue-500/10">
+                {isEdit ? <Edit size={32} /> : <Plus size={32} />}
+              </div>
+              <div>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                  {isEdit ? t('Cập nhật', 'Update') : t('Khởi tạo', 'Create')} {t('Tài khoản', 'Account')}
+                </h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{t('Hệ thống quản trị tài nguyên chuyên sâu', 'Advanced Resource Management System')}</p>
+                </div>
+              </div>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="w-14 h-14 flex items-center justify-center rounded-[1.25rem] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-sm transition-all active:scale-90"
+            >
+              <X size={28} />
+            </button>
           </div>
-          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 rounded-2xl text-slate-400 hover:text-rose-500 shadow-sm transition-all"><X size={24} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-10 space-y-6" autoComplete="off">
+        {/* Master Form Content */}
+        <form id={formId} onSubmit={handleSubmit} className="relative" autoComplete="off">
           <input type="hidden" name="_token" value={csrfToken} />
           {isEdit && <input type="hidden" name="_method" value="PUT" />}
           {isEdit && <input type="hidden" name="version" value={user.version || 0} />}
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Họ và tên</label>
-            <input name="full_name" defaultValue={user?.full_name} required className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none" />
-          </div>
+          <div className="flex flex-col lg:flex-row">
+            {/* LEFT PANE: IDENTITY */}
+            <div className="flex-1 p-12 space-y-10">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
+                  <User size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">{t('Thông tin định danh', 'Identification Info')}</h4>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{t('Dữ liệu cá nhân & liên lạc', 'Personal & Contact Data')}</p>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Email</label>
-              <input name="email" type="email" defaultValue={user?.email} required className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="example@gmail.com" autoComplete="off" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Số điện thoại</label>
-              <input name="phone_number" type="tel" defaultValue={user?.phone_number} className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="09xx..." />
-            </div>
-          </div>
+              <div className="space-y-8">
+                <div className="space-y-2.5">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Họ và tên đầy đủ', 'Full Name')}</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                      <User size={20} />
+                    </div>
+                    <input 
+                      name="full_name" 
+                      defaultValue={isEdit ? user?.full_name : ''} 
+                      required 
+                      autoComplete="off"
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-[1.5rem] font-bold text-base outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
+                      placeholder="VD: Nguyễn Văn A..."
+                    />
+                  </div>
+                </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">
-                Mật khẩu {isEdit && <span className="text-xs lowercase opacity-60 font-medium">(Bỏ trống nếu không đổi)</span>}
-              </label>
-              <div className="relative group">
-                <input
-                  name="password"
-                  type={showPass ? "text" : "password"}
-                  required={!isEdit}
-                  className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none pr-12 transition-all"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors p-1"
-                >
-                  {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                <div className="space-y-2.5">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Địa chỉ Email liên hệ', 'Contact Email')}</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                      <Mail size={20} />
+                    </div>
+                    <input 
+                      name="email" 
+                      type="email" 
+                      defaultValue={isEdit ? user?.email : ''} 
+                      required 
+                      autoComplete="off"
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-[1.5rem] font-bold text-base outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Số điện thoại di động', 'Mobile Phone Number')}</label>
+                  <div className="relative group">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+                      <Phone size={20} />
+                    </div>
+                    <input 
+                      name="phone_number" 
+                      defaultValue={isEdit ? user?.phone_number : ''} 
+                      autoComplete="off"
+                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-[1.5rem] font-bold text-base outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
+                      placeholder="09xx..."
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Xác nhận mật khẩu</label>
-              <div className="relative group">
-                <input
-                  name="password_confirmation"
-                  type={showConfirmPass ? "text" : "password"}
-                  required={!isEdit}
-                  className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none pr-12 transition-all"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPass(!showConfirmPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-colors p-1"
-                >
-                  {showConfirmPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+
+            {/* VERTICAL DIVIDER */}
+            <div className="hidden lg:block w-px bg-slate-100 dark:bg-slate-800 self-stretch my-12" />
+
+            {/* RIGHT PANE: ACCESS & SECURITY */}
+            <div className="flex-1 p-12 space-y-10">
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">{t('Cấu hình hệ thống', 'System Configuration')}</h4>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{t('Quyền hạn & Bảo mật truy cập', 'Permissions & Access Security')}</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2.5">
+                    <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Mật khẩu', 'Password')}</label>
+                    <div className="relative">
+                      <input 
+                        name="password" 
+                        type={showPass ? "text" : "password"} 
+                        required={!isEdit}
+                        autoComplete="new-password"
+                        className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all pr-12 shadow-sm"
+                        placeholder="••••••••"
+                      />
+                      <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600">
+                        {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-2.5">
+                    <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Xác nhận', 'Confirm Password')}</label>
+                    <input 
+                      name="password_confirmation" 
+                      type={showPass ? "text" : "password"} 
+                      required={!isEdit}
+                      autoComplete="new-password"
+                      className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all shadow-sm"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2.5">
+                    <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Vai trò hệ thống', 'System Role')}</label>
+                    <input type="hidden" name="role_id" value={roleId} />
+                    <CustomSelect
+                      options={[
+                        { value: '', label: t('Chọn vai trò...', 'Select role...') },
+                        ...roles.map((r: any) => ({ value: r.role_id.toString(), label: r.name, icon: <Shield size={14} /> }))
+                      ]}
+                      value={roleId}
+                      onChange={setRoleId}
+                      placeholder={t('Chọn vai trò', 'Select role')}
+                      icon={<Shield size={16} />}
+                    />
+                  </div>
+                  <div className="space-y-2.5">
+                    <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Hạng thành viên', 'Member Tier')}</label>
+                    <input type="hidden" name="member_tier" value={memberTier} />
+                    <CustomSelect
+                      options={[
+                        { value: '', label: t('Chọn hạng...', 'Select tier...') },
+                        { value: 'Dong', label: t('Đồng (Bronze)', 'Bronze'), icon: <Trophy size={14} className="text-orange-500" /> },
+                        { value: 'Bac', label: t('Bạc (Silver)', 'Silver'), icon: <Trophy size={14} className="text-slate-400" /> },
+                        { value: 'Vang', label: t('Vàng (Gold)', 'Gold'), icon: <Trophy size={14} className="text-amber-500" /> }
+                      ]}
+                      value={memberTier}
+                      onChange={setMemberTier}
+                      placeholder={t('Chọn hạng', 'Select tier')}
+                      icon={<Trophy size={16} />}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2.5">
+                  <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Trạng thái vận hành', 'Operational Status')}</label>
+                  <input type="hidden" name="status" value={status} />
+                  <CustomSelect
+                    options={[
+                      { value: 'Active', label: t('Hoạt động bình thường', 'Active / Normal'), icon: <CheckCircle2 size={14} className="text-emerald-500" /> },
+                      { value: 'Banned', label: t('Bị khóa/Tạm dừng', 'Banned / Suspended'), icon: <XCircle size={14} className="text-rose-500" /> }
+                    ]}
+                    value={status}
+                    onChange={setStatus}
+                    placeholder={t('Chọn trạng thái', 'Select status')}
+                    icon={<Clock size={16} />}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Vai trò</label>
-              <input type="hidden" name="role_id" value={roleId} />
-              <CustomSelect
-                options={[
-                  { value: '', label: 'Chọn vai trò...' },
-                  ...roles.map((r: any) => ({ value: r.role_id.toString(), label: r.name, icon: <Shield size={14} /> }))
-                ]}
-                value={roleId}
-                onChange={setRoleId}
-                placeholder="Chọn vai trò"
-                icon={<Shield size={16} />}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Hạng thành viên</label>
-              <input type="hidden" name="member_tier" value={memberTier} />
-              <CustomSelect
-                options={[
-                  { value: '', label: 'Chọn hạng...' },
-                  { value: 'Dong', label: 'Đồng', icon: <Trophy size={14} className="text-orange-500" /> },
-                  { value: 'Bac', label: 'Bạc', icon: <Trophy size={14} className="text-slate-400" /> },
-                  { value: 'Vang', label: 'Vàng', icon: <Trophy size={14} className="text-amber-500" /> }
-                ]}
-                value={memberTier}
-                onChange={setMemberTier}
-                placeholder="Chọn hạng"
-                icon={<Trophy size={16} />}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Trạng thái</label>
-            <input type="hidden" name="status" value={status} />
-            <CustomSelect
-              options={[
-                { value: '', label: 'Chọn trạng thái...' },
-                { value: 'Active', label: 'Hoạt động', icon: <CheckCircle2 size={14} className="text-emerald-500" /> },
-                { value: 'Banned', label: 'Bị khóa', icon: <XCircle size={14} className="text-rose-500" /> }
-              ]}
-              value={status}
-              onChange={setStatus}
-              placeholder="Chọn trạng thái"
-              icon={<Clock size={16} />}
-            />
-          </div>
-
-          <div className="pt-6 flex gap-4">
-            <Button type="button" variant="outline" className="flex-1 font-black uppercase text-[10px] tracking-widest h-14 rounded-2xl border-slate-200" onClick={onClose}>Hủy bỏ</Button>
-            <Button type="submit" disabled={loading} className="flex-1 font-black uppercase text-[10px] tracking-widest h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/30">
-              {loading ? <Loader2 className="animate-spin" /> : (isEdit ? 'Cập nhật' : 'Tạo mới')}
-            </Button>
           </div>
         </form>
+
+        {/* Master Footer */}
+        <div className="px-12 py-10 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex justify-end gap-6 shrink-0">
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="px-12 h-16 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm" 
+            onClick={onClose}
+          >
+            {t('Hủy yêu cầu', 'Cancel')}
+          </Button>
+          <Button 
+            type="submit" 
+            form={formId}
+            disabled={loading}
+            className="px-16 h-16 rounded-[1.5rem] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-600/30 transition-all active:scale-95 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : (isEdit ? t('Xác nhận Cập nhật', 'Confirm Update') : t('Khởi tạo Tài khoản', 'Create Account'))}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -684,6 +797,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
 function RoleModal({ role, onClose, onSuccess }: { role: Role | null, onClose: () => void, onSuccess: () => void }) {
   const isEdit = !!role;
   const [loading, setLoading] = useState(false);
+  const formId = "role-management-form";
   const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
 
   const defaultPermissions = {
@@ -702,11 +816,11 @@ function RoleModal({ role, onClose, onSuccess }: { role: Role | null, onClose: (
   });
 
   const permissionGroups = [
-    { title: 'Người dùng', keys: ['user_view', 'user_manage'], labels: ['Xem danh sách', 'Quản lý tài khoản'] },
-    { title: 'Sản phẩm', keys: ['product_view', 'product_manage'], labels: ['Xem sản phẩm', 'Quản lý kho hàng'] },
-    { title: 'Đơn hàng', keys: ['order_view', 'order_manage'], labels: ['Xem đơn hàng', 'Xử lý vận chuyển'] },
-    { title: 'Nội dung', keys: ['content_view', 'content_manage'], labels: ['Xem bài viết', 'Đăng tải nội dung'] },
-    { title: 'Hệ thống', keys: ['system_config'], labels: ['Cấu hình chuyên sâu'] },
+    { title: t('Người dùng', 'Users'), keys: ['user_view', 'user_manage'], labels: [t('Xem danh sách', 'View List'), t('Quản lý tài khoản', 'Manage Accounts')], icon: <Users size={16} /> },
+    { title: t('Sản phẩm', 'Products'), keys: ['product_view', 'product_manage'], labels: [t('Xem sản phẩm', 'View Products'), t('Quản lý kho hàng', 'Manage Inventory')], icon: <Briefcase size={16} /> },
+    { title: t('Đơn hàng', 'Orders'), keys: ['order_view', 'order_manage'], labels: [t('Xem đơn hàng', 'View Orders'), t('Xử lý vận chuyển', 'Process Shipping')], icon: <Clock size={16} /> },
+    { title: t('Nội dung', 'Content'), keys: ['content_view', 'content_manage'], labels: [t('Xem bài viết', 'View Articles'), t('Đăng tải nội dung', 'Publish Content')], icon: <Calendar size={16} /> },
+    { title: t('Hệ thống', 'System'), keys: ['system_config'], labels: [t('Cấu hình chuyên sâu', 'Advanced Config')], icon: <Shield size={16} /> },
   ];
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -729,8 +843,8 @@ function RoleModal({ role, onClose, onSuccess }: { role: Role | null, onClose: (
     } catch (error: any) {
       const Swal = (window as any).Swal;
       Swal.fire({
-        title: 'Thất bại!',
-        text: error.response?.data?.message || 'Có lỗi xảy ra!',
+        title: t('Thất bại!', 'Failed!'),
+        text: error.response?.data?.message || t('Có lỗi xảy ra!', 'An error occurred!'),
         icon: 'error',
         customClass: { popup: 'rounded-[2rem]' }
       });
@@ -739,45 +853,81 @@ function RoleModal({ role, onClose, onSuccess }: { role: Role | null, onClose: (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[3rem] shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
-        <div className="px-10 py-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{isEdit ? 'Cấu hình Vai trò' : 'Tạo Vai trò mới'}</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Phân quyền chi tiết hệ thống</p>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto custom-scrollbar">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-[3rem] shadow-[0_40px_160px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden animate-in zoom-in-95 duration-700 flex flex-col my-8">
+        
+        {/* Header */}
+        <div className="px-10 py-8 relative overflow-hidden shrink-0 bg-gradient-to-r from-indigo-50 to-white dark:from-slate-900 dark:to-slate-800 border-b border-slate-100 dark:border-slate-800">
+          <div className="absolute right-0 top-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-[80px] -mr-40 -mt-40" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center text-white shadow-xl shadow-indigo-600/20 ring-4 ring-indigo-500/5">
+                <Shield size={28} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                  {isEdit ? t('Cấu hình', 'Configure') : t('Tạo mới', 'Create')} {t('Vai trò', 'Role')}
+                </h2>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-0.5">{t('Phân quyền & Kiểm soát truy cập', 'Role Permissions & Access Control')}</p>
+              </div>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90"
+            >
+              <X size={24} />
+            </button>
           </div>
-          <button onClick={onClose} className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 rounded-2xl text-slate-400 hover:text-rose-500 shadow-sm transition-all"><X size={24} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Content */}
+        <form id={formId} onSubmit={handleSubmit} className="p-10 space-y-10 overflow-y-auto custom-scrollbar max-h-[60vh]">
+          {/* Identity Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Tên vai trò</label>
-              <input name="name" defaultValue={role?.name} required className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="VD: Marketing, Accountant..." />
+              <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Tên định danh', 'Identifier Name')}</label>
+              <input 
+                name="name" 
+                defaultValue={role?.name} 
+                required 
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-black text-sm outline-none transition-all shadow-sm"
+                placeholder={t('VD: Quản trị viên...', 'E.g. Administrator...')}
+              />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Mô tả ngắn</label>
-              <input name="description" defaultValue={role?.description} className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-base font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Mô tả trách nhiệm..." />
+              <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Mô tả chức trách', 'Role Description')}</label>
+              <input 
+                name="description" 
+                defaultValue={role?.description} 
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-indigo-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all shadow-sm"
+                placeholder={t('Mô tả ngắn gọn quyền hạn...', 'Brief description of role rights...')}
+              />
             </div>
           </div>
 
+          {/* Permissions Matrix */}
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <Shield size={20} className="text-blue-500" />
-              <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Quyền hạn chi tiết</h4>
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600">
+                <ShieldCheck size={16} />
+              </div>
+              <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">{t('Ma trận Phân quyền', 'Permissions Matrix')}</h4>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {permissionGroups.map((group, gIdx) => (
-                <div key={gIdx} className="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border border-slate-100 dark:border-slate-800">
-                  <h5 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4">{group.title}</h5>
-                  <div className="space-y-3">
+                <div key={gIdx} className="p-6 bg-slate-50/50 dark:bg-slate-800/30 rounded-[2rem] border border-slate-100 dark:border-slate-800 transition-all hover:border-indigo-200 dark:hover:border-indigo-900 group">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="text-indigo-500 group-hover:scale-110 transition-transform">{group.icon}</div>
+                    <h5 className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.1em]">{group.title}</h5>
+                  </div>
+                  <div className="space-y-3.5">
                     {group.keys.map((key, kIdx) => (
-                      <label key={key} className="flex items-center justify-between group cursor-pointer">
-                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-blue-600 transition-colors">{group.labels[kIdx]}</span>
+                      <label key={key} className="flex items-center justify-between group/item cursor-pointer">
+                        <span className="text-xs font-bold text-slate-600 dark:text-slate-300 group-hover/item:text-indigo-600 transition-colors">{group.labels[kIdx]}</span>
                         <div
                           onClick={() => setPermissions(prev => ({ ...prev, [key]: !prev[key] }))}
-                          className={`w-12 h-6 rounded-full p-1 transition-all duration-300 ${permissions[key] ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'}`}
+                          className={`w-12 h-6 rounded-full p-1 transition-all duration-300 ${permissions[key] ? 'bg-indigo-600 shadow-lg shadow-indigo-500/10' : 'bg-slate-300 dark:bg-slate-700'}`}
                         >
                           <div className={`w-4 h-4 bg-white rounded-full transition-all duration-300 shadow-sm ${permissions[key] ? 'translate-x-6' : 'translate-x-0'}`} />
                         </div>
@@ -788,14 +938,27 @@ function RoleModal({ role, onClose, onSuccess }: { role: Role | null, onClose: (
               ))}
             </div>
           </div>
-
-          <div className="pt-6 flex gap-4">
-            <Button type="button" variant="outline" className="flex-1 font-black uppercase text-[10px] tracking-widest h-14 rounded-2xl border-slate-200" onClick={onClose}>Hủy bỏ</Button>
-            <Button type="submit" disabled={loading} className="flex-1 font-black uppercase text-[10px] tracking-widest h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/30">
-              {loading ? <Loader2 className="animate-spin" /> : (isEdit ? 'Cập nhật' : 'Tạo mới')}
-            </Button>
-          </div>
         </form>
+
+        {/* Footer */}
+        <div className="px-10 py-8 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex justify-end gap-5 shrink-0">
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="px-10 h-14 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 transition-all shadow-sm" 
+            onClick={onClose}
+          >
+            {t('Hủy bỏ', 'Cancel')}
+          </Button>
+          <Button 
+            type="submit" 
+            form={formId}
+            disabled={loading}
+            className="px-14 h-14 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-600/20 transition-all active:scale-95"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : (isEdit ? t('Lưu cấu hình', 'Save Configuration') : t('Tạo Vai trò', 'Create Role'))}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -822,14 +985,15 @@ function StatCard({ icon, label, value, color, description }: { icon: any, label
 
 function TierBadge({ tier }: { tier: string }) {
   const styles: any = { Vang: 'bg-amber-400 text-white shadow-lg shadow-amber-500/20', Bac: 'bg-slate-400 text-white shadow-lg shadow-slate-500/20', Dong: 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' };
+  const tierNameMap: Record<string, string> = { Vang: t('Vàng', 'Gold'), Bac: t('Bạc', 'Silver'), Dong: t('Đồng', 'Bronze') };
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-wider ${styles[tier] || styles.Dong}`}>
-      <Trophy size={10} /> Member {tier}
+      <Trophy size={10} /> {t('Thành viên', 'Member')} {tierNameMap[tier] || tier}
     </span>
   );
 }
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === 'Active') return <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-inner"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Hoạt động</span>;
-  return <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-widest border border-rose-500/20 shadow-inner"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Bị khóa</span>;
+  if (status === 'Active') return <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 shadow-inner"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> {t('Hoạt động', 'Active')}</span>;
+  return <span className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-widest border border-rose-500/20 shadow-inner"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> {t('Bị khóa', 'Banned')}</span>;
 }

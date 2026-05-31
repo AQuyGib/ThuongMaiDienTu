@@ -39,15 +39,10 @@ export default function SessionManagement({
   const [sessions, setSessions] = useState(initialSessions);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [revokingAll, setRevokingAll] = useState(false);
+  const [confirmRevokeAll, setConfirmRevokeAll] = useState(false);
+  const [revokeSingleId, setRevokeSingleId] = useState<string | null>(null);
 
   const handleRevoke = async (id: string) => {
-    const isMe = id === currentSessionId;
-    const msg = isMe 
-      ? 'Đây là phiên đăng nhập CỦA BẠN (Admin). Nếu thu hồi, bạn sẽ bị văng khỏi hệ thống ngay lập tức. Xác nhận?'
-      : `Bạn có chắc chắn muốn buộc thiết bị này của "${userName}" đăng xuất?`;
-
-    if (!confirm(msg)) return;
-
     setLoadingId(id);
     try {
       await axios.post(`${revokeUrl}/${id}`, {
@@ -56,18 +51,18 @@ export default function SessionManagement({
       }, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
       
       setSessions(sessions.filter(s => s.id !== id));
-      if (isMe) window.location.href = '/login';
+      if (id === currentSessionId) window.location.href = '/login';
     } catch (error) {
       alert('Lỗi hệ thống khi thu hồi phiên làm việc.');
     } finally {
       setLoadingId(null);
+      setRevokeSingleId(null);
     }
   };
 
   const handleRevokeAll = async () => {
-    if (!confirm(`Tất cả các thiết bị hiện tại của "${userName}" sẽ bị buộc đăng xuất ngay lập tức. Tiếp tục?`)) return;
-    
     setRevokingAll(true);
+    setConfirmRevokeAll(false);
     try {
       await axios.post(revokeAllUrl, { _token: csrfToken }, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
       setSessions(sessions.filter(s => s.id === currentSessionId));
@@ -107,7 +102,7 @@ export default function SessionManagement({
             <p className="text-slate-400 text-sm font-medium">Buộc kết thúc toàn bộ phiên đăng nhập của người dùng này.</p>
           </div>
           <Button 
-            onClick={handleRevokeAll}
+            onClick={() => setConfirmRevokeAll(true)}
             disabled={revokingAll || sessions.length === 0}
             className="bg-rose-600 hover:bg-rose-700 text-white font-black uppercase text-[10px] tracking-widest px-8 h-12 rounded-2xl shadow-lg shadow-rose-600/20 transition-all relative z-10"
           >
@@ -153,7 +148,7 @@ export default function SessionManagement({
                 variant="ghost" 
                 size="icon" 
                 disabled={loadingId === session.id}
-                onClick={() => handleRevoke(session.id)}
+                onClick={() => setRevokeSingleId(session.id)}
                 className="h-12 w-12 rounded-2xl text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-all"
               >
                 {loadingId === session.id ? <Loader2 className="animate-spin" size={20} /> : <Trash2 size={20} />}
@@ -187,6 +182,72 @@ export default function SessionManagement({
           </div>
         )}
       </div>
+
+      {/* CUSTOM CONFIRM MODAL (REVOKE ALL) */}
+      {confirmRevokeAll && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-10 text-center">
+              <div className="w-20 h-20 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <AlertTriangle size={40} />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Xác nhận thu hồi toàn bộ?</h3>
+              <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-8">
+                Tất cả các thiết bị hiện tại của <strong className="text-slate-900 dark:text-white">"{userName}"</strong> sẽ bị buộc đăng xuất ngay lập tức. Hành động này không thể hoàn tác.
+              </p>
+              <div className="flex flex-col gap-3">
+                <Button 
+                  onClick={handleRevokeAll}
+                  className="w-full bg-rose-600 hover:bg-rose-700 text-white font-black uppercase text-[11px] tracking-widest h-14 rounded-2xl shadow-lg shadow-rose-600/20"
+                >
+                  Xác nhận đăng xuất toàn bộ
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setConfirmRevokeAll(false)}
+                  className="w-full text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 h-14 rounded-2xl"
+                >
+                  Hủy bỏ
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM CONFIRM MODAL (SINGLE) */}
+      {revokeSingleId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-10 text-center">
+              <div className="w-20 h-20 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <LogOut size={40} />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Thu hồi phiên làm việc?</h3>
+              <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed mb-8">
+                {revokeSingleId === currentSessionId 
+                  ? "Đây là phiên đăng nhập HIỆN TẠI của bạn. Nếu thu hồi, bạn sẽ bị đăng xuất ngay lập tức." 
+                  : `Bạn có chắc chắn muốn buộc thiết bị này của "${userName}" đăng xuất?`}
+              </p>
+              <div className="flex flex-col gap-3">
+                <Button 
+                  onClick={() => handleRevoke(revokeSingleId)}
+                  className="w-full bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-black uppercase text-[11px] tracking-widest h-14 rounded-2xl shadow-xl shadow-slate-900/10"
+                >
+                  Xác nhận thu hồi
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setRevokeSingleId(null)}
+                  className="w-full text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 h-14 rounded-2xl"
+                >
+                  Hủy bỏ
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

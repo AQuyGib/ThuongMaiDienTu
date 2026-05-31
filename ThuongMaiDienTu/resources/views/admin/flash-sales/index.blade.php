@@ -66,10 +66,6 @@
                         <i class="fa-solid fa-pen-to-square"></i>
                         {{ $editingFlashSale ? 'Cập nhật Flash Sale' : 'Tạo Chiến Dịch Mới' }}
                     </h3>
-                    <div id="admin-clock" class="bg-white/20 px-3 py-1 rounded-lg text-xs font-black backdrop-blur-sm border border-white/30 flex items-center gap-2">
-                        <i class="fa-solid fa-clock animate-pulse"></i>
-                        <span id="live-time">00:00:00</span>
-                    </div>
                 </div>
                 <div class="p-6">
                     <form action="{{ $editingFlashSale ? route('admin.flash-sales.update', $editingFlashSale->flash_sale_id) : route('admin.flash-sales.store') }}" method="POST" class="space-y-5">
@@ -84,21 +80,22 @@
                                    placeholder="Ví dụ: Flash Sale Hè Rực Rỡ" required maxlength="150" value="{{ $editingFlashSale->name ?? '' }}">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="block text-sm font-bold text-slate-700">Thời gian bắt đầu</label>
-                                    <button type="button" onclick="setCurrentTime('start_at')" class="text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-tighter">Bây giờ</button>
+                        <div class="space-y-6">
+                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Thời gian bắt đầu</label>
+                                    <button type="button" onclick="setCurrentTime('start_at')" class="text-[9px] px-3 py-1 bg-white text-indigo-600 rounded-lg border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all font-black uppercase shadow-sm">Lấy giờ hiện tại</button>
                                 </div>
-                                <input type="datetime-local" name="start_at" id="start_at" step="1" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-slate-700" 
+                                <input type="datetime-local" name="start_at" id="start_at" step="1" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-base font-bold text-slate-700 bg-white" 
                                        required value="{{ isset($editingFlashSale) ? \Carbon\Carbon::parse($editingFlashSale->start_at)->format('Y-m-d\\TH:i:s') : '' }}">
                             </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="block text-sm font-bold text-slate-700">Thời gian kết thúc</label>
-                                    <button type="button" onclick="setCurrentTime('end_at')" class="text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-tighter">Bây giờ</button>
+                            
+                            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                <div class="flex items-center justify-between mb-3">
+                                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest">Thời gian kết thúc</label>
+                                    <button type="button" onclick="setCurrentTime('end_at')" class="text-[9px] px-3 py-1 bg-white text-indigo-600 rounded-lg border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all font-black uppercase shadow-sm">Lấy giờ hiện tại</button>
                                 </div>
-                                <input type="datetime-local" name="end_at" id="end_at" step="1" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-slate-700" 
+                                <input type="datetime-local" name="end_at" id="end_at" step="1" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-base font-bold text-slate-700 bg-white" 
                                        required value="{{ isset($editingFlashSale) ? \Carbon\Carbon::parse($editingFlashSale->end_at)->format('Y-m-d\\TH:i:s') : '' }}">
                             </div>
                         </div>
@@ -238,39 +235,42 @@
                     </h3>
                 </div>
                 <div class="p-6">
-                    <form action="{{ route('admin.flash-sales.products.store', $currentFlashSale->flash_sale_id) }}" method="POST" class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100 mb-8">
+                    <form id="add-product-form" action="{{ route('admin.flash-sales.products.store', $currentFlashSale->flash_sale_id) }}" method="POST" class="bg-slate-50/80 p-6 rounded-3xl border border-slate-200 mb-8 space-y-6">
                             @csrf
-                            <div class="md:col-span-5">
-                                <label class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 ml-1">Chọn sản phẩm cần Sale</label>
-                                <select name="product_id" id="product_select" class="select2-bootstrap-5" required>
-                                    <option value="">-- Tìm tên sản phẩm --</option>
-                                    @foreach($products as $product)
-                                        <option value="{{ $product->product_id }}" data-price="{{ $product->base_price }}">
-                                            {{ $product->name }} (Gốc: {{ number_format($product->base_price, 0, ',', '.') }}đ)
-                                        </option>
-                                    @endforeach
-                                </select>
+                            <div class="grid grid-cols-1 gap-4">
+                                <div class="w-full">
+                                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">1. Chọn sản phẩm cần chạy Flash Sale</label>
+                                    <select name="product_id" id="product_select" class="select2-bootstrap-5" required>
+                                        <option value="">-- Tìm tên sản phẩm hoặc mã sản phẩm --</option>
+                                        @foreach($products as $product)
+                                            <option value="{{ $product->product_id }}" 
+                                                    data-price="{{ $product->base_price }}"
+                                                    data-image="{{ $product->thumbnail }}">
+                                                {{ $product->name }} (Giá gốc: {{ number_format($product->base_price, 0, ',', '.') }}đ)
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
-                            <div class="md:col-span-1">
-                                <label class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 ml-1">Giảm %</label>
-                                <input type="number" id="discount_percent" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold text-indigo-600" min="0" max="100" placeholder="0">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 ml-1">Giá Sale (đ)</label>
-                                <input type="number" name="sale_price" id="sale_price" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm font-bold text-rose-600" required min="0" placeholder="0">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 ml-1">Tồn kho Sale</label>
-                                <input type="number" name="stock_limit" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm font-medium" required min="1" value="10">
-                            </div>
-                            <div class="md:col-span-1">
-                                <label class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2 ml-1">Thứ tự</label>
-                                <input type="number" name="sort_order" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none text-sm font-medium" min="0" value="0">
-                            </div>
-                            <div class="md:col-span-1">
-                                <button type="submit" class="w-full py-2.5 bg-slate-800 hover:bg-indigo-600 text-white rounded-xl font-bold text-sm transition-all shadow-md shadow-slate-200">
-                                    Thêm
-                                </button>
+
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">2. Giảm (%)</label>
+                                    <input type="number" id="discount_percent" class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-base font-bold text-indigo-600 bg-white" min="0" max="100" placeholder="0">
+                                </div>
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">3. Giá Sale (VNĐ)</label>
+                                    <input type="number" name="sale_price" id="sale_price" class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-base font-black text-rose-600 bg-white" required min="0" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">4. Kho Sale</label>
+                                    <input type="number" name="stock_limit" class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none text-base font-bold text-slate-700 bg-white" required min="1" value="10">
+                                </div>
+                                <div>
+                                    <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                                        <i class="fa-solid fa-plus"></i> Thêm vào Sale
+                                    </button>
+                                </div>
                             </div>
                         </form>
 
@@ -285,12 +285,17 @@
                                         <th class="px-5 py-3"></th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-50">
+                                <tbody id="flash-sale-products-list" class="divide-y divide-slate-50">
                                     @forelse($currentFlashSale->products as $item)
                                         <tr class="hover:bg-slate-50/30 transition-colors">
                                             <td class="px-5 py-4">
-                                                <div class="font-bold text-slate-700 text-sm line-clamp-1">{{ $item->product->name ?? 'N/A' }}</div>
-                                                <div class="text-[10px] text-slate-400 italic">PID: #{{ $item->product->product_id ?? '?' }}</div>
+                                                <div class="flex items-center gap-3">
+                                                    <img src="{{ $item->product->thumbnail }}" class="w-10 h-10 rounded-lg object-cover shadow-sm border border-slate-200">
+                                                    <div>
+                                                        <div class="font-bold text-slate-700 text-sm line-clamp-1">{{ $item->product->name ?? 'N/A' }}</div>
+                                                        <div class="text-[10px] text-slate-400 italic">PID: #{{ $item->product->product_id ?? '?' }}</div>
+                                                    </div>
+                                                </div>
                                             </td>
                                             <td class="px-5 py-4 text-center">
                                                 <span class="text-rose-600 font-black text-sm">{{ number_format($item->sale_price, 0, ',', '.') }}đ</span>
@@ -389,6 +394,131 @@
         setInterval(updateLiveTime, 1000);
         injectClock();
         updateLiveTime();
+
+        // Trì hoãn một chút để đảm bảo Select2 không bị script khác ghi đè
+        setTimeout(function() {
+            if ($('#product_select').data('select2')) {
+                $('#product_select').select2('destroy');
+            }
+
+            $('#product_select').select2({
+                theme: 'bootstrap-5',
+                templateResult: function(opt) {
+                    if (!opt.id) return opt.text;
+                    var imageUrl = $(opt.element).attr('data-image');
+                    if (!imageUrl) return opt.text;
+                    
+                    return $('<div style="display: flex; align-items: center; gap: 10px; padding: 2px 0;">' +
+                             '<img src="' + imageUrl + '" style="width: 32px; height: 32px; border-radius: 6px; object-fit: cover; border: 1px solid #eee;">' +
+                             '<span style="font-weight: 600; color: #334155;">' + opt.text + '</span>' +
+                             '</div>');
+                },
+                templateSelection: function(opt) {
+                    if (!opt.id) return opt.text;
+                    var imageUrl = $(opt.element).attr('data-image');
+                    if (!imageUrl) return opt.text;
+                    
+                    return $('<div style="display: flex; align-items: center; gap: 8px;">' +
+                             '<img src="' + imageUrl + '" style="width: 20px; height: 20px; border-radius: 4px; object-fit: cover;">' +
+                             '<span>' + opt.text + '</span>' +
+                             '</div>');
+                },
+                escapeMarkup: function(m) { return m; }
+            });
+        }, 500);
+
+        // Xử lý AJAX thêm sản phẩm
+        $('#add-product-form').on('submit', function(e) {
+            e.preventDefault();
+            const form = $(this);
+            const submitBtn = form.find('button[type="submit"]');
+            const originalBtnHtml = submitBtn.html();
+
+            // Hiệu ứng loading
+            submitBtn.prop('disabled', true).html('<i class="fa-solid fa-circle-notch animate-spin"></i> Đang thêm...');
+
+            $.ajax({
+                url: form.attr('action'),
+                method: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        // Thêm hàng mới vào bảng
+                        const product = response.product;
+                        const newRow = `
+                            <tr class="hover:bg-slate-50/30 transition-colors animate-in fade-in slide-in-from-left duration-500">
+                                <td class="px-5 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <img src="${product.thumbnail}" class="w-10 h-10 rounded-lg object-cover shadow-sm border border-slate-200">
+                                        <div>
+                                            <div class="font-bold text-slate-700 text-sm line-clamp-1">${product.name}</div>
+                                            <div class="text-[10px] text-slate-400 italic">PID: #${product.id}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 text-center">
+                                    <span class="text-rose-600 font-black text-sm">${product.sale_price}</span>
+                                </td>
+                                <td class="px-5 py-4 text-center">
+                                    <div class="text-xs font-bold text-slate-700">
+                                        <span class="text-indigo-600">${product.sold_quantity}</span> / ${product.stock_limit}
+                                    </div>
+                                    <div class="w-24 h-1.5 bg-slate-100 rounded-full mx-auto mt-2 overflow-hidden">
+                                        <div class="h-full bg-indigo-500 rounded-full" style="width: 0%"></div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-4 text-center">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase">
+                                        Đang bán
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4 text-right">
+                                    <form action="${product.delete_url}" method="POST" class="inline delete-product-form">
+                                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="_method" value="DELETE">
+                                        <button type="submit" class="w-8 h-8 bg-white border border-slate-200 text-slate-400 rounded-lg flex items-center justify-center hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all">
+                                            <i class="fa-solid fa-xmark text-xs"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        `;
+                        
+                        // Xóa dòng "Chưa có sản phẩm" nếu có
+                        $('#flash-sale-products-list').find('td[colspan]').parent().remove();
+                        
+                        $('#flash-sale-products-list').prepend(newRow);
+                        
+                        // Reset form
+                        form[0].reset();
+                        $('#product_select').val('').trigger('change');
+                        
+                        // Thông báo
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Thành công!',
+                            text: response.message,
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    const message = xhr.responseJSON ? xhr.responseJSON.message : 'Có lỗi xảy ra, vui lòng thử lại.';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi!',
+                        text: message
+                    });
+                },
+                complete: function() {
+                    submitBtn.prop('disabled', false).html(originalBtnHtml);
+                }
+            });
+        });
 
         const productSelect = $('#product_select');
         const discountInput = $('#discount_percent');
