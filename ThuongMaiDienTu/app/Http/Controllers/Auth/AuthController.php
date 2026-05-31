@@ -32,13 +32,18 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required|min:8',
+        ], [
+            'email.required' => __('ui.error_email_required'),
+            'email.email' => __('ui.error_email_required'),
+            'password.required' => __('ui.error_password_min'),
+            'password.min' => __('ui.error_password_min'),
         ]);
 
         $user = User::where('email', $request->email)->first();
 
         if ($user && Hash::check($request->password, $user->password_hash)) {
             if ($user->status === 'Banned') {
-                return back()->withErrors(['login_error' => 'Tài khoản của bạn đã bị khóa.'])->withInput();
+                return back()->withErrors(['login_error' => __('ui.error_banned')])->withInput();
             }
 
             // Kiểm tra 2FA
@@ -68,7 +73,7 @@ class AuthController extends Controller
             return redirect()->route('home');
         }
 
-        return back()->withErrors(['login_error' => 'Email hoặc mật khẩu không chính xác.'])->withInput();
+        return back()->withErrors(['login_error' => __('ui.error_invalid_credentials')])->withInput();
     }
 
 
@@ -82,8 +87,13 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
         ], [
-            'email.unique' => 'Email này đã được sử dụng.',
-            'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
+            'full_name.required' => __('ui.error_fullname_required'),
+            'email.required' => __('ui.error_email_required'),
+            'email.email' => __('ui.error_email_required'),
+            'email.unique' => __('ui.error_email_unique'),
+            'password.required' => __('ui.error_password_min'),
+            'password.min' => __('ui.error_password_min'),
+            'password.confirmed' => __('ui.error_password_confirmed'),
         ]);
 
         if ($validator->fails()) {
