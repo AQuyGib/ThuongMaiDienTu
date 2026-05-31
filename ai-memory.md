@@ -25,14 +25,18 @@
   - Service-based backend filtering via `ProductFilterService`.
 
 ## Files Changed
-- **API Authentication (Login, Logout, Profile):**
+- **API Authentication & Login/Register UI:**
   - `ThuongMaiDienTu/app/Http/Controllers/Api/AuthController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Auth/AuthController.php`
   - `ThuongMaiDienTu/app/Http/Middleware/ApiAuthMiddleware.php`
   - `ThuongMaiDienTu/app/Http/Resources/UserResource.php`
   - `ThuongMaiDienTu/bootstrap/app.php`
   - `ThuongMaiDienTu/routes/api.php`
   - `ThuongMaiDienTu/tests/Feature/ApiAuthTest.php`
-  - `ThuongMaiDienTu/scratch/DienMayPro_Auth_API.postman_collection.json`
+  - `ThuongMaiDienTu/scratch/Auth_API.postman_collection.json`
+  - `ThuongMaiDienTu/resources/views/Auth/login_register.blade.php`
+  - `ThuongMaiDienTu/lang/vi/ui.php`
+  - `ThuongMaiDienTu/lang/en/ui.php`
 - **System Orchestrator Upgrade:**
   - `ThuongMaiDienTu/start.bat` (Ultimate Orchestrator v8.0 with interactive System Repair Assistant, one-click interactive Full Automation mode choices, Navigator Dashboard Launcher, comprehensive project health diagnostics report, live MySQL monitors, Laravel logs viewer and cleaner, and auto-healing environment bootstrap)
   - `ThuongMaiDienTu/chay_du_an.bat` (deprecated / replaced by start.bat)
@@ -79,6 +83,20 @@
   - `ThuongMaiDienTu/app/Services/RewardsService.php`
 
 ## Important Logic & Behavior Changes
+- **Responsive Login/Register Interface Upgrade & Multi-Language Validation Fix:**
+  - Integrated custom CSS media queries (`@media`) and adaptive classes to ensure optimal layout on all device categories (Mobile, Tablet, Desktop).
+  - Configured the main dual-panel grid to automatically collapse into a single column layout and hide the decorative left welcome panel on screens narrower than `768px` to focus solely on the credentials form.
+  - Converted static inline CSS styles for the top actions bar (Home redirect, Language switcher) and the registration password container row into dynamic CSS classes (`.form-top-actions`, `.form-row`) for fluid responsiveness.
+  - Automatically restructured the top utilities to justify-between (left and right edges) on mobile to prevent overlapping with the center logo.
+  - Configured `body` container to support auto scrolling (`overflow-y: auto`, `height: auto`) and set standard paddings so that mobile layouts remain perfectly readable and scrollable when virtual keyboards slide up.
+  - Replaced all hardcoded Vietnamese string validation messages in the web `AuthController` (login and register actions) with dynamic multi-language key references (`__('ui.error_...')`).
+  - Added new dedicated validation error translation keys in both `lang/vi/ui.php` and `lang/en/ui.php` to handle incorrect credentials, banned users, password length mismatches, missing names, etc.
+  - Integrated defensive JS on the client side to intercept form submissions: instantly validates password minimum length (8 chars) and password confirmation matching prior to reloading, auto-disables the submit button to block double-submits on slow networks, and replaces the button label with an active spinning loading indicator.
+  - Added a "Remember Me" checkbox to the login form, synchronized with Laravel's remember token session lifetime.
+  - Added a legally required "Terms & Conditions & Privacy Policy" acceptance checkbox to the registration form, fully integrated with client-side defensive checks and dynamic multi-language warnings.
+  - Integrated a real-time "Password Strength Meter" utilizing JavaScript regex matching to dynamically evaluate password complexity scores (Weak, Too Short, Medium, Strong, Very Strong) with a dynamic HSL-colored progress bar.
+  - Developed and integrated a bespoke "Premium Toast Notification System" (CSS-based glassmorphism, slide-in spring animations, state-driven SVG/FontAwesome icons, and active progress-timer countdowns) replacing ugly browser default alert tooltips and popups. Enabled form `novalidate` properties to cleanly redirect all standard validation triggers into the custom toast engine.
+  - Redesigned and repositioned the "Back to Home" and "Language Switcher" buttons: integrated them cleanly as an inline header row (`.form-top-actions-bar`) at the very top of the right-hand form panel. Corrected duplicate CSS syntax bugs (`700;` and double trailing closing braces `}`) to ensure full compiler compliance. Upgraded the elements to a premium glassmorphic ghost design with Outfit typography, spring transformations, glowing hover outlines, custom circular emoji flags, and stylish active language indicators. Added dedicated mobile media adjustments to reduce top padding of the form panel to `30px` (or `24px` on small devices) to keep the form beautifully balanced and responsive on all viewports.
 - **API Authentication (Laravel Sanctum Integration):**
   - Fully integrated industry-standard Laravel Sanctum token-based authentication using `HasApiTokens`.
   - Configured `User.php` to use the `Laravel\Sanctum\HasApiTokens` trait.
