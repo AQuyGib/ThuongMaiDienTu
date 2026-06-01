@@ -55,19 +55,20 @@
      PHẦN 1: TOP BAR - THANH TIỆN ÍCH PHÍA TRÊN CÙNG
      Hiển thị các thông tin cam kết dịch vụ, tra cứu đơn hàng và nút chuyển đổi đa ngôn ngữ (VI/EN)
      ============================================================ -->
+@if(($globalSettings['announcement_show'] ?? '1') !== '0')
 <div class="top-bar">
     <div class="container">
         <!-- Các chính sách cam kết dịch vụ bán hàng -->
         <div class="top-bar-left">
-            <span><i class="fa-solid fa-recycle"></i> {{ __('ui.topbar_trade_in') }}</span>
-            <span><i class="fa-solid fa-certificate"></i> {!! __('ui.topbar_genuine') !!}</span>
-            <span><i class="fa-solid fa-truck-fast"></i> {!! __('ui.topbar_fast_delivery') !!}</span>
+            <span><i class="fa-solid fa-recycle"></i> {!! $globalSettings['topbar_text_1'] ?? __('ui.topbar_trade_in') !!}</span>
+            <span><i class="fa-solid fa-certificate"></i> {!! $globalSettings['topbar_text_2'] ?? __('ui.topbar_genuine') !!}</span>
+            <span><i class="fa-solid fa-truck-fast"></i> {!! $globalSettings['topbar_text_3'] ?? __('ui.topbar_fast_delivery') !!}</span>
         </div>
         <!-- Các liên kết tiện ích & Chuyển đổi ngôn ngữ -->
         <div class="top-bar-right">
-            <span><i class="fa-solid fa-store"></i> {{ __('ui.topbar_nearby_store') }}</span>
+            <span><i class="fa-solid fa-store"></i> {!! $globalSettings['topbar_text_4'] ?? __('ui.topbar_nearby_store') !!}</span>
             <a href="/orders" class="hover:text-white transition"><span><i class="fa-solid fa-truck"></i> {{ __('ui.topbar_track_order') }}</span></a>
-            <span><i class="fa-solid fa-phone"></i> <strong>1800 2097</strong></span>
+            <span><i class="fa-solid fa-phone"></i> <strong>{{ $globalSettings['hotline'] ?? '1800 2097' }}</strong></span>
             
             {{-- Language Switcher - Nút chuyển đổi ngôn ngữ động --}}
             <div class="lang-switcher" id="langSwitcher">
@@ -93,6 +94,7 @@
         </div>
     </div>
 </div>
+@endif
 
 <!-- ============================================================
      PHẦN 2: HEADER MAIN - KHU VỰC ĐIỀU HƯỚNG VÀ TÌM KIẾM CHÍNH
@@ -146,8 +148,12 @@
 
         <!-- Logo trang web thương mại điện tử -->
         <a href="/" class="logo {{ $isHomepage ? 'logo-rgb' : '' }}">
-            <i class="fa-solid fa-bolt"></i>
-            DIENMAY<span>PRO</span>
+            @if(!empty($globalSettings['logo']))
+                <img src="{{ asset($globalSettings['logo']) }}" alt="Logo" style="max-height: 40px; width: auto; object-fit: contain;">
+            @else
+                <i class="fa-solid fa-bolt"></i>
+                {{ $globalSettings['site_name'] ?? 'DIENMAY' }}<span>{{ $globalSettings['site_suffix'] ?? 'PRO' }}</span>
+            @endif
         </a>
 
         <!-- Nút Kích hoạt Mega Menu (Danh mục sản phẩm đa cấp) -->

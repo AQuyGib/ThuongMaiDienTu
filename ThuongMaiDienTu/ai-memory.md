@@ -701,6 +701,81 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - `routes/api.php` (Sửa đổi)
   - `tests/Feature/ApiAuthTest.php` (Tạo mới)
   - `scratch/DienMayPro_Auth_API.postman_collection.json` (Tạo mới)
->>>>>>> xuanhoa/Login
+
+### 36. Chức năng Tùy biến Giao diện chuyên biệt Header & Footer
+- **Mục tiêu:** Phát triển tính năng cho phép quản trị viên tùy biến giao diện website tập trung chuyên biệt vào hai khu vực: Đầu trang (Header & Topbar) và Chân trang (Footer, Socials, Hotline, Custom Links).
+- **Tính năng triển khai:**
+  - **Quản trị Customizer (React Component - `ThemeSettings.tsx`):**
+    - Tái cấu trúc thành **đúng 2 tab chuyên sâu: HEADER và FOOTER** gọn gàng, mang đậm ngôn ngữ thiết kế **Midnight Black Premium** vô cùng đẳng cấp và hiện đại.
+    - **Color Presets**: Tích hợp 5 bộ phối màu sẵn có (Đại dương, Midnight, Eco Green, Đỏ Công Nghệ, Luxury) giúp Admin áp dụng bảng màu hài hòa ngay lập tức chỉ với 1-Click.
+    - **LinksListEditor nâng cao**: Quản lý danh sách liên kết động cho Cột 2 & Cột 3 Chân trang trực quan, tích hợp các nút **Thêm nhanh (Link Presets)** như Chính sách, Vận trình đơn hàng, Tuyển dụng,...
+    - **Live Preview nâng cấp**: Hỗ trợ thanh thu phóng tự do (Zoom slider 25% - 100%), bộ lọc chế độ xem trước (Xem toàn bộ, Chỉ xem Header, Chỉ xem Footer) để kiểm nghiệm giao diện hoàn hảo nhất trước khi lưu.
+  - **Đồng bộ hóa CSS Variables (`app.blade.php`):**
+    - Nạp động các mã màu cấu hình từ `$globalSettings` sang biến CSS `:root` và đồng bộ hóa với toàn bộ các class `.header-main`, `.top-bar`, `.footer`, `.footer-col h4`, `.footer-quick-links`.
+  - **Đồng bộ hóa Giao diện Frontend (`header.blade.php` & `footer.blade.php`):**
+    - **Header**: Tích hợp cấu hình bật/tắt hiển thị Topbar, chuyển đổi các nội dung cam kết tĩnh sang biến `$globalSettings['topbar_text_...']` và hotline hỗ trợ động. Logo tự động fallback về logo chữ (Site Name + Suffix) kèm hiệu ứng RGB trên trang chủ nếu không có ảnh tải lên.
+    - **Footer**: Chuyển hotlineGọi mua, Kỹ thuật, Khiếu nại, Bảo hành, Địa chỉ và Email sang các biến tương ứng trong `$globalSettings`.
+    - **Liên kết động Footer**: Tự động giải mã JSON render danh sách liên kết `{ label, url }` cho Cột 2 & Cột 3, fallback an toàn về danh sách mặc định nếu chưa có cấu hình. Đồng bộ liên kết Facebook, Youtube, Tiktok, Instagram, và dòng Copyright chân trang.
+- **Các file sửa đổi:**
+  - `resources/js/components/ThemeSettings.tsx` (Sửa đổi)
+  - `resources/views/layouts/app.blade.php` (Sửa đổi)
+  - `resources/views/partials/header.blade.php` (Sửa đổi)
+  - `resources/views/partials/footer.blade.php` (Sửa đổi)
+
+### 41. Siêu Nâng Cấp Giao Diện Tùy Biến Giao Diện Master (Theme Settings UI/UX Premium Overhaul & Real Storefront Simulation)
+- **Khắc phục lỗi ép dẹp (squished) ô chọn màu**: Gộp ô nhập mã màu Hex và ô chọn màu trực quan thành một Input thống nhất (ô màu tròn nằm trong ô nhập text như Shopify), đảm bảo không bao giờ chồng chéo.
+- **Mô phỏng Live Preview siêu thực 100% giống Storefront thật**:
+  - **Tái cấu trúc HTML/CSS chuẩn**: Loại bỏ inline styles thô sơ, đưa toàn bộ CSS layout thật của `.top-bar`, `.header-main`, `.logo`, `.header-category-btn`, `.header-province-btn`, `.search-bar`, `.header-actions`, `.action-item`, `.footer`, `.footer-grid`, `.footer-col`, `.social-icons`, `.footer-quick-links`, `.footer-copyright-bar` vào một thẻ `<style>` nhúng động. Điều này giúp mockup thừa hưởng 100% giao diện thực tế của storefront.
+  - **Bổ sung thành phần thực tế**: Tích hợp nút "Góc video", "Lang-switcher" động, liên kết "Tra cứu đơn hàng" trên topbar, và danh sách các từ khoá sản phẩm phổ biến nhanh (popular tags quick links) kiểu dáng CellphoneS ở chân trang.
+  - **Đồng bộ hóa 100% các chi tiết nhỏ**: 
+    - Loại bỏ viền tròn nhân tạo quanh các biểu tượng mạng xã hội trong mockup. Thay bằng các **free-floating icons 28px** đổi màu rực rỡ và bay lên nhẹ khi hover y hệt storefront thực tế.
+    - Cải tiến cột đăng ký khuyến mãi chân trang có đầy đủ các trường nhập Email, Số điện thoại và hộp checkbox điều khoản bảo mật thay vì chỉ có một trường đơn độc thô sơ.
+  - **Mô phỏng Responsive Mobile thật 100%**: Khi bật chế độ xem Điện thoại (`isMobile === true`), mockup tự động áp dụng các quy tắc CSS responsive thực tế: Ẩn Topbar, ẩn nút Danh mục/Tỉnh thành ở Header, co giãn Logo và các Action icons sang hai bên, ẩn text nhãn của các Action icons (chỉ hiện biểu tượng lớn 20px), đẩy ô tìm kiếm xuống dòng thứ hai chiếm trọn 100% chiều rộng, và xếp chồng lưới footer thành 1 cột đứng.
+- **Chú thích chi tiết & Ghi nhận thay đổi trực quan (Customizer Badges)**:
+  - Tích hợp các vùng viền nét đứt (`customizer-highlight`) quanh tất cả các thành phần mockup chịu ảnh hưởng bởi các ô cấu hình.
+  - Khi tab tương ứng hoạt động (Header hoặc Footer), vùng đó sẽ tự động kích hoạt viền nét đứt màu tím đậm rực rỡ (`active-highlight`) và gắn các nhãn neon rực rỡ (`customizer-badge` với animation `neon-pulse`) ghi rõ chính xác tên thuộc tính động (như `header_bg_color`, `site_name`, `logo`, `footer_col_1_title`, `footer_copyright`...) đang điều hành vùng giao diện đó. Người dùng có thể dễ dàng đối chiếu sự thay đổi cực kỳ chính xác và trực quan 100%.
+- **Biên dịch tài nguyên**: Hướng dẫn người dùng chọn phím `2` hoặc `5` ở cửa sổ terminal chạy `start.bat` của host để chạy `npm run build` biên dịch Vite asset mới.
+
+- **Các file sửa đổi:**
+  - `resources/js/components/ThemeSettings.tsx` (Sửa đổi)
+  - `ai-memory.md` (Cập nhật ghi nhớ)
+
+
+### 42. Tích Hợp Live Storefront Iframe & Đồng Bộ DOM Thời Gian Thực Chuyên Biệt Header & Footer
+- **Mục tiêu:** Đáp ứng yêu cầu nâng cấp giao diện mô phỏng đạt 100% độ chính xác thực tế ("mô phỏng như real 100%"). Thay thế toàn bộ khung mockup storefront tự vẽ bằng một `<iframe>` nhúng trực tiếp giao diện Storefront thật (`/?theme_preview=1`) và thực hiện đồng bộ hóa DOM thời gian thực (Same-Origin DOM Sync).
+- **Các nâng cấp cụ thể:**
+  - **Tích hợp Live Iframe:**
+    - Thay thế component mockup `StorefrontContent` bằng một `<iframe>` thực tế trên cả hai khung mô phỏng thiết bị macOS Safari (Máy tính) và iPhone (Điện thoại).
+    - Thừa hưởng 100% responsive media queries của trình duyệt thực tế mà không cần bất kỳ dòng giả lập CSS nào (nút danh mục, nút tỉnh thành, topbar tự động ẩn hiện, các cột footer tự động xếp chồng dựa trên chiều rộng viewport iframe).
+  - **Đồng bộ hóa DOM Thời Gian Thực (`syncIframeDOM`):**
+    - Lắng nghe sự thay đổi của form cài đặt (`settings`, `col2Links`, `col3Links`, `activeTab`) và cập nhật trực tiếp vào tài liệu DOM của iframe (`iframe.contentDocument`).
+    - Cập nhật các biến CSS màu sắc trên :root của iframe (`--header-bg-color`, `--header-text-color`, `--announcement-bg-color`, `--announcement-text-color`, `--footer-bg-color`, `--footer-text-color`, `--footer-heading-color`) cho hiệu ứng chuyển đổi màu sắc tức thời cực kỳ mượt mà.
+    - Cập nhật logo hình ảnh (tự động render thẻ `<img>` với src là logo_preview/logo thật) hoặc logo chữ (site_name + site_suffix) trực tiếp vào thẻ `a.logo` của header storefront.
+    - Đồng bộ hóa toàn bộ các trường text động như Hotline tổng đài, các thông tin cam kết chạy chữ trên Topbar, và ẩn hiện Topbar theo thuộc tính `announcement_show`.
+    - Cập nhật số điện thoại các tổng đài hỗ trợ Gọi mua, Kỹ thuật, Khiếu nại, Bảo hành, Địa chỉ và Email của chân trang.
+    - Đồng bộ hóa các liên kết mạng xã hội và cập nhật trạng thái hiển thị (tự động tô xám các icon chưa cấu hình đường dẫn).
+    - Đồng bộ hóa văn bản bản quyền `footer_copyright` dưới chân trang.
+  - **Tái tạo Liên kết động Footer:**
+    - Tự động xóa sạch và tái tạo các thẻ `li` / `a` danh sách liên kết tùy chỉnh ở Cột 2 (Về chúng tôi) và Cột 3 (Chính sách) ngay lập tức khi Admin thêm, sửa, hoặc xóa dòng liên kết trên Customizer.
+  - **Đánh dấu viền Neon & Nhãn Customizer trong Iframe:**
+    - Tiêm động một thẻ `<style>` chuyên biệt vào `<head>` của iframe định nghĩa các hiệu ứng viền nét đứt màu neon glowing (`customizer-highlight` / `active-highlight`) và nhãn badge (`customizer-badge` kèm hiệu ứng pulsing `neon-pulse`).
+    - Chỉ áp dụng đánh dấu và hiển thị nhãn chỉ dẫn thuộc tính động (như `site_name`, `footer_copyright`, `header_bg_color`,...) cho khu vực Header & Topbar khi Tab Đầu trang kích hoạt, và khu vực Footer khi Tab Chân trang kích hoạt, đúng theo yêu cầu chỉ tập trung điều chỉnh Header & Footer.
+    - Tự động cuộn mượt (smooth scroll) màn hình Iframe lên đầu trang (khi chỉnh Header) hoặc xuống cuối trang (khi chỉnh Footer) khi chuyển tab để đảm bảo trải nghiệm trực quan nhất.
+- **Các file sửa đổi:**
+  - `resources/js/components/ThemeSettings.tsx` (Sửa đổi)
+  - `start.bat` (Nâng cấp & Sửa lỗi)
+  - `ai-memory.md` (Cập nhật ghi nhớ)
+
+- **Ẩn hoàn toàn nội dung giữa (Body) theo yêu cầu chuyên biệt & Sửa lỗi chữ thô Customizer:**
+  - Tiêm CSS trực tiếp vào tài liệu iframe ẩn hoàn toàn phần thẻ `<main>`, bong bóng chatbot thực tế (`.chatbot-fab`, `#chatbot-fab`, `#ai-chat-window`, `#pending-payment-alert`), và các thanh so sánh nổi (`.compare-bar`, `.compare-bar-inner`, `.compare-floating-bar`).
+  - Sửa lỗi hiển thị chữ thô do ký tự thoát `\${` ở các trường Logo, Topbar, Hotline, Địa chỉ và Copyright. Các biến giờ đây được đánh giá nội suy chính xác 100% theo dữ liệu thời gian thực của Admin.
+  - Loại bỏ hoàn toàn các nhãn text `.customizer-badge` đè che khuất các phần tử thật của website. Thay thế hiệu ứng viền highlight thành một đường viền outline nét đứt màu đỏ thương hiệu `#d70018` tuyệt đẹp có bóng mờ phát sáng dịu mà không gây xê dịch hay móp xẹp chiều cao của Header/Topbar.
+  - Sửa lỗi co rút và lệch khung xem trước bằng cách chuyển macOS Safari sang định vị tuyệt đối `absolute top-4 left-4`, mở rộng kích thước pre-transform `100/previewScale %` và sử dụng `origin-top-left` kèm `shrink-0`. Khung máy tính giờ đây hiển thị siêu nét, lấp đầy 100% diện tích giả lập thực tế không còn lề thừa hay thanh cuộn ngang khó chịu.
+
+- **Nâng cấp Smart Orchestrator start.bat & Tránh lỗi Parser crash:**
+  - Expose Option [5] thành phím tắt ONE-CLICK mang tên `FAST REBUILD & RUN`, trỏ thẳng đến luồng tiêu chuẩn `:PIPELINE_STANDARD` giúp Reset DB, Seed dữ liệu gia lập, Build Vite nhanh và khởi chạy Server tự động mở trình duyệt ngay lập tức.
+  - Khắc phục triệt để lỗi `"The system cannot find the batch label specified - SUPER_PIPELINE"` và các lỗi parser crash khác bằng cách chuyển đổi toàn bộ cấu trúc `if (...)` chứa PowerShell command có ngoặc đơn lồng nhau thành các bước nhảy nhãn tuyến tính `goto` an toàn (`:REBUILD_DB_SQLITE`, `:PIPE_DB_SQLITE`, v.v.).
+
+
 
 
