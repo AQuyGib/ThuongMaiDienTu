@@ -119,22 +119,47 @@ class CartController extends Controller
         if ($parentProductId) {
             $parentProduct = Product::find($parentProductId);
             if ($parentProduct) {
-                // Truy vấn bảng trung gian product_combos để lấy thông tin cấu hình giảm giá
-                $comboRelation = $parentProduct->comboProducts()->where('product_combos.combo_product_id', $productId)->first();
-                if ($comboRelation) {
-                    $pivot = $comboRelation->pivot;
-                    $basePriceToDiscount = $salePrice ?? (int) $product->base_price;
-                    
-                    // Áp dụng giảm giá theo phần trăm (%) hoặc số tiền cố định (đ)
-                    if ($pivot->discount_type === 'percentage') {
-                        $salePrice = (int) ($basePriceToDiscount * (1 - $pivot->discount_value / 100));
-                    } else {
-                        $salePrice = (int) ($basePriceToDiscount - $pivot->discount_value);
+                $basePriceToDiscount = $salePrice ?? (int) $product->base_price;
+                $appliedDiscount = false;
+
+                // 1. Kiểm tra từ Cache Combo AI đã đề xuất
+                $user = auth()->user();
+                $userKey = $user ? $user->user_id : (session()->getId() ?? 'guest');
+                $cacheKey = "ai_combo_recs_{$userKey}_{$parentProductId}";
+                $cachedCombos = cache()->get($cacheKey);
+
+                if (is_array($cachedCombos)) {
+                    foreach ($cachedCombos as $combo) {
+                        if ((int) $combo['product_id'] === $productId) {
+                            $discountType = $combo['discount_type'];
+                            $discountValue = (float) $combo['discount_value'];
+
+                            if ($discountType === 'percentage') {
+                                $salePrice = (int) ($basePriceToDiscount * (1 - $discountValue / 100));
+                            } else {
+                                $salePrice = (int) ($basePriceToDiscount - $discountValue);
+                            }
+                            $appliedDiscount = true;
+                            break;
+                        }
                     }
-                    
-                    if ($salePrice < 0) {
-                        $salePrice = 0;
+                }
+
+                // 2. Fallback về cơ sở dữ liệu nếu không tìm thấy trong Cache AI
+                if (!$appliedDiscount) {
+                    $comboRelation = $parentProduct->comboProducts()->where('product_combos.combo_product_id', $productId)->first();
+                    if ($comboRelation) {
+                        $pivot = $comboRelation->pivot;
+                        if ($pivot->discount_type === 'percentage') {
+                            $salePrice = (int) ($basePriceToDiscount * (1 - $pivot->discount_value / 100));
+                        } else {
+                            $salePrice = (int) ($basePriceToDiscount - $pivot->discount_value);
+                        }
                     }
+                }
+
+                if ($salePrice !== null && $salePrice < 0) {
+                    $salePrice = 0;
                 }
             }
         }

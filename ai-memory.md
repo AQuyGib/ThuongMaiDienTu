@@ -1,6 +1,18 @@
 # Project Memory
 
 ## Current State & Focus
+- **Tích hợp nhánh AI & Hoàn tất Merge (Merge Branch AnhQuy/TichHopAI into master):**
+  - Thực hiện merge thành công nhánh `AnhQuy/TichHopAI` vào nhánh `master` và giải quyết xung đột thủ công trong file `ThuongMaiDienTu/ai-memory.md` bằng cách hợp nhất lịch sử phát triển của cả hai nhánh một cách khoa học.
+  - Đồng bộ và cài đặt toàn bộ dependencies mới của dự án bằng lệnh `composer install --ignore-platform-reqs`, giúp tải đầy đủ các thư viện hỗ trợ AI và API Sanctum.
+  - Publish các file migration của Laravel Sanctum (`personal_access_tokens`) và thực thi thành công toàn bộ migration cơ sở dữ liệu (`php artisan migrate`), thiết lập hoàn chỉnh các bảng lưu vết log quét AI và cấu hình Sanctum.
+  - Khắc phục lỗi kiểm thử API xác thực Sanctum (`ApiAuthTest`):
+    - Cập nhật mật khẩu mẫu trong ca kiểm thử từ 6 ký tự lên 11 ký tự (`password123`) để vượt qua rule kiểm tra độ dài tối thiểu của password validation (`min:8`).
+    - Tích hợp hàm `$this->refreshApplication()` trước khi gửi request lấy thông tin người dùng lần thứ hai sau khi đăng xuất nhằm làm sạch cache memory auth trong môi trường test, giải quyết triệt để lỗi logic cache token.
+  - Chạy thành công 100% các bài test suite bao gồm phân hệ kiểm duyệt bài viết UGC AI (`ArticleModerationTest`) và Suite xác thực API (`ApiAuthTest`).
+- **Sửa lỗi cú pháp shopping cart:**
+  - Khắc phục lỗi `syntax error, unexpected end of file, expecting "elseif" or "else" or "endif"` tại trang `/shoppingcart` do Blade compiler tự động biên dịch chữ `@auth` trong block comment JavaScript (dòng 540) thành thẻ mở `if` của PHP nhưng không có thẻ đóng.
+  - Thay thế `@auth` bằng `auth` trong phần giải thích comment và thay thế cấu trúc `@auth` thành `@if(Auth::check())` trong logic xử lý điều hướng `window.proceedToCheckout` để tăng độ ổn định.
+  - Chạy `php artisan view:clear` và biên dịch thử thành công, xác nhận trang giỏ hàng render bình thường không có lỗi.
 - **Dọn dẹp & Đồng bộ hóa Hệ thống Testing:**
   - Sửa lỗi lặp lại code dư thừa ở cuối file `ServiceInvoiceController.php` (cắt bỏ phần trùng lặp của hàm `destroy`).
   - Khắc phục các test case Flash Sale (`FlashSaleCheckoutTest` và `FlashSaleEndToEndTest`) bị lỗi: Sửa đổi assert status trả về từ `'success. success'` thành `'success'`; tích hợp cơ chế đăng nhập (`actingAs($user)`) và chạy seeder `RoleSeeder` trong môi trường test trước khi gọi các route thanh toán yêu cầu middleware `auth`.
@@ -37,6 +49,21 @@
   - `ThuongMaiDienTu/tests/Feature/FlashSaleCheckoutTest.php`
   - `ThuongMaiDienTu/tests/Feature/FlashSaleEndToEndTest.php`
   - `ThuongMaiDienTu/tests/Feature/NotificationTest.php`
+- **API Authentication & Login/Register UI:**
+  - `ThuongMaiDienTu/app/Http/Controllers/Api/AuthController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Auth/AuthController.php`
+  - `ThuongMaiDienTu/app/Http/Middleware/ApiAuthMiddleware.php`
+  - `ThuongMaiDienTu/app/Http/Resources/UserResource.php`
+  - `ThuongMaiDienTu/bootstrap/app.php`
+  - `ThuongMaiDienTu/routes/api.php`
+  - `ThuongMaiDienTu/tests/Feature/ApiAuthTest.php`
+  - `ThuongMaiDienTu/scratch/Auth_API.postman_collection.json`
+  - `ThuongMaiDienTu/resources/views/Auth/login_register.blade.php`
+  - `ThuongMaiDienTu/lang/vi/ui.php`
+  - `ThuongMaiDienTu/lang/en/ui.php`
+- **System Orchestrator Upgrade:**
+  - `ThuongMaiDienTu/start.bat` (Ultimate Orchestrator v8.0 with interactive System Repair Assistant, one-click interactive Full Automation mode choices, Navigator Dashboard Launcher, comprehensive project health diagnostics report, live MySQL monitors, Laravel logs viewer and cleaner, and auto-healing environment bootstrap)
+  - `ThuongMaiDienTu/chay_du_an.bat` (deprecated / replaced by start.bat)
 - **Checkout / Payment Validation:**
   - `ThuongMaiDienTu/resources/views/frontend/cart/pay.blade.php`
 - **Articles:**
@@ -86,6 +113,27 @@
   - `ThuongMaiDienTu/app/Services/PointsService.php`
 
 ## Important Logic & Behavior Changes
+- **Responsive Login/Register Interface Upgrade & Multi-Language Validation Fix:**
+  - Integrated custom CSS media queries (`@media`) and adaptive classes to ensure optimal layout on all device categories (Mobile, Tablet, Desktop).
+  - Configured the main dual-panel grid to automatically collapse into a single column layout and hide the decorative left welcome panel on screens narrower than `768px` to focus solely on the credentials form.
+  - Converted static inline CSS styles for the top actions bar (Home redirect, Language switcher) and the registration password container row into dynamic CSS classes (`.form-top-actions`, `.form-row`) for fluid responsiveness.
+  - Automatically restructured the top utilities to justify-between (left and right edges) on mobile to prevent overlapping with the center logo.
+  - Configured `body` container to support auto scrolling (`overflow-y: auto`, `height: auto`) and set standard paddings so that mobile layouts remain perfectly readable and scrollable when virtual keyboards slide up.
+  - Replaced all hardcoded Vietnamese string validation messages in the web `AuthController` (login and register actions) with dynamic multi-language key references (`__('ui.error_...')`).
+  - Added new dedicated validation error translation keys in both `lang/vi/ui.php` and `lang/en/ui.php` to handle incorrect credentials, banned users, password length mismatches, missing names, etc.
+  - Integrated defensive JS on the client side to intercept form submissions: instantly validates password minimum length (8 chars) and password confirmation matching prior to reloading, auto-disables the submit button to block double-submits on slow networks, and replaces the button label with an active spinning loading indicator.
+  - Added a "Remember Me" checkbox to the login form, synchronized with Laravel's remember token session lifetime.
+  - Added a legally required "Terms & Conditions & Privacy Policy" acceptance checkbox to the registration form, fully integrated with client-side defensive checks and dynamic multi-language warnings.
+  - Integrated a real-time "Password Strength Meter" utilizing JavaScript regex matching to dynamically evaluate password complexity scores (Weak, Too Short, Medium, Strong, Very Strong) with a dynamic HSL-colored progress bar.
+  - Developed and integrated a bespoke "Premium Toast Notification System" (CSS-based glassmorphism, slide-in spring animations, state-driven SVG/FontAwesome icons, and active progress-timer countdowns) replacing ugly browser default alert tooltips and popups. Enabled form `novalidate` properties to cleanly redirect all standard validation triggers into the custom toast engine.
+  - Redesigned and repositioned the "Back to Home" and "Language Switcher" buttons: integrated them cleanly as an inline header row (`.form-top-actions-bar`) at the very top of the right-hand form panel. Corrected duplicate CSS syntax bugs (`700;` and double trailing closing braces `}`) to ensure full compiler compliance. Upgraded the elements to a premium glassmorphic ghost design with Outfit typography, spring transformations, glowing hover outlines, custom circular emoji flags, and stylish active language indicators. Added dedicated mobile media adjustments to reduce top padding of the form panel to `30px` (or `24px` on small devices) to keep the form beautifully balanced and responsive on all viewports.
+- **API Authentication (Laravel Sanctum Integration):**
+  - Fully integrated industry-standard Laravel Sanctum token-based authentication using `HasApiTokens`.
+  - Configured `User.php` to use the `Laravel\Sanctum\HasApiTokens` trait.
+  - Implemented `AuthController.php` which generates personal access tokens via `$user->createToken('api-token')->plainTextToken` and revokes tokens upon logout via `currentAccessToken()->delete()`.
+  - Built custom `ApiAuthMiddleware.php` wrapping around the standard Sanctum guard (`Auth::guard('sanctum')->user()`) to perform clean authorization, banned account checking (immediately revoking their active token if blocked), and seamless integration into standard Laravel authentication states.
+  - Refactored `ApiAuthTest.php` feature tests to assert tokens against the standard `personal_access_tokens` table and verified credentials.
+  - Exported a fully-documented, dynamic Postman Collection JSON file with integrated test scripts that automatically capture and propagate authorization tokens across requests for fluid testing.
 - **Lucky Wheel Rank-Restrictions:**
   - Added a `min_rank` column in the Admin Quick Manager Modal. The dropdown options map to database tier names (`Dong`, `Bac`, `Vang`, `KimCuong`) and "none".
   - Created a client-side rank verification dictionary (`rankOrder`) in JavaScript to check and alert user if their active tier (`member_tier`) is insufficient for the selected wheel before triggering the spin API.
@@ -266,23 +314,10 @@
   - Verify the new detail-page compare button visually against the existing product action buttons.
   - Consider extracting compare button styles into reusable Blade components to reduce duplication.
   - Verify and apply the new migration against the actual database engine.
-
-    - Viết comment mô tả chức năng chi tiết cho tất cả các hàm và khối logic bên trong `Admin\RewardsController.php` (quản trị, validation, image upload, cấu hình vòng quay, lọc lịch sử).
-    - Viết comment cho `RewardsController.php` (frontend endpoint phục vụ xem quà, redeem AJAX, và quay thưởng AJAX).
-    - Viết comment giải thích logic nghiệp vụ của `RewardsService.php` (các giao dịch DB, tính toán random trúng giải theo trọng số, trừ điểm ví, kiểm tra hạng thành viên, kiểm tra tồn kho).
-    - Viết comment cho các file Seeder dữ liệu giả lập (`RewardSeeder.php`, `RewardHistorySeeder.php`).
-
-## TODOs & Follow-up Work
-- **Lucky Wheel & Rewards:**
-  - Check database translations for reward model attributes if multi-language data-level localization becomes necessary.
-  - Test custom sound effects triggering on spin start and stop if requested by the user.
-- **Vouchers / Coupon System:**
-  - Theo dõi trải nghiệm người dùng khi áp dụng mã giảm giá và đảm bảo phí ship (nếu có) được cập nhật đồng bộ.
-  - Test thực tế luồng mua hàng trọn vẹn với mã đổi thưởng.
-- **Articles:**
-  - If desired, refine tag taxonomy so lifestyle tags map to a dedicated database column instead of inferred article attributes.
-  - If desired, further reduce duplication by moving article preview markup into a shared partial component.
-- **Storefront:**
-  - Verify the new detail-page compare button visually against the existing product action buttons.
-  - Consider extracting compare button styles into reusable Blade components to reduce duplication.
-  - Verify and apply the new migration against the actual database engine.
+- **Environment & System Setup:**
+  - Kích hoạt thành công tiện ích mở rộng `zip` (`ext-zip`) và `gd` (`ext-gd`) trong tệp cấu hình PHP của hệ thống (`C:\xampp\php\php.ini`).
+  - Đã sẵn sàng hỗ trợ người dùng chạy lại `composer install` không bị gián đoạn và có tốc độ giải nén tối đa.
+  - Tích hợp **SUPER PIPELINE** (Standard Pipeline & Clean Rebuild Pipeline) vào `start.bat` để tổ hợp chạy toàn trình từ đầu đến cuối chỉ với 1-Click.
+  - **BUG FIX (Super Pipeline + MySQL):** Sửa 2 lỗi nghiêm trọng: (1) Thêm kiểm tra MySQL process (`mysqld.exe`) đang chạy trước khi gọi `migrate:fresh --seed` trong cả 2 pipeline (Standard & Clean Rebuild), tránh script treo chết khi MySQL chưa bật. (2) Thêm `goto PROCESS` sau `npm run build` trong PIPELINE_CLEAN_REBUILD — trước đó script rơi thẳng xuống nhãn `:VIEW_SITEMAP` khiến Laravel server không bao giờ được khởi chạy.
+  - Khắc phục thành công lỗi `QueryException: General error: 1 error in index orders_user_id_status_index after drop column` trên SQLite bằng cách tự động drop index ghép trước khi drop cột và tái tạo lại sau khi đổi cấu trúc cột trong tệp migration `2026_05_14_130000_add_cancelled_status_to_orders_table.php`.
+  - Khai báo bổ sung gói `"laravel/sanctum": "^4.0"` vào mục `"require"` của [composer.json](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/composer.json) giải quyết triệt để lỗi `Trait "Laravel\Sanctum\HasApiTokens" not found`, giúp package tự động cài đặt mượt mà khi rebuild.

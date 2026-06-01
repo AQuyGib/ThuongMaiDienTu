@@ -35,8 +35,13 @@ class ArticleController extends Controller
         // Thực hiện truy vấn danh sách bài viết kèm thông tin tác giả để tránh lỗi N+1 Query
         $articles = Article::with('author')
             ->when($status, function ($query, $status) {
-                // Lọc theo trạng thái bài viết (ví dụ: pending - chờ duyệt, approved - đã duyệt)
-                $query->where('status', $status);
+                if ($status === 'ai_checked') {
+                    // Lọc theo các bài viết đã được AI kiểm duyệt quét qua
+                    $query->where('ai_checked', 1);
+                } else {
+                    // Lọc theo trạng thái bài viết (ví dụ: pending - chờ duyệt, approved - đã duyệt)
+                    $query->where('status', $status);
+                }
             })
             ->when($search, function ($query, $search) {
                 // Lọc theo từ khóa tìm kiếm (so khớp tiêu đề hoặc tên đầy đủ của tác giả viết bài)
@@ -51,8 +56,17 @@ class ArticleController extends Controller
             ->paginate(10) // Phân trang, mỗi trang hiển thị tối đa 10 bài viết
             ->withQueryString(); // Giữ nguyên các tham số bộ lọc trên thanh URL khi chuyển trang
 
+        // Tính toán các chỉ số thống kê toàn cục từ cơ sở dữ liệu (thay vì tính cục bộ trên trang phân trang)
+        $stats = [
+            'total' => Article::count(),
+            'approved' => Article::where('status', 'approved')->count(),
+            'pending' => Article::where('status', 'pending')->count(),
+            'rejected' => Article::where('status', 'rejected')->count(),
+            'ai_checked' => Article::where('ai_checked', 1)->count(),
+        ];
+
         // Trả về giao diện danh sách bài viết trong khu vực Admin
-        return view('admin.articles.index', compact('articles'));
+        return view('admin.articles.index', compact('articles', 'stats'));
     }
 
     /**
@@ -235,5 +249,53 @@ class ArticleController extends Controller
         }
 
         return redirect()->route('admin.articles.index')->with('error', 'Bài viết không đủ điều kiện duyệt hoặc đã được duyệt!');
+    }
+
+    /**
+     * Từ chối bài viết do khách hàng viết.
+     * 
+     * @param string $id ID bài viết
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function reject(string $id)
+    {
+        $article = Article::findOrFail($id);
+        
+        if ($article->author_type === 'customer' && $article->status === 'pending') {
+            $article->update([
+                'status' => 'rejected'
+            ]);
+            return redirect()->route('admin.articles.index')->with('success', 'Đã từ chối bài viết thành công!');
+        }
+
+        return redirect()->route('admin.articles.index')->with('error', 'Bài viết không ở trạng thái chờ duyệt!');
+    }
+
+    /**
+     * Phê duyệt hàng loạt các bài viết chờ duyệt đạt chuẩn kiểm duyệt của AI.
+     * 
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function bulkApproveAi()
+    {
+        $articles = Article::where('author_type', 'customer')
+            ->where('status', 'pending')
+            ->where('ai_checked', 1)
+            ->where('ai_moderation_verdict', 'approved')
+            ->get();
+
+        $count = 0;
+        foreach ($articles as $article) {
+            $points = (int) ($article->ai_analysis['recommended_reward_points'] ?? 20);
+            if ($article->approveAndReward($points)) {
+                $count++;
+            }
+        }
+
+        if ($count > 0) {
+            return redirect()->route('admin.articles.index')->with('success', "Đã duyệt hàng loạt thành công $count bài viết đạt chuẩn AI và cộng điểm tương ứng!");
+        }
+
+        return redirect()->route('admin.articles.index')->with('error', 'Không tìm thấy bài viết chờ duyệt nào đạt chuẩn AI!');
     }
 }

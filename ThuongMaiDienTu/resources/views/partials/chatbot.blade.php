@@ -669,6 +669,7 @@ Tích hợp Google Gemini API qua Backend RAG.
                 body: JSON.stringify({
                     prompt: prompt,
                     context: context, // Truyền kèm ngữ cảnh sản phẩm đang xem
+                    message_count: messageList.length
                 }),
             });
 

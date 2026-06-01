@@ -56,6 +56,8 @@ class ChatbotController extends Controller
         $prompt = trim($request->input('prompt', ''));
         // Ngữ cảnh sản phẩm khách hàng đang xem (nếu khách đang ở trang chi tiết sản phẩm)
         $currentProductContext = trim($request->input('context', ''));
+        // Số lượng tin nhắn đã gửi trong phiên chat này
+        $messageCount = (int)$request->input('message_count', 0);
 
         // Kiểm tra nếu câu hỏi trống thì phản hồi yêu cầu người dùng nhập lại
         if (!$prompt) {
@@ -82,6 +84,41 @@ class ChatbotController extends Controller
         // Tìm kiếm các sản phẩm trong kho hàng liên quan đến câu hỏi của khách
         $productKnowledge = $this->searchProducts($prompt, $isEnglish);
 
+        // TỰ ĐỘNG PHÁT HÀNH MÃ GIẢM GIÁ (DYNAMIC COUPONING)
+        $couponInstruction = '';
+        if ($messageCount >= 5 && !session()->has('chatbot_coupon_code')) {
+            $couponCode = 'CHAT5_' . strtoupper(\Illuminate\Support\Str::random(5));
+            try {
+                \App\Models\CouponFlashSale::create([
+                    'promo_type' => 'Coupon',
+                    'code' => $couponCode,
+                    'discount_type' => 'percentage',
+                    'discount_val' => 5,
+                    'start_time' => \Illuminate\Support\Carbon::now(),
+                    'end_time' => \Illuminate\Support\Carbon::now()->addDays(7),
+                ]);
+                session()->put('chatbot_coupon_code', $couponCode);
+            } catch (\Exception $e) {
+                Log::error('Lỗi tạo chatbot coupon: ' . $e->getMessage());
+            }
+        }
+
+        if (session()->has('chatbot_coupon_code')) {
+            $code = session('chatbot_coupon_code');
+            if ($isEnglish) {
+                $couponInstruction = "\nSPECIAL PROMOTION INCENTIVE: The system has generated an exclusive 5% discount coupon code for this customer: `{$code}`. If they ask about discount codes, promotions, prices, or seem hesitant to buy, you MUST offer them this coupon code. Encourage them to apply it at checkout to get 5% off.";
+            } else {
+                $couponInstruction = "\nƯU ĐÃI KHUYẾN MÃI ĐẶC BIỆT: Hệ thống đã tạo một mã giảm giá 5% độc quyền cho khách hàng này: `{$code}`. Nếu khách hàng hỏi về mã giảm giá, chương trình khuyến mãi, giá cả, hoặc có vẻ do dự chưa muốn mua, bạn BẮT BUỘC phải tặng cho họ mã giảm giá này. Hãy khuyên họ áp dụng mã này khi thanh toán để được giảm giá 5%.";
+            }
+        }
+
+        // TỰ ĐỘNG TẠO PHIẾU SỬA CHỮA (REPAIR BOOKING)
+        if ($isEnglish) {
+            $repairInstruction = "\nREPAIR BOOKING RULE: If the customer mentions wanting to book a repair appointment, schedule a repair, or reports a device issue they want fixed, you must guide them politely and extract: customer_name, customer_phone, customer_email, issue_desc, schedule_date, and imei_serial. At the VERY END of your response, you MUST append a command block in the exact format: `[[CREATE_REPAIR_TICKET:{\"customer_name\":\"...\",\"customer_phone\":\"...\",\"customer_email\":\"...\",\"issue_desc\":\"...\",\"schedule_date\":\"YYYY-MM-DD HH:MM:SS\",\"imei_serial\":\"...\"}]]`. Use the current system local time " . \Illuminate\Support\Carbon::now()->toIso8601String() . " as reference to calculate dates (e.g. 'tomorrow at 9am' or 'next Monday'). If any field is not provided, use null or fallback value (e.g., fallback customer details to the logged in user details if available, or default name to 'Khách hàng qua Chat', phone/email to 'N/A', imei_serial to 'N/A'). DO NOT mention this tag or JSON structure to the customer, just append it silently.";
+        } else {
+            $repairInstruction = "\nQUY TẮC ĐẶT LỊCH SỬA CHỮA: Nếu khách hàng đề cập đến việc muốn đặt lịch sửa chữa, hẹn giờ sửa, hoặc thông báo thiết bị bị hỏng cần sửa, bạn phải tư vấn lịch sự và tự động trích xuất: customer_name (tên khách), customer_phone (sđt), customer_email (email), issue_desc (mô tả lỗi), schedule_date (ngày giờ hẹn), và imei_serial (số IMEI/Serial). Tại CUỐI CÙNG của câu trả lời, bạn Bắt Buộc phải chèn một khối lệnh theo đúng định dạng: `[[CREATE_REPAIR_TICKET:{\"customer_name\":\"...\",\"customer_phone\":\"...\",\"customer_email\":\"...\",\"issue_desc\":\"...\",\"schedule_date\":\"YYYY-MM-DD HH:MM:SS\",\"imei_serial\":\"...\"}]]`. Hãy dựa vào thời gian hệ thống hiện tại là " . \Illuminate\Support\Carbon::now()->toIso8601String() . " để tính toán ngày giờ cụ thể (ví dụ 'ngày mai lúc 9h sáng'). Nếu thông tin nào thiếu, hãy dùng giá trị mặc định (tên khách hàng mặc định lấy tên của user đăng nhập hoặc 'Khách hàng qua Chat', phone/email mặc định 'N/A', imei_serial mặc định 'N/A'). KHÔNG giải thích về thẻ này cho khách hàng biết, chỉ âm thầm chèn nó ở cuối cùng câu trả lời.";
+        }
+
         // BƯỚC 2: CHUẨN BỊ NỘI DUNG PROMPT & CÁC CHỈ THỊ CHO AI
         if ($isEnglish) {
             // Định nghĩa chỉ thị ngữ cảnh sản phẩm hiện tại bằng tiếng Anh
@@ -89,6 +126,7 @@ class ChatbotController extends Controller
             if ($currentProductContext) {
                 $contextInstruction = "SPECIAL NOTICE: The customer is VIEWING THIS PRODUCT:\n{$currentProductContext}\n-> Prioritize using this product's details in your response.";
             }
+            $contextInstruction .= $couponInstruction . $repairInstruction;
 
             // Xây dựng Prompt tiếng Anh toàn diện gửi lên cho AI
             $fullPrompt = "BACKGROUND: You are the Smart Shopping Assistant of DIENMAY PRO - a retail system for phones, laptops, and technology accessories.
@@ -140,6 +178,7 @@ CUSTOMER'S QUESTION: {$prompt}";
             if ($currentProductContext) {
                 $contextInstruction = "ĐẶC BIỆT LƯU Ý: Khách hàng ĐANG XEM SẢN PHẨM NÀY:\n{$currentProductContext}\n-> Ưu tiên dùng thông tin sản phẩm này để trả lời.";
             }
+            $contextInstruction .= $couponInstruction . $repairInstruction;
 
             // Xây dựng Prompt tiếng Việt toàn diện gửi lên cho AI
             $fullPrompt = "BỐI CẢNH: Bạn là Trợ lý bán hàng thông minh của DIENMAY PRO - hệ thống bán lẻ điện thoại, laptop, phụ kiện công nghệ.
@@ -192,9 +231,80 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
 
         // Trả kết quả JSON về cho Frontend dựa vào trạng thái gọi AI thành công hay thất bại
         if ($result['success']) {
+            $text = $result['text'];
+
+            // Xử lý tạo Phiếu Sửa Chữa nếu có thẻ đặc biệt
+            if (preg_match('/\[\[CREATE_REPAIR_TICKET:(.*?)\]\]/s', $text, $matches)) {
+                $jsonData = trim($matches[1]);
+                $ticketData = json_decode($jsonData, true);
+
+                if (json_last_error() === JSON_ERROR_NONE && is_array($ticketData)) {
+                    try {
+                        // Xác định các thông tin cơ bản
+                        $custName = $ticketData['customer_name'] ?? null;
+                        if (empty($custName) || $custName === 'null') {
+                            $custName = auth()->check() ? auth()->user()->name : 'Khách hàng qua Chat';
+                        }
+
+                        $custPhone = $ticketData['customer_phone'] ?? null;
+                        if (empty($custPhone) || $custPhone === 'null') {
+                            $custPhone = auth()->check() ? auth()->user()->phone : 'N/A';
+                        }
+
+                        $custEmail = $ticketData['customer_email'] ?? null;
+                        if (empty($custEmail) || $custEmail === 'null') {
+                            $custEmail = auth()->check() ? auth()->user()->email : 'N/A';
+                        }
+
+                        $issue = $ticketData['issue_desc'] ?? 'Lỗi thiết bị (Tạo qua Chatbot)';
+
+                        $schedDate = null;
+                        if (!empty($ticketData['schedule_date']) && $ticketData['schedule_date'] !== 'null') {
+                            try {
+                                $schedDate = \Illuminate\Support\Carbon::parse($ticketData['schedule_date']);
+                            } catch (\Exception $ex) {
+                                $schedDate = \Illuminate\Support\Carbon::now()->addDay();
+                            }
+                        } else {
+                            $schedDate = \Illuminate\Support\Carbon::now()->addDay();
+                        }
+
+                        $imei = $ticketData['imei_serial'] ?? null;
+                        if (empty($imei) || $imei === 'null') {
+                            $imei = 'N/A';
+                        }
+
+                        $ticket = \App\Models\RepairTicket::create([
+                            'user_id' => auth()->id(),
+                            'customer_name' => $custName,
+                            'customer_phone' => $custPhone,
+                            'customer_email' => $custEmail,
+                            'customer_address' => $ticketData['customer_address'] ?? 'N/A',
+                            'issue_desc' => $issue,
+                            'schedule_date' => $schedDate,
+                            'imei_serial' => $imei,
+                            'status' => 'Received',
+                        ]);
+
+                        // Xóa thẻ khỏi câu trả lời của AI
+                        $text = str_replace($matches[0], '', $text);
+
+                        // Thêm thông báo xác nhận đẹp mắt vào phản hồi
+                        $formattedDate = $schedDate->format('H:i d/m/Y');
+                        if ($isEnglish) {
+                            $text .= "<br><br><b>📅 Booking Confirmation:</b> We have created a draft repair ticket <b>#{$ticket->ticket_id}</b> for you. Schedule: {$formattedDate}.";
+                        } else {
+                            $text .= "<br><br><b>📅 Xác nhận đặt lịch:</b> Hệ thống đã tự động tạo bản nháp phiếu sửa chữa <b>#{$ticket->ticket_id}</b> dành cho bạn. Lịch hẹn: {$formattedDate}.";
+                        }
+                    } catch (\Exception $ex) {
+                        Log::error('Lỗi khi lưu phiếu sửa chữa từ Chatbot: ' . $ex->getMessage());
+                    }
+                }
+            }
+
             return response()->json([
                 'success' => true,
-                'response' => $result['text'],
+                'response' => $text,
             ]);
         }
 
@@ -251,7 +361,7 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
             // CHIẾN LƯỢC TRUY VẤN:
             // Lần 1: Thử tìm kiếm khớp ĐỒNG THỜI tất cả các từ khóa (toán tử AND).
             // Tìm kiếm trong cột Tên sản phẩm chính, Bản dịch sản phẩm tiếng Anh, Danh mục sản phẩm, và Bản dịch danh mục.
-            $foundProducts = \App\Models\Product::whereNull('deleted_at')
+            $foundProducts = \App\Models\Product::with(['variants.inventoryItems'])->whereNull('deleted_at')
                 ->where(function ($q) use ($searchTerms) {
                     foreach ($searchTerms as $term) {
                         $q->where(function ($inner) use ($term) {
@@ -274,7 +384,7 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
             // Lần 2 (Fallback): Nếu không có sản phẩm nào khớp đồng thời tất cả các từ,
             // nới lỏng điều kiện bằng cách tìm sản phẩm khớp ÍT NHẤT MỘT trong các từ khóa (toán tử OR).
             if ($foundProducts->isEmpty()) {
-                $foundProducts = \App\Models\Product::whereNull('deleted_at')
+                $foundProducts = \App\Models\Product::with(['variants.inventoryItems'])->whereNull('deleted_at')
                     ->where(function ($q) use ($searchTerms) {
                         foreach ($searchTerms as $term) {
                             $q->orWhere('name', 'LIKE', "%{$term}%")
@@ -324,12 +434,28 @@ CÂU HỎI CỦA KHÁCH: {$prompt}";
                         }
                     }
                 }
+
+                // Lấy chi tiết các biến thể (Màu sắc, Dung lượng, Hàng tồn kho)
+                $variantsInfo = [];
+                if ($p instanceof \App\Models\Product) {
+                    foreach ($p->variants as $var) {
+                        $stockCount = $var->in_stock_count;
+                        $colorStr = $var->color ?: ($isEnglish ? 'Default Color' : 'Màu mặc định');
+                        $romStr = $var->rom_capacity ? " - {$var->rom_capacity}" : "";
+                        if ($isEnglish) {
+                            $variantsInfo[] = "{$colorStr}{$romStr}: {$stockCount} in stock";
+                        } else {
+                            $variantsInfo[] = "Màu {$colorStr}{$romStr}: còn {$stockCount} sản phẩm";
+                        }
+                    }
+                }
+                $variantsStr = !empty($variantsInfo) ? ($isEnglish ? " [Available variants: " : " [Phiên bản có sẵn: ") . implode(', ', $variantsInfo) . "]" : "";
                 
                 // Ghép nối thông tin dạng: Tên sản phẩm - Giá - Link để AI dựng câu trả lời
                 if ($isEnglish) {
-                    $knowledge .= "- {$name}: Price {$price} VND (Link: /san-pham/{$productId})\n";
+                    $knowledge .= "- {$name}: Price {$price} VND{$variantsStr} (Link: /san-pham/{$productId})\n";
                 } else {
-                    $knowledge .= "- {$name}: Giá {$price}đ (Link: /san-pham/{$productId})\n";
+                    $knowledge .= "- {$name}: Giá {$price}đ{$variantsStr} (Link: /san-pham/{$productId})\n";
                 }
             }
 

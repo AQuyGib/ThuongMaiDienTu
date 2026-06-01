@@ -123,8 +123,9 @@ class ProductController extends Controller
         // Thường mua cùng nhau (Frequently Bought Together) -> Cùng hãng sản xuất (Brand) -> Đang Flash Sale -> Cùng danh mục (Category)
         $crossSellProducts = $this->crossSellService->getFullCrossSellList($product, 8);
 
-        // 9. Lấy danh sách Combo sản phẩm mua kèm giá tốt được cấu hình cho sản phẩm này
-        $comboProducts = $product->comboProducts;
+        // 9. Lấy danh sách Combo sản phẩm mua kèm giá tốt được tối ưu cá nhân hóa bằng AI
+        $cart = session()->get('cart', []);
+        $comboProducts = $this->crossSellService->getAICrossSellCombos($product, Auth::user(), $cart);
         // Đính kèm thông tin Flash Sale (nếu có) vào các sản phẩm trong Combo để cập nhật giá chuẩn xác nhất
         $this->crossSellService->attachFlashSaleInfo($comboProducts);
 

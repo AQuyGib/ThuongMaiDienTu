@@ -45,6 +45,11 @@ return [
     'footer_return_policy'  => 'Chính sách đổi trả',
     'footer_privacy'        => 'Bảo mật thông tin',
     'footer_connect'        => 'Kết nối với chúng tôi',
+    'footer_subscribe'      => 'Đăng ký nhận khuyến mãi',
+    'footer_warranty_lookup'=> 'Tra cứu bảo hành',
+    'footer_compare'        => 'So sánh sản phẩm',
+    'footer_all_products'   => 'Tất cả sản phẩm',
+    'footer_rewards_history'=> 'Lịch sử tích điểm',
 
     // ===== MEGA MENU EXTRA =====
     'rewards_page'          => 'Trang đổi thưởng',
@@ -127,4 +132,19 @@ return [
     'placeholder_fullname'          => 'Nhập họ và tên',
     'welcome_back_slogan'           => 'Chào mừng bạn quay trở lại',
     'login_register_title'          => 'Đăng Nhập / Đăng Ký',
+
+    // ===== VALIDATION ERRORS =====
+    'error_banned'                  => 'Tài khoản của bạn đã bị khóa.',
+    'error_invalid_credentials'     => 'Email hoặc mật khẩu không chính xác.',
+    'error_email_unique'            => 'Email này đã được sử dụng.',
+    'error_password_confirmed'      => 'Mật khẩu xác nhận không khớp.',
+    'error_fullname_required'       => 'Họ và tên là bắt buộc.',
+    'error_email_required'          => 'Email là bắt buộc và phải đúng định dạng.',
+    'error_password_min'            => 'Mật khẩu phải từ 8 ký tự trở lên.',
+
+    // ===== REMEMBER & TERMS =====
+    'remember_me'                   => 'Ghi nhớ đăng nhập',
+    'accept_terms_text'             => 'Tôi đồng ý với :terms và :privacy của cửa hàng.',
+    'terms_link'                    => 'Điều khoản dịch vụ',
+    'privacy_link'                  => 'Chính sách bảo mật',
 ];

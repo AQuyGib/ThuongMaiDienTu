@@ -123,6 +123,7 @@ Route::middleware('auth')->group(function() {
     Route::get('/lifestyle/{id}/edit', [\App\Http\Controllers\ArticleFrontendController::class, 'edit'])->name('articles.edit');
     Route::put('/lifestyle/{id}', [\App\Http\Controllers\ArticleFrontendController::class, 'update'])->name('articles.update');
     Route::delete('/lifestyle/{id}', [\App\Http\Controllers\ArticleFrontendController::class, 'destroy'])->name('articles.destroy');
+    Route::post('/lifestyle/ai-assist', [\App\Http\Controllers\ArticleFrontendController::class, 'aiAssist'])->name('articles.ai-assist');
 });
 Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController::class, 'show'])->name('articles.show');
 
@@ -141,14 +142,26 @@ Route::middleware(['auth', \App\Http\Middleware\IsAdmin::class])->prefix('admin'
     Route::post('/notifications/low-stock-check', [NotificationCampaignController::class, 'lowStockCheck'])->name('admin.notifications.low-stock-check');
 });
 
-// Product Filtering
+// ============================================================
+// ROUTE: SẢN PHẨM FRONTEND (PRODUCT LISTING & DETAIL)
+// Các route phục vụ trang danh sách sản phẩm, lọc nâng cao theo danh mục,
+// và trang chi tiết sản phẩm (product.show) cho khách hàng.
+// Controller: Frontend\ProductController (index, show)
+// ============================================================
+
+// Trang danh sách tất cả sản phẩm (có hỗ trợ phân trang, lọc theo query params)
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
+// API endpoint lọc sản phẩm AJAX (được gọi từ JavaScript bộ lọc nâng cao)
 Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
+// Trang danh sách sản phẩm theo danh mục cụ thể (VD: /products/dien-thoai)
 Route::get('/products/{categorySlug}', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.category');
+// Trang chi tiết sản phẩm - hiển thị đầy đủ thông tin, biến thể, đánh giá, combo, cross-sell
 Route::get('/san-pham/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
+// Redirect từ URL cũ /product/{id} sang URL mới /san-pham/{id} để giữ tương thích ngược (backward compatible)
 Route::get('/product/{id}', function ($id) {
     return redirect()->route('product.show', $id);
 })->name('product.legacy');
+// API endpoint lấy danh sách bộ lọc đặc thù theo danh mục (RAM, ROM, Chip...) cho sidebar lọc
 Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'getCategoryFilters'])->name('api.categories.filters');
 
 // Admin Customer Management
@@ -195,6 +208,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::post('/profile/repair-tickets/ai-diagnose', [ProfileController::class, 'aiDiagnoseRepairTicket'])->name('profile.repair-tickets.ai-diagnose');
     Route::post('/profile/repair-tickets', [ProfileController::class, 'storeRepairTicket'])->name('profile.repair-tickets.store');
     Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name('profile.address.store');
     Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
