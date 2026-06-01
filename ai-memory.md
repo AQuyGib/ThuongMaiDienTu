@@ -1,6 +1,14 @@
 # Project Memory
 
 ## Current State & Focus
+- **Tích hợp nhánh AI & Hoàn tất Merge (Merge Branch AnhQuy/TichHopAI into master):**
+  - Thực hiện merge thành công nhánh `AnhQuy/TichHopAI` vào nhánh `master` và giải quyết xung đột thủ công trong file `ThuongMaiDienTu/ai-memory.md` bằng cách hợp nhất lịch sử phát triển của cả hai nhánh một cách khoa học.
+  - Đồng bộ và cài đặt toàn bộ dependencies mới của dự án bằng lệnh `composer install --ignore-platform-reqs`, giúp tải đầy đủ các thư viện hỗ trợ AI và API Sanctum.
+  - Publish các file migration của Laravel Sanctum (`personal_access_tokens`) và thực thi thành công toàn bộ migration cơ sở dữ liệu (`php artisan migrate`), thiết lập hoàn chỉnh các bảng lưu vết log quét AI và cấu hình Sanctum.
+  - Khắc phục lỗi kiểm thử API xác thực Sanctum (`ApiAuthTest`):
+    - Cập nhật mật khẩu mẫu trong ca kiểm thử từ 6 ký tự lên 11 ký tự (`password123`) để vượt qua rule kiểm tra độ dài tối thiểu của password validation (`min:8`).
+    - Tích hợp hàm `$this->refreshApplication()` trước khi gửi request lấy thông tin người dùng lần thứ hai sau khi đăng xuất nhằm làm sạch cache memory auth trong môi trường test, giải quyết triệt để lỗi logic cache token.
+  - Chạy thành công 100% các bài test suite bao gồm phân hệ kiểm duyệt bài viết UGC AI (`ArticleModerationTest`) và Suite xác thực API (`ApiAuthTest`).
 - **Sửa lỗi cú pháp shopping cart:**
   - Khắc phục lỗi `syntax error, unexpected end of file, expecting "elseif" or "else" or "endif"` tại trang `/shoppingcart` do Blade compiler tự động biên dịch chữ `@auth` trong block comment JavaScript (dòng 540) thành thẻ mở `if` của PHP nhưng không có thẻ đóng.
   - Thay thế `@auth` bằng `auth` trong phần giải thích comment và thay thế cấu trúc `@auth` thành `@if(Auth::check())` trong logic xử lý điều hướng `window.proceedToCheckout` để tăng độ ổn định.

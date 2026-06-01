@@ -14,7 +14,7 @@ class ApiAuthTest extends TestCase
 
     private $role;
     private $user;
-    private $password = '123456';
+    private $password = 'password123';
 
     protected function setUp(): void
     {
@@ -181,6 +181,8 @@ class ApiAuthTest extends TestCase
         $this->assertDatabaseMissing('personal_access_tokens', [
             'tokenable_id' => $this->user->user_id,
         ]);
+
+        $this->refreshApplication();
 
         // Gửi lại yêu cầu lấy thông tin bằng token vừa xóa sẽ bị chặn 401
         $retryResponse = $this->getJson('/api/v1/me', [
