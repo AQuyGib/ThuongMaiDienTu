@@ -1,6 +1,10 @@
 # Project Memory
 
 ## Current State & Focus
+- **Đồng bộ nhánh tối ưu hóa (Merge master into AnhQuy/ToiUu):**
+  - Thực hiện merge thành công nhánh `master` vào nhánh `AnhQuy/ToiUu` không xảy ra xung đột.
+  - Đồng bộ toàn bộ các tính năng AI mới (kiểm duyệt UGC, chẩn đoán Vision AI cho phiếu sửa chữa, bán chéo Gemini AI, kiểm duyệt đơn hàng AI) và các sửa đổi hệ thống test API Auth và database migrations.
+  - Chạy toàn bộ các ca kiểm thử (`php artisan test`) và xác nhận 100% test cases (35 tests, 134 assertions) đều PASS thành công không có lỗi hồi quy.
 - **Tích hợp nhánh AI & Hoàn tất Merge (Merge Branch AnhQuy/TichHopAI into master):**
   - Thực hiện merge thành công nhánh `AnhQuy/TichHopAI` vào nhánh `master` và giải quyết xung đột thủ công trong file `ThuongMaiDienTu/ai-memory.md` bằng cách hợp nhất lịch sử phát triển của cả hai nhánh một cách khoa học.
   - Đồng bộ và cài đặt toàn bộ dependencies mới của dự án bằng lệnh `composer install --ignore-platform-reqs`, giúp tải đầy đủ các thư viện hỗ trợ AI và API Sanctum.
