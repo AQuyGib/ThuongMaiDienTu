@@ -25,13 +25,18 @@ class Article extends Model
     protected $fillable = [
         'title', 'slug', 'summary', 'content', 'thumbnail', 'format_type', 
         'related_ticket_id', 'author_id', 'author_type', 'status', 
-        'reward_points_awarded', 'embedded_product_ids', 'published_at'
+        'reward_points_awarded', 'embedded_product_ids', 'published_at',
+        'tags', 'seo_title', 'seo_description', 'seo_keywords', 'seo_score',
+        'ai_quality_score', 'ai_moderation_verdict', 'ai_analysis', 'ai_checked'
     ];
 
     // Chuyển đổi định dạng dữ liệu (Casting) khi đọc/ghi vào DB
     protected $casts = [
         'embedded_product_ids' => 'array', // Tự động chuyển JSON thành Array và ngược lại
         'published_at' => 'datetime',      // Tự động cast về đối tượng Carbon Datetime
+        'tags' => 'array',
+        'seo_keywords' => 'array',
+        'ai_analysis' => 'array',
     ];
 
     /**

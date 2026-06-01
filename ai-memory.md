@@ -1,6 +1,10 @@
 # Project Memory
 
 ## Current State & Focus
+- **Sửa lỗi cú pháp shopping cart:**
+  - Khắc phục lỗi `syntax error, unexpected end of file, expecting "elseif" or "else" or "endif"` tại trang `/shoppingcart` do Blade compiler tự động biên dịch chữ `@auth` trong block comment JavaScript (dòng 540) thành thẻ mở `if` của PHP nhưng không có thẻ đóng.
+  - Thay thế `@auth` bằng `auth` trong phần giải thích comment và thay thế cấu trúc `@auth` thành `@if(Auth::check())` trong logic xử lý điều hướng `window.proceedToCheckout` để tăng độ ổn định.
+  - Chạy `php artisan view:clear` và biên dịch thử thành công, xác nhận trang giỏ hàng render bình thường không có lỗi.
 - **Dọn dẹp & Đồng bộ hóa Hệ thống Testing:**
   - Sửa lỗi lặp lại code dư thừa ở cuối file `ServiceInvoiceController.php` (cắt bỏ phần trùng lặp của hàm `destroy`).
   - Khắc phục các test case Flash Sale (`FlashSaleCheckoutTest` và `FlashSaleEndToEndTest`) bị lỗi: Sửa đổi assert status trả về từ `'success. success'` thành `'success'`; tích hợp cơ chế đăng nhập (`actingAs($user)`) và chạy seeder `RoleSeeder` trong môi trường test trước khi gọi các route thanh toán yêu cầu middleware `auth`.
