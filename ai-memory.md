@@ -1,6 +1,201 @@
 # Project Memory
 
 ## Current State & Focus
+- **Tích hợp nhánh AI & Hoàn tất Merge (Merge Branch AnhQuy/TichHopAI into master):**
+  - Thực hiện merge thành công nhánh `AnhQuy/TichHopAI` vào nhánh `master` và giải quyết xung đột thủ công trong file `ThuongMaiDienTu/ai-memory.md` bằng cách hợp nhất lịch sử phát triển của cả hai nhánh một cách khoa học.
+  - Đồng bộ và cài đặt toàn bộ dependencies mới của dự án bằng lệnh `composer install --ignore-platform-reqs`, giúp tải đầy đủ các thư viện hỗ trợ AI và API Sanctum.
+  - Publish các file migration của Laravel Sanctum (`personal_access_tokens`) và thực thi thành công toàn bộ migration cơ sở dữ liệu (`php artisan migrate`), thiết lập hoàn chỉnh các bảng lưu vết log quét AI và cấu hình Sanctum.
+  - Khắc phục lỗi kiểm thử API xác thực Sanctum (`ApiAuthTest`):
+    - Cập nhật mật khẩu mẫu trong ca kiểm thử từ 6 ký tự lên 11 ký tự (`password123`) để vượt qua rule kiểm tra độ dài tối thiểu của password validation (`min:8`).
+    - Tích hợp hàm `$this->refreshApplication()` trước khi gửi request lấy thông tin người dùng lần thứ hai sau khi đăng xuất nhằm làm sạch cache memory auth trong môi trường test, giải quyết triệt để lỗi logic cache token.
+  - Chạy thành công 100% các bài test suite bao gồm phân hệ kiểm duyệt bài viết UGC AI (`ArticleModerationTest`) và Suite xác thực API (`ApiAuthTest`).
+- **Sửa lỗi cú pháp shopping cart:**
+  - Khắc phục lỗi `syntax error, unexpected end of file, expecting "elseif" or "else" or "endif"` tại trang `/shoppingcart` do Blade compiler tự động biên dịch chữ `@auth` trong block comment JavaScript (dòng 540) thành thẻ mở `if` của PHP nhưng không có thẻ đóng.
+  - Thay thế `@auth` bằng `auth` trong phần giải thích comment và thay thế cấu trúc `@auth` thành `@if(Auth::check())` trong logic xử lý điều hướng `window.proceedToCheckout` để tăng độ ổn định.
+  - Chạy `php artisan view:clear` và biên dịch thử thành công, xác nhận trang giỏ hàng render bình thường không có lỗi.
+- **Dọn dẹp & Đồng bộ hóa Hệ thống Testing:**
+  - Sửa lỗi lặp lại code dư thừa ở cuối file `ServiceInvoiceController.php` (cắt bỏ phần trùng lặp của hàm `destroy`).
+  - Khắc phục các test case Flash Sale (`FlashSaleCheckoutTest` và `FlashSaleEndToEndTest`) bị lỗi: Sửa đổi assert status trả về từ `'success. success'` thành `'success'`; tích hợp cơ chế đăng nhập (`actingAs($user)`) và chạy seeder `RoleSeeder` trong môi trường test trước khi gọi các route thanh toán yêu cầu middleware `auth`.
+  - Khắc phục test case của chiến dịch thông báo (`NotificationTest`): Thay đổi giá trị target gửi đi từ `'users'` thành `'all'` để vượt qua kiểm tra validation backend.
+  - Chạy toàn bộ test suite (`php artisan test`) thành công 100% không còn lỗi.
+- **Chatbot Reversion & Optimization:**
+  - Reverted recent multilingual additions to `ChatbotController.php` and `chatbot.blade.php` to restore the original Vietnamese-first prompt behavior and simple, robust HTML rendering.
+  - Cleared out the `decodeHtml` helper from `chatbot.blade.php` that was stripping `<a>` tags and corrupting `<br>` tags during message parsing and history loading.
+  - Added store policy answering capabilities to `ChatbotController.php` prompt context, enabling the AI to accurately respond to questions about warranties, returns, installment options, and point rewards with proper internal links.
+- **Lucky Wheel Localization:**
+  - Fully localized both Frontend and Admin interfaces for the Rewards & Lucky Wheel module (supporting Vietnamese & English).
+  - Synchronized static texts, labels, alerts, validation helpers, and Canvas/draw rendering routines in JavaScript according to `app()->getLocale()`.
+- **Dynamic Multi-Wheel Customization with Rank Restrictions:**
+  - Added support for Admin to independently define, edit, and delete multiple lucky wheels.
+  - Added `min_rank` constraint to each lucky wheel configuration (None, Bronze, Silver, Gold, Diamond), allowing rank restrictions for custom wheels.
+  - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
+- **Merge Activities:**
+  - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
+  - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
+- **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
+  - Added tag-based filtering on the lifestyle listing page.
+  - Fixed admin article filters so status buttons and search now work together.
+  - Previous fixes remain in place for the admin article form/editor and mobile preview layout.
+- **Storefront Upgrades (`master`):**
+  - Compare product module upgrade is now aligned with the user-provided roadmap.
+  - Advanced product filtering for frontend product listing with partial AJAX rendering.
+  - Service-based backend filtering via `ProductFilterService`.
+  - Bổ sung bình luận tiếng Việt chi tiết cho toàn bộ mã nguồn JavaScript lọc sản phẩm (`product-filter.js`) giúp lập trình viên và quản trị viên dễ dàng nắm bắt logic.
+  - Bổ sung bình luận tiếng Việt siêu chi tiết, dễ hiểu cho các lập trình viên khác tại `ProductController.php`, `ProductFilterController.php`, và `ProductFilterService.php` giải thích cặn kẽ các logic lọc AJAX, gợi ý bán chéo FBT, Combo sản phẩm, và cơ chế bảo mật server-side.
+  - Hoàn tất tài liệu hóa chi tiết bằng comment tiếng Việt trong `PointsService.php` (Tích điểm & phân hạng), `CrossSellService.php` (Gợi ý bán chéo phân tầng), `ArticleController.php` (Admin CRUD bài viết), `ArticleFrontendController.php` (Khách hàng đăng bài & duyệt bài cộng điểm), `Article.php` (Model bài viết) và toàn bộ các file views liên quan đến Articles ở cả Frontend và Admin Dashboard.
+## Files Changed
+- **Testing & Bug Fixes:**
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/ServiceInvoiceController.php`
+  - `ThuongMaiDienTu/tests/Feature/FlashSaleCheckoutTest.php`
+  - `ThuongMaiDienTu/tests/Feature/FlashSaleEndToEndTest.php`
+  - `ThuongMaiDienTu/tests/Feature/NotificationTest.php`
+- **API Authentication & Login/Register UI:**
+  - `ThuongMaiDienTu/app/Http/Controllers/Api/AuthController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Auth/AuthController.php`
+  - `ThuongMaiDienTu/app/Http/Middleware/ApiAuthMiddleware.php`
+  - `ThuongMaiDienTu/app/Http/Resources/UserResource.php`
+  - `ThuongMaiDienTu/bootstrap/app.php`
+  - `ThuongMaiDienTu/routes/api.php`
+  - `ThuongMaiDienTu/tests/Feature/ApiAuthTest.php`
+  - `ThuongMaiDienTu/scratch/Auth_API.postman_collection.json`
+  - `ThuongMaiDienTu/resources/views/Auth/login_register.blade.php`
+  - `ThuongMaiDienTu/lang/vi/ui.php`
+  - `ThuongMaiDienTu/lang/en/ui.php`
+- **System Orchestrator Upgrade:**
+  - `ThuongMaiDienTu/start.bat` (Ultimate Orchestrator v8.0 with interactive System Repair Assistant, one-click interactive Full Automation mode choices, Navigator Dashboard Launcher, comprehensive project health diagnostics report, live MySQL monitors, Laravel logs viewer and cleaner, and auto-healing environment bootstrap)
+  - `ThuongMaiDienTu/chay_du_an.bat` (deprecated / replaced by start.bat)
+- **Checkout / Payment Validation:**
+  - `ThuongMaiDienTu/resources/views/frontend/cart/pay.blade.php`
+- **Articles:**
+  - `ThuongMaiDienTu/app/Http/Controllers/ArticleFrontendController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/ArticleController.php`
+  - `ThuongMaiDienTu/app/Models/Article.php`
+  - `ThuongMaiDienTu/resources/views/articles/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/articles/create.blade.php`
+  - `ThuongMaiDienTu/resources/views/articles/show.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/articles/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/articles/form.blade.php`
+- **Storefront (Compare & Filter):**
+  - `ThuongMaiDienTu/app/Http/Controllers/CompareController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Frontend/ProductController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ProductFilterController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ChatbotController.php`
+  - `ThuongMaiDienTu/app/Services/ProductFilterService.php`
+  - `ThuongMaiDienTu/app/Services/CrossSellService.php`
+  - `ThuongMaiDienTu/public/assets/frontend/js/compare.js`
+  - `ThuongMaiDienTu/public/assets/frontend/js/product-filter.js`
+  - `ThuongMaiDienTu/resources/views/frontend/compare/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/frontend/products/partials/product_grid.blade.php`
+  - `ThuongMaiDienTu/resources/views/frontend/products/show.blade.php`
+  - `ThuongMaiDienTu/resources/views/layouts/app.blade.php`
+  - `ThuongMaiDienTu/resources/views/partials/compare-bar.blade.php`
+  - `ThuongMaiDienTu/routes/web.php`
+- **Repair Tickets & Customer Profile:**
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/RepairTicketInvoiceController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/ServiceInvoiceController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ProfileController.php`
+  - `ThuongMaiDienTu/app/Models/User.php`
+  - `ThuongMaiDienTu/routes/admin.php`
+  - `ThuongMaiDienTu/routes/web.php`
+  - `ThuongMaiDienTu/resources/views/admin/repair-tickets/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/repair-tickets/create.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/repair-tickets/edit.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/service-invoices/create.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/service-invoices/edit.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/service-invoices/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/frontend/profile.blade.php`
+- **Lucky Wheel (Dynamic Configurations & Rank Restrictions):**
+  - `ThuongMaiDienTu/resources/views/frontend/rewards/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/rewards/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/rewards/partials/image-modal.blade.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/RewardsController.php`
+  - `ThuongMaiDienTu/app/Services/RewardsService.php`
+  - `ThuongMaiDienTu/app/Services/PointsService.php`
+
+## Important Logic & Behavior Changes
+- **Responsive Login/Register Interface Upgrade & Multi-Language Validation Fix:**
+  - Integrated custom CSS media queries (`@media`) and adaptive classes to ensure optimal layout on all device categories (Mobile, Tablet, Desktop).
+  - Configured the main dual-panel grid to automatically collapse into a single column layout and hide the decorative left welcome panel on screens narrower than `768px` to focus solely on the credentials form.
+  - Converted static inline CSS styles for the top actions bar (Home redirect, Language switcher) and the registration password container row into dynamic CSS classes (`.form-top-actions`, `.form-row`) for fluid responsiveness.
+  - Automatically restructured the top utilities to justify-between (left and right edges) on mobile to prevent overlapping with the center logo.
+  - Configured `body` container to support auto scrolling (`overflow-y: auto`, `height: auto`) and set standard paddings so that mobile layouts remain perfectly readable and scrollable when virtual keyboards slide up.
+  - Replaced all hardcoded Vietnamese string validation messages in the web `AuthController` (login and register actions) with dynamic multi-language key references (`__('ui.error_...')`).
+  - Added new dedicated validation error translation keys in both `lang/vi/ui.php` and `lang/en/ui.php` to handle incorrect credentials, banned users, password length mismatches, missing names, etc.
+  - Integrated defensive JS on the client side to intercept form submissions: instantly validates password minimum length (8 chars) and password confirmation matching prior to reloading, auto-disables the submit button to block double-submits on slow networks, and replaces the button label with an active spinning loading indicator.
+  - Added a "Remember Me" checkbox to the login form, synchronized with Laravel's remember token session lifetime.
+  - Added a legally required "Terms & Conditions & Privacy Policy" acceptance checkbox to the registration form, fully integrated with client-side defensive checks and dynamic multi-language warnings.
+  - Integrated a real-time "Password Strength Meter" utilizing JavaScript regex matching to dynamically evaluate password complexity scores (Weak, Too Short, Medium, Strong, Very Strong) with a dynamic HSL-colored progress bar.
+  - Developed and integrated a bespoke "Premium Toast Notification System" (CSS-based glassmorphism, slide-in spring animations, state-driven SVG/FontAwesome icons, and active progress-timer countdowns) replacing ugly browser default alert tooltips and popups. Enabled form `novalidate` properties to cleanly redirect all standard validation triggers into the custom toast engine.
+  - Redesigned and repositioned the "Back to Home" and "Language Switcher" buttons: integrated them cleanly as an inline header row (`.form-top-actions-bar`) at the very top of the right-hand form panel. Corrected duplicate CSS syntax bugs (`700;` and double trailing closing braces `}`) to ensure full compiler compliance. Upgraded the elements to a premium glassmorphic ghost design with Outfit typography, spring transformations, glowing hover outlines, custom circular emoji flags, and stylish active language indicators. Added dedicated mobile media adjustments to reduce top padding of the form panel to `30px` (or `24px` on small devices) to keep the form beautifully balanced and responsive on all viewports.
+- **API Authentication (Laravel Sanctum Integration):**
+  - Fully integrated industry-standard Laravel Sanctum token-based authentication using `HasApiTokens`.
+  - Configured `User.php` to use the `Laravel\Sanctum\HasApiTokens` trait.
+  - Implemented `AuthController.php` which generates personal access tokens via `$user->createToken('api-token')->plainTextToken` and revokes tokens upon logout via `currentAccessToken()->delete()`.
+  - Built custom `ApiAuthMiddleware.php` wrapping around the standard Sanctum guard (`Auth::guard('sanctum')->user()`) to perform clean authorization, banned account checking (immediately revoking their active token if blocked), and seamless integration into standard Laravel authentication states.
+  - Refactored `ApiAuthTest.php` feature tests to assert tokens against the standard `personal_access_tokens` table and verified credentials.
+  - Exported a fully-documented, dynamic Postman Collection JSON file with integrated test scripts that automatically capture and propagate authorization tokens across requests for fluid testing.
+- **Lucky Wheel Rank-Restrictions:**
+  - Added a `min_rank` column in the Admin Quick Manager Modal. The dropdown options map to database tier names (`Dong`, `Bac`, `Vang`, `KimCuong`) and "none".
+  - Created a client-side rank verification dictionary (`rankOrder`) in JavaScript to check and alert user if their active tier (`member_tier`) is insufficient for the selected wheel before triggering the spin API.
+  - Implemented identical server-side verification in `RewardsService@spinWheel` comparing `$user->member_tier` to `$wheelConfig['min_rank']` using ordinal values (`Dong`=1, `Bac`=2, `Vang`=3, `KimCuong`=4) to ensure secure validation.
+- **Repair Tickets CRUD & Invoicing Link:**
+  - Expanded `RepairTicketInvoiceController` to support full ticket lifecycle: creation (`createTicket`, `storeTicket`), updating (`editTicket`, `updateTicket`), and deletion (`destroyTicket`).
+  - Created database migration to make `user_id` nullable on `repair_tickets` table and added `customer_address`, `customer_email`, and `customer_source` fields.
+  - Removed "Tài khoản khách hàng" (`user_id`) selection dropdown from repair ticket create and edit views, making customer profile creation fully client-contact-driven with required Name, Phone, and optional Address, Email, and Source.
+  - Updated validation rules in `RepairTicketInvoiceController` to make user account linking optional, customer name and phone number mandatory, and allow storing the new guest details.
+  - Added "Tạo phiếu sửa chữa" button and inline "Sửa"/"Xóa" actions in `admin/repair-tickets/index.blade.php`.
+  - Added a search API `/api/customers/search-by-phone` and implemented an AJAX autocomplete script in `create.blade.php` and `edit.blade.php` which automatically fetches and populates customer details (Name, Address, Email, Source) when typing an existing phone number.
+  - Displayed the "IMEI / Serial" column in the repair tickets list page (`index.blade.php`).
+  - Integrated `datetime-local` input and form select boxes populating customer/technician records.
+  - Fixed form action routing in `admin/service-invoices/create.blade.php` to target `admin.repair-tickets.invoice.store` when `$repairTicket` is present (so linking is processed by `RepairTicketInvoiceController@store`).
+  - Fixed the hidden input field to submit the correct PK field name `$repairTicket->ticket_id` instead of the non-existent `$repairTicket->id`.
+  - Added `edit()`, `update()`, and `destroy()` methods to `ServiceInvoiceController.php` to allow managing and editing service invoices (including publishing drafts), automatically clearing any associated `invoice_no` and `invoiced_at` references in `repair_tickets` table on deletion.
+  - Redesigned create and edit forms for service invoices (`create.blade.php`, `edit.blade.php`) to use themed container cards grouping customer, cost, and status information.
+  - Dynamically altered title, description, back button, and submit button on `service-invoices/create.blade.php` to read "Xuất hóa đơn" instead of "Lưu hóa đơn / Tạo hóa đơn" when exporting from a repair ticket (`$repairTicket` context), and updated redirect success message to "Đã xuất hóa đơn dịch vụ thành công.".
+  - Added compact Edit, Delete, and PDF download buttons to the service invoices actions in `admin/service-invoices/index.blade.php`.
+  - Restricted invoice export: nút "Xuất HD" chỉ hiện khi phiếu sửa chữa có status='Done'. Các trạng thái khác hiện badge "Chờ hoàn thành". Backend `create()` cũng chặn nếu status != Done.
+  - Thêm trường VAT (%) vào form tạo/sửa hóa đơn dịch vụ (`create.blade.php`, `edit.blade.php`) với tính tổng preview real-time bằng JS. Hiển thị dòng VAT trong `show.blade.php` và `print.blade.php`. Cập nhật `ServiceInvoiceController` và `RepairTicketInvoiceController` để validate `vat_rate` và tính `tax_amount = subtotal * vatRate / 100`.
+  - Added migration to add `imei_serial` column to `service_invoices` table. Updated model, controllers, and views (`create`, `edit`, `show`, `print`) to include `imei_serial`.
+  - Display pre-generated `invoice_no` on the `service-invoices/create.blade.php` and `edit.blade.php` forms so users can see the invoice code before saving.
+  - Updated validation in `RepairTicketInvoiceController`: `imei_serial` remains unique, but `customer_phone` and `customer_email` are no longer enforced to be unique (enabling customers to have multiple tickets). `schedule_date` is enforced to be `after_or_equal:today`.
+  - Added a new repair status `Under_Repair` (Đang sửa chữa) to the status list validation, admin creation/editing forms, list badges, customer profile view, and tracking visual stepper.
+  - Standardized repair ticket code prefixes to `#RT-` globally (synchronized between customer profile table/modal and admin dashboard).
+  - Dynamically updated the date labels in the customer profile: displays "Ngày hẹn mang tới" (Hẹn mang máy) if the ticket status is `Received`, and automatically shifts to "Ngày hẹn trả máy" (Hẹn trả máy) once the ticket moves to `Under_Repair`, `Waiting_Parts`, or `Done` to reflect the updated schedule date updated by the Admin.
+  - Fixed a critical bug in `RepairTicketInvoiceController` where updating or storing a repair ticket from the admin panel would reset `user_id` to `null` (since the selection dropdown was removed from admin views). The controller now automatically queries and links the user account by `customer_phone`, fallbacks/preserves existing `user_id` if not matched.
+  - Removed the "Tạo hóa đơn mới" button from the service invoices list page and added an "invoice_no" (Mã hóa đơn) search input control to filter results by code.
+- **Online Repair Bookings (Customer Portal):**
+  - Fully integrated "Lịch sử & Đặt lịch sửa chữa" tab (`repair-tab`) into the customer profile sidebar and tab menu.
+  - Reverted profile page layout width, header, and footer back to their exact original visual dimensions (280px sidebar, 20px gap, standard container width) for visual coherence.
+  - Removed "Dịch vụ / Hóa đơn", "Kỹ thuật viên", and "Ngày hẹn" from the outer repair list table, retaining them exclusively inside the detail tracking popup.
+  - Standardized ticket IDs with `#RT-` prefix globally.
+  - Labeled technician in tracking modal as "Kỹ thuật viên phụ trách" and ensured every ticket always has an assigned technician (required validation in admin store/update routes, automatically assigns default technician on customer self-registration).
+  - Implemented the multi-section grid layout for the online repair registration form (`customer_name`, `customer_phone`, `customer_email`, `customer_address`, `imei_serial`, `schedule_date`, `issue_desc`).
+  - Added visual, state-driven vertical progress Stepper tracking modal populating steps (`Received` -> `Checking` -> `Under_Repair` / `Waiting_Parts` -> `Done`), displaying estimated cost, assigned technicians, real service fees, and invoices dynamically.
+  - Implemented automatic redirection / modal re-opening when Laravel validation errors occur during repair ticket submission.
+- **Checkout Form Real-Time Validation & Character Counter:**
+  - Implemented real-time checking for Họ và tên (Full Name): letters only (showing "Nhập họ và tên bằng chữ" on numbers) and constrained to minimum 15 characters (showing "Họ và tên phải từ 15 ký tự trở lên").
+  - Implemented real-time checking for Số điện thoại (Phone): numbers only (showing "Bạn chỉ nhập số" on letters) and standard formatting constraint.
+  - Implemented 40-character limit constraint for Địa chỉ giao hàng (Shipping Address) with active real-time character counter.
+  - Implemented 250-character limit constraint for Ghi chú (Note) with active real-time character counter.
+- **Lucky Wheel Improvements:**
+  - Standardized UI texts across Frontend and Admin Reward Views based on locale setup via `app()->getLocale()`.
+  - Converted JavaScript hardcoded text variables (such as results prompt, spin testing alerts, canvas placeholder warnings, button labels, and number formatting) to reactive configurations that load the correct language dictionary.
+  - Verified localization support for all three wheel tiers (Standard, Silver, Gold) on both the user dashboard and the administrator control panel.
+  - Fixed "Wheel Settings" button not clickable due to a missing `locale` JavaScript variable (ReferenceError: locale is not defined).
+  - Added a backend and admin feature to toggle lucky wheel visibility on the frontend.
+# Project Memory
+
+## Current State & Focus
+- **Lucky Wheel Localization:**
+  - Fully localized both Frontend and Admin interfaces for the Rewards & Lucky Wheel module (supporting Vietnamese & English).
+  - Synchronized static texts, labels, alerts, validation helpers, and Canvas/draw rendering routines in JavaScript according to `app()->getLocale()`.
+- **Dynamic Multi-Wheel Customization with Rank Restrictions:**
+  - Added support for Admin to independently define, edit, and delete multiple lucky wheels.
+  - Added `min_rank` constraint to each lucky wheel configuration (None, Bronze, Silver, Gold, Diamond), allowing rank restrictions for custom wheels.
+  - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
+- **Merge Activities:**
+  - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
+  - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
   - Added tag-based filtering on the lifestyle listing page.
   - Fixed admin article filters so status buttons and search now work together.
@@ -11,6 +206,8 @@
   - Service-based backend filtering via `ProductFilterService`.
 
 ## Files Changed
+- **Checkout / Payment Validation:**
+  - `ThuongMaiDienTu/resources/views/frontend/cart/pay.blade.php`
 - **Articles:**
   - `ThuongMaiDienTu/app/Http/Controllers/ArticleFrontendController.php`
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/ArticleController.php`
@@ -30,23 +227,86 @@
   - `ThuongMaiDienTu/resources/views/layouts/app.blade.php`
   - `ThuongMaiDienTu/resources/views/partials/compare-bar.blade.php`
   - `ThuongMaiDienTu/routes/web.php`
+- **Repair Tickets & Customer Profile:**
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/RepairTicketInvoiceController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/ServiceInvoiceController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ProfileController.php`
+  - `ThuongMaiDienTu/app/Models/User.php`
+  - `ThuongMaiDienTu/routes/admin.php`
+  - `ThuongMaiDienTu/routes/web.php`
+  - `ThuongMaiDienTu/resources/views/admin/repair-tickets/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/repair-tickets/create.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/repair-tickets/edit.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/service-invoices/create.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/service-invoices/edit.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/service-invoices/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/frontend/profile.blade.php`
+- **Lucky Wheel (Dynamic Configurations & Rank Restrictions):**
+  - `ThuongMaiDienTu/resources/views/frontend/rewards/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/rewards/index.blade.php`
+  - `ThuongMaiDienTu/resources/views/admin/rewards/partials/image-modal.blade.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/RewardsController.php`
+  - `ThuongMaiDienTu/app/Services/RewardsService.php`
+  - `ThuongMaiDienTu/resources/views/frontend/cart/apply-discount-code.blade.php`
 
 ## Important Logic & Behavior Changes
-- **Articles:**
-  - `ArticleFrontendController@index()` now accepts `tag` filtering and keeps pagination query strings.
-  - Added `applyTagFilter()` for lifestyle tag behavior.
-  - Admin article index now applies `status` and `q` filters in a grouped query so both filters work together.
-  - Lifestyle page now shows a tag filter row for `standard`, `lifestyle`, and `dienmay-pro`.
-- **Storefront (Compare & Filter):**
-  - Compare items are stored in `localStorage` under `compare_products` and merged with server data for authenticated users.
-  - Frontend filter JS now hydrates from URL, supports quick filters, and syncs active tags with AJAX updates.
-  - Product listing cards now show compare loading, animation, and `Đã so sánh` state after AJAX rerenders.
-  - `product-filter.js` dispatches `product-grid:updated` after AJAX replacement so compare UI can rebind.
-  - `/compare` renders a responsive compare page with diff highlighting and mobile-friendly cards.
-  - `/compare/sync` persists the compare list to `WishlistRecentlyViewed` when a user is logged in.
-  - `filter_rules` schema is being standardized around `group_key`, `rule_key`, `label`, `conditions`, `sort_order`, `is_active`.
+- **Lucky Wheel Rank-Restrictions:**
+  - Added a `min_rank` column in the Admin Quick Manager Modal. The dropdown options map to database tier names (`Dong`, `Bac`, `Vang`, `KimCuong`) and "none".
+  - Created a client-side rank verification dictionary (`rankOrder`) in JavaScript to check and alert user if their active tier (`member_tier`) is insufficient for the selected wheel before triggering the spin API.
+  - Implemented identical server-side verification in `RewardsService@spinWheel` comparing `$user->member_tier` to `$wheelConfig['min_rank']` using ordinal values (`Dong`=1, `Bac`=2, `Vang`=3, `KimCuong`=4) to ensure secure validation.
+- **Repair Tickets CRUD & Invoicing Link:**
+  - Expanded `RepairTicketInvoiceController` to support full ticket lifecycle: creation (`createTicket`, `storeTicket`), updating (`editTicket`, `updateTicket`), and deletion (`destroyTicket`).
+  - Created database migration to make `user_id` nullable on `repair_tickets` table and added `customer_address`, `customer_email`, and `customer_source` fields.
+  - Removed "Tài khoản khách hàng" (`user_id`) selection dropdown from repair ticket create and edit views, making customer profile creation fully client-contact-driven with required Name, Phone, and optional Address, Email, and Source.
+  - Updated validation rules in `RepairTicketInvoiceController` to make user account linking optional, customer name and phone number mandatory, and allow storing the new guest details.
+  - Added "Tạo phiếu sửa chữa" button and inline "Sửa"/"Xóa" actions in `admin/repair-tickets/index.blade.php`.
+  - Added a search API `/api/customers/search-by-phone` and implemented an AJAX autocomplete script in `create.blade.php` and `edit.blade.php` which automatically fetches and populates customer details (Name, Address, Email, Source) when typing an existing phone number.
+  - Displayed the "IMEI / Serial" column in the repair tickets list page (`index.blade.php`).
+  - Integrated `datetime-local` input and form select boxes populating customer/technician records.
+  - Fixed form action routing in `admin/service-invoices/create.blade.php` to target `admin.repair-tickets.invoice.store` when `$repairTicket` is present (so linking is processed by `RepairTicketInvoiceController@store`).
+  - Fixed the hidden input field to submit the correct PK field name `$repairTicket->ticket_id` instead of the non-existent `$repairTicket->id`.
+  - Added `edit()`, `update()`, and `destroy()` methods to `ServiceInvoiceController.php` to allow managing and editing service invoices (including publishing drafts), automatically clearing any associated `invoice_no` and `invoiced_at` references in `repair_tickets` table on deletion.
+  - Redesigned create and edit forms for service invoices (`create.blade.php`, `edit.blade.php`) to use themed container cards grouping customer, cost, and status information.
+  - Dynamically altered title, description, back button, and submit button on `service-invoices/create.blade.php` to read "Xuất hóa đơn" instead of "Lưu hóa đơn / Tạo hóa đơn" when exporting from a repair ticket (`$repairTicket` context), and updated redirect success message to "Đã xuất hóa đơn dịch vụ thành công.".
+  - Added compact Edit, Delete, and PDF download buttons to the service invoices actions in `admin/service-invoices/index.blade.php`.
+  - Restricted invoice export: nút "Xuất HD" chỉ hiện khi phiếu sửa chữa có status='Done'. Các trạng thái khác hiện badge "Chờ hoàn thành". Backend `create()` cũng chặn nếu status != Done.
+  - Thêm trường VAT (%) vào form tạo/sửa hóa đơn dịch vụ (`create.blade.php`, `edit.blade.php`) với tính tổng preview real-time bằng JS. Hiển thị dòng VAT trong `show.blade.php` và `print.blade.php`. Cập nhật `ServiceInvoiceController` và `RepairTicketInvoiceController` để validate `vat_rate` và tính `tax_amount = subtotal * vatRate / 100`.
+  - Added migration to add `imei_serial` column to `service_invoices` table. Updated model, controllers, and views (`create`, `edit`, `show`, `print`) to include `imei_serial`.
+  - Display pre-generated `invoice_no` on the `service-invoices/create.blade.php` and `edit.blade.php` forms so users can see the invoice code before saving.
+  - Updated validation in `RepairTicketInvoiceController`: `imei_serial` remains unique, but `customer_phone` and `customer_email` are no longer enforced to be unique (enabling customers to have multiple tickets). `schedule_date` is enforced to be `after_or_equal:today`.
+  - Added a new repair status `Under_Repair` (Đang sửa chữa) to the status list validation, admin creation/editing forms, list badges, customer profile view, and tracking visual stepper.
+  - Standardized repair ticket code prefixes to `#RT-` globally (synchronized between customer profile table/modal and admin dashboard).
+  - Dynamically updated the date labels in the customer profile: displays "Ngày hẹn mang tới" (Hẹn mang máy) if the ticket status is `Received`, and automatically shifts to "Ngày hẹn trả máy" (Hẹn trả máy) once the ticket moves to `Under_Repair`, `Waiting_Parts`, or `Done` to reflect the updated schedule date updated by the Admin.
+  - Fixed a critical bug in `RepairTicketInvoiceController` where updating or storing a repair ticket from the admin panel would reset `user_id` to `null` (since the selection dropdown was removed from admin views). The controller now automatically queries and links the user account by `customer_phone`, fallbacks/preserves existing `user_id` if not matched.
+  - Removed the "  - Implemented the multi-section grid layout for the online repair registration form (`customer_name`, `customer_phone`, `customer_email`, `customer_address`, `imei_serial`, `schedule_date`, `issue_desc`).
+  - Added visual, state-driven vertical progress Stepper tracking modal populating steps (`Received` -> `Checking` -> `Under_Repair` / `Waiting_Parts` -> `Done`), displaying estimated cost, assigned technicians, real service fees, and invoices dynamically.
+  - Implemented automatic redirection / modal re-opening when Laravel validation errors occur during repair ticket submission.
+- **Frontend Views Documentation (Tài liệu hóa Giao diện):**
+  - Đã bổ sung hệ thống chú thích và comment tiếng Việt siêu chi tiết cho toàn bộ các file view còn lại trong thư mục `resources/views/frontend` (đặc biệt là `wishlist/index.blade.php` với logic xóa sản phẩm yêu thích qua AJAX kèm hiệu ứng Optimistic UI mượt mà, cũng như làm sạch toàn bộ danh sách).
+  - Xác nhận tất cả các phân hệ frontend chính như so sánh sản phẩm (`compare`), giỏ hàng & tính phí vận chuyển (`cart`), trang cá nhân (`profile`), và tích điểm đổi quà/vòng quay may mắn (`rewards`) đều đã có đầy đủ comment tiếng Việt chuyên sâu hỗ trợ phát triển lâu dài.
 
 ## TODOs & Follow-up Work
+- **Lucky Wheel & Rewards:**
+  - Check database translations for reward model attributes if multi-language data-level localization becomes necessary.
+  - Test custom sound effects triggering on spin start and stop if requested by the user.
+- **Vouchers / Coupon System:**
+  - Theo dõi trải nghiệm người dùng khi áp dụng mã giảm giá và đảm bảo phí ship (nếu có) được cập nhật đồng bộ.
+  - Test thực tế luồng mua hàng trọn vẹn với mã đổi thưởng.
+- **Articles:**
+  - If desired, refine tag taxonomy so lifestyle tags map to a dedicated database column instead of inferred article attributes.
+  - If desired, further reduce duplication by moving article preview markup into a shared partial component.
+- **Storefront:**
+  - Verify the new detail-page compare button visually against the existing product action buttons.
+  - Consider extracting compare button styles into reusable Blade components to reduce duplication.
+  - Verify and apply the new migration against the actual database engine.(`RewardSeeder.php`, `RewardHistorySeeder.php`).
+
+## TODOs & Follow-up Work
+- **Lucky Wheel & Rewards:**
+  - Check database translations for reward model attributes if multi-language data-level localization becomes necessary.
+  - Test custom sound effects triggering on spin start and stop if requested by the user.
+- **Vouchers / Coupon System:**
+  - Theo dõi trải nghiệm người dùng khi áp dụng mã giảm giá và đảm bảo phí ship (nếu có) được cập nhật đồng bộ.
+  - Test thực tế luồng mua hàng trọn vẹn với mã đổi thưởng.
 - **Articles:**
   - If desired, refine tag taxonomy so lifestyle tags map to a dedicated database column instead of inferred article attributes.
   - If desired, further reduce duplication by moving article preview markup into a shared partial component.
@@ -54,3 +314,32 @@
   - Verify the new detail-page compare button visually against the existing product action buttons.
   - Consider extracting compare button styles into reusable Blade components to reduce duplication.
   - Verify and apply the new migration against the actual database engine.
+- **Environment & System Setup:**
+  - Kích hoạt thành công tiện ích mở rộng `zip` (`ext-zip`) và `gd` (`ext-gd`) trong tệp cấu hình PHP của hệ thống (`C:\xampp\php\php.ini`).
+  - Đã sẵn sàng hỗ trợ người dùng chạy lại `composer install` không bị gián đoạn và có tốc độ giải nén tối đa.
+  - Tích hợp **SUPER PIPELINE** (Standard Pipeline & Clean Rebuild Pipeline) vào `start.bat` để tổ hợp chạy toàn trình từ đầu đến cuối chỉ với 1-Click.
+  - **BUG FIX (Super Pipeline + MySQL):** Sửa 2 lỗi nghiêm trọng: (1) Thêm kiểm tra MySQL process (`mysqld.exe`) đang chạy trước khi gọi `migrate:fresh --seed` trong cả 2 pipeline (Standard & Clean Rebuild), tránh script treo chết khi MySQL chưa bật. (2) Thêm `goto PROCESS` sau `npm run build` trong PIPELINE_CLEAN_REBUILD — trước đó script rơi thẳng xuống nhãn `:VIEW_SITEMAP` khiến Laravel server không bao giờ được khởi chạy.
+  - Khắc phục thành công lỗi `QueryException: General error: 1 error in index orders_user_id_status_index after drop column` trên SQLite bằng cách tự động drop index ghép trước khi drop cột và tái tạo lại sau khi đổi cấu trúc cột trong tệp migration `2026_05_14_130000_add_cancelled_status_to_orders_table.php`.
+  - Khai báo bổ sung gói `"laravel/sanctum": "^4.0"` vào mục `"require"` của [composer.json](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/composer.json) giải quyết triệt để lỗi `Trait "Laravel\Sanctum\HasApiTokens" not found`, giúp package tự động cài đặt mượt mà khi rebuild.
+  - **BUG FIX (start.bat Option 5 / Parentheses Syntax & CRLF Line Endings Crash):** Khắc phục triệt để lỗi Windows CMD parser sụp đổ gây ra lỗi `The system cannot find the batch label specified - PIPELINE_STANDARD` khi chọn Option 5. Chúng tôi đã xử lý 2 nguyên nhân cốt lõi: (1) Sửa 6 điểm lỗi dấu ngoặc đơn đóng `)` chưa được escape nằm trong các câu lệnh `echo` và `set` thuộc các khối lệnh `if (...)` lồng nhau (tại dòng 183, 201, 899, 994, 995, và 996) bằng cách đổi thành ngoặc vuông `[...]`. (2) Phát hiện và sửa đổi định dạng xuống dòng của file `start.bat` từ Unix-style (LF) về lại Windows-style (CRLF) bằng PowerShell. Định dạng xuống dòng LF là nguyên nhân kinh điển khiến CMD trên Windows không thể tìm thấy bất kỳ nhãn nào khi chạy lệnh `goto`. Hệ thống hiện đã hoạt động hoàn hảo 100%.
+- **Live Theme Customizer Compiler Fix & Customizer Focus Optimization:**
+  - Đại trùng tu và tích hợp Same-Origin Iframe Sync chất lượng cao trỏ trực tiếp đến `/?theme_preview=1`.
+  - Đã xử lý loại bỏ hoàn toàn các đoạn mã dư thừa, cú pháp lỗi của component `MockProductCard` cũ bị bỏ lại tại `ThemeSettings.tsx` (dòng 934-953), giúp khôi phục trạng thái biên dịch thành công 100% cho trình biên dịch Vite dev server trên máy host.
+  - Sửa lỗi co rút và lệch khung xem trước bằng cách chuyển macOS Safari sang định vị tuyệt đối `absolute top-4 left-4`, mở rộng kích thước pre-transform `100/previewScale %` và sử dụng `origin-top-left` kèm `shrink-0`. Khung máy tính giờ đây hiển thị siêu nét, lấp đầy 100% diện tích giả lập thực tế không còn lề thừa hay thanh cuộn ngang khó chịu.
+  - Khắc phục lỗi rò rỉ và hiển thị bong bóng Chatbot bằng cách cập nhật selector thực tế trong Iframe: ẩn triệt để `.chatbot-fab`, `#chatbot-fab`, `#ai-chat-window`, `#pending-payment-alert`, `.compare-bar`, `.compare-bar-inner`, và `.compare-floating-bar`.
+  - Sửa lỗi hiển thị chữ thô do ký tự thoát `\${` ở các trường Logo, Topbar, Hotline, Địa chỉ và Copyright. Các biến giờ đây được đánh giá nội suy chính xác 100% theo dữ liệu thời gian thực của Admin.
+  - Loại bỏ hoàn toàn các nhãn text `.customizer-badge` đè che khuất các phần tử thật của website. Thay thế hiệu ứng viền highlight thành một đường viền outline nét đứt màu đỏ thương hiệu `#d70018` tuyệt đẹp có bóng mờ phát sáng dịu mà không gây xê dịch hay móp xẹp chiều cao của Header/Topbar.
+  - Kích hoạt cơ chế cuộn thông minh cuộn mượt mà lên đỉnh đầu khi chọn tab Đầu trang (Header) và cuộn xuống đáy trang khi chọn tab Chân trang (Footer).
+- **Storefront Live Theme Integration & Layout Bug Fix:**
+  - **Đồng bộ hóa SettingsStorefront:** Kích hoạt đăng ký lớp `App\Providers\SettingsServiceProvider::class` trong tệp cấu hình khởi động của Laravel (`bootstrap/providers.php`). Trước đó, do thiếu đăng ký này, toàn bộ biến `$globalSettings` không bao giờ được khởi tạo và chia sẻ đến các view Blade trên storefront trực tiếp, khiến các cài đặt giao diện (màu sắc, logo, hotline, chân trang, v.v.) bị bỏ qua hoàn toàn.
+  - **Sửa lỗi cú pháp HTML vỡ khung top-bar:** Tái cấu trúc khối lệnh điều kiện `@if` ẩn hiện Topbar thông báo trong `header.blade.php`. Chuyển dịch vị trí đóng thẻ `@endif` xuống bao trọn toàn bộ cấu trúc `.top-bar` thay vì cắt ngang giữa chừng. Lỗi này trước đây khiến trình duyệt render dư thừa các thẻ `</div>` khi thanh thông báo bị ẩn (`announcement_show` = 0), gây vỡ toàn bộ cấu trúc layout DOM của trang web.
+  - **Dọn dẹp cache hệ thống:** Đã thực hiện xóa cache cấu hình và view (`optimize:clear`) để hệ thống nạp lại lớp service provider mới nhất và áp dụng tức thì.
+  - **Sắp xếp phân hệ Tùy biến Header & Footer trực quan:** Tái cấu trúc bộ chọn tab (`activeTab`) trong component `ThemeSettings.tsx` từ dạng hàng ngang (flex row) thành dạng cột đứng (flex column). Nhờ đó, tùy chọn "Tùy biến Header (Đầu trang)" luôn nằm ở **phía trên** và "Tùy biến Footer (Chân trang)" luôn nằm ở **phía dưới**, tương ứng 100% với vị trí thực tế của các phần tử này trên bố cục một website. Tối ưu hóa thêm độ trễ `setTimeout` when cuộn mượt (smooth scroll) xem trước để bảo đảm trình duyệt tính toán và dịch chuyển tiêu điểm chính xác tuyệt đối.
+
+- **Merge Master vào xuanhoa/CRUD_NhanVien & Giải quyết Xung đột:**
+  - **AppServiceProvider.php:** Giải quyết xung đột bằng cách gộp thành công định nghĩa `Gate::policy` cho `EmployeePolicy` (từ nhánh CRUD_NhanVien) vào trong hàm `boot()` chung với các hàm hạ tầng khác của `master` (`bootInfrastructure`, `bootLoginHistory`, và `bootObservers`).
+  - **sidebar.blade.php:** Giải quyết xung đột bằng cách giữ lại menu điều hướng "Employees / Nhân viên" (từ nhánh CRUD_NhanVien) trong nhóm phân hệ `Settings / Thiết lập` cho Admin, đồng thời chuyển hóa nhãn hiển thị sang dạng hỗ trợ song ngữ Anh-Việt (`$isEn ? 'Employees' : 'Nhân viên'`) đồng nhất 100% với phong cách giao diện của `master`.
+
+
+
+

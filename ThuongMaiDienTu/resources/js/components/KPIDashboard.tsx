@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import Chart from 'chart.js/auto';
 import { Button } from './ui/button';
+import { t } from '../helpers';
 
 interface Stats {
     total_sales_revenue: number;
@@ -98,7 +99,7 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
             const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?filter=${filter}${start ? `&start=${start}&end=${end}` : ''}`;
             window.history.pushState({ path: newUrl }, '', newUrl);
         } catch (error) {
-            console.error("Lỗi tải dữ liệu KPI:", error);
+            console.error(t("Lỗi tải dữ liệu KPI:", "Error loading KPI data:"), error);
         } finally {
             setIsRefreshing(false);
         }
@@ -123,7 +124,7 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
                             return `${date.getDate()}/${date.getMonth() + 1}`;
                         }),
                         datasets: [{
-                            label: 'Doanh thu',
+                            label: t('Doanh thu', 'Revenue'),
                             data: data.revenueChart.map(d => d.total),
                             borderColor: '#4f46e5',
                             borderWidth: 3,
@@ -194,20 +195,20 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
     const formatDate = (dateStr: string) => {
         if (!dateStr) return '';
         const date = new Date(dateStr);
-        return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return date.toLocaleDateString(t('vi-VN', 'en-US'), { day: '2-digit', month: '2-digit', year: 'numeric' });
     };
 
     const filterOptions = [
-        { label: 'Hôm nay', value: 'today' },
-        { label: 'Hôm qua', value: 'yesterday' },
-        { label: 'Tuần này', value: 'week' },
-        { label: 'Tháng này', value: 'month' },
-        { label: 'Tháng trước', value: 'last_month' },
-        { label: 'Năm nay', value: 'year' },
-        { label: 'Tùy chỉnh...', value: 'custom' },
+        { label: t('Hôm nay', 'Today'), value: 'today' },
+        { label: t('Hôm qua', 'Yesterday'), value: 'yesterday' },
+        { label: t('Tuần này', 'This Week'), value: 'week' },
+        { label: t('Tháng này', 'This Month'), value: 'month' },
+        { label: t('Tháng trước', 'Last Month'), value: 'last_month' },
+        { label: t('Năm nay', 'This Year'), value: 'year' },
+        { label: t('Tùy chỉnh...', 'Custom...'), value: 'custom' },
     ];
 
-    const currentFilterLabel = filterOptions.find(o => o.value === data.stats.filter)?.label || 'Chọn kỳ';
+    const currentFilterLabel = filterOptions.find(o => o.value === data.stats.filter)?.label || t('Chọn kỳ', 'Select Period');
 
     // Get today's date in YYYY-MM-DD format for the 'max' attribute
     const todayStr = new Date().toISOString().split('T')[0];
@@ -227,10 +228,10 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
                         <Activity className="w-5 h-5" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-black text-slate-800 tracking-tight">Thống kê KPI</h1>
+                        <h1 className="text-xl font-black text-slate-800 tracking-tight">{t('Thống kê KPI', 'KPI Statistics')}</h1>
                         {data.stats.start_date && data.stats.end_date && (
                             <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kỳ thống kê:</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('Kỳ thống kê:', 'Period:')}</span>
                                 <span className="text-[11px] font-black text-indigo-600 tracking-tight">
                                     {formatDate(data.stats.start_date)} - {formatDate(data.stats.end_date)}
                                 </span>
@@ -276,12 +277,12 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
                                 ) : (
                                     <div className="p-4 space-y-4">
                                         <div className="flex items-center justify-between mb-2">
-                                            <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Tùy chỉnh ngày</span>
+                                            <span className="text-xs font-black text-slate-700 uppercase tracking-widest">{t('Tùy chỉnh ngày', 'Custom Date')}</span>
                                             <button onClick={() => setShowCustomDate(false)} className="text-slate-400 hover:text-rose-500"><X className="w-4 h-4" /></button>
                                         </div>
                                         <div className="space-y-3">
                                             <div>
-                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Từ ngày</label>
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">{t('Từ ngày', 'From Date')}</label>
                                                 <input 
                                                     type="date" 
                                                     max={todayStr}
@@ -291,7 +292,7 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Đến ngày</label>
+                                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">{t('Đến ngày', 'To Date')}</label>
                                                 <input 
                                                     type="date" 
                                                     max={todayStr}
@@ -306,7 +307,7 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
                                             disabled={!customStart || !customEnd || customStart > customEnd}
                                             onClick={() => fetchKPI('custom', customStart, customEnd)}
                                         >
-                                            Áp dụng
+                                            {t('Áp dụng', 'Apply')}
                                         </Button>
                                     </div>
                                 )}
@@ -327,9 +328,9 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
 
             {/* Metrics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                <MetricCard icon={<TrendingUp />} value={`${formatMoney(data.stats.total_sales_revenue)}đ`} label="Doanh thu" color="indigo" />
-                <MetricCard icon={<ShoppingCart />} value={`${data.stats.total_orders_completed}`} label="Đơn hàng" color="emerald" />
-                <MetricCard icon={<Wrench />} value={`${data.stats.total_repairs_done}`} label="Kỹ thuật" color="amber" />
+                <MetricCard icon={<TrendingUp />} value={`${formatMoney(data.stats.total_sales_revenue)}đ`} label={t('Doanh thu', 'Revenue')} color="indigo" />
+                <MetricCard icon={<ShoppingCart />} value={`${data.stats.total_orders_completed}`} label={t('Đơn hàng', 'Orders')} color="emerald" />
+                <MetricCard icon={<Wrench />} value={`${data.stats.total_repairs_done}`} label={t('Kỹ thuật', 'Technical')} color="amber" />
                 <div className="bg-slate-900 px-6 py-4 rounded-[1.25rem] shadow-lg flex items-center justify-between group cursor-default">
                     <div>
                         <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Top Sales</div>
@@ -343,7 +344,7 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
             <div className={`grid gap-4 ${isRevenueExpanded ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
                 <div className={`${isRevenueExpanded ? 'h-[500px]' : 'lg:col-span-2 h-[350px]'} bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-100 relative group`}>
                     <div className="flex items-center justify-between mb-6">
-                        <span className="text-sm font-black text-slate-700 uppercase tracking-tight">Doanh thu theo ngày</span>
+                        <span className="text-sm font-black text-slate-700 uppercase tracking-tight">{t('Doanh thu theo ngày', 'Daily Revenue')}</span>
                         <Button
                             variant="ghost"
                             size="icon"
@@ -360,7 +361,7 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
 
                 {!isRevenueExpanded && (
                     <div className="h-[350px] bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-100 relative">
-                        <span className="text-sm font-black text-slate-700 uppercase tracking-tight">Cơ cấu Sales</span>
+                        <span className="text-sm font-black text-slate-700 uppercase tracking-tight">{t('Cơ cấu Sales', 'Sales Structure')}</span>
                         <div className="absolute inset-0 pt-16 px-6 pb-6">
                             <canvas ref={distChartRef}></canvas>
                         </div>
@@ -371,14 +372,14 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
             {/* Tables Section */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 <TableCard
-                    title="Bảng vàng Sales"
+                    title={t('Bảng vàng Sales', 'Sales Leaderboard')}
                     icon={<Users className="w-4 h-4" />}
                     data={data.salesKPI}
                     color="indigo"
                     onExport={() => exportCSV(data.salesKPI, 'sales')}
                 />
                 <TableCard
-                    title="Bảng vàng Kỹ thuật"
+                    title={t('Bảng vàng Kỹ thuật', 'Technical Leaderboard')}
                     icon={<Wrench className="w-4 h-4" />}
                     data={data.techKPI}
                     color="emerald"
@@ -391,7 +392,7 @@ const KPIDashboard: React.FC<KPIProps> = (initialProps) => {
 
 const exportCSV = (tableData: any[], filename: string) => {
     const csvContent = "data:text/csv;charset=utf-8,"
-        + ["Tên,Số lượng,Giá trị"].join(",") + "\n"
+        + [t('Tên,Số lượng,Giá trị', 'Name,Quantity,Value')].join(",") + "\n"
         + tableData.map(item => `${item.full_name},${item.total_orders || item.completed_tickets},${item.total_revenue || 0}`).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -434,16 +435,16 @@ const TableCard = ({ title, icon, data = [], color, onExport }: any) => {
                     <h3 className="font-black text-slate-700 text-xs uppercase tracking-tight">{title}</h3>
                 </div>
                 <Button variant="ghost" size="sm" className="rounded-lg h-8 px-3 text-slate-400 hover:text-indigo-600 text-xs" onClick={onExport}>
-                    <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" /> Xuất
+                    <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" /> {t('Xuất', 'Export')}
                 </Button>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left">
                     <thead>
                         <tr className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
-                            <th className="px-6 py-3 w-16 text-center">Hạng</th>
-                            <th className="px-6 py-3">Nhân viên</th>
-                            <th className="px-6 py-3 text-right">Giá trị</th>
+                            <th className="px-6 py-3 w-16 text-center">{t('Hạng', 'Rank')}</th>
+                            <th className="px-6 py-3">{t('Nhân viên', 'Employee')}</th>
+                            <th className="px-6 py-3 text-right">{t('Giá trị', 'Value')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 text-xs">
@@ -452,7 +453,7 @@ const TableCard = ({ title, icon, data = [], color, onExport }: any) => {
                                 <td className="px-6 py-3 text-center font-black text-slate-200">#{index + 1}</td>
                                 <td className="px-6 py-3 font-bold text-slate-600">{item.full_name}</td>
                                 <td className="px-6 py-3 text-right font-black text-slate-800 italic">
-                                    {item.total_revenue !== undefined ? `${new Intl.NumberFormat('vi-VN').format(item.total_revenue)}đ` : `${item.completed_tickets} ca`}
+                                    {item.total_revenue !== undefined ? `${new Intl.NumberFormat('vi-VN').format(item.total_revenue)}đ` : `${item.completed_tickets} ${t('ca', 'tickets')}`}
                                 </td>
                             </tr>
                         ))}

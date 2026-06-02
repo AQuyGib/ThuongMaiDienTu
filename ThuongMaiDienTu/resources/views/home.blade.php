@@ -3,27 +3,35 @@
 @section('title', 'DienMayPRO - Hệ thống bán lẻ điện thoại di động, máy tính')
 
 @push('styles')
+    <!-- CSS TÙY CHỈNH CHO TRANG CHỦ DIENMAYPRO (LUỒNG GIAO DIỆN PREMIUM VÀ HIỆU ỨNG DỰNG ĐỘNG) -->
     <style>
-        /* Slider & Menu Section */
+        /* ============================================================
+           1. HERO SECTION: KHUNG BỐ CỤC CHÍNH BÊN DƯỚI HEADER
+           Kết hợp Menu dọc (Flyout Mega Menu) bên trái và Banner slider bên phải.
+           ============================================================ */
         .hero-section {
             margin-top: 20px;
             display: flex;
             gap: 15px;
         }
 
-        /* Menu dọc bên trái - NÂNG CẤP PREMIUM */
+        /* 1.1. MENU DỌC BÊN TRÁI - PHÂN HỆ DANH MỤC TRÊN TRANG CHỦ
+           Được thiết kế tinh gọn dạng thẻ nổi (Floating Card) với bo góc mềm mại 16px.
+           Thiết lập position: relative để bảng điều khiển Mega Menu con (Flyout) 
+           định vị chính xác theo lề của menu cha.
+        */
         .category-menu {
-            position: relative; /* THÊM RELATIVE ĐỂ PANEL CĂN THEO ĐÂY */
+            position: relative; 
             width: 230px;
             background: var(--white);
             border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            /* overflow: hidden; */ /* ĐÃ XÓA ĐỂ HIỆN MEGA MENU */
             flex-shrink: 0;
             border: 1px solid rgba(0,0,0,0.03);
             padding: 8px 0;
         }
 
+        /* Định dạng liên kết từng danh mục */
         .category-menu ul li a {
             display: flex;
             align-items: center;
@@ -36,6 +44,7 @@
             position: relative;
         }
 
+        /* Khối chứa icon và văn bản của danh mục */
         .category-menu ul li a .menu-icon {
             display: flex;
             align-items: center;
@@ -43,6 +52,7 @@
             transition: transform 0.3s ease;
         }
 
+        /* Biểu tượng đại diện (FontAwesome) */
         .category-menu ul li a i.main-icon {
             width: 24px;
             height: 24px;
@@ -54,17 +64,22 @@
             transition: all 0.3s ease;
         }
 
+        /* Biểu tượng mũi tên đi sang phải báo hiệu có menu con */
         .category-menu ul li a .fa-angle-right {
             font-size: 11px;
             color: #ccc;
             transition: all 0.3s ease;
         }
 
-        /* Hover Effect */
+        /* Hiệu ứng Hover:
+           - background chuyển sang màu xanh dương nhạt dịu mát.
+           - Đẩy văn bản sang phải 4px tạo hiệu ứng chuyển động mượt mà.
+           - Phóng to nhẹ icon chính và đẩy mũi tên sang phải.
+        */
         .category-menu ul li a:hover {
             background-color: #f5f8ff;
             color: var(--primary-color);
-            padding-left: 22px; /* Đẩy nội dung sang phải một chút */
+            padding-left: 22px; 
         }
 
         .category-menu ul li a:hover i.main-icon {
@@ -77,12 +92,16 @@
             transform: translateX(3px);
         }
 
-        /* Thêm đường kẻ giả tinh tế */
+        /* Tạo khoảng cách nhỏ giữa các dòng menu */
         .category-menu ul li:not(:last-child) {
             margin-bottom: 2px;
         }
 
-        /* Menu Badges */
+        /* 1.2. HỆ THỐNG NHÃN NỔI BẬT (BADGES) TRÊN MENU
+           - Nhãn HOT (Đỏ cam gradient) đại diện cho các ngành hàng bán chạy (Điện thoại, Laptop).
+           - Nhãn NEW (Xanh lục gradient) cho các dòng sản phẩm mới (Smartwatch).
+           - Tích hợp hiệu ứng nhấp nháy phát sáng (pulseGlow) bằng CSS Keyframe để thu hút tầm nhìn.
+        */
         .menu-badge-hot {
             background: var(--primary-gradient);
             color: white;
@@ -108,7 +127,9 @@
             100% { box-shadow: 0 0 0 0 rgba(215, 0, 24, 0); }
         }
 
-        /* Banner chính */
+        /* 1.3. BANNER SLIDER CHÍNH (SWIPER SLIDE) BÊN PHẢI
+           Tự động co giãn theo tỷ lệ khung hình chuẩn 1200x380 để không bị vỡ ảnh trên các màn hình lớn.
+        */
         .hero-banner {
             flex: 1;
             background: #f0f0f0;
@@ -127,6 +148,7 @@
             display: block;
         }
 
+        /* Thu nhỏ nhẹ các nút bấm Next/Prev điều hướng của Swiper và tạo nền mờ tối */
         .hero-banner .swiper-button-next,
         .hero-banner .swiper-button-prev {
             color: var(--white);
@@ -137,11 +159,12 @@
             transform: scale(0.7);
         }
 
+        /* Đổi màu chấm định vị Swiper active sang màu đỏ/xanh thương hiệu */
         .hero-banner .swiper-pagination-bullet-active {
             background: var(--primary-color);
         }
 
-        /* Section Tiêu đề */
+        /* Tiêu đề chung cho các phần danh mục sản phẩm trên trang */
         .section-title {
             font-size: 20px;
             font-weight: 800;
@@ -153,20 +176,27 @@
             color: var(--text-color);
         }
 
-        /* Quick Links Ngang */
+        /* ============================================================
+           2. QUICK LINKS NGANG (DANH MỤC TRUY CẬP NHANH)
+           Thiết kế dạng danh sách cuộn ngang (scrollbar ẩn hoàn toàn) giúp người dùng 
+           trên di động dễ dàng vuốt chạm bằng ngón tay.
+           ============================================================ */
         .quick-links {
             display: flex;
             gap: 12px;
             margin: 20px 0;
             overflow-x: auto;
             padding-bottom: 10px;
-            scrollbar-width: none;
+            scrollbar-width: none; /* Ẩn thanh cuộn trên Firefox */
         }
         
         .quick-links::-webkit-scrollbar {
-            display: none;
+            display: none; /* Ẩn thanh cuộn trên Chrome/Safari */
         }
 
+        /* Thẻ liên kết nhanh:
+           Tạo hiệu ứng nổi 3D (phóng to, nghiêng nhẹ icon và đổ bóng rực đỏ) khi hover.
+        */
         .quick-link-item {
             background: var(--white);
             border-radius: 18px;
@@ -211,7 +241,10 @@
             color: var(--text-main);
         }
 
-        /* Flash Sale Section */
+        /* ============================================================
+           3. PHÂN HỆ FLASH SALE ĐÈN LED ĐẾM NGƯỢC
+           Tông màu chủ đạo chuyển sắc đỏ cam rực cháy.
+           ============================================================ */
         .flash-sale-section {
             margin-top: 30px;
             position: relative;
@@ -224,6 +257,7 @@
             margin-bottom: 15px;
         }
 
+        /* Tiêu đề chữ chạy chuyển sắc (Text Gradient Clip) */
         .flash-title {
             font-size: 26px;
             font-weight: 900;
@@ -238,6 +272,7 @@
             -webkit-text-fill-color: transparent;
         }
 
+        /* Hộp hiển thị số giờ/phút/giây dạng LED phong cách neon */
         .countdown-box {
             background: linear-gradient(180deg, #d70018 0%, #a50012 100%);
             color: var(--white);
@@ -250,7 +285,11 @@
             text-align: center;
         }
 
-        /* Progress Bar rực lửa */
+        /* 3.1. THANH TIẾN ĐỘ SẢN PHẨM FLASH SALE (LAVA PROGRESS BAR)
+           Mô tả mức độ cháy hàng của sản phẩm. 
+           Sử dụng CSS Animation dịch chuyển background liên tục (`lavaFlow`) tạo cảm giác 
+           dòng dung nham rực lửa cuộn trào sinh động.
+        */
         .fs-progress-wrapper {
             margin-top: 15px;
             background: #fee2e2;
@@ -289,7 +328,7 @@
             z-index: 2;
         }
 
-        /* Product Grid */
+        /* Lưới sản phẩm mặc định: 5 cột bằng nhau trải đều */
         .product-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -306,7 +345,9 @@
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
-        /* Thẻ Sản Phẩm */
+        /* 3.2. THẺ SẢN PHẨM MẶC ĐỊNH
+           Tự động co dãn cột dọc, có hiệu ứng zoom ảnh nhẹ và đổ bóng khi hover chuột.
+        */
         .product-card {
             background: var(--white);
             border-radius: 10px;
@@ -319,7 +360,6 @@
         }
 
         .product-grid .product-card {
-            /* Trong flash sale có bg trắng nổi bật */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
@@ -334,6 +374,7 @@
             z-index: 10;
         }
 
+        /* Nhãn Trả góp ở góc trên bên trái */
         .badge-top-left {
             position: absolute;
             top: 10px;
@@ -348,6 +389,7 @@
             text-transform: uppercase;
         }
 
+        /* Nhãn phần trăm giảm giá ở góc trên bên phải */
         .badge-top-right {
             position: absolute;
             top: 10px;
@@ -374,6 +416,7 @@
             transform: scale(1.05);
         }
 
+        /* Cố định tên sản phẩm hiển thị trong đúng 2 dòng, tránh vỡ layout lưới */
         .product-name {
             font-size: 14px;
             font-weight: 600;
@@ -421,7 +464,6 @@
             margin-left: 5px;
         }
 
-        /* Các nhãn nhỏ (tags) */
         .tags-container {
             display: flex;
             flex-wrap: wrap;
@@ -436,10 +478,11 @@
             color: #555;
         }
 
-
-        /* ============================
-           PREMIUM PRODUCT SECTION (V2 - Modern & Interesting)
-           ============================ */
+        /* ============================================================
+           4. DYNAMIC PRODUCTS SECTIONS (CÁC KHUNG SẢN PHẨM KHỔ LỚN)
+           Cơ cấu bố cục chia đôi: Banner đứng quảng cáo bên trái + Lưới sản phẩm bên phải.
+           Hỗ trợ bộ Tabs chuyển đổi dữ liệu bằng AJAX.
+           ============================================================ */
         .product-section-wrapper {
             margin: 40px 0;
             background: var(--white);
@@ -453,7 +496,7 @@
             border: 1px solid rgba(0,0,0,0.03);
         }
 
-        /* Họa tiết trang trí mờ */
+        /* Họa tiết trang trí dạng bóng tròn mờ ảo ở góc phải */
         .product-section-wrapper::before {
             content: "";
             position: absolute;
@@ -468,8 +511,9 @@
             filter: blur(40px);
         }
 
+        /* Banner dọc trang trí bên trái */
         .section-sidebar-banner {
-            width: 230px;
+            width: 200px;
             flex-shrink: 0;
             border-radius: 20px;
             overflow: hidden;
@@ -477,6 +521,7 @@
             z-index: 1;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            align-self: stretch; 
         }
 
         .section-sidebar-banner:hover {
@@ -484,10 +529,18 @@
             box-shadow: 0 20px 45px rgba(0,0,0,0.15);
         }
 
+        .section-sidebar-banner a {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
         .section-sidebar-banner img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center top;
+            display: block;
             transition: transform 0.8s ease;
         }
 
@@ -515,15 +568,16 @@
             letter-spacing: -0.5px;
         }
 
+        /* 4.1. TABS CHUYỂN ĐỔI SẢN PHẨM KHÔNG TẢI LẠI TRANG (AJAX TABS) */
         .section-tabs {
             display: flex;
             gap: 12px;
-            align-items: center; /* Đảm bảo các tab thẳng hàng */
+            align-items: center; 
         }
 
         .section-tab-item {
             padding: 8px 20px;
-            height: 38px; /* Cố định chiều cao để không bị lệch */
+            height: 38px; 
             display: flex;
             align-items: center;
             justify-content: center;
@@ -538,6 +592,7 @@
             white-space: nowrap;
         }
 
+        /* Trạng thái tab đang được chọn: chuyển thành màu gradient xanh đậm */
         .section-tab-item.active {
             background: var(--primary-gradient);
             color: white;
@@ -570,7 +625,10 @@
             border-color: rgba(0, 70, 171, 0.1);
         }
 
-        /* Nâng cấp Thẻ sản phẩm Premium v3.0 - FIX OVERLAP */
+        /* 4.2. THẺ SẢN PHẨM BẢN PREMIUM (ĐỔI MỚI UX)
+           Bổ sung thêm cụm nút chức năng tròn (wishlist, giỏ hàng nhanh) nổi lên 
+           khi di chuột qua thẻ sản phẩm.
+        */
         .product-card-premium {
             background: var(--white);
             border-radius: 18px;
@@ -581,7 +639,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            min-height: 380px; /* Cố định chiều cao tối thiểu */
+            min-height: 380px; 
         }
 
         .product-card-premium:hover {
@@ -598,7 +656,6 @@
             transform: scale(1.12) rotate(2deg);
         }
 
-        /* Nhãn (Badges) */
         .badge-container {
             position: absolute;
             top: 10px;
@@ -628,7 +685,6 @@
             border: 1px solid rgba(0, 70, 171, 0.1);
         }
 
-        /* Nút chức năng */
         .product-card-actions {
             position: absolute;
             top: 10px;
@@ -673,7 +729,7 @@
         }
 
         .btn-wishlist:hover i {
-            font-weight: 900; /* Làm tim đậm lên khi hover */
+            font-weight: 900; 
         }
 
         .btn-add-cart:hover {
@@ -682,7 +738,10 @@
             border-color: #bfdbfe;
         }
 
-        /* AJAX Loading Overlay V2 */
+        /* 4.3. HIỆU ỨNG LỚP PHỦ TẢI DỮ LIỆU AJAX (AJAX LOADING OVERLAY V2)
+           Phủ một lớp màu trắng mờ (opacity 0.6) có kèm hiệu ứng nhòe (backdrop-filter) 
+           và vòng xoay tròn loading vô tận ở giữa để ngăn người dùng thao tác khi grid đang tải dữ liệu.
+        */
         .grid-loading {
             position: relative;
             min-height: 300px;
@@ -716,7 +775,7 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Empty state */
+        /* Khung trống khi không tìm thấy sản phẩm nào phù hợp */
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -730,9 +789,9 @@
             color: #ddd;
         }
 
-        /* ============================
-           RESPONSIVE HOME PAGE
-           ============================ */
+        /* ============================================================
+           5. RESPONSIVE LAYOUT (THÍCH ỨNG TRÊN DI ĐỘNG & TABLET)
+           ============================================================ */
         @media (max-width: 1024px) {
             .product-grid-white {
                 grid-template-columns: repeat(3, 1fr);
@@ -742,11 +801,10 @@
             }
         }
 
-        /* Mega Menu dọc (Flyout) */
-        .sidebar-mega-container {
-            /* position: relative; */ /* BỎ RELATIVE Ở LI ĐỂ PANEL CĂN THEO MENU CHA */
-        }
-
+        /* 5.1. MENU FLYOUT CHI TIẾT (MEGA MENU DỌC)
+           Bảng điều khiển bay ngang (Flyout Mega Menu) hiển thị chi tiết các sản phẩm 
+           con khi di chuột qua menu danh mục chính ở trang chủ.
+        */
         .sidebar-mega-panel {
             position: absolute;
             top: 0;
@@ -764,6 +822,7 @@
             animation: fadeInMenu 0.2s ease;
         }
 
+        /* Vùng đệm ảo bằng trong suốt để người dùng không bị mất menu khi rê chuột chéo góc */
         .sidebar-mega-panel::before {
             content: '';
             position: absolute;
@@ -778,6 +837,7 @@
             to { opacity: 1; transform: translateX(0); }
         }
 
+        /* Kích hoạt hiển thị flyout menu bằng hover thuần CSS */
         .category-menu ul li:hover .sidebar-mega-panel {
             display: block;
         }
@@ -827,7 +887,6 @@
         .mr-2 { margin-right: 8px; }
         .mr-1 { margin-right: 4px; }
 
-        /* AJAX Loading Overlay */
         .grid-loading {
             position: relative;
             min-height: 200px;
@@ -846,7 +905,7 @@
             border-radius: 12px;
         }
 
-        /* Responsive cho Mega Menu dọc */
+        /* Lớp responsive tinh chỉnh giao diện trên màn hình Tablet và Mobile */
         @media (max-width: 1024px) {
             .sidebar-mega-panel { width: 500px; }
         }
@@ -857,6 +916,7 @@
                 gap: 10px;
                 margin-top: 10px;
             }
+            /* Ẩn hoàn toàn menu dọc và flyout panel trên di động để nhường không gian hiển thị banner */
             .category-menu {
                 display: none;
             }
@@ -870,7 +930,6 @@
             .hero-banner .swiper-button-prev {
                 display: none;
             }
-            /* Ẩn banner dọc trên mobile */
             .section-sidebar-banner {
                 display: none;
             }
@@ -886,7 +945,7 @@
                 padding: 8px;
             }
             .section-tabs {
-                display: none; /* Ẩn tab trên mobile cho gọn */
+                display: none; 
             }
             .section-header-premium {
                 flex-direction: column;
@@ -904,7 +963,7 @@
 @endpush
 
 @php
-    // Map icon cho từng danh mục trong sidebar dọc
+    // Gán thủ công icon danh mục cho menu dọc (Flyout)
     $sidebarIcons = [
         'Điện thoại'          => 'fa-mobile-screen-button',
         'Laptop'              => 'fa-laptop',
@@ -914,8 +973,18 @@
         'Phụ kiện'            => 'fa-keyboard',
         'Tivi, Màn hình'      => 'fa-tv',
         'Gia dụng, Smarthome' => 'fa-plug',
+
+        'Smartphones'         => 'fa-mobile-screen-button',
+        'Laptops'             => 'fa-laptop',
+        'Tablets'             => 'fa-tablet-screen-button',
+        'Sound'               => 'fa-headphones',
+        'Smart watch'         => 'fa-clock',
+        'Accessory'           => 'fa-keyboard',
+        'TV, Monitor'         => 'fa-tv',
+        'Household appliances, Smarthome' => 'fa-plug',
     ];
 
+    // Gán hình ảnh hoạt họa đại diện cho danh mục liên kết nhanh (Quick links)
     $quickLinkIcons = [
         'Điện thoại'          => 'https://cdn-icons-png.flaticon.com/512/3616/3616856.png',
         'Laptop'              => 'https://cdn-icons-png.flaticon.com/512/428/428001.png',
@@ -925,14 +994,25 @@
         'Gia dụng, Smarthome' => 'https://cdn-icons-png.flaticon.com/512/2585/2585175.png',
         'Phụ kiện'            => 'https://cdn-icons-png.flaticon.com/512/1865/1865273.png',
         'Tivi, Màn hình'      => 'https://cdn-icons-png.flaticon.com/512/716/716429.png',
+
+        'Smartphones'         => 'https://cdn-icons-png.flaticon.com/512/3616/3616856.png',
+        'Laptops'             => 'https://cdn-icons-png.flaticon.com/512/428/428001.png',
+        'Tablets'             => 'https://cdn-icons-png.flaticon.com/512/3616/3616874.png',
+        'Smart watch'         => 'https://cdn-icons-png.flaticon.com/512/2972/2972185.png',
+        'Sound'               => 'https://cdn-icons-png.flaticon.com/512/3659/3659899.png',
+        'Household appliances, Smarthome' => 'https://cdn-icons-png.flaticon.com/512/2585/2585175.png',
+        'Accessory'           => 'https://cdn-icons-png.flaticon.com/512/1865/1865273.png',
+        'TV, Monitor'         => 'https://cdn-icons-png.flaticon.com/512/716/716429.png',
     ];
 @endphp
 
 @section('content')
     <div class="container">
-        <!-- Hero Section (Menu + Banner) -->
+        <!-- ============================================================
+             1. KHỐI HERO: CHỨA MEGA MENU DỌC VÀ SLIDER SWIPER
+             ============================================================ -->
         <div class="hero-section">
-            <!-- Sidebar Menu - DỮ LIỆU ĐỘNG TỪ DB -->
+            <!-- Mega Menu dọc lấy dữ liệu động từ Database -->
             <div class="category-menu">
                 <ul>
                     @foreach($categories as $cat)
@@ -941,20 +1021,22 @@
                                 <div class="menu-icon">
                                     <i class="fa-solid {{ $sidebarIcons[$cat->name] ?? 'fa-tag' }} main-icon"></i>
                                     {{ $cat->name }}
-                                    @if(in_array($cat->name, ['Điện thoại', 'Laptop']))
+                                    <!-- Hiển thị nhãn HOT/NEW dựa trên tên danh mục -->
+                                    @if(in_array($cat->name, ['Điện thoại', 'Laptop', 'Smartphones', 'Laptops']))
                                         <span class="menu-badge-hot">HOT</span>
-                                    @elseif($cat->name == 'Đồng hồ thông minh')
+                                    @elseif(in_array($cat->name, ['Đồng hồ thông minh', 'Smart watch']))
                                         <span class="menu-badge-new">NEW</span>
                                     @endif
                                 </div>
                                 <i class="fa-solid fa-angle-right text-xs text-gray-400"></i>
                             </a>
 
-                            <!-- Panel chi tiết (Flyout Mega Menu) -->
+                            <!-- Panel Flyout hiển thị thông tin chi tiết các dòng con, thương hiệu, nhu cầu -->
                             <div class="sidebar-mega-panel">
                                 <div class="mega-panel-content">
+                                    <!-- Khối 1: Các dòng sản phẩm chi tiết (Danh mục con) -->
                                     <div class="mega-section">
-                                        <h3 class="sidebar-mega-title">DÒNG SẢN PHẨM {{ mb_strtoupper($cat->name) }}</h3>
+                                        <h3 class="sidebar-mega-title">{{ mb_strtoupper(__('ui.product_lines', ['name' => $cat->name])) }}</h3>
                                         <div class="sidebar-mega-tags">
                                             @foreach($cat->children as $child)
                                                 <a href="{{ route('products.category', $child->slug) }}" class="sidebar-mega-tag">
@@ -962,14 +1044,14 @@
                                                 </a>
                                             @endforeach
                                             <a href="{{ route('products.category', $cat->slug) }}" class="sidebar-mega-tag see-all">
-                                                Xem tất cả {{ $cat->name }}
+                                                {{ __('ui.view_all_cat', ['name' => $cat->name]) }}
                                             </a>
                                         </div>
                                     </div>
 
-                                    {{-- Mockup cho Hãng và Nhu cầu để giao diện đẹp như hình mẫu --}}
+                                    <!-- Khối 2: Đề xuất các hãng sản xuất nổi tiếng -->
                                     <div class="mega-section mt-6">
-                                        <h3 class="sidebar-mega-title">HÃNG SẢN XUẤT PHỔ BIẾN</h3>
+                                        <h3 class="sidebar-mega-title">{{ mb_strtoupper(__('ui.popular_brands')) }}</h3>
                                         <div class="sidebar-mega-tags">
                                             @php
                                                 $brands = ['Apple', 'Samsung', 'Asus', 'HP', 'Dell', 'Lenovo', 'MSI', 'Acer'];
@@ -980,28 +1062,29 @@
                                         </div>
                                     </div>
 
+                                    <!-- Khối 3: Đề xuất chọn sản phẩm nhanh theo nhu cầu công việc/học tập/gaming -->
                                     <div class="mega-section mt-6">
-                                        <h3 class="sidebar-mega-title">CHỌN THEO NHU CẦU</h3>
+                                        <h3 class="sidebar-mega-title">{{ mb_strtoupper(__('ui.choose_by_need')) }}</h3>
                                         <div class="sidebar-mega-tags">
-                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-gamepad mr-1"></i> Chơi game/Đồ họa</a>
-                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-graduation-cap mr-1"></i> Học tập/Văn phòng</a>
-                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-leaf mr-1"></i> Thân thiện môi trường</a>
+                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-gamepad mr-1"></i> {{ __('ui.need_gaming') }}</a>
+                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-graduation-cap mr-1"></i> {{ __('ui.need_student') }}</a>
+                                            <a href="#" class="sidebar-mega-tag"><i class="fa-solid fa-leaf mr-1"></i> {{ __('ui.need_eco') }}</a>
                                         </div>
                                     </div>
                                     
                                     <hr class="my-6 border-gray-100">
                                     <a href="{{ route('products.category', $cat->slug) }}" class="flex items-center font-bold text-blue-800 hover:underline">
-                                        <i class="fa-solid fa-arrow-right mr-2"></i> Xem tất cả {{ $cat->name }}
+                                        <i class="fa-solid fa-arrow-right mr-2"></i> {{ __('ui.view_all_cat', ['name' => $cat->name]) }}
                                     </a>
                                 </div>
                             </div>
                         </li>
                     @endforeach
-                    {{-- Các mục tĩnh bổ sung --}}
+                    <!-- Các mục tĩnh tiện ích phía dưới menu -->
                     <li>
                         <a href="#">
                             <div class="menu-icon">
-                                <i class="fa-solid fa-gamepad main-icon"></i> Thu cũ đổi mới
+                                <i class="fa-solid fa-gamepad main-icon"></i> {{ __('ui.trade_in_renew') }}
                             </div>
                             <i class="fa-solid fa-angle-right text-xs text-gray-400"></i>
                         </a>
@@ -1009,7 +1092,7 @@
                     <li>
                         <a href="{{ route('articles.index') }}">
                             <div class="menu-icon">
-                                <i class="fa-solid fa-newspaper main-icon"></i> Tin công nghệ
+                                <i class="fa-solid fa-newspaper main-icon"></i> {{ __('ui.tech_news') }}
                             </div>
                             <i class="fa-solid fa-angle-right text-xs text-gray-400"></i>
                         </a>
@@ -1017,27 +1100,29 @@
                 </ul>
             </div>
 
-            <!-- Banner Slider (Swiper) -->
-        <div class="hero-banner swiper mySwiper">
-            <div class="swiper-wrapper">
-                <div class="swiper-slide">
-                    <img src="https://images.unsplash.com/photo-1593640495253-23196b27a87f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Khuyến mãi Laptop">
+            <!-- Banner Slider Swiper bên phải màn hình -->
+            <div class="hero-banner swiper mySwiper">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide">
+                        <img src="https://images.unsplash.com/photo-1593640495253-23196b27a87f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Khuyến mãi Laptop">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="S24 Ultra Giảm Sốc">
+                    </div>
+                    <div class="swiper-slide">
+                        <img src="https://images.unsplash.com/photo-1605236453806-6ff36851218e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="iPhone 15 Pro Max">
+                    </div>
                 </div>
-                <div class="swiper-slide">
-                    <img src="https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="S24 Ultra Giảm Sốc">
-                </div>
-                <div class="swiper-slide">
-                    <img src="https://images.unsplash.com/photo-1605236453806-6ff36851218e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="iPhone 15 Pro Max">
-                </div>
+                <!-- Nút bấm qua slide tiếp theo / slide cũ -->
+                <div class="swiper-button-next"></div>
+                <div class="swiper-button-prev"></div>
+                <div class="swiper-pagination"></div>
             </div>
-            <!-- Nút điều hướng -->
-            <div class="swiper-button-next"></div>
-            <div class="swiper-button-prev"></div>
-            <div class="swiper-pagination"></div>
-        </div>
         </div>
 
-        <!-- Quick Links - DỮ LIỆU ĐỘNG TỪ DB -->
+        <!-- ============================================================
+             2. CỤM LIÊN KẾT NHANH (QUICK LINKS)
+             ============================================================ -->
         <div class="quick-links">
             @foreach($categories as $cat)
                 <a href="{{ route('products.category', $cat->slug) }}" class="quick-link-item">
@@ -1047,13 +1132,17 @@
             @endforeach
         </div>
 
-        <!-- Flash Sale Sections -->
+        <!-- ============================================================
+             3. KHỐI TRÌNH DIỄN SẢN PHẨM KHUYẾN MÃI GIỚI HẠN (FLASH SALE)
+             ============================================================ -->
         @foreach($activeFlashSales as $sale)
+            <!-- Nhúng kèm thuộc tính data-end để Javascript đọc thời gian kết thúc của sự kiện -->
             <div class="flash-sale-section" data-end="{{ $sale->end_at->format('Y-m-d H:i:s') }}">
                 <div class="flash-sale-header">
                     <div class="flash-title">
                         <i class="fa-solid fa-bolt"></i> {{ $sale->name }}
                     </div>
+                    <!-- Đồng hồ đếm ngược được tự động điền số giờ/phút/giây qua JS mỗi giây -->
                     <div class="countdown" id="countdown-{{ $sale->flash_sale_id }}">
                         <span>Kết thúc trong:</span>
                         <span class="countdown-box h">00</span> :
@@ -1083,7 +1172,7 @@
                             <div class="product-price">{{ number_format($currentPrice, 0, ',', '.') }}đ</div>
                             <div class="product-old-price">{{ number_format($oldPrice, 0, ',', '.') }}đ</div>
                             
-                            {{-- Thanh tiến độ Flash Sale --}}
+                            <!-- Thanh tiến độ dung nham Flash Sale: tính toán tỷ lệ % số lượng đã bán thực tế -->
                             @php
                                 $sold = $product->flash_sale_sold ?? 0;
                                 $limit = $product->flash_sale_limit ?? 1;
@@ -1106,7 +1195,7 @@
             </div>
         @endforeach
 
-        <!-- Fallback Flash Sale Section (Nếu không có chiến dịch nào) -->
+        <!-- Fallback Flash Sale: Hiển thị danh sách sản phẩm giảm giá mặc định nếu không có chiến dịch Flash Sale đang chạy -->
         @if($activeFlashSales->isEmpty() && $flashSaleProducts->count() > 0)
             <div class="flash-sale-section">
                 <div class="flash-sale-header">
@@ -1138,10 +1227,13 @@
             </div>
         @endif
 
-        <!-- CÁC KHUNG SẢN PHẨM TÙY BIẾN (DYNAMICAL SECTIONS) -->
+        <!-- ============================================================
+             4. KHU VỰC CÁC PHẦN DỰNG SẢN PHẨM ĐỘNG (DYNAMIC SECTIONS)
+             Hỗ trợ AJAX Tab switching để đổi nhóm sản phẩm con nhanh chóng.
+             ============================================================ -->
         @foreach($homeSections as $section)
             <div class="product-section-wrapper" id="section-{{ $section->id }}">
-                <!-- Banner dọc bên trái -->
+                <!-- Banner đứng quảng cáo ở cột bên trái (nếu có cấu hình) -->
                 @if($section->sidebar_banner)
                 <div class="section-sidebar-banner">
                     <a href="{{ $section->sidebar_link ?? '#' }}">
@@ -1150,12 +1242,15 @@
                 </div>
                 @endif
 
+                <!-- Nội dung chính chứa danh sách sản phẩm ở bên phải -->
                 <div class="section-main-content">
                     <div class="section-header-premium">
                         <h2 class="section-title-premium">{{ $section->title }}</h2>
+                        <!-- Tabs điều hướng chứa data-target trỏ về grid id tương ứng -->
                         <div class="section-tabs" data-target="grid-{{ $section->id }}">
                             <span class="section-tab-item active" data-id="{{ $section->category_id ?? '' }}">Tất cả</span>
                             @if($section->type === 'category' && $section->category)
+                                <!-- Chỉ lấy tối đa 4 danh mục con để hiển thị thành các nút tab -->
                                 @foreach($section->category->children->take(4) as $child)
                                     <span class="section-tab-item" data-id="{{ $child->category_id }}">{{ $child->name }}</span>
                                 @endforeach
@@ -1164,13 +1259,17 @@
                         </div>
                     </div>
 
+                    <!-- Khung lưới hiển thị sản phẩm (Mặc định render cục bộ từ Blade, khi bấm tab sẽ gửi AJAX ghi đè) -->
                     <div class="product-grid" id="grid-{{ $section->id }}" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; position: relative;">
                         @include('partials.product_grid_items', ['products' => $section->products_list])
                     </div>
                 </div>
             </div>
         @endforeach
-        <!-- Góc Tin tức & Lifestyle - GIỐNG SFORUM -->
+
+        <!-- ============================================================
+             5. KHỐI TIN TỨC CÔNG NGHỆ & LIFESTYLE (TECH NEWS SECTION)
+             ============================================================ -->
         @if($latestArticles->count())
             <div class="news-section" style="margin-top: 40px; margin-bottom: 40px;">
                 <div class="news-header" style="display: flex; align-items: center; margin-bottom: 20px;">
@@ -1198,7 +1297,7 @@
             </div>
             <style>
                 .news-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1) !important; }
-                .news-card:hover h3 { color: #d70018 !important; } /* Màu đỏ thương hiệu khi hover */
+                .news-card:hover h3 { color: #d70018 !important; } 
             </style>
         @endif
     </div>
@@ -1206,8 +1305,11 @@
 
 @push('scripts')
 <script>
-    // AJAX Lọc sản phẩm theo danh mục (Tabs)
+    /* ============================================================
+       1. AJAX TABS - CHUYỂN ĐỔI SẢN PHẨM KHÔNG CẦN TẢI LẠI TRANG
+       ============================================================ */
     document.addEventListener("DOMContentLoaded", function() {
+        // Lấy toàn bộ các phần tử nút tab có chứa thuộc tính data-id danh mục con
         const tabItems = document.querySelectorAll('.section-tab-item[data-id]');
         
         tabItems.forEach(tab => {
@@ -1219,20 +1321,22 @@
 
                 if (!gridContainer || !categoryId) return;
 
-                // Cập nhật trạng thái Active của Tab
+                // 1.1. Cập nhật trạng thái Active trên giao diện tab
                 parentHeader.querySelectorAll('.section-tab-item').forEach(item => item.classList.remove('active'));
                 this.classList.add('active');
 
-                // Hiệu ứng Loading
+                // 1.2. Thêm class kích hoạt vòng quay Loading tròn xoay mờ màn hình
                 gridContainer.classList.add('grid-loading');
 
-                // Gọi AJAX
+                // 1.3. Gửi yêu cầu HTTP GET lấy mã HTML đã render của danh sách sản phẩm danh mục con từ Backend
                 fetch(`/api/category-products/${categoryId}`)
                     .then(response => response.text())
                     .then(html => {
+                        // Cập nhật nội dung HTML vào lưới sản phẩm
                         gridContainer.innerHTML = html;
                         gridContainer.classList.remove('grid-loading');
-                        // Thêm hiệu ứng xuất hiện nhẹ
+                        
+                        // Áp dụng hiệu ứng fade-in mượt mà sau khi cập nhật dữ liệu DOM
                         gridContainer.style.opacity = 0;
                         setTimeout(() => {
                             gridContainer.style.transition = 'opacity 0.3s ease';
@@ -1240,25 +1344,27 @@
                         }, 50);
                     })
                     .catch(error => {
-                        console.error('Lỗi khi tải sản phẩm:', error);
+                        console.error('Lỗi khi tải sản phẩm qua AJAX:', error);
                         gridContainer.classList.remove('grid-loading');
                     });
             });
         });
     });
 
-    // Khởi tạo Swiper Banner
+    /* ============================================================
+       2. KHỞI TẠO BANNER TRƯỢT SWIPER SLIDER CHÍNH
+       ============================================================ */
     document.addEventListener("DOMContentLoaded", function() {
         if(typeof Swiper !== 'undefined') {
             var swiper = new Swiper(".mySwiper", {
-                loop: true,
+                loop: true, // Tự động xoay vòng lặp vô hạn
                 autoplay: {
-                    delay: 3000,
-                    disableOnInteraction: false,
+                    delay: 3000, // Chuyển slide sau mỗi 3 giây
+                    disableOnInteraction: false, // Tiếp tục chạy tự động ngay cả khi người dùng vuốt trượt thủ công
                 },
                 pagination: {
                     el: ".swiper-pagination",
-                    clickable: true,
+                    clickable: true, // Cho phép click vào dấu chấm để chuyển nhanh đến slide tương ứng
                 },
                 navigation: {
                     nextEl: ".swiper-button-next",
@@ -1268,10 +1374,13 @@
         }
     });
 
-    // Countdown timer cho Flash Sale
+    /* ============================================================
+       3. ĐỒNG HỒ ĐẾM NGƯỢC THỜI GIAN THỰC (FLASH SALE COUNTDOWN TIMER)
+       ============================================================ */
     (function() {
         function updateCountdowns() {
             const now = new Date().getTime();
+            // Lấy tất cả các block chiến dịch Flash Sale đang hiển thị
             const sections = document.querySelectorAll('.flash-sale-section[data-end]');
 
             sections.forEach(section => {
@@ -1285,6 +1394,7 @@
 
                 if (!hEl || !mEl || !sEl) return;
 
+                // Nếu chiến dịch đã kết thúc, trả giá trị đồng hồ về 00:00:00
                 if (distance < 0) {
                     hEl.textContent = "00";
                     mEl.textContent = "00";
@@ -1292,20 +1402,26 @@
                     return;
                 }
 
+                // Tính toán số giờ, phút, giây còn lại
                 const h = Math.floor(distance / (1000 * 60 * 60));
                 const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 const s = Math.floor((distance % (1000 * 60)) / 1000);
 
+                // Ghi dữ liệu vào DOM kèm đệm số 0 ở đầu nếu giá trị bé hơn 10 (VD: 09 thay vì 9)
                 hEl.textContent = String(h).padStart(2, '0');
                 mEl.textContent = String(m).padStart(2, '0');
                 sEl.textContent = String(s).padStart(2, '0');
             });
         }
 
+        // Kích hoạt cập nhật thời gian liên tục mỗi giây (1000ms)
         setInterval(updateCountdowns, 1000);
         updateCountdowns();
     })();
 
+    /* ============================================================
+       4. AJAX ADD TO CART - THÊM NHANH SẢN PHẨM VÀO GIỎ HÀNG
+       ============================================================ */
     function addToCart(productId) {
         fetch('{{ route("cart.add") }}', {
             method: 'POST',
@@ -1318,6 +1434,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
+                // Hiển thị toast thông báo thành công xanh lá góc trên bên phải màn hình
                 Swal.fire({
                     icon: 'success',
                     title: 'Đã thêm vào giỏ hàng!',
@@ -1326,9 +1443,11 @@
                     toast: true,
                     position: 'top-end'
                 });
-                const cartCountElement = document.querySelector('.cart-count');
+                // Đồng bộ số lượng sản phẩm giỏ hàng mới lên Badge đỏ trên Header
+                const cartCountElement = document.getElementById('headerCartBadge');
                 if (cartCountElement && data.cart_count !== undefined) {
                     cartCountElement.innerText = data.cart_count;
+                    cartCountElement.style.display = data.cart_count > 0 ? 'block' : 'none';
                 }
             } else {
                 Swal.fire('Thất bại', data.message || 'Lỗi khi thêm vào giỏ', 'error');
@@ -1336,6 +1455,9 @@
         });
     }
 
+    /* ============================================================
+       5. AJAX WISHLIST - BẬT TẮT SẢN PHẨM YÊU THÍCH TỨC THỜI
+       ============================================================ */
     function toggleWishlist(productId, element) {
         fetch('{{ route("wishlist.toggle") }}', {
             method: 'POST',
@@ -1348,6 +1470,7 @@
         .then(response => response.json())
         .then(data => {
             if (data.status === 'added') {
+                // Thêm thành công: Đổi icon trái tim sang dạng đầy màu (fa-solid) và tô màu đỏ hồng
                 element.querySelector('i').classList.remove('fa-regular');
                 element.querySelector('i').classList.add('fa-solid');
                 element.style.color = '#e11d48';
@@ -1360,6 +1483,7 @@
                     position: 'top-end'
                 });
             } else if (data.status === 'removed') {
+                // Xóa thành công: Đổi icon trái tim trở về dạng rỗng viền đen (fa-regular)
                 element.querySelector('i').classList.remove('fa-solid');
                 element.querySelector('i').classList.add('fa-regular');
                 element.style.color = '';
@@ -1372,6 +1496,7 @@
                     position: 'top-end'
                 });
             } else if (data.status === 'unauthenticated') {
+                // Bảo mật: Nếu khách hàng chưa đăng nhập tài khoản, hiển thị cảnh báo chuyển hướng
                 Swal.fire({
                     title: 'Yêu cầu đăng nhập',
                     text: "Vui lòng đăng nhập để sử dụng tính năng này!",

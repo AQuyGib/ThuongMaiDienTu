@@ -6,6 +6,8 @@ use App\Models\Category;
 use App\Models\FlashSale;
 use App\Models\FlashSaleProduct;
 use App\Models\Product;
+use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -14,8 +16,22 @@ class FlashSaleEndToEndTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(RoleSeeder::class);
+    }
+
     public function test_full_flash_sale_checkout_flow_locks_and_confirms_quantity(): void
     {
+        // Tạo User
+        $user = User::create([
+            'role_id' => 3, // Khách hàng
+            'full_name' => 'Nguyen Van A',
+            'email' => 'test@example.com',
+            'password_hash' => bcrypt('password'),
+        ]);
+
         $category = Category::create(['name' => 'Laptop']);
         $product = Product::create([
             'category_id' => $category->category_id,
@@ -49,12 +65,27 @@ class FlashSaleEndToEndTest extends TestCase
             ],
         ]]);
 
-        $this->get(route('cart.pay'))->assertOk();
+        $this->actingAs($user)->get(route('cart.pay'))->assertOk();
         $fsp->refresh();
         $this->assertSame(2, $fsp->sold_quantity);
         $this->assertTrue(session('cart_locked'));
 
-        $this->post(route('cart.confirm'))->assertRedirect(route('home'));
+        // Tạo Supplier và PurchaseOrder mặc định để tránh lỗi khóa ngoại trong InventoryItem
+        $supplier = \DB::table('suppliers')->insertGetId([
+            'name' => 'Supplier Test',
+        ]);
+        \DB::table('purchase_orders')->insertGetId([
+            'po_id' => 1,
+            'supplier_id' => $supplier,
+            'total_cost' => 10000000,
+        ]);
+
+        $this->actingAs($user)->post(route('cart.confirm'), [
+            'name' => 'Nguyen Van A',
+            'phone' => '0901234567',
+            'address' => '123 Duong ABC, Quan 1, TP HCM',
+            'note' => 'Ghi chu test',
+        ])->assertJson(['status' => 'success']);
         $this->assertFalse(session()->has('cart'));
         $this->assertFalse(session()->has('cart_locked'));
         $fsp->refresh();
@@ -63,6 +94,14 @@ class FlashSaleEndToEndTest extends TestCase
 
     public function test_timeout_after_pay_releases_reserved_quantity(): void
     {
+        // Tạo User
+        $user = User::create([
+            'role_id' => 3, // Khách hàng
+            'full_name' => 'Nguyen Van A',
+            'email' => 'test2@example.com',
+            'password_hash' => bcrypt('password'),
+        ]);
+
         $category = Category::create(['name' => 'Laptop']);
         $product = Product::create([
             'category_id' => $category->category_id,
@@ -96,8 +135,8 @@ class FlashSaleEndToEndTest extends TestCase
             ],
         ]]);
 
-        $this->get(route('cart.pay'))->assertOk();
-        $this->post(route('cart.timeout'))->assertRedirect(route('cart.index'));
+        $this->actingAs($user)->get(route('cart.pay'))->assertOk();
+        $this->actingAs($user)->post(route('cart.timeout'))->assertRedirect(route('cart.index'));
         $fsp->refresh();
         $this->assertSame(0, $fsp->sold_quantity);
         $this->assertFalse(session()->has('cart_locked'));
