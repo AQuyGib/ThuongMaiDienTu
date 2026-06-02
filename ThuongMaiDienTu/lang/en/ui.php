@@ -45,6 +45,11 @@ return [
     'footer_return_policy'  => 'Return Policy',
     'footer_privacy'        => 'Privacy Policy',
     'footer_connect'        => 'Connect with us',
+    'footer_subscribe'      => 'Subscribe to promotions',
+    'footer_warranty_lookup'=> 'Warranty lookup',
+    'footer_compare'        => 'Compare products',
+    'footer_all_products'   => 'All products',
+    'footer_rewards_history'=> 'Points history',
 
     // ===== MEGA MENU EXTRA =====
     'rewards_page'          => 'Rewards',
@@ -127,4 +132,19 @@ return [
     'placeholder_fullname'          => 'Enter full name',
     'welcome_back_slogan'           => 'Welcome back',
     'login_register_title'          => 'Login / Register',
+
+    // ===== VALIDATION ERRORS =====
+    'error_banned'                  => 'Your account has been banned.',
+    'error_invalid_credentials'     => 'Incorrect email or password.',
+    'error_email_unique'            => 'This email is already in use.',
+    'error_password_confirmed'      => 'The password confirmation does not match.',
+    'error_fullname_required'       => 'Full name is required.',
+    'error_email_required'          => 'Email is required and must be a valid email.',
+    'error_password_min'            => 'Password must be at least 8 characters.',
+
+    // ===== REMEMBER & TERMS =====
+    'remember_me'                   => 'Remember me',
+    'accept_terms_text'             => 'I agree to the store\'s :terms and :privacy.',
+    'terms_link'                    => 'Terms of Service',
+    'privacy_link'                  => 'Privacy Policy',
 ];

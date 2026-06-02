@@ -617,7 +617,7 @@
         border-radius: 12px;
         overflow: hidden;
         box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        transition: transform 0.3s, box-shadow 0.3s;
+        transition: transform 0.3s, box-shadow 0.3s, opacity 0.3s;
         border: 1px solid #eee;
         position: relative;
     }
@@ -1030,10 +1030,13 @@
                 <div class="account-cards-grid">
                     
                     <!-- Thông tin cá nhân -->
+                    @php
+                        $hasProfileError = $errors->has('full_name') || $errors->has('phone_number') || $errors->has('gender') || $errors->has('dob') || $errors->has('address') || $errors->has('no_change');
+                    @endphp
                     <div class="acc-card" style="grid-column: 1 / -1;">
                         <div class="acc-card-header">
                             <h3>Thông tin cá nhân</h3>
-                            <a href="#" style="color: #0046ab; font-size: 13px; font-weight: 600;" onclick="event.preventDefault(); document.getElementById('viewProfileInfo').style.display = 'none'; document.getElementById('editProfileForm').style.display = 'block'; this.style.display = 'none';">Sửa</a>
+                            <a href="#" style="color: #0046ab; font-size: 13px; font-weight: 600;{{ $hasProfileError ? ' display: none;' : '' }}" onclick="event.preventDefault(); document.getElementById('viewProfileInfo').style.display = 'none'; document.getElementById('editProfileForm').style.display = 'block'; this.style.display = 'none';">Sửa</a>
                         </div>
                         
                         @if(session('success'))
@@ -1042,7 +1045,7 @@
                             </div>
                         @endif
 
-                        <div class="acc-card-content" id="viewProfileInfo">
+                        <div class="acc-card-content" id="viewProfileInfo" style="{{ $hasProfileError ? 'display: none;' : 'display: flex;' }}">
                             <div class="acc-info-row">
                                 <span class="acc-info-label">Họ và tên:</span>
                                 <span class="acc-info-value">{{ $user->full_name }}</span>
@@ -1074,11 +1077,19 @@
                         </div>
 
                         <!-- Form ẩn để cập nhật (Khi bấm Sửa) -->
-                        <form id="editProfileForm" action="{{ route('profile.update') }}" method="POST" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                        <form id="editProfileForm" action="{{ route('profile.update') }}" method="POST" style="{{ $hasProfileError ? 'display: block;' : 'display: none;' }} margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
                             @csrf
+                            @if($errors->has('no_change'))
+                                <div style="background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-weight: 600; font-size: 13px;">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> {{ $errors->first('no_change') }}
+                                </div>
+                            @endif
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Họ và tên</label>
-                                <input type="text" name="full_name" class="form-control" value="{{ $user->full_name }}" required>
+                                <input type="text" name="full_name" class="form-control @error('full_name') is-invalid @enderror" value="{{ old('full_name', $user->full_name) }}" required>
+                                @error('full_name')
+                                    <span style="color: #e21033; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Địa chỉ Email</label>
@@ -1086,31 +1097,43 @@
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Giới tính</label>
-                                <select name="gender" class="form-control">
+                                <select name="gender" class="form-control @error('gender') is-invalid @enderror">
                                     <option value="">Chọn giới tính</option>
-                                    <option value="Nam" {{ $user->gender == 'Nam' ? 'selected' : '' }}>Nam</option>
-                                    <option value="Nữ" {{ $user->gender == 'Nữ' ? 'selected' : '' }}>Nữ</option>
-                                    <option value="Khác" {{ $user->gender == 'Khác' ? 'selected' : '' }}>Khác</option>
+                                    <option value="Nam" {{ old('gender', $user->gender) == 'Nam' ? 'selected' : '' }}>Nam</option>
+                                    <option value="Nữ" {{ old('gender', $user->gender) == 'Nữ' ? 'selected' : '' }}>Nữ</option>
+                                    <option value="Khác" {{ old('gender', $user->gender) == 'Khác' ? 'selected' : '' }}>Khác</option>
                                 </select>
+                                @error('gender')
+                                    <span style="color: #e21033; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Ngày sinh</label>
-                                <input type="date" name="dob" class="form-control" value="{{ $user->dob }}">
+                                <input type="date" name="dob" class="form-control @error('dob') is-invalid @enderror" value="{{ old('dob', $user->dob) }}">
+                                @error('dob')
+                                    <span style="color: #e21033; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Số điện thoại</label>
-                                <input type="tel" name="phone_number" class="form-control" value="{{ $user->phone_number }}" placeholder="Nhập số điện thoại">
+                                <input type="tel" name="phone_number" class="form-control @error('phone_number') is-invalid @enderror" value="{{ old('phone_number', $user->phone_number) }}" placeholder="Nhập số điện thoại">
+                                @error('phone_number')
+                                    <span style="color: #e21033; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Địa chỉ mặc định</label>
-                                <input type="text" name="address" class="form-control" value="{{ $user->address }}" placeholder="Nhập địa chỉ của bạn">
+                                <input type="text" name="address" class="form-control @error('address') is-invalid @enderror" value="{{ old('address', $user->address) }}" placeholder="Nhập địa chỉ của bạn">
+                                @error('address')
+                                    <span style="color: #e21033; font-size: 12px; margin-top: 5px; display: block;">{{ $message }}</span>
+                                @enderror
                             </div>
                             <div class="form-group" style="margin-bottom: 15px;">
                                 <label style="display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 5px;">Ngày tham gia</label>
                                 <input type="text" class="form-control" value="{{ $user->created_at ? $user->created_at->format('d/m/Y') : 'Không rõ' }}" readonly style="background: #f1f5f9; cursor: not-allowed;">
                             </div>
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                                <button type="button" class="btn-outline" onclick="document.getElementById('editProfileForm').style.display='none'; document.getElementById('viewProfileInfo').style.display='flex'; document.querySelector('.acc-card-header a').style.display='block';">Hủy</button>
+                                <button type="button" class="btn-outline" onclick="resetProfileForm(); document.getElementById('editProfileForm').style.display='none'; document.getElementById('viewProfileInfo').style.display='flex'; document.querySelector('.acc-card-header a').style.display='block';">Hủy</button>
                                 <button type="submit" class="btn-update" style="margin-top: 10px; padding: 8px 20px; background: #0046ab;">Lưu</button>
                             </div>
                         </form>
@@ -1128,7 +1151,7 @@
                                 <div style="border: 1px solid #eee; border-radius: 12px; padding: 15px;">
                                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                         <strong style="font-size: 14px; color: #333;">
-                                            {{ $address->name ?? $user->full_name }}
+                                            {{ $address->name ?: $user->full_name }}
                                             @if($address->is_default)
                                                 <span style="color: #e21033; font-size: 11px; margin-left: 5px;">[Mặc định]</span>
                                             @endif
@@ -1243,56 +1266,56 @@
             <div id="wishlist-tab" class="profile-tab">
                 <div class="info-form-wrap">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                        <h3 style="margin: 0;">Danh sách yêu thích ({{ count($wishlist) }})</h3>
-                        @if(count($wishlist) > 0)
-                            <form action="{{ route('wishlist.clear') }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn-outline" style="color: #d70018; border-color: #d70018;">
+                        <h3 style="margin: 0;">Danh sách yêu thích (<span id="wishlist-title-count">{{ count($wishlist) }}</span>)</h3>
+                        <div id="wishlist-clear-btn-wrapper">
+                            @if(count($wishlist) > 0)
+                                <button type="button" class="btn-outline" style="color: #d70018; border-color: #d70018;" onclick="clearWishlist()">
                                     <i class="fa-solid fa-trash-can"></i> Xóa tất cả
                                 </button>
-                            </form>
-                        @endif
+                            @endif
+                        </div>
                     </div>
 
-                    @if(count($wishlist) > 0)
-                        <div class="wishlist-grid">
-                            @foreach($wishlist as $item)
-                                @if($item->product)
-                                    <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
-                                        <div class="wishlist-item-img">
-                                            <a href="{{ route('product.show', $item->product->product_id) }}">
-                                                <img src="{{ $item->product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}" alt="{{ $item->product->name }}">
-                                            </a>
-                                            <button class="remove-btn" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
-                                                <i class="fa-solid fa-xmark"></i>
-                                            </button>
-                                        </div>
-                                        <div class="wishlist-item-info">
-                                            <a href="{{ route('product.show', $item->product->product_id) }}" class="wishlist-item-name">{{ $item->product->name }}</a>
-                                            <div class="wishlist-item-price">{{ number_format($item->product->base_price, 0, ',', '.') }}đ</div>
-                                            <button class="btn-add-cart-wishlist" onclick="addToCart('{{ $item->product->product_id }}')">
-                                                <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
-                                            </button>
-                                            <div style="margin-top: 10px; text-align: center;">
-                                                <a href="javascript:void(0)" onclick="addToCompare('{{ $item->product->product_id }}')" 
-                                                   style="font-size: 11px; color: #666; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 500;"
-                                                   onmouseover="this.style.color='#0046ab'" onmouseout="this.style.color='#666'">
-                                                    <i class="fa-solid fa-scale-balanced"></i> So sánh
+                    <div id="wishlist-content-area">
+                        @if(count($wishlist) > 0)
+                            <div class="wishlist-grid">
+                                @foreach($wishlist as $item)
+                                    @if($item->product)
+                                        <div class="wishlist-item" id="wishlist-item-{{ $item->id }}">
+                                            <div class="wishlist-item-img">
+                                                <a href="{{ route('product.show', $item->product->product_id) }}">
+                                                    <img src="{{ $item->product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}" alt="{{ $item->product->name }}">
                                                 </a>
+                                                <button class="remove-btn" onclick="removeFromWishlist({{ $item->id }})" title="Xóa khỏi yêu thích">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                            <div class="wishlist-item-info">
+                                                <a href="{{ route('product.show', $item->product->product_id) }}" class="wishlist-item-name">{{ $item->product->name }}</a>
+                                                <div class="wishlist-item-price">{{ number_format($item->product->base_price, 0, ',', '.') }}đ</div>
+                                                <button class="btn-add-cart-wishlist" onclick="addToCart('{{ $item->product->product_id }}')">
+                                                    <i class="fa-solid fa-cart-plus"></i> Thêm vào giỏ
+                                                </button>
+                                                <div style="margin-top: 10px; text-align: center;">
+                                                    <a href="javascript:void(0)" onclick="addToCompare('{{ $item->product->product_id }}')" 
+                                                       style="font-size: 11px; color: #666; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 500;"
+                                                       onmouseover="this.style.color='#0046ab'" onmouseout="this.style.color='#666'">
+                                                        <i class="fa-solid fa-scale-balanced"></i> So sánh
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="dash-empty" style="padding: 50px 0;">
-                            <i class="fa-solid fa-heart-crack" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
-                            <p>Danh sách yêu thích của bạn đang trống.</p>
-                            <a href="{{ route('home') }}" class="btn-outline">Khám phá sản phẩm</a>
-                        </div>
-                    @endif
+                                    @endif
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="dash-empty" style="padding: 50px 0;">
+                                <i class="fa-solid fa-heart-crack" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
+                                <p>Danh sách yêu thích của bạn đang trống.</p>
+                                <a href="{{ route('home') }}" class="btn-outline">Khám phá sản phẩm</a>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 
@@ -1815,7 +1838,7 @@
             <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 18px;" onclick="closeRepairModal()"></i>
         </div>
         <div class="student-modal-body" style="max-height: 75vh; overflow-y: auto;">
-            <form id="repairRegistrationForm" action="{{ route('profile.repair-tickets.store') }}" method="POST">
+            <form id="repairRegistrationForm" action="{{ route('profile.repair-tickets.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="grid-2-cols">
                     <!-- SECTION 1: CONTACT INFO -->
@@ -1872,16 +1895,89 @@
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
                         </div>
-                        <div class="form-group" style="margin-bottom: 0;">
+                        <div class="form-group" style="margin-bottom: 12px;">
                             <label>Mô tả tình trạng lỗi *</label>
                             <textarea name="issue_desc" id="repIssueDesc" class="form-control @error('issue_desc') is-invalid @enderror" rows="4" placeholder="Mô tả chi tiết tình trạng máy lỗi và linh kiện cần thay thế..." style="resize: none;" required maxlength="500">{{ old('issue_desc') }}</textarea>
                             @error('issue_desc')
                                 <div style="color: #e21033; font-size: 11px; margin-top: 4px;">{{ $message }}</div>
                             @enderror
                         </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Ảnh chụp tình trạng / lỗi (AI Vision)</label>
+                            <input type="file" name="device_image" id="repDeviceImage" accept="image/*" class="form-control" onchange="previewRepairImage(this)">
+                            <div id="repairImagePreviewWrap" style="display: none; margin-top: 8px; text-align: center; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 5px; position: relative;">
+                                <img id="repairImagePreview" src="" style="max-height: 120px; border-radius: 6px;">
+                                <button type="button" onclick="removeRepairImage()" style="position: absolute; top: 5px; right: 5px; background: rgba(226, 16, 51, 0.8); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px;"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
+
+                <!-- AI DIAGNOSIS INTERACTIVE SECTION -->
+                <div style="margin-top: 20px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+                    <button type="button" id="btnAIDiagnose" class="btn-update" style="margin: 0; width: 100%; background: linear-gradient(135deg, #7c3aed, #0046ab); display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; border: none; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.25);">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> ✨ Phân tích & Chẩn đoán lỗi bằng AI
+                    </button>
+
+                    <!-- AI Diagnosis Report Card -->
+                    <div id="aiDiagnosisReport" style="display: none; background: rgba(243, 244, 246, 0.75); border: 1px solid #7c3aed; border-radius: 12px; padding: 15px; margin-top: 15px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); backdrop-filter: blur(4px);">
+                        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 10px;">
+                            <strong style="color: #7c3aed; font-size: 14px; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-robot"></i> KẾT QUẢ CHẨN ĐOÁN & TƯ VẤN AI</strong>
+                            <span id="aiComplexityBadge" class="status-badge" style="font-size: 11px; background: #f3e8ff; color: #7c3aed; padding: 2px 8px; border-radius: 12px; font-weight: 600;">Trung bình</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 10px; font-size: 13px;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
+                                <span><strong>Loại lỗi dự đoán:</strong></span>
+                                <strong id="aiFaultType" style="color: #1e293b;">-</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px;">
+                                <span><strong>Giải pháp / Linh kiện dự kiến:</strong></span>
+                                <strong id="aiReplacementParts" style="color: #1e293b;">-</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 4px; align-items: center;">
+                                <span><strong>Khoảng giá dự toán:</strong></span>
+                                <strong id="aiEstimatedCostRange" style="color: #e21033; font-size: 15px;">-</strong>
+                            </div>
+                            
+                            <!-- Cảnh báo rủi ro -->
+                            <div id="aiRiskWarningsBox" style="background: #fff5f5; border-left: 4px solid #f87171; border-radius: 4px; padding: 8px; margin-top: 5px;">
+                                <strong style="color: #c53030; font-size: 12px; display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-circle-exclamation"></i> CẢNH BÁO RỦI RO:</strong>
+                                <ul id="aiRiskWarningsList" style="margin: 4px 0 0 15px; padding: 0; color: #9b2c2c; font-size: 12px; list-style-type: disc;">
+                                </ul>
+                            </div>
+
+                            <!-- Nguyên nhân -->
+                            <div style="margin-top: 5px;">
+                                <strong>Nguyên nhân có thể xảy ra:</strong>
+                                <ul id="aiProbableCausesList" style="margin: 4px 0 0 15px; padding: 0; color: #475569; list-style-type: circle; line-height: 1.4;">
+                                </ul>
+                            </div>
+
+                            <!-- Phân công kỹ thuật viên -->
+                            <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 10px; margin-top: 8px; display: flex; align-items: flex-start; gap: 10px;">
+                                <i class="fa-solid fa-user-gear" style="font-size: 20px; color: #0284c7; margin-top: 2px;"></i>
+                                <div>
+                                    <strong style="color: #1e3a8a;">Kỹ thuật viên phụ trách đề xuất:</strong> <span id="aiAssignedTech" style="color: #0284c7; font-weight: bold;">-</span>
+                                    <p id="aiDispatchReason" style="margin: 4px 0 0 0; font-size: 12px; color: #4b5563; font-style: italic; line-height: 1.4;"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs for AI diagnostic results -->
+                <input type="hidden" name="ai_diagnosed" id="hidAiDiagnosed" value="0">
+                <input type="hidden" name="ai_fault_type" id="hidAiFaultType">
+                <input type="hidden" name="ai_probable_causes" id="hidAiProbableCauses">
+                <input type="hidden" name="ai_risk_warnings" id="hidAiRiskWarnings">
+                <input type="hidden" name="ai_replacement_parts" id="hidAiReplacementParts">
+                <input type="hidden" name="ai_estimated_cost_min" id="hidAiEstimatedCostMin">
+                <input type="hidden" name="ai_estimated_cost_max" id="hidAiEstimatedCostMax">
+                <input type="hidden" name="ai_complexity_level" id="hidAiComplexityLevel">
+                <input type="hidden" name="ai_recommended_skills" id="hidAiRecommendedSkills">
+                <input type="hidden" name="ai_dispatch_reason" id="hidAiDispatchReason">
+                <input type="hidden" name="assigned_technician_id" id="hidAssignedTechnicianId">
+
                 <div style="font-size: 11px; color: #64748b; font-style: italic; margin-top: 15px;">
                     * Lưu ý: Quý khách vui lòng mang thiết bị đến cửa hàng theo đúng ngày hẹn để được nhân viên hỗ trợ kiểm tra nhanh nhất.
                 </div>
@@ -1910,6 +2006,26 @@
                     <div><span id="track-date-label" style="color: #64748b;">{{ __('ui.repair_date_received_label') }}</span> <strong id="track-date">-</strong></div>
                     <div style="grid-column: 1 / -1;"><span style="color: #64748b;">{{ __('ui.repair_error_desc') }}</span> <span id="track-desc">-</span></div>
                     <div style="grid-column: 1 / -1;"><span style="color: #64748b;">{{ __('ui.repair_technician') }}</span> <strong id="track-tech" style="color: #0046ab;">{{ __('ui.repair_tech_assigning') }}</strong></div>
+                </div>
+            </div>
+
+            <!-- Ảnh chụp thiết bị thực tế -->
+            <div id="track-image-container" style="display: none; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; text-align: center;">
+                <span style="color: #64748b; font-size: 13px; display: block; margin-bottom: 8px; text-align: left; font-weight: 600;"><i class="fa-regular fa-image"></i> Hình ảnh thiết bị:</span>
+                <img id="track-device-image" src="" style="max-height: 180px; border-radius: 8px; border: 1px solid #cbd5e1; display: inline-block;">
+            </div>
+
+            <!-- Bản tin tư vấn & Chẩn đoán AI -->
+            <div id="track-ai-report" style="display: none; background: rgba(124, 58, 237, 0.06); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 12px; padding: 15px; margin-bottom: 20px; font-size: 13px;">
+                <div style="color: #7c3aed; font-weight: bold; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-robot"></i> Chẩn đoán & Khuyến nghị từ AI</div>
+                <div style="display: grid; gap: 6px;">
+                    <div><span style="color: #64748b;">Chẩn đoán loại lỗi:</span> <strong id="track-ai-fault-type" style="color: #1e293b;">-</strong></div>
+                    <div><span style="color: #64748b;">Linh kiện/Giải pháp dự kiến:</span> <strong id="track-ai-parts" style="color: #1e293b;">-</strong></div>
+                    <div><span style="color: #64748b;">Chi phí dự toán:</span> <strong id="track-ai-cost" style="color: #e21033;">-</strong></div>
+                    <div id="track-ai-warnings-box" style="background: #fff5f5; border-left: 3px solid #ef4444; padding: 8px; border-radius: 4px; margin-top: 5px;">
+                        <div style="color: #b91c1c; font-weight: bold; font-size: 12px; margin-bottom: 4px;"><i class="fa-solid fa-circle-exclamation"></i> Khuyến cáo phòng ngừa từ AI:</div>
+                        <ul id="track-ai-warnings" style="margin: 0 0 0 15px; padding: 0; color: #7f1d1d; font-size: 12px; list-style-type: disc;"></ul>
+                    </div>
                 </div>
             </div>
 
@@ -1975,6 +2091,42 @@
 
 @push('scripts')
 <script>
+    // ============================================================
+    // DỮ LIỆU BAN ĐẦU CỦA PROFILE KHÁCH HÀNG (DÙNG ĐỂ CHECK THAY ĐỔI)
+    // ============================================================
+    const originalProfileData = {
+        full_name: @json($user->full_name),
+        gender: @json($user->gender ?? ''),
+        dob: @json($user->dob ?? ''),
+        phone_number: @json($user->phone_number ?? ''),
+        address: @json($user->address ?? '')
+    };
+
+    /**
+     * Khôi phục form cập nhật thông tin cá nhân về trạng thái ban đầu.
+     * Xóa sạch các class báo lỗi validation viền đỏ (is-invalid) cũ.
+     */
+    function resetProfileForm() {
+        const form = document.getElementById('editProfileForm');
+        if (form) {
+            form.querySelector('[name="full_name"]').value = originalProfileData.full_name;
+            form.querySelector('[name="gender"]').value = originalProfileData.gender;
+            form.querySelector('[name="dob"]').value = originalProfileData.dob;
+            form.querySelector('[name="phone_number"]').value = originalProfileData.phone_number;
+            form.querySelector('[name="address"]').value = originalProfileData.address;
+            
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            form.querySelectorAll('span[style*="color: #e21033"]').forEach(el => el.remove());
+            const noChangeAlert = form.querySelector('div[style*="background: #fee2e2"]');
+            if (noChangeAlert) noChangeAlert.remove();
+        }
+    }
+
+    /**
+     * CHUYỂN TẢI GIAO DIỆN TAB ĐỘNG (TAB SWITCHER SYSTEM)
+     * Ẩn/hiện các tab tương ứng và đồng bộ hóa tham số 'tab' vào URL search params của trình duyệt
+     * để người dùng reload trang không bị mất tab hiện tại.
+     */
     function switchTab(tabId, element) {
         document.querySelectorAll('.profile-nav-item').forEach(item => {
             item.classList.remove('active');
@@ -1987,9 +2139,16 @@
         });
 
         document.getElementById(tabId).classList.add('active');
+
+        // Đồng bộ hóa tab vào URL search params của trình duyệt
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tabId);
+        window.history.replaceState({}, '', url);
     }
 
-    /* ===== Toast Notification System ===== */
+    // ============================================================
+    // HỆ THỐNG TOAST THÔNG BÁO TỰ TẠO (TOAST SYSTEM)
+    // ============================================================
     function showToast(title, message, type = 'success') {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
@@ -2023,7 +2182,9 @@
         }, 4000);
     }
 
-    /* ===== Custom Confirmation System ===== */
+    // ============================================================
+    // HỘP THOẠI XÁC NHẬN TÙY CHỈNH (CUSTOM CONFIRMATION MODAL SYSTEM)
+    // ============================================================
     let confirmCallback = null;
     function showConfirm(title, message, callback) {
         document.getElementById('confirmTitle').innerText = title;
@@ -2035,7 +2196,6 @@
     function closeConfirmModal() {
         document.getElementById('confirmModal').classList.remove('active');
         confirmCallback = null;
-        // Reset lại nút xác nhận về trạng thái ban đầu
         const btn = document.getElementById('btnDoConfirm');
         btn.disabled = false;
         btn.innerHTML = 'Xác nhận xóa';
@@ -2049,6 +2209,9 @@
         }
     });
 
+    /**
+     * Bật/tắt trạng thái chờ loading cho nút bấm để tránh double click submit.
+     */
     function setBtnLoading(btnId, isLoading, text = 'Đang lưu...') {
         const btn = document.getElementById(btnId);
         if (isLoading) {
@@ -2061,7 +2224,9 @@
         }
     }
 
-
+    // ============================================================
+    // MODAL ĐĂNG KÝ HỌC SINH/SINH VIÊN (S-STUDENT PROGRAM REGISTRATION)
+    // ============================================================
     function openStudentModal() {
         document.getElementById('studentModal').classList.add('active');
     }
@@ -2075,6 +2240,7 @@
         document.getElementById('uploadPlaceholder').style.display = 'block';
     }
 
+    // Hiển thị ảnh xem trước (Preview) của thẻ học sinh khi upload
     function previewStudentCard(input) {
         if (input.files && input.files[0]) {
             var reader = new FileReader();
@@ -2087,16 +2253,55 @@
         }
     }
 
+    /**
+     * Xóa sạch các trạng thái lỗi validation cũ của form
+     *
+     * Hàm này xóa class 'is-invalid' của các thẻ input/select bị lỗi và 
+     * loại bỏ tất cả các thẻ thông báo lỗi màu đỏ (invalid-feedback-custom) 
+     * để khôi phục giao diện form sạch sẽ trước khi thực hiện lượt validate mới.
+     *
+     * @param {string} formId - ID của thẻ form cần xóa lỗi
+     */
     function clearValidationErrors(formId) {
         const form = document.getElementById(formId);
-        form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        if (form) {
+            form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            form.querySelectorAll('.invalid-feedback-custom').forEach(el => el.remove());
+        }
     }
 
-    function highlightInvalidField(id, isUploadBox = false) {
+    /**
+     * Đánh dấu ô nhập liệu bị lỗi và hiển thị thông báo bên dưới
+     *
+     * Hàm này thêm class 'is-invalid' vào ô nhập liệu để hiện viền đỏ, 
+     * đồng thời tạo động một thẻ span chứa thông báo lỗi chèn ngay phía dưới ô nhập liệu đó.
+     *
+     * @param {string} id - ID của ô nhập liệu (input/select) bị lỗi
+     * @param {string} message - Nội dung thông báo lỗi cần hiển thị
+     * @param {boolean} isUploadBox - Cờ đánh dấu nếu đây là khung upload file (cần viền đỏ cho container cha)
+     */
+    function highlightInvalidField(id, message = '', isUploadBox = false) {
         const el = isUploadBox ? document.getElementById(id).parentElement : document.getElementById(id);
-        el.classList.add('is-invalid');
+        if (el) {
+            el.classList.add('is-invalid');
+            if (message) {
+                // Kiểm tra xem đã tồn tại thẻ báo lỗi cũ dưới ô này chưa
+                let errorSpan = el.parentNode.querySelector('.invalid-feedback-custom');
+                if (!errorSpan) {
+                    errorSpan = document.createElement('span');
+                    errorSpan.className = 'invalid-feedback-custom';
+                    errorSpan.style.color = '#e21033';
+                    errorSpan.style.fontSize = '11px';
+                    errorSpan.style.display = 'block';
+                    errorSpan.style.marginTop = '4px';
+                    el.parentNode.appendChild(errorSpan);
+                }
+                errorSpan.innerText = message;
+            }
+        }
     }
 
+    // Submit thông tin đăng ký S-Student lên hệ thống (phía client giả lập xử lý)
     function submitStudentRegistration() {
         clearValidationErrors('studentRegistrationForm');
         const sName = document.getElementById('studentFullName');
@@ -2126,7 +2331,9 @@
         }, 1500);
     }
 
-    // --- Business Modal ---
+    // ============================================================
+    // MODAL ĐĂNG KÝ DOANH NGHIỆP (M-BUSINESS REGISTRATION SYSTEM)
+    // ============================================================
     function openBusinessModal() {
         document.getElementById('businessModal').classList.add('active');
     }
@@ -2156,6 +2363,7 @@
         }
     }
 
+    // Submit đăng ký thành viên doanh nghiệp (giả lập)
     function submitBusinessRegistration() {
         clearValidationErrors('businessRegistrationForm');
         const cName = document.getElementById('companyName');
@@ -2184,12 +2392,16 @@
         }, 2000);
     }
 
-    // --- Address Modal ---
+    // ============================================================
+    // MODAL SỔ ĐỊA CHỈ & HÀNH CHÍNH QUẬN HUYỆN (ADDRESS BOOK SYSTEM)
+    // ============================================================
     const isEnglish = {{ App::getLocale() === 'en' ? 'true' : 'false' }};
 
     function openAddressModal() {
         document.getElementById('addressModal').classList.add('active');
+        clearValidationErrors('addAddressForm');
         if (document.getElementById('addrCity').options.length <= 1) {
+            // Tải danh sách tỉnh thành lần đầu tiên mở modal
             fetchProvincesData();
         }
     }
@@ -2198,8 +2410,9 @@
         document.getElementById('addressModal').classList.remove('active');
         document.getElementById('addAddressForm').reset();
         document.getElementById('addrId').value = '';
+        clearValidationErrors('addAddressForm');
         
-        // Reset selections
+        // Reset lại dropdown
         document.getElementById('addrCity').selectedIndex = 0;
         document.getElementById('addrDistrict').innerHTML = '<option value="">Chọn Quận/Huyện</option>';
         document.getElementById('addrDistrict').disabled = true;
@@ -2207,7 +2420,10 @@
         document.getElementById('addrWard').disabled = true;
     }
 
-    // Fetch API Data (Stable Version)
+    /**
+     * TẢI DANH SÁCH TỈNH THÀNH (PROVINCES FETCH API)
+     * Sử dụng API công cộng của Esgoo.
+     */
     function fetchProvincesData() {
         fetch('https://esgoo.net/api-tinhthanh/1/0.htm')
             .then(res => res.json())
@@ -2219,9 +2435,7 @@
             .catch(err => console.error('Error fetching provinces:', err));
     }
 
-    // 34 allowed provinces from header (Nghị quyết 202/2025/QH15)
-    // We map esgoo IDs to the Vietnamese display names. Since these strings contain Vietnamese accented characters,
-    // they will be automatically translated into English by the TranslateHtmlResponse middleware when App::getLocale() is 'en'.
+    // Whitelist 34 tỉnh thành hợp lệ cho phép áp dụng theo Nghị quyết 202/2025/QH15
     const provinceIdMap = {
         '79': 'TP. Hồ Chí Minh', '01': 'TP. Hà Nội', '31': 'TP. Hải Phòng', '48': 'TP. Đà Nẵng', '92': 'TP. Cần Thơ', '46': 'TP. Huế',
         '89': 'An Giang', '27': 'Bắc Ninh', '96': 'Cà Mau', '04': 'Cao Bằng',
@@ -2237,7 +2451,7 @@
         const citySelect = document.getElementById('addrCity');
         citySelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
         data.forEach(city => {
-            // Check if the province ID is in the allowed whitelist
+            // Lọc chỉ lấy các tỉnh thành nằm trong whitelist
             if (provinceIdMap.hasOwnProperty(city.id)) {
                 let displayName = provinceIdMap[city.id];
                 let option = document.createElement('option');
@@ -2249,6 +2463,7 @@
         });
     }
 
+    // Lắng nghe sự kiện thay đổi Tỉnh/Thành để tải danh sách Quận/Huyện tương ứng
     document.getElementById('addrCity').addEventListener('change', function() {
         const cityCode = this.options[this.selectedIndex].dataset.code;
         const districtSelect = document.getElementById('addrDistrict');
@@ -2284,6 +2499,7 @@
         }
     });
 
+    // Lắng nghe sự kiện thay đổi Quận/Huyện để tải danh sách Phường/Xã
     document.getElementById('addrDistrict').addEventListener('change', function() {
         const distCode = this.options[this.selectedIndex].dataset.code;
         const wardSelect = document.getElementById('addrWard');
@@ -2315,8 +2531,15 @@
         }
     });
 
+    /**
+     * THỰC THI GỬI THÔNG TIN ĐỊA CHỈ LÊN SERVER QUA AJAX
+     * Validate dữ liệu trống phía client.
+     * AJAX POST/PUT lên controller xử lý lưu trữ địa chỉ.
+     * Bắt lỗi validation (Status 422) từ Laravel Validator và ánh xạ xuống giao diện.
+     */
     function submitAddress() {
         clearValidationErrors('addAddressForm');
+        
         const id = document.getElementById('addrId').value;
         const city = document.getElementById('addrCity');
         const district = document.getElementById('addrDistrict');
@@ -2327,10 +2550,10 @@
         const isDefault = document.getElementById('addrIsDefault').checked;
         
         let hasError = false;
-        if(!city.value) { highlightInvalidField('addrCity'); hasError = true; }
-        if(!district.value) { highlightInvalidField('addrDistrict'); hasError = true; }
-        if(!ward.value) { highlightInvalidField('addrWard'); hasError = true; }
-        if(!street.value) { highlightInvalidField('addrStreet'); hasError = true; }
+        if(!city.value) { highlightInvalidField('addrCity', 'Vui lòng chọn Tỉnh/Thành phố.'); hasError = true; }
+        if(!district.value) { highlightInvalidField('addrDistrict', 'Vui lòng chọn Quận/Huyện.'); hasError = true; }
+        if(!ward.value) { highlightInvalidField('addrWard', 'Vui lòng chọn Phường/Xã.'); hasError = true; }
+        if(!street.value) { highlightInvalidField('addrStreet', 'Vui lòng nhập địa chỉ (Số nhà, tên đường).'); hasError = true; }
 
         if(hasError) {
             showToast('Lỗi nhập liệu', 'Vui lòng điền đầy đủ các thông tin bắt buộc!', 'warning');
@@ -2344,6 +2567,7 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             body: JSON.stringify({
@@ -2356,10 +2580,39 @@
                 is_default: isDefault
             })
         })
-        .then(res => res.json())
+        .then(res => {
+            return res.json().then(data => {
+                if (!res.ok) {
+                    let errorMsg = data.error || data.message;
+                    // Xử lý lỗi validation từ Laravel Validator
+                    if (data.errors) {
+                        clearValidationErrors('addAddressForm');
+                        for (const key in data.errors) {
+                            let fieldId = '';
+                            if (key === 'city') fieldId = 'addrCity';
+                            else if (key === 'district') fieldId = 'addrDistrict';
+                            else if (key === 'ward') fieldId = 'addrWard';
+                            else if (key === 'street') fieldId = 'addrStreet';
+                            else if (key === 'name') fieldId = 'addrName';
+                            
+                            if (fieldId && data.errors[key][0]) {
+                                highlightInvalidField(fieldId, data.errors[key][0]);
+                            }
+                        }
+                        const firstKey = Object.keys(data.errors)[0];
+                        if (firstKey && data.errors[firstKey][0]) {
+                            errorMsg = data.errors[firstKey][0];
+                        }
+                    }
+                    return { success: false, error: errorMsg };
+                }
+                return data;
+            });
+        })
         .then(data => {
             if(data.success) {
                 const action = id ? 'Cập nhật' : 'Thêm mới';
+                // Lưu trạng thái toast để sau khi tải lại trang sẽ hiển thị thông báo
                 sessionStorage.setItem('profile_toast', JSON.stringify({
                     title: 'Thành công',
                     msg: `${action} địa chỉ thành công!`,
@@ -2378,6 +2631,12 @@
         });
     }
 
+    /**
+     * MỞ FORM CẬP NHẬT ĐỊA CHỈ (EDIT ADDRESS LOADER)
+     * Đổ dữ liệu cũ vào form.
+     * Gọi API lấy Tỉnh thành, Quận huyện, Phường xã và tự động chọn đúng Option cũ
+     * nhờ hàm `normalize` lọc dấu tiếng Việt để so khớp tương đối chính xác.
+     */
     function editAddress(id, city, district, ward, street, name, type, isDefault) {
         document.getElementById('addressModalTitle').innerText = 'Cập nhật địa chỉ';
         document.getElementById('addressSubmitBtn').innerText = 'Cập nhật';
@@ -2392,7 +2651,7 @@
         setTimeout(() => {
             const citySelect = document.getElementById('addrCity');
             
-            // Helper function to normalize names for robust matching of old and new formats across languages
+            // Hàm chuẩn hóa chuỗi tiếng Việt để so sánh chuỗi tương đối chính xác giữa các locale ngôn ngữ
             const normalize = (name) => {
                 if (!name) return "";
                 return name.toLowerCase()
@@ -2401,12 +2660,13 @@
                            .replace(/^(phường|xã|thị\s+trấn)\s+/i, "")
                            .replace(/thừa thiên huế/i, "huế")
                            .replace(/\s+(city|province|district|town|ward|commune)$/i, "")
-                           .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Strip accents for cross-language compatibility
+                           .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Khử các ký tự dấu tiếng Việt
                            .trim();
             };
 
             const normalizedCity = normalize(city);
 
+            // Tìm và select Tỉnh/Thành
             for(let i=0; i<citySelect.options.length; i++) {
                 if(normalize(citySelect.options[i].value) === normalizedCity) { 
                     citySelect.selectedIndex = i; 
@@ -2414,6 +2674,8 @@
                 }
             }
             citySelect.dispatchEvent(new Event('change'));
+            
+            // Tìm và select Quận/Huyện sau 500ms
             setTimeout(() => {
                 const distSelect = document.getElementById('addrDistrict');
                 const normalizedDist = normalize(district);
@@ -2421,6 +2683,8 @@
                     if(normalize(distSelect.options[i].value) === normalizedDist) { distSelect.selectedIndex = i; break; }
                 }
                 distSelect.dispatchEvent(new Event('change'));
+                
+                // Tìm và select Phường/Xã sau 500ms nữa
                 setTimeout(() => {
                     const wardSelect = document.getElementById('addrWard');
                     const normalizedWard = normalize(ward);
@@ -2432,6 +2696,11 @@
         }, 500);
     }
 
+    // ============================================================
+    // CÁC HÀNH ĐỘNG AJAX TƯƠNG TÁC KHÁC TRÊN PROFILE
+    // ============================================================
+
+    // Copy mã voucher vào bộ nhớ tạm Clipboard kèm phản hồi giao diện
     function copyVoucher(code, btn) {
         navigator.clipboard.writeText(code).then(() => {
             const originalText = btn.innerText;
@@ -2449,6 +2718,7 @@
         });
     }
 
+    // Thêm sản phẩm vào giỏ hàng qua AJAX POST
     function addToCart(productId) {
         fetch('{{ route('cart.add') }}', {
             method: 'POST',
@@ -2480,11 +2750,13 @@
         });
     }
 
+    // Cập nhật số lượng sản phẩm hiển thị trên tab yêu thích
     function updateWishlistCount(count) {
-        const countEl = document.getElementById('wishlist-count');
+        const countEl = document.getElementById('wishlist-title-count');
         if (countEl) countEl.textContent = count;
     }
 
+    // Xóa một sản phẩm khỏi danh sách yêu thích qua AJAX DELETE
     function removeFromWishlist(id) {
         showConfirm('Xóa khỏi yêu thích', 'Bạn muốn bỏ sản phẩm này khỏi danh sách yêu thích?', function() {
             fetch(`/wishlist/${id}`, {
@@ -2508,7 +2780,18 @@
                             const remaining = document.querySelectorAll('.wishlist-item').length;
                             updateWishlistCount(remaining);
                             if(remaining === 0) {
-                                window.location.reload();
+                                const clearBtnWrapper = document.getElementById('wishlist-clear-btn-wrapper');
+                                if (clearBtnWrapper) clearBtnWrapper.innerHTML = '';
+                                const contentArea = document.getElementById('wishlist-content-area');
+                                if (contentArea) {
+                                    contentArea.innerHTML = `
+                                        <div class="dash-empty" style="padding: 50px 0;">
+                                            <i class="fa-solid fa-heart-crack" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
+                                            <p>Danh sách yêu thích của bạn đang trống.</p>
+                                            <a href="{{ route('home') }}" class="btn-outline">Khám phá sản phẩm</a>
+                                        </div>
+                                    `;
+                                }
                             }
                         }, 300);
                     }
@@ -2523,6 +2806,7 @@
         });
     }
 
+    // Xóa toàn bộ danh sách sản phẩm yêu thích (Clear Wishlist)
     function clearWishlist() {
         showConfirm('Xóa tất cả', 'Bạn có chắc chắn muốn xóa toàn bộ danh sách yêu thích?', function() {
             fetch('{{ route('wishlist.clear') }}', {
@@ -2537,7 +2821,27 @@
                 closeConfirmModal();
                 if(data.success) {
                     showToast('Thành công', 'Đã xóa toàn bộ danh sách yêu thích.', 'success');
-                    setTimeout(() => window.location.reload(), 1000);
+                    const items = document.querySelectorAll('.wishlist-item');
+                    items.forEach(item => {
+                        item.style.opacity = '0';
+                        item.style.transform = 'scale(0.8)';
+                    });
+                    setTimeout(() => {
+                        items.forEach(item => item.remove());
+                        updateWishlistCount(0);
+                        const clearBtnWrapper = document.getElementById('wishlist-clear-btn-wrapper');
+                        if (clearBtnWrapper) clearBtnWrapper.innerHTML = '';
+                        const contentArea = document.getElementById('wishlist-content-area');
+                        if (contentArea) {
+                            contentArea.innerHTML = `
+                                <div class="dash-empty" style="padding: 50px 0;">
+                                    <i class="fa-solid fa-heart-crack" style="font-size: 50px; color: #ddd; margin-bottom: 15px;"></i>
+                                    <p>Danh sách yêu thích của bạn đang trống.</p>
+                                    <a href="{{ route('home') }}" class="btn-outline">Khám phá sản phẩm</a>
+                                </div>
+                            `;
+                        }
+                    }, 300);
                 } else {
                     showToast('Lỗi', data.error || 'Không thể xóa danh sách lúc này.', 'error');
                 }
@@ -2549,6 +2853,7 @@
         });
     }
 
+    // Thêm nhanh vào giỏ hàng từ trang Wishlist kèm feedback loading trên nút
     function addToCartFromWishlist(btn, productId) {
         const originalHTML = btn.innerHTML;
         btn.disabled = true;
@@ -2581,6 +2886,7 @@
         });
     }
 
+    // Xóa một địa chỉ khỏi sổ địa chỉ giao nhận qua AJAX DELETE
     function deleteAddress(id) {
         showConfirm('Xóa địa chỉ', 'Bạn có chắc chắn muốn xóa địa chỉ này? Thao tác này không thể hoàn tác.', function() {
             fetch(`/profile/address/${id}`, {
@@ -2611,25 +2917,212 @@
         });
     }
 
-    // Repair Booking Modals and Progress Stepper Actions
+    // ============================================================
+    // TIẾN TRÌNH THEO DÕI SỬA CHỮA / BẢO HÀNH (REPAIR TRACKING SYSTEM)
+    // ============================================================
     function openRepairModal() {
         document.getElementById('repairModal').classList.add('active');
     }
     function closeRepairModal() {
         document.getElementById('repairModal').classList.remove('active');
         document.getElementById('repairRegistrationForm').reset();
+        removeRepairImage();
+        document.getElementById('aiDiagnosisReport').style.display = 'none';
+        document.getElementById('hidAiDiagnosed').value = '0';
     }
     function closeTrackingModal() {
         document.getElementById('trackingModal').classList.remove('active');
     }
 
+    // Xử lý ảnh chụp xem trước
+    function previewRepairImage(input) {
+        const previewWrap = document.getElementById('repairImagePreviewWrap');
+        const previewImg = document.getElementById('repairImagePreview');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewWrap.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function removeRepairImage() {
+        const fileInput = document.getElementById('repDeviceImage');
+        const previewWrap = document.getElementById('repairImagePreviewWrap');
+        const previewImg = document.getElementById('repairImagePreview');
+        if (fileInput) fileInput.value = '';
+        if (previewImg) previewImg.src = '';
+        if (previewWrap) previewWrap.style.display = 'none';
+    }
+
+    // AJAX Gọi AI chẩn đoán lỗi & dispatch
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnAIDiagnose = document.getElementById('btnAIDiagnose');
+        if (btnAIDiagnose) {
+            btnAIDiagnose.addEventListener('click', function() {
+                const issueDescInput = document.getElementById('repIssueDesc');
+                const issueDesc = issueDescInput.value.trim();
+
+                if (!issueDesc || issueDesc.length < 10) {
+                    showToast('Cảnh báo', 'Vui lòng điền mô tả lỗi chi tiết hơn (tối thiểu 10 ký tự) để AI phân tích chính xác.', 'warning');
+                    issueDescInput.focus();
+                    return;
+                }
+
+                const originalHTML = btnAIDiagnose.innerHTML;
+                btnAIDiagnose.disabled = true;
+                btnAIDiagnose.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích và chẩn đoán lỗi...';
+
+                const formData = new FormData();
+                formData.append('issue_desc', issueDesc);
+                
+                const fileInput = document.getElementById('repDeviceImage');
+                if (fileInput && fileInput.files && fileInput.files[0]) {
+                    formData.append('device_image', fileInput.files[0]);
+                }
+
+                fetch('{{ route("profile.repair-tickets.ai-diagnose") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                })
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(err => { throw new Error(err.error || err.message || 'Lỗi hệ thống'); });
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    btnAIDiagnose.disabled = false;
+                    btnAIDiagnose.innerHTML = originalHTML;
+
+                    document.getElementById('aiDiagnosisReport').style.display = 'block';
+                    document.getElementById('aiFaultType').innerText = data.ai_fault_type;
+                    document.getElementById('aiReplacementParts').innerText = data.ai_replacement_parts;
+                    
+                    const costMin = new Intl.NumberFormat('vi-VN').format(data.ai_estimated_cost_min);
+                    const costMax = new Intl.NumberFormat('vi-VN').format(data.ai_estimated_cost_max);
+                    document.getElementById('aiEstimatedCostRange').innerText = `${costMin} đ - ${costMax} đ`;
+
+                    const compBadge = document.getElementById('aiComplexityBadge');
+                    compBadge.innerText = data.ai_complexity_level;
+                    if (data.ai_complexity_level === 'Dễ') {
+                        compBadge.style.background = '#dcfce7';
+                        compBadge.style.color = '#15803d';
+                    } else if (data.ai_complexity_level === 'Khó') {
+                        compBadge.style.background = '#fee2e2';
+                        compBadge.style.color = '#b91c1c';
+                    } else {
+                        compBadge.style.background = '#f3e8ff';
+                        compBadge.style.color = '#7c3aed';
+                    }
+
+                    const riskList = document.getElementById('aiRiskWarningsList');
+                    riskList.innerHTML = '';
+                    if (data.ai_risk_warnings && data.ai_risk_warnings.length > 0) {
+                        data.ai_risk_warnings.forEach(risk => {
+                            const li = document.createElement('li');
+                            li.innerText = risk;
+                            riskList.appendChild(li);
+                        });
+                        document.getElementById('aiRiskWarningsBox').style.display = 'block';
+                    } else {
+                        document.getElementById('aiRiskWarningsBox').style.display = 'none';
+                    }
+
+                    const causeList = document.getElementById('aiProbableCausesList');
+                    causeList.innerHTML = '';
+                    if (data.ai_probable_causes && data.ai_probable_causes.length > 0) {
+                        data.ai_probable_causes.forEach(cause => {
+                            const li = document.createElement('li');
+                            li.innerText = cause;
+                            causeList.appendChild(li);
+                        });
+                    }
+
+                    document.getElementById('aiAssignedTech').innerText = data.technician_name;
+                    document.getElementById('aiDispatchReason').innerText = data.ai_dispatch_reason;
+
+                    document.getElementById('hidAiDiagnosed').value = '1';
+                    document.getElementById('hidAiFaultType').value = data.ai_fault_type;
+                    document.getElementById('hidAiProbableCauses').value = JSON.stringify(data.ai_probable_causes);
+                    document.getElementById('hidAiRiskWarnings').value = JSON.stringify(data.ai_risk_warnings);
+                    document.getElementById('hidAiReplacementParts').value = data.ai_replacement_parts;
+                    document.getElementById('hidAiEstimatedCostMin').value = data.ai_estimated_cost_min;
+                    document.getElementById('hidAiEstimatedCostMax').value = data.ai_estimated_cost_max;
+                    document.getElementById('hidAiComplexityLevel').value = data.ai_complexity_level;
+                    document.getElementById('hidAiRecommendedSkills').value = JSON.stringify(data.ai_recommended_skills);
+                    document.getElementById('hidAiDispatchReason').value = data.ai_dispatch_reason;
+                    document.getElementById('hidAssignedTechnicianId').value = data.assigned_technician_id;
+
+                    showToast('Thành công', 'AI đã chẩn đoán lỗi thiết bị và đề xuất kỹ thuật viên phù hợp!', 'success');
+                })
+                .catch(err => {
+                    btnAIDiagnose.disabled = false;
+                    btnAIDiagnose.innerHTML = originalHTML;
+                    showToast('Lỗi', err.message || 'Lỗi kết nối máy chủ khi gọi AI chẩn đoán.', 'error');
+                });
+            });
+        }
+    });
+
+    /**
+     * ĐỌC VÀ HIỂN THỊ TIẾN TRÌNH SỬA CHỮA THIẾT BỊ LÊN TRỤC BẬC THANG (STEPPER PROGRESS)
+     * Đọc JSON dữ liệu phiếu sửa chữa đính trên nút.
+     * Điền thông tin mã phiếu, số IMEI, lỗi mô tả, ngày hẹn và kỹ thuật viên nhận máy.
+     * So sánh trạng thái ('Received', 'Checking', 'Under_Repair', 'Waiting_Parts', 'Done') 
+     * để gán các class active/completed cho các mốc tương ứng trên sơ đồ Stepper.
+     */
     function viewProgress(btn) {
         const ticket = JSON.parse(btn.getAttribute('data-ticket'));
         
-        // Gắn dữ liệu vào modal
         document.getElementById('track-id').innerText = ticket.ticket_id;
         document.getElementById('track-imei').innerText = ticket.imei_serial;
         document.getElementById('track-desc').innerText = ticket.issue_desc;
+        
+        // Cập nhật ảnh chụp thiết bị trong tracking modal
+        const trackImgContainer = document.getElementById('track-image-container');
+        const trackImg = document.getElementById('track-device-image');
+        if (ticket.device_image) {
+            trackImg.src = '/' + ticket.device_image;
+            trackImgContainer.style.display = 'block';
+        } else {
+            trackImg.src = '';
+            trackImgContainer.style.display = 'none';
+        }
+
+        // Cập nhật chẩn đoán AI trong tracking modal
+        const trackAiReport = document.getElementById('track-ai-report');
+        if (ticket.ai_diagnosed) {
+            document.getElementById('track-ai-fault-type').innerText = ticket.ai_fault_type || 'Phần cứng';
+            document.getElementById('track-ai-parts').innerText = ticket.ai_replacement_parts || 'Cần kiểm tra trực tiếp';
+            
+            const costRange = (ticket.ai_estimated_cost_min && ticket.ai_estimated_cost_max)
+                ? `${new Intl.NumberFormat('vi-VN').format(ticket.ai_estimated_cost_min)} đ - ${new Intl.NumberFormat('vi-VN').format(ticket.ai_estimated_cost_max)} đ`
+                : 'Chưa ước lượng';
+            document.getElementById('track-ai-cost').innerText = costRange;
+
+            const warningsList = document.getElementById('track-ai-warnings');
+            warningsList.innerHTML = '';
+            const warnings = typeof ticket.ai_risk_warnings === 'string' ? JSON.parse(ticket.ai_risk_warnings) : ticket.ai_risk_warnings;
+            if (warnings && warnings.length > 0) {
+                warnings.forEach(w => {
+                    const li = document.createElement('li');
+                    li.innerText = w;
+                    warningsList.appendChild(li);
+                });
+                document.getElementById('track-ai-warnings-box').style.display = 'block';
+            } else {
+                document.getElementById('track-ai-warnings-box').style.display = 'none';
+            }
+            trackAiReport.style.display = 'block';
+        } else {
+            trackAiReport.style.display = 'none';
+        }
         
         const scheduleDate = new Date(ticket.schedule_date);
         const day = String(scheduleDate.getDate()).padStart(2, '0');
@@ -2637,7 +3130,7 @@
         const year = scheduleDate.getFullYear();
         const formattedDate = `${day}/${month}/${year}`;
         
-        // Tự động thay đổi nhãn của ngày hẹn tùy theo trạng thái
+        // Cập nhật nhãn ngày nhận/ngày trả tương ứng theo trạng thái
         const dateLabel = document.getElementById('track-date-label');
         if (['Under_Repair', 'Waiting_Parts', 'Done'].includes(ticket.status)) {
             dateLabel.innerText = @json(__('ui.repair_date_return_label'));
@@ -2652,7 +3145,7 @@
         }
         document.getElementById('track-tech').innerText = techName;
         
-        // Reset class active/completed cho tất cả các bước trong stepper
+        // Reset sạch các trạng thái của các bước mốc trước đó
         const steps = ['step-received', 'step-checking', 'step-repairing', 'step-done'];
         steps.forEach(id => {
             const el = document.getElementById(id);
@@ -2661,7 +3154,7 @@
             }
         });
         
-        // Reset nội dung mô tả mặc định của các bước trước khi gán dữ liệu mới
+        // Khôi phục mô tả gốc của các mốc
         document.getElementById('step-received-desc').innerHTML = @json(__('ui.repair_step_received_desc'));
         document.getElementById('step-checking-desc').innerHTML = @json(__('ui.repair_step_checking_desc'));
         document.getElementById('step-repairing-desc').innerHTML = @json(__('ui.repair_step_repairing_desc'));
@@ -2674,7 +3167,7 @@
             document.getElementById('step-received').classList.add('completed');
             document.getElementById('step-checking').classList.add('active');
             
-            // Nếu có chi phí dự kiến thì hiển thị thêm ở bước Kiểm tra & báo giá
+            // Hiện chi phí dự kiến nếu có trong bước báo giá
             const costHtml = ticket.estimated_cost > 0 
                 ? `<div style="margin-top:5px; color:#0369a1; font-weight:600;"><i class="fa-solid fa-calculator"></i> ` + @json(__('ui.repair_step_checking_cost')) + ` ${new Intl.NumberFormat('vi-VN').format(ticket.estimated_cost)} đ</div>`
                 : '';
@@ -2711,8 +3204,35 @@
         document.getElementById('trackingModal').classList.add('active');
     }
 
-    // Initialize Active Tab & Notifications
+    // ============================================================
+    // KHỞI CHẠY KHI TẢI XONG TRANG (DOM CONTENT LOADED INITIALIZATIONS)
+    // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
+        // Kiểm tra xem dữ liệu cập nhật profile có gì thay đổi so với DB không trước khi submit
+        const editForm = document.getElementById('editProfileForm');
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                const currentFullName = this.querySelector('[name="full_name"]').value.trim();
+                const currentGender = this.querySelector('[name="gender"]').value;
+                const currentDob = this.querySelector('[name="dob"]').value;
+                const currentPhoneNumber = this.querySelector('[name="phone_number"]').value.trim();
+                const currentAddress = this.querySelector('[name="address"]').value.trim();
+
+                const norm = val => val || '';
+
+                if (currentFullName === norm(originalProfileData.full_name) &&
+                    currentGender === norm(originalProfileData.gender) &&
+                    currentDob === norm(originalProfileData.dob) &&
+                    currentPhoneNumber === norm(originalProfileData.phone_number) &&
+                    currentAddress === norm(originalProfileData.address)) {
+                    
+                    e.preventDefault();
+                    showToast('Thông báo', 'Không có thông tin nào thay đổi so với dữ liệu cũ!', 'warning');
+                }
+            });
+        }
+
+        // Tự động kiểm tra hiển thị Toast thông báo lưu từ sessionStorage (nếu có)
         const toastData = sessionStorage.getItem('profile_toast');
         if (toastData) {
             const data = JSON.parse(toastData);
@@ -2720,6 +3240,7 @@
             sessionStorage.removeItem('profile_toast');
         }
 
+        // Tự động chuyển đến Tab tương ứng dựa trên tham số 'tab' trên thanh địa chỉ URL
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab');
         
@@ -2739,7 +3260,7 @@
             }
         }
 
-        // Tự động mở lại modal đăng ký nếu có lỗi validation từ server trả về
+        // Tự động mở lại modal đăng ký bảo hành/sửa chữa nếu có lỗi validation từ Server Laravel trả về
         @if($errors->has('customer_name') || $errors->has('customer_phone') || $errors->has('customer_email') || $errors->has('imei_serial') || $errors->has('issue_desc') || $errors->has('schedule_date'))
             openRepairModal();
         @endif

@@ -496,12 +496,21 @@
 </div>
 
 <script>
+// Lấy ngôn ngữ hiện tại từ Backend PHP
 const locale = '{{ $locale }}';
+
+// Các phần tử modal form
 const modal = document.getElementById('reward-modal');
 const form = document.getElementById('reward-form');
 const imageModal = document.getElementById('reward-image-modal');
 const imageForm = document.getElementById('reward-image-form');
 
+/**
+ * Hàm ẩn/hiện Admin Topbar chính của hệ thống.
+ * Chức năng: Khi mở các modal toàn màn hình (Modal vẽ Canvas, form thêm/sửa),
+ * ta tạm ẩn Topbar để tránh vỡ giao diện hoặc z-index đè lên nhau.
+ * @param {boolean} show Trạng thái ẩn/hiện
+ */
 function toggleAdminTopbar(show) {
   const topbar = document.getElementById('joly-admin-topbar');
   if (topbar) {
@@ -513,21 +522,29 @@ function toggleAdminTopbar(show) {
   }
 }
 
+/**
+ * Rà soát xem có modal nào đang mở không để quyết định ẩn/hiện Admin Topbar.
+ */
 function updateTopbarVisibilityBasedOnModals() {
   const modalSetup = document.getElementById('wheel-setup-modal');
   const managerModal = document.getElementById('lucky-wheels-manager-modal');
   const rewardModal = document.getElementById('reward-modal');
   const imageModal = document.getElementById('reward-image-modal');
   
+  // Xác định xem ít nhất một modal nào đó đang được kích hoạt hiển thị hay không
   const isAnyModalOpen = 
     (modalSetup && modalSetup.classList.contains('flex')) ||
     (managerModal && managerModal.classList.contains('flex')) ||
     (rewardModal && rewardModal.classList.contains('flex')) ||
     (imageModal && imageModal.classList.contains('flex'));
     
+  // Ẩn topbar nếu có modal đang mở để giao diện hiển thị tối ưu nhất
   toggleAdminTopbar(!isAnyModalOpen);
 }
 
+/**
+ * Hàm ẩn/hiện cấu hình "Hạng yêu cầu tối thiểu" dựa vào trạng thái checkbox "Ràng buộc hạng".
+ */
 function toggleMinRankPoints() {
   const select = form.querySelector('[name="requires_rank_check"]');
   const container = document.getElementById('min-rank-points-container');
@@ -542,13 +559,17 @@ function toggleMinRankPoints() {
   }
 }
 
-// Lắng nghe sự kiện thay đổi của select
+// Lắng nghe sự kiện thay đổi của các cấu hình đầu vào trong form
 form.querySelector('[name="requires_rank_check"]')?.addEventListener('change', toggleMinRankPoints);
 form.querySelector('[name="reward_type"]')?.addEventListener('change', adjustExchangeFieldsByType);
 form.querySelector('[name="wheel_prize_type"]')?.addEventListener('change', adjustExchangeFieldsByType);
 
-let currentMainTab = 'exchange';
+let currentMainTab = 'exchange'; // Tab chính hiện tại ('exchange' hoặc 'wheel')
 
+/**
+ * Hàm chuyển đổi tab quản lý chính ở Admin: Đổi điểm lấy Voucher vs Quà vòng quay may mắn.
+ * @param {string} tab Tên tab ('exchange' hoặc 'wheel')
+ */
 function switchMainTab(tab) {
   currentMainTab = tab;
   
@@ -557,6 +578,7 @@ function switchMainTab(tab) {
   const btnAddExchange = document.getElementById('btn-add-exchange');
   const btnAddWheelPrize = document.getElementById('btn-add-wheel-prize');
   
+  // Thiết lập class CSS active/inactive cho các tab button tương ứng
   if (tab === 'exchange') {
     if (btnExchange) {
       btnExchange.className = "flex-1 py-2 rounded-lg font-bold text-xs md:text-sm transition flex items-center justify-center gap-1.5 bg-white text-indigo-600 shadow-md shadow-indigo-100/50 border border-slate-200/30";
@@ -577,6 +599,7 @@ function switchMainTab(tab) {
     if (btnAddWheelPrize) btnAddWheelPrize.classList.remove('hidden');
   }
   
+  // Lọc hiển thị các dòng dữ liệu trong bảng danh sách
   document.querySelectorAll('.reward-row').forEach(row => {
     if (row.getAttribute('data-main-tab') === tab) {
       row.style.display = '';
@@ -586,8 +609,13 @@ function switchMainTab(tab) {
   });
 }
 
+/**
+ * Tự động điều chỉnh hiển thị các trường nhập số tiền giảm (VND) hoặc giảm phí vận chuyển (VND)
+ * tùy thuộc vào loại quà tặng đang chọn (Voucher giảm giá, Free Ship hay Quà tặng hiện vật).
+ */
 function adjustExchangeFieldsByType() {
   const rewardTypeSelect = form.querySelector('[name="reward_type"]');
+  // Kiểm tra xem form đang ở chế độ đổi quà thường hay quà vòng quay
   const isExchange = rewardTypeSelect && rewardTypeSelect.closest('.exchange-only-field')?.style.display !== 'none';
   
   const divDiscount = document.getElementById('div-discount-amount');
@@ -599,6 +627,7 @@ function adjustExchangeFieldsByType() {
   
   const rewardCategorySelect = form.querySelector('[name="reward_category"]');
   
+  // Ẩn hiện các trường đầu vào tương ứng với đặc thù loại phần thưởng
   if (type === 'voucher') {
     if (divDiscount) divDiscount.style.display = '';
     if (divShipping) divShipping.style.display = 'none';
@@ -614,11 +643,17 @@ function adjustExchangeFieldsByType() {
   }
 }
 
+/**
+ * Ẩn/hiện toàn bộ các nhóm trường đầu vào tương ứng với chế độ quà đổi điểm hay quà vòng quay.
+ * @param {string} mode Chế độ form ('exchange' hoặc 'wheel')
+ */
 function adjustFormFieldsByMode(mode) {
+  // Nhóm trường chỉ hiển thị cho Đổi điểm
   document.querySelectorAll('.exchange-only-field').forEach(el => {
     el.style.display = mode === 'exchange' ? '' : 'none';
   });
   
+  // Nhóm trường chỉ hiển thị cho Vòng quay
   document.querySelectorAll('.wheel-only-field').forEach(el => {
     el.style.display = mode === 'wheel' ? '' : 'none';
   });
@@ -627,10 +662,11 @@ function adjustFormFieldsByMode(mode) {
   const rewardCategorySelect = form.querySelector('[name="reward_category"]');
   const pointsCostInput = form.querySelector('[name="points_cost"]');
 
+  // Đặt giá trị mặc định cho các cấu hình hệ thống tương ứng
   if (mode === 'wheel') {
     if (rewardTypeSelect) rewardTypeSelect.value = 'wheel_prize';
     if (rewardCategorySelect) rewardCategorySelect.value = 'wheel';
-    if (pointsCostInput) pointsCostInput.value = 0;
+    if (pointsCostInput) pointsCostInput.value = 0; // Quà vòng quay không trực tiếp đổi bằng điểm
   } else {
     if (rewardTypeSelect && rewardTypeSelect.value === 'wheel_prize') {
       rewardTypeSelect.value = 'voucher';
@@ -643,21 +679,27 @@ function adjustFormFieldsByMode(mode) {
   adjustExchangeFieldsByType();
 }
 
+/**
+ * Mở modal tạo mới phần thưởng.
+ * @param {string} mode Chế độ tạo ('exchange' hoặc 'wheel')
+ */
 function openCreateModal(mode = null) {
   if (!mode) mode = currentMainTab;
   
+  // Cập nhật tiêu đề modal phù hợp
   if (mode === 'wheel') {
     document.getElementById('modal-title').textContent = '{{ $locale === "en" ? "Create Lucky Wheel Prize" : "Tạo quà vòng quay may mắn" }}';
   } else {
     document.getElementById('modal-title').textContent = '{{ $locale === "en" ? "Create Reward" : "Tạo phần thưởng đổi điểm" }}';
   }
   
-  form.action = '{{ route('admin.rewards.store') }}';
-  document.getElementById('method-field').innerHTML = '';
-  form.reset();
+  form.action = '{{ route('admin.rewards.store') }}'; // Endpoint tạo mới phần thưởng
+  document.getElementById('method-field').innerHTML = ''; // Đảm bảo dùng phương thức POST mặc định
+  form.reset(); // Làm sạch toàn bộ dữ liệu form cũ
   
   adjustFormFieldsByMode(mode);
   
+  // Khởi tạo các giá trị mặc định cho quà vòng quay
   if (mode === 'wheel') {
     form.querySelector('[name="code"]').value = 'WHEEL_' + Date.now().toString().slice(-6);
     form.querySelector('[name="name"]').value = 'Quà Vòng Quay - ';
@@ -681,6 +723,7 @@ function openCreateModal(mode = null) {
   
   adjustExchangeFieldsByType();
   
+  // Reset input file và khung preview ảnh
   const imgInput = document.getElementById('reward-image-input');
   if (imgInput) imgInput.value = '';
   document.getElementById('image-preview').textContent = '{{ $locale === "en" ? "No image" : "Chưa có ảnh" }}';
@@ -690,6 +733,10 @@ function openCreateModal(mode = null) {
   updateTopbarVisibilityBasedOnModals();
 }
 
+/**
+ * Mở modal chỉnh sửa thông tin phần thưởng có sẵn.
+ * @param {object} item Đối tượng phần thưởng cần chỉnh sửa
+ */
 function openEditModal(item) {
   const mode = item.reward_type === 'wheel_prize' ? 'wheel' : 'exchange';
   
@@ -699,17 +746,18 @@ function openEditModal(item) {
     document.getElementById('modal-title').textContent = '{{ $locale === "en" ? "Edit Reward" : "Sửa phần thưởng đổi điểm" }}';
   }
   
-  form.action = `/admin/rewards/${item.reward_id}`;
-  document.getElementById('method-field').innerHTML = '<input type="hidden" name="_method" value="PUT">';
+  form.action = `/admin/rewards/${item.reward_id}`; // Endpoint cập nhật PUT/PATCH
+  document.getElementById('method-field').innerHTML = '<input type="hidden" name="_method" value="PUT">'; // Gán method PUT của Laravel
   
   adjustFormFieldsByMode(mode);
   
+  // Điền dữ liệu bản ghi vào các ô input tương ứng
   for (const [k,v] of Object.entries(item)) {
     const el = form.querySelector(`[name="${k}"]`);
     if (el) el.value = v ?? '';
   }
   
-  // Gán winning_rate & wheel_type & min_rank từ metadata
+  // Trích xuất và điền cấu hình từ cột JSON metadata
   const winningRateInput = form.querySelector('[name="winning_rate"]');
   if (winningRateInput) {
     winningRateInput.value = item.metadata?.winning_rate ?? 10;
@@ -736,6 +784,7 @@ function openEditModal(item) {
   
   adjustExchangeFieldsByType();
   
+  // Hiển thị ảnh cũ lên khung preview
   const preview = document.getElementById('image-preview');
   if (item.display_image) {
     preview.innerHTML = `<img src="/storage/${item.display_image}" class="w-full h-full object-cover" alt="preview">`;
@@ -748,11 +797,24 @@ function openEditModal(item) {
   updateTopbarVisibilityBasedOnModals();
 }
 
-function closeRewardModal(){ modal.classList.add('hidden'); modal.classList.remove('flex'); updateTopbarVisibilityBasedOnModals(); }
+/**
+ * Hàm đóng modal soạn thảo/thêm mới phần thưởng
+ */
+function closeRewardModal(){ 
+  modal.classList.add('hidden'); 
+  modal.classList.remove('flex'); 
+  updateTopbarVisibilityBasedOnModals(); 
+}
+
+/**
+ * Hàm mở nhanh modal cập nhật ảnh đại diện phần thưởng
+ * @param {object} item Đối tượng phần thưởng cần đổi ảnh
+ */
 function openImageModal(item){
   imageForm.action = `/admin/rewards/${item.reward_id}/image`;
   const preview = document.getElementById('reward-image-preview');
   const placeholder = document.getElementById('reward-image-placeholder');
+  
   if (item.display_image) {
     preview.src = `/storage/${item.display_image}`;
     preview.classList.remove('hidden');
@@ -762,11 +824,22 @@ function openImageModal(item){
     preview.classList.add('hidden');
     placeholder.classList.remove('hidden');
   }
-  imageModal.classList.remove('hidden'); imageModal.classList.add('flex');
+  
+  imageModal.classList.remove('hidden'); 
+  imageModal.classList.add('flex');
   updateTopbarVisibilityBasedOnModals();
 }
-function closeImageModal(){ imageModal.classList.add('hidden'); imageModal.classList.remove('flex'); updateTopbarVisibilityBasedOnModals(); }
 
+/**
+ * Hàm đóng nhanh modal đổi ảnh
+ */
+function closeImageModal(){ 
+  imageModal.classList.add('hidden'); 
+  imageModal.classList.remove('flex'); 
+  updateTopbarVisibilityBasedOnModals(); 
+}
+
+// Xử lý preview ảnh thời gian thực khi chọn tệp tin (Dùng FileReader API chuyển Base64 hiển thị tức thì)
 document.getElementById('reward-image-form')?.addEventListener('change', (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -794,21 +867,22 @@ document.getElementById('reward-image-input')?.addEventListener('change', (e) =>
   reader.readAsDataURL(file);
 });
 
-// Vòng quay may mắn Admin
-let luckyWheels = @json($wheels);
-const allWheelPrizes = @json($catalog->where('reward_type', 'wheel_prize')->values());
-const wheelColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'];
-let adminCurrentRotation = 0;
-let adminIsSpinning = false;
-let wheelItems = [];
-let adminLedTick = 0;
-let currentAdminWheelTab = luckyWheels.length > 0 ? luckyWheels[0].key : 'standard';
-let activeWheelPrizes = [];
+// --- LOGIC VÒNG QUAY MAY MẮN PHÍA ADMIN (CHẠY THỬ OFFLINE) ---
+let adminCurrentRotation = 0; // Góc xoay tích lũy đĩa quay admin
+let adminIsSpinning = false; // Trạng thái đĩa đang xoay
+let wheelItems = []; // Mảng chứa các ô quà vẽ lên Canvas
+let adminLedTick = 0; // Trạng thái nhấp nháy đèn LED viền
+let currentAdminWheelTab = luckyWheels.length > 0 ? luckyWheels[0].key : 'standard'; // Tab loại vòng đang xem thử
+let activeWheelPrizes = []; // Danh sách quà thực của loại vòng đang chọn
 
+/**
+ * Chuyển tab vòng quay trong khung thiết lập Admin.
+ * @param {string} tab Loại vòng quay
+ */
 function switchAdminWheelTab(tab) {
   currentAdminWheelTab = tab;
   
-  // Cập nhật CSS cho các button tab
+  // Cập nhật giao diện nút tab active/inactive
   luckyWheels.forEach(w => {
     const btn = document.getElementById(`admin-tab-${w.key}`);
     if (btn) {
@@ -824,9 +898,10 @@ function switchAdminWheelTab(tab) {
   adminCurrentRotation = 0;
   if (adminCanvas) adminCanvas.style.transform = `rotate(0deg)`;
   
-  openWheelSetupModal();
+  openWheelSetupModal(); // Vẽ lại giao diện danh sách quà và đĩa
 }
 
+// Nhấp nháy LED viền Canvas Admin
 setInterval(() => {
   adminLedTick = (adminLedTick + 1) % 2;
   const modalSetup = document.getElementById('wheel-setup-modal');
@@ -838,6 +913,10 @@ setInterval(() => {
 const adminCanvas = document.getElementById('admin-wheel-canvas');
 const adminCtx = adminCanvas ? adminCanvas.getContext('2d') : null;
 
+/**
+ * Xây dựng danh sách quà hiển thị trên Canvas của Admin.
+ * Tự nhân bản ô quà nếu số lượng ít hơn 6 ô để đảm bảo đồ họa đẹp.
+ */
 function buildWheelItems() {
   activeWheelPrizes = allWheelPrizes.filter(prize => {
     const meta = prize.metadata ?? {};
@@ -861,6 +940,10 @@ function buildWheelItems() {
   }));
 }
 
+/**
+ * Hàm vẽ Canvas Vòng quay may mắn dành cho Admin (Xem trước thiết kế).
+ * Đồng bộ đồ họa cao cấp 3D với giao diện người dùng.
+ */
 function drawAdminWheel() {
   if (!adminCanvas || !adminCtx) return;
   const size = adminCanvas.width;
@@ -1009,6 +1092,9 @@ function drawAdminWheel() {
   adminCtx.stroke();
 }
 
+/**
+ * Quay thử vòng quay offline dành cho Admin trải nghiệm hiệu ứng hình ảnh (Không trừ điểm, không sinh bản ghi).
+ */
 function spinAdminWheel() {
   if (adminIsSpinning || wheelItems.length === 0) return;
 
@@ -1016,6 +1102,7 @@ function spinAdminWheel() {
   adminIsSpinning = true;
   if (btn) btn.disabled = true;
 
+  // Lấy ngẫu nhiên một ô đích làm kết quả thử nghiệm offline
   const targetIndex = Math.floor(Math.random() * wheelItems.length);
   const anglePerSeg = (2 * Math.PI) / wheelItems.length;
 
@@ -1023,7 +1110,7 @@ function spinAdminWheel() {
   const centerAngleDeg = (centerAngleRad * 180) / Math.PI;
 
   let targetRotationDeg = 270 - centerAngleDeg;
-  const extraSpins = 5;
+  const extraSpins = 5; // Xoay 5 vòng trơn trước khi dừng
   const additionalDeg = (extraSpins * 360) + (targetRotationDeg - (adminCurrentRotation % 360) + 360) % 360;
   adminCurrentRotation += additionalDeg;
 
@@ -1036,6 +1123,10 @@ function spinAdminWheel() {
   }, 4100);
 }
 
+/**
+ * Mở modal thiết lập danh sách ô quà của Vòng quay may mắn.
+ * Đồng thời dựng lại Canvas hiển thị đĩa quay tương ứng.
+ */
 function openWheelSetupModal() {
   buildWheelItems();
   
@@ -1045,6 +1136,7 @@ function openWheelSetupModal() {
   if (activeWheelPrizes.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 italic">${locale === 'en' ? 'No prizes configured. Please add new segments!' : 'Chưa cấu hình quà. Hãy thêm ô quà tặng mới!'}</td></tr>`;
   } else {
+    // Render động bảng danh sách quà thuộc vòng quay
     activeWheelPrizes.forEach(prize => {
       const rate = prize.metadata?.winning_rate ?? 10;
       const tr = document.createElement('tr');
@@ -1067,6 +1159,7 @@ function openWheelSetupModal() {
     });
   }
 
+  // Cho Canvas hiển thị mượt sau khi DOM render xong
   setTimeout(drawAdminWheel, 100);
 
   const modalSetup = document.getElementById('wheel-setup-modal');
@@ -1075,6 +1168,9 @@ function openWheelSetupModal() {
   updateTopbarVisibilityBasedOnModals();
 }
 
+/**
+ * Đóng modal xem trước thiết lập đĩa quay.
+ */
 function closeWheelSetupModal() {
   const modalSetup = document.getElementById('wheel-setup-modal');
   modalSetup.classList.add('hidden');
@@ -1082,6 +1178,9 @@ function closeWheelSetupModal() {
   updateTopbarVisibilityBasedOnModals();
 }
 
+/**
+ * Phím tắt mở nhanh Form thêm mới quà tặng trực tiếp từ Tab Vòng quay.
+ */
 function openQuickCreateWheelPrize() {
   closeWheelSetupModal();
   openCreateModal('wheel');
@@ -1091,11 +1190,19 @@ function openQuickCreateWheelPrize() {
   form.querySelector('[name="name"]').value = 'Vòng quay - ';
 }
 
+/**
+ * Phím tắt mở form chỉnh sửa quà trực tiếp từ bảng thiết lập vòng quay.
+ */
 function openEditModalFromWheel(prize) {
   closeWheelSetupModal();
   openEditModal(prize);
 }
 
+/**
+ * Cập nhật trạng thái hiển thị/ẩn Vòng quay may mắn ngoài trang chủ Frontend.
+ * Gửi request cập nhật cấu hình hệ thống trực tiếp đến Database qua Fetch API.
+ * @param {boolean} checked Trạng thái bật/tắt
+ */
 function updateWheelVisibility(checked) {
   const statusText = document.getElementById('wheel-status-text');
   if (statusText) {
@@ -1127,10 +1234,14 @@ function updateWheelVisibility(checked) {
   });
 }
 
+// Mảng tạm thời lưu danh sách cấu hình cấp độ vòng quay phục vụ chỉnh sửa hàng loạt
 let tempLuckyWheels = [];
 
+/**
+ * Mở modal quản lý danh sách và định mức chi phí điểm của các loại Vòng quay may mắn.
+ */
 function openLuckyWheelsManagerModal() {
-  tempLuckyWheels = JSON.parse(JSON.stringify(luckyWheels));
+  tempLuckyWheels = JSON.parse(JSON.stringify(luckyWheels)); // Clone dữ liệu sâu để tránh làm sai lệch dữ liệu gốc khi chưa bấm lưu
   renderLuckyWheelsList();
   closeWheelSetupModal();
   
@@ -1142,6 +1253,9 @@ function openLuckyWheelsManagerModal() {
   updateTopbarVisibilityBasedOnModals();
 }
 
+/**
+ * Đóng modal quản lý danh sách vòng quay
+ */
 function closeLuckyWheelsManagerModal() {
   const managerModal = document.getElementById('lucky-wheels-manager-modal');
   if (managerModal) {
@@ -1149,9 +1263,12 @@ function closeLuckyWheelsManagerModal() {
     managerModal.classList.remove('flex');
   }
   updateTopbarVisibilityBasedOnModals();
-  openWheelSetupModal();
+  openWheelSetupModal(); // Trở lại màn hình xem trước vòng quay cũ
 }
 
+/**
+ * Render động danh sách các dòng Vòng quay may mắn trong bảng quản trị cấp độ.
+ */
 function renderLuckyWheelsList() {
   const tbody = document.getElementById('lucky-wheels-list-body');
   if (!tbody) return;
@@ -1162,6 +1279,7 @@ function renderLuckyWheelsList() {
     return;
   }
   
+  // Vẽ từng dòng bản ghi vòng quay
   tempLuckyWheels.forEach((w, index) => {
     const minRankVal = w.min_rank || 'none';
     const tr = document.createElement('tr');
@@ -1198,6 +1316,9 @@ function renderLuckyWheelsList() {
   });
 }
 
+/**
+ * Cập nhật giá trị một ô đầu vào trong mảng chỉnh sửa tạm thời.
+ */
 function updateTempLuckyWheelValue(index, field, value) {
   if (field === 'key') {
     value = value.toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -1208,6 +1329,9 @@ function updateTempLuckyWheelValue(index, field, value) {
   tempLuckyWheels[index][field] = value;
 }
 
+/**
+ * Thêm một dòng loại vòng quay trống mới vào danh sách.
+ */
 function addNewLuckyWheelRow() {
   const newKey = 'wheel_' + Date.now().toString().slice(-4);
   tempLuckyWheels.push({
@@ -1220,8 +1344,12 @@ function addNewLuckyWheelRow() {
   renderLuckyWheelsList();
 }
 
+/**
+ * Xóa một dòng loại vòng quay khỏi danh sách.
+ */
 function deleteLuckyWheelRow(index) {
   const w = tempLuckyWheels[index];
+  // Cảnh báo nếu xóa các vòng mặc định hệ thống
   if (['standard', 'silver', 'gold'].includes(w.key)) {
     if (!confirm(locale === 'en' ? 'This is a default system wheel. Are you sure you want to delete it?' : 'Đây là vòng quay mặc định của hệ thống. Bạn có chắc chắn muốn xóa không?')) {
       return;
@@ -1235,8 +1363,13 @@ function deleteLuckyWheelRow(index) {
   renderLuckyWheelsList();
 }
 
+/**
+ * Lưu toàn bộ thay đổi danh sách vòng quay gửi về Database.
+ * Sử dụng Fetch API gửi request lên Backend xử lý ghi đè cấu hình Settings.
+ */
 function saveLuckyWheelsList() {
   let keys = [];
+  // Kiểm tra tính hợp lệ dữ liệu trước khi gửi đi
   for (let i = 0; i < tempLuckyWheels.length; i++) {
     const w = tempLuckyWheels[i];
     if (!w.key || w.key.trim() === '') {
@@ -1249,11 +1382,11 @@ function saveLuckyWheelsList() {
     }
     keys.push(w.key);
     if (!w.name || w.name.trim() === '') {
-      alert(locale === 'en' ? 'Name (VI) cannot be empty!' : 'Tên (Tiếng Việt) không được để trống!');
+      alert(locale === 'en' ? 'Tên (Tiếng Việt) không được để trống!' : 'Tên (Tiếng Việt) không được để trống!');
       return;
     }
     if (!w.name_en || w.name_en.trim() === '') {
-      alert(locale === 'en' ? 'Name (EN) cannot be empty!' : 'Tên (Tiếng Anh) không được để trống!');
+      alert(locale === 'en' ? 'Tên (Tiếng Anh) không được để trống!' : 'Tên (Tiếng Anh) không được để trống!');
       return;
     }
   }
@@ -1276,7 +1409,7 @@ function saveLuckyWheelsList() {
       updateAdminWheelTabsUI();
       updateRewardFormSelectWheels();
       
-      // Update tab hiện tại nếu tab đó bị xóa
+      // Update tab hiện tại nếu tab đó bị xóa khỏi danh sách
       if (!luckyWheels.some(x => x.key === currentAdminWheelTab)) {
         currentAdminWheelTab = luckyWheels.length > 0 ? luckyWheels[0].key : 'standard';
       }
@@ -1292,6 +1425,9 @@ function saveLuckyWheelsList() {
   });
 }
 
+/**
+ * Cập nhật động danh sách các nút tab vòng quay trên view xem thử Canvas.
+ */
 function updateAdminWheelTabsUI() {
   const container = document.getElementById('admin-wheel-tabs-container');
   if (!container) return;
@@ -1313,6 +1449,9 @@ function updateAdminWheelTabsUI() {
   });
 }
 
+/**
+ * Đồng bộ danh sách lựa chọn Vòng quay may mắn trong thẻ select của form thêm/sửa quà tặng.
+ */
 function updateRewardFormSelectWheels() {
   const select = document.getElementById('select-wheel-type');
   if (!select) return;

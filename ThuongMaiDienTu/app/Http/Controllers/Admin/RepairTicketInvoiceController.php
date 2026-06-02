@@ -15,6 +15,11 @@ use Illuminate\View\View;
 
 class RepairTicketInvoiceController extends Controller
 {
+    /**
+     * Hiển thị danh sách các phiếu sửa chữa có trong hệ thống.
+     * Hỗ trợ nạp kèm thông tin hóa đơn dịch vụ liên kết (serviceInvoice),
+     * sắp xếp theo thứ tự phiếu mới nhất và phân trang 10 dòng/trang.
+     */
     public function index(): View
     {
         $repairTickets = RepairTicket::with('serviceInvoice')->latest('ticket_id')->paginate(10);
@@ -22,6 +27,11 @@ class RepairTicketInvoiceController extends Controller
         return view('admin.repair-tickets.index', compact('repairTickets'));
     }
 
+    /**
+     * Hiển thị giao diện tạo mới phiếu sửa chữa.
+     * Truy vấn danh sách khách hàng (role_id = 3) và kỹ thuật viên (role_id thuộc [1, 2, 4])
+     * để hiển thị trên các thẻ chọn (select box) trong form.
+     */
     public function createTicket(): View
     {
         $customers = User::where('role_id', 3)->orderBy('full_name')->get();
@@ -107,6 +117,11 @@ class RepairTicketInvoiceController extends Controller
         return redirect()->route('admin.repair-tickets.index')->with('success', 'Đã tạo phiếu sửa chữa thành công.');
     }
 
+    /**
+     * Hiển thị giao diện chỉnh sửa một phiếu sửa chữa cụ thể.
+     * Nạp thông tin phiếu sửa chữa hiện tại kèm danh sách khách hàng và kỹ thuật viên
+     * để hiển thị thông tin cũ và cho phép cập nhật.
+     */
     public function editTicket(RepairTicket $repairTicket): View
     {
         $customers = User::where('role_id', 3)->orderBy('full_name')->get();
@@ -192,6 +207,9 @@ class RepairTicketInvoiceController extends Controller
         return redirect()->route('admin.repair-tickets.index')->with('success', 'Đã cập nhật phiếu sửa chữa thành công.');
     }
 
+    /**
+     * Xóa một phiếu sửa chữa ra khỏi hệ thống.
+     */
     public function destroyTicket(RepairTicket $repairTicket): RedirectResponse
     {
         $repairTicket->delete();
@@ -199,6 +217,12 @@ class RepairTicketInvoiceController extends Controller
         return redirect()->route('admin.repair-tickets.index')->with('success', 'Đã xóa phiếu sửa chữa thành công.');
     }
 
+    /**
+     * Phương thức create(): Chuẩn bị dữ liệu và hiển thị giao diện xuất hóa đơn dịch vụ từ phiếu sửa chữa.
+     * RÀNG BUỘC BẢO MẬT:
+     *   - Chỉ cho phép xuất hóa đơn nếu phiếu sửa chữa đã ở trạng thái hoàn thành ('Done').
+     *   - Tự động điền trước các thông tin khách hàng, số điện thoại, email, IMEI, tên dịch vụ và chi phí dịch vụ thực tế từ phiếu sửa chữa sang hóa đơn.
+     */
     public function create(RepairTicket $repairTicket): View|RedirectResponse
     {
         if ($repairTicket->status !== 'Done') {

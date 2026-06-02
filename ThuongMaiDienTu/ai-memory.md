@@ -145,9 +145,27 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - `app/Traits/BaseTranslationTrait.php`
     - `resources/js/helpers.ts`
     - `resources/js/components/AdminTopbar.tsx`
+    - `resources/views/partials/chatbot.blade.php` (Giao diện & Logic Chatbot RAG)
+    - `resources/views/admin/rewards/index.blade.php` (Quản trị Vòng quay & Catalog phần thưởng)
+    - `resources/views/admin/rewards/history.blade.php` (Giao diện lịch sử đổi thưởng & quay số của Admin)
+    - `app/Http/Controllers/RewardsHistoryController.php` (Lịch sử đổi thưởng/quay số frontend controller)
+    - `app/Http/Controllers/Admin/RewardImageController.php` (Upload ảnh quà tặng admin controller)
+    - `resources/views/frontend/rewards/history.blade.php` (Giao diện lịch sử đổi quà & quay thưởng)
+    - `resources/views/frontend/rewards/show.blade.php` (Giao diện chi tiết quà tặng & AJAX đổi thưởng)
+    - `app/Services/FlashSaleService.php` (Dịch vụ xử lý tồn kho & locking cho Flash Sale)
+    - `app/Services/InventoryService.php` (Dịch vụ quản lý kho hàng, IMEIs/Serials và đồng bộ kho theo đơn hàng)
+    - `app/Http/Controllers/Admin/FlashSaleController.php` (Bộ điều khiển quản lý chiến dịch Flash Sale phía Admin)
+    - `app/Http/Controllers/Admin/FlashSaleProductController.php` (Bộ điều khiển quản lý sản phẩm tham gia Flash Sale phía Admin)
+    - `resources/views/frontend/products/index.blade.php` (Giao diện sản phẩm & AJAX bộ lọc nâng cao phía Frontend)
+    - `app/Models/FlashSale.php` (Eloquent Model đại diện cho chiến dịch Flash Sale)
+    - `app/Models/FlashSaleProduct.php` (Eloquent Model đại diện cho sản phẩm Flash Sale)
+    - `resources/views/partials/compare-bar.blade.php` (Thanh so sánh sản phẩm floating phía Frontend)
+    - `resources/views/partials/footer.blade.php` (Footer đa ngôn ngữ chân trang)
+    - `resources/views/partials/header.blade.php` (Header chính tích hợp AJAX Autocomplete, đa ngôn ngữ, và thông báo)
+    - `resources/views/partials/notification-filters.blade.php` (Khung lọc thông báo tái sử dụng)
+    - `resources/views/partials/product_grid_items.blade.php` (Khung hiển thị từng sản phẩm trong danh sách lưới)
   - Đảm bảo các kỹ sư tiếp quản dễ dàng nắm vững kiến trúc, các bước hoạt động (quét DOM, dịch gộp, bộ lọc dịch, cách intercept model, click-outside, v.v.).
 
-<<<<<<< HEAD
 ### 7. Phân hệ Đa Ngôn Ngữ (Dynamic Localization) - Gộp nhánh thành công
 - **Khắc phục lỗi View Product list:**
   - Đã khôi phục và đồng bộ chính xác file `ProductController.php` và `Product.blade.php` trên nhánh `Hien/dangonngu` trước khi merge vào `master`.
@@ -425,4 +443,315 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Viết chú thích (comments) chi tiết cho cả 12 khối logic truy vấn thống kê dữ liệu bên trong `DashboardController.php` để hỗ trợ phát triển và bảo trì.
   - Cập nhật định dạng DocBlock chi tiết cho phương thức `index()` của `DashboardController.php`, mô tả tường tận nhiệm vụ của hàm, các luồng phân quyền bảo mật, 12 nhóm dữ liệu thống kê thu thập cùng các cấu trúc dữ liệu truyền ra view.
   - Thêm đầy đủ comment trong file giao diện `dashboard.blade.php` giải thích cấu trúc layout Grid, Flexbox, các khối Blade dynamic components và phần vẽ biểu đồ bằng Javascript (Chart.js).
+
+### 25. Sửa lỗi Chatbot hiển thị Raw Unicode & Phản hồi sai ngôn ngữ
+- **Sửa lỗi Welcome Message hiển thị raw unicode escapes (`\u003Cb`, `\ud83d\udc4b`):**
+  - Nguyên nhân: Directive `@json()` của Blade mặc định sử dụng flag `JSON_HEX_TAG` mã hóa `<`, `>` thành `\u003C`, `\u003E` gây hiển thị dạng text thô.
+  - Khắc phục: Thay toàn bộ `@json(__('ui.chatbot_greeting'))` bằng `{!! json_encode(__('ui.chatbot_greeting'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}` để giữ nguyên HTML tags và emoji.
+  - Áp dụng cho: `chatbot_greeting`, `chatbot_product_greeting`, `chatbot_error` trong `chatbot.blade.php`.
+- **Sửa lỗi Chatbot trả lời sai ngôn ngữ:**
+  - Nguyên nhân ban đầu: Toàn bộ System Prompt trong `ChatbotController.php` hardcode bằng tiếng Việt, không có quy tắc ngôn ngữ rõ ràng.
+  - Khắc phục: Gộp thành 1 prompt duy nhất với quy tắc ngôn ngữ ưu tiên cao nhất (LANGUAGE RULE - HIGHEST PRIORITY): AI tự động nhận diện ngôn ngữ câu hỏi của khách và phản hồi 100% bằng chính ngôn ngữ đó. Hỗ trợ mọi ngôn ngữ (Việt, Anh, Nhật, Hàn, v.v.) mà không cần ép cứng theo locale.
+  - Loại bỏ `use App` facade và biến `$isEnglish` không còn cần thiết.
+- **Nâng cấp chất lượng phản hồi đồng đều ở mọi ngôn ngữ:**
+  - Thêm CẤU TRÚC CÂU TRẢ LỜI BẮT BUỘC: Mở đầu ấm áp → Phân tích theo nhu cầu sử dụng (2-3 đoạn với emoji) → Lồng ghép chính sách tự nhiên → Kết thúc mời gọi.
+  - Thêm PHONG CÁCH TƯ VẤN CHUYÊN NGHIỆP: Viết như chuyên gia trò chuyện, giải thích TẠI SAO phù hợp, KHÔNG liệt kê khô khan. Chỉ đề cập 2-4 sản phẩm liên quan nhất.
+  - Đảm bảo khi trả lời tiếng Anh hay bất kỳ ngôn ngữ nào khác, đều có chất lượng phân tích sâu, bố cục đẹp như tiếng Việt.
+- **Xóa lịch sử chat khi đổi ngôn ngữ:**
+  - Thêm tracking `chatbot_locale` trong `localStorage`. Khi phát hiện locale hiện tại khác với locale đã lưu, tự động xóa `chatbot_history` để tránh hiển thị tin nhắn cũ sai ngôn ngữ.
+- **Các file sửa đổi:**
+  - `resources/views/partials/chatbot.blade.php`
+  - `app/Http/Controllers/ChatbotController.php`
+
+### 26. Sửa lỗi Chatbot làm hỏng đường dẫn URL tiếng Anh & Tối ưu RAG tiếng Anh
+- **Cơ chế Prompt phân tách theo Locale:**
+  - Thiết lập lại biến kiểm tra ngôn ngữ `$isEnglish` trong `ChatbotController.php` dựa trên `App::getLocale() === 'en'`.
+  - Nếu ở locale tiếng Anh, sử dụng System Prompt hoàn toàn bằng tiếng Anh chuyên biệt, giúp AI hiểu sâu sắc và phản hồi mạch lạc bằng tiếng Anh với chất lượng cao nhất.
+- **Quy tắc chèn Link tuyệt đối (Link Preservation Rule):**
+  - Thêm chỉ dẫn cực kỳ nghiêm ngặt tại cả hai phiên bản Prompt (tiếng Anh & tiếng Việt), yêu cầu AI giữ nguyên 100% các đường dẫn URL nội bộ của hệ thống:
+    - Chi tiết sản phẩm: luôn dùng `/san-pham/{id}`, không dịch thành `/product/{id}` hay `/en/san-pham/`.
+    - Tìm kiếm/Thương hiệu/Danh mục: luôn dùng `/search?q={từ_khóa}`.
+    - Trang chính sách: giữ nguyên `/warranty`, `/rewards`, ### 34. Tài liệu hóa & Chú thích chi tiết hệ thống Thông báo (Notification System Documentation)
+- **Tài liệu hóa Backend:**
+  - `app/Http/Controllers/NotificationController.php`: Bổ sung chú thích tiếng Việt làm rõ logic endpoint đánh dấu đã đọc của User và kiểm tra bảo mật ngăn chặn xem trộm thông báo.
+  - `app/Services/NotificationService.php`: Bổ sung chú thích giải thích cơ chế chunking (1000 bản ghi) để tối ưu hóa việc tạo thông báo hàng loạt mà không gây quá tải bộ nhớ.
+  - `app/Jobs/SendNotificationCampaignJob.php`: Bổ sung chú thích về cách thức queue chạy ngầm xử lý phân phối chiến dịch thông báo lớn bất đồng bộ.
+  - `app/Models/Notification.php`: Chú thích rõ ràng các casts cột JSON `data`, scope `unread()`, và quan hệ `user()`.
+  - `app/Http/Controllers/Admin/NotificationCampaignController.php`: Chú thích chi tiết cơ chế cache thống kê Dashboard trong 1 giờ, các API tìm kiếm coupon/user phục vụ autocomplete, logic dispatch queue, và logic quét tự động tồn kho thấp gửi cảnh báo cho admin.
+- **Tài liệu hóa Frontend (Admin views):**
+  - `resources/views/admin/notifications/dashboard.blade.php`: Chú thích cấu trúc lưới stats card, chart, và top loại thông báo.
+  - `resources/views/admin/notifications/show.blade.php`: Chú thích cách trình bày metadata JSON và đánh dấu đã đọc trực tiếp khi xem.
+  - `resources/views/admin/notifications/create.blade.php`: Chú thích cặn kẽ hệ thống script Javascript xử lý autocomplete bằng AJAX có Debounce 300ms, quản lý tags chọn sản phẩm, khuyến mãi, tài khoản nhận, và cơ chế đóng mở dropdown thông minh.
+- **Mục tiêu:** Giúp mã nguồn minh bạch 100%, sẵn sàng cho việc bảo trì, tối ưu hóa và mở rộng sang các kênh thông báo nâng cao (như Firebase Push Notification, SMS) trong tương lai.
+
+### 35. Tài liệu hóa & Chú thích chi tiết hệ thống Gợi ý bán chéo (Cross-sell & Combo Discount System)
+- **Tài liệu hóa Backend:**
+  - `app/Services/CrossSellService.php`: Bổ sung chú thích tiếng Việt cực kỳ chi tiết cho thuật toán 7 tầng gợi ý bán chéo (FBT từ co-order_details, cùng thương hiệu khác danh mục, cùng phân khúc giá Flash Sale, cá nhân hóa lịch sử xem, và fallback cùng danh mục), có cấu hình cache 30 phút.
+  - `app/Http/Controllers/Admin/ProductController.php`: Chú thích chi tiết các phương thức `syncCrossSells` và `syncCombos` xử lý đồng bộ cơ sở dữ liệu và dọn dẹp các cache tương ứng.
+  - `app/Http/Controllers/ProductController.php` & `app/Http/Controllers/Frontend/ProductController.php`: Chú thích luồng ghi nhận lịch sử xem sản phẩm cho user đăng nhập (phục vụ cá nhân hóa) và tích hợp lấy danh sách gợi ý bán chéo, nạp thông tin khuyến mãi Flash Sale thời gian thực.
+  - `app/Models/Product.php`: Chú thích tiếng Việt làm rõ quan hệ tự liên kết `crossSells()` và `comboProducts()` mang các trường pivot bổ trợ.
+- **Tài liệu hóa Frontend (Views & Scripts):**
+  - `resources/views/admin/products/ProductDetail.blade.php`: Chú thích chi tiết cấu trúc Modal thiết lập combo và bán kèm, các hàm định dạng hiển thị kết quả của Select2, và mã Javascript tự động tính toán tổng giá sau giảm thời gian thực.
+  - `resources/views/frontend/products/_combo_bundle.blade.php`: Chú thích vai trò của gói combo mua kèm, hàm tự động cập nhật tổng giá trị/số tiền tiết kiệm khi tích chọn checkbox, và luồng Sequential AJAX gọi tuần tự API thêm vào giỏ hàng bảo mật.
+  - `resources/views/frontend/products/_cross_sell.blade.php`: Chú thích giao diện thanh cuộn ngang slider sản phẩm bán kèm, optimistic UI hiển thị trạng thái "Đã thêm" tức thời của AJAX và cập nhật badge cart trên header.
+
+### 36. Tài liệu hóa & Chú thích chi tiết hệ thống Tích điểm & Đổi thưởng (Loyalty Points & Rewards System)
+- **Tài liệu hóa Backend:**
+  - `app/Services/PointsService.php`: Chú thích tiếng Việt cực kỳ chi tiết cho tỷ lệ tích lũy `EARN_RATE` (10k VND = 1 điểm) và giá trị quy đổi `POINT_VALUE` (1 điểm = 1k VND); các hàm cộng điểm giao dịch đơn completed (`applyOrderCompletedPoints`), hoàn điểm/thu hồi điểm khi cancel đơn (`cancelOrderPoints`), trừ điểm ví tiêu dùng (`deductWalletPoints`), xác định hạng VIP (`resolveRankLevel`), và cơ chế khóa bản ghi `lockForUpdate` chống race condition.
+  - `app/Services/RewardsService.php`: Giải thích logic kiểm tra điều kiện tồn kho quà, hạng tối thiểu, số dư; thuật toán quay thưởng ngẫu nhiên theo trọng số (Weighted Random) trong phương thức `spinWheel`.
+  - `app/Http/Controllers/RewardsController.php`: Chú thích luồng API đổi voucher, API spin vòng quay may mắn có xác thực đăng nhập và bảo mật CSRF.
+  - Các Eloquent Models (`app/Models/RewardCatalog.php`, `app/Models/RewardRedemption.php`, `app/Models/LuckyWheelSpin.php`, `app/Models/UserPoint.php`, `app/Models/PointTransaction.php`): Bổ sung Docblock tiếng Việt chi tiết làm rõ ý nghĩa của các cột dữ liệu, ép kiểu `casts`, các mối quan hệ khoá ngoại, và quan hệ đa hình `morphTo`.
+- **Tài liệu hóa Frontend (Views & Scripts):**
+  - `resources/views/frontend/rewards/index.blade.php`: Chú thích toàn bộ hệ thống Canvas vẽ đĩa quay 3D, vòng LED nhấp nháy, thuật toán xoay đĩa dừng đúng góc quà trúng ở kim chỉ góc 270 độ, AJAX đổi quà và spin.
+  - `resources/views/frontend/rewards/show.blade.php` & `resources/views/frontend/rewards/history.blade.php`: Chú thích hệ thống lọc lịch sử, định dạng hiển thị timeline tiến trình và xử lý AJAX đổi voucher đơn lẻ.
+  - `resources/views/admin/rewards/index.blade.php` (Giao diện Quản trị): Chú thích toàn bộ logic bật/tắt hiển thị vòng quay ở client, logic form thêm/sửa linh động ẩn hiện các trường đầu vào VND/Freeship/Rate theo chủng loại quà, và modal test spin offline.
+
+### 37. Tích hợp nhánh Tối ưu & Cập nhật Báo cáo phân chia chức năng theo Thành viên
+- **Merge nhánh Git:**
+  - Thực hiện chuyển sang nhánh `master` và tích hợp nhánh phát triển `AnhQuy/ToiUu` (chứa toàn bộ nội dung cải tiến mã nguồn, comment Docblock và tối ưu hóa hệ thống) vào nhánh `master` dạng Fast-forward không có conflict.
+  - Tiến hành dọn dẹp Git repository: Xóa bỏ tệp tin tạm `docx_content.txt` khỏi Git tracking và thực tế trên đĩa cứng của `master`.
+- **Tài liệu hóa & Phân chia chức năng dự án mới:**
+  - Nhận diện cấu trúc dự án Thương mại điện tử hiện tại (`ThuongMaiDienTu`) với 5 thành viên phát triển: Anh Quý, Vinh Em, Thanh Hiền, Xuân Hòa, Đăng Nguyên dựa theo các branch trong Git.
+  - Tạo tệp Word mới chi tiết: **`d:\HOC\Hoc 4\pywword\Mapping_Chuc_Nng_Theo_Thanh_Vien.docx`** chứa bảng ánh xạ cặn kẽ 100% tất cả các tệp mã nguồn tương ứng (từ Controller, Service, Model, View, Migration, Route cho đến Script JS/CSS phụ trợ) cho từng nhánh tính năng của từng thành viên.
+  - Định dạng tệp Word thẩm mỹ cao, lề chuẩn 1 inch, sử dụng font *Times New Roman* kết hợp *Consolas* cho tên tệp code, và đổ màu tiêu đề phân cấp trực quan cho phần việc của mỗi người để chuẩn bị bảo vệ đồ án trước Hội đồng chấm thi.
+
+### 38. Sửa lỗi Xóa tất cả & Tối ưu hóa hiệu năng Danh sách yêu thích (Wishlist AJAX & Dynamic UI Optimization)
+- **Giao diện Khách hàng (Frontend):**
+  - Cải tiến view `resources/views/frontend/profile.blade.php` ở tab Danh sách yêu thích.
+  - Thay thế thẻ `<form>` thực hiện hành động DELETE trực tiếp (gây ra tình trạng chuyển hướng trình duyệt đến trang xuất JSON thô `{"success":true}`) bằng một nút bấm gọi AJAX qua `onclick="clearWishlist()"`.
+  - Tối ưu hóa UI/UX: Loại bỏ hoàn toàn cơ chế reload toàn bộ trang (`window.location.reload()`) khi xóa một sản phẩm hoặc xóa toàn bộ wishlist để tránh tải chậm (do trang Profile phải gánh rất nhiều câu truy vấn nặng).
+  - Tích hợp hiệu ứng CSS transition (`opacity 0.3s`, `transform 0.3s`) để các item biến mất mượt mà, đồng thời tự động cập nhật số lượng badge hiển thị trên tiêu đề tab và render giao diện trống (empty state) bằng JS ngay trên client.
+- **Hạ tầng & Seeders:**
+  - Tạo mới `database/seeders/WishlistRecentlyViewedSeeder.php` để tự động gán ngẫu nhiên từ 3 đến 5 sản phẩm mẫu vào danh sách yêu thích (`type => 'Wishlist'`) cho tất cả người dùng trong hệ thống bằng phương thức `firstOrCreate` (idempotent).
+  - Đăng ký seeder mới vào class list trong `database/seeders/DatabaseSeeder.php`.
+
+### 39. Sửa lỗi Sidebar xoay vô hạn, Cấu hình Thông số Sản phẩm & Di chuyển Khối Đăng ký Khuyến mãi xuống Footer (Sidebar Loading, Product Specs & Footer Subscribe Layout Migration)
+- **Sửa lỗi Admin Sidebar Loading vô hạn:**
+  - **Nguyên nhân:** File rác `public/hot` tồn tại trong thư mục `public` khiến cho chỉ thị `@vite` trong Laravel cố gắng tải các file tài nguyên React từ Vite Dev Server (cổng `5173`) trong khi server này không chạy, dẫn đến việc giao diện React Sidebar bị treo ở trạng thái `"Khởi tạo Sidebar..."`.
+  - **Cách xử lý:** Đã xóa bỏ file `public/hot` để Laravel tự động nhận diện và nạp các tệp tài nguyên tĩnh đã được build sẵn (production build) từ `public/build/assets/`.
+- **Cải tiến hiển thị Thông số sản phẩm (Product Specifications):**
+  - **Vấn đề:** Các sản phẩm do `LargeProductSeeder` tạo ra lưu thông số kỹ thuật dưới dạng cột JSON `specifications` thay vì bản ghi trong bảng `product_specifications`, khiến tab "Cấu hình chi tiết" bị ẩn do không tìm thấy bản ghi liên kết.
+  - **Cách xử lý:** Cập nhật view `resources/views/frontend/products/show.blade.php` để hỗ trợ hiển thị song song. Nếu không có bản ghi trong bảng liên kết, view sẽ tự động giải mã trường JSON `specifications` và lặp để hiển thị đầy đủ thông số kỹ thuật của sản phẩm.
+  - **Tính năng mở rộng (Xem chi tiết):** Thêm tính năng thu gọn / xem thêm thông số kỹ thuật. Bảng thông số được giới hạn chiều cao tối đa `260px` (khoảng 6 dòng đầu) kèm hiệu ứng mờ dần (gradient fade). Nếu thông số dài quá giới hạn này, một nút "Xem chi tiết cấu hình" sẽ xuất hiện để người dùng bấm và mở rộng/thu gọn mượt mà. Nếu thông số ngắn, nút này sẽ tự động ẩn thông qua kiểm tra thuộc tính `scrollHeight` bằng Javascript.
+- **Di chuyển Khối Đăng Ký Khuyến Mãi Xuống Footer:**
+  - **Mục tiêu:** Di chuyển khối Đăng ký nhận thông tin khuyến mãi từ chi tiết sản phẩm xuống dưới Footer của toàn bộ trang web làm cột (div) thứ 5.
+  - **Cách xử lý:** 
+    - Xóa bỏ khối đăng ký khuyến mãi và modal chúc mừng thành công cũ ở `resources/views/frontend/products/show.blade.php`.
+    - Thêm cột thứ 5 vào `resources/views/partials/footer.blade.php`, kèm theo mã nguồn HTML Modal thành công và Script điều phối chung `showPromoSuccess()` để tính năng hoạt động độc lập trên mọi trang web.
+    - Cập nhật số cột tối đa trên desktop của `.footer-grid` trong `resources/views/layouts/app.blade.php` từ `repeat(4, 1fr)` thành `repeat(5, 1fr)`. Dữ liệu hiển thị đáp ứng co giãn hoàn hảo (responsive) trên mọi kích thước màn hình.
+    - Khởi tạo thêm khóa dịch thuật `footer_subscribe` ở cả hai tệp `lang/vi/ui.php` và `lang/en/ui.php`.
+- **Sửa Lỗi Chèn/Đè Nội Dung Ở Footer (Sticky Bar Overlap Fix):**
+  - **Vấn đề:** Khi cuộn xuống cuối trang chi tiết sản phẩm, thanh tác vụ ghim dưới cùng (`bottom-action-bar` có giá trị `position: fixed; bottom: 0`) đè lên chân trang (footer) làm ẩn nút "Đăng ký nhận mã", ô checkbox, và che mất nút Chatbot AI.
+  - **Cách xử lý:**
+    - Cấu hình thêm CSS `padding-bottom: 110px !important;` cho `.footer` tại trang chi tiết sản phẩm, chừa một khoảng trống vừa đủ ở dưới để chân trang không bao giờ bị che lấp khi người dùng cuộn xuống đáy.
+    - Cải tiến Javascript bắt sự kiện cuộn chuột ở trang chi tiết sản phẩm: Khi thanh mua hàng nhanh (`bottom-action-bar`) trượt ra (`active.show`), hệ thống tự động đẩy nút Chatbot (`#chatbot-fab`), cửa sổ chat (`#ai-chat-window`), và thông báo giỏ hàng (`#pending-payment-alert`) lên cao thêm `75px` để tránh bị đè chồng lấp. Khi thanh này ẩn đi, các vị trí lại tự động khôi phục bình thường.
+- **Tích Hợp Đường Dẫn Động Vào Chân Trang (Footer Links Integration):**
+  - **Mục tiêu:** Cấu hình các đường liên kết thực tế thay thế cho các ký tự `#` ở Footer.
+  - **Các liên kết đã tích hợp:**
+    - Cột 2 (Về công ty): Tích hợp **Tất cả sản phẩm** (`route('products.index')`), **Tin công nghệ** (`route('articles.index')`), và **Góc video** (`route('videos.index')`).
+    - Cột 3 (Chính sách & Tra cứu): Tích hợp **Lịch sử tích điểm** (`route('rewards.history')`), **Tra cứu bảo hành** (`route('warranty.index')`), **Tra cứu đơn hàng** (`route('cart.tracking')`), **So sánh sản phẩm** (`route('compare.index')`), và **Bảo mật thông tin** (`route('security')`).
+    - Khởi tạo các khóa ngôn ngữ tương ứng (`footer_warranty_lookup`, `footer_compare`, `footer_all_products`, `footer_rewards_history`) để hỗ trợ chuyển đổi ngôn ngữ trọn vẹn.
+  - **Hàng liên kết nhanh sản phẩm phổ biến ở đáy Footer (Quick links):**
+    - Thiết kế thêm 1 hàng lưới 4 cột ở cuối Footer hiển thị các mẫu iPhone, Điện thoại, Laptop, Tivi, Đồ gia dụng và thiết bị thông minh phổ biến (theo giao diện CellphoneS).
+    - Tất cả liên kết được ánh xạ động: Các danh mục thực tế trỏ đến `route('products.category', $slug)` và các từ khóa cụ thể trỏ đến `route('search.index', ['query' => $keyword])`.
+  - **Tích hợp Favicon Logo Sét (Lightning Bolt SVG Favicon):**
+    - Bổ sung chỉ thị `<link rel="icon" type="image/svg+xml">` với dữ liệu hình ảnh dạng inline SVG (FontAwesome 6 Bolt icon có màu xanh chủ đạo `#0046ab` đồng bộ với tông màu chủ đạo của website) vào thẻ `<head>` của các layout chính:
+      - `resources/views/layouts/app.blade.php` (Giao diện khách hàng)
+      - `resources/views/Auth/login_register.blade.php` (Giao diện đăng nhập/đăng ký)
+      - `resources/views/admin/layouts/master.blade.php` (Giao diện quản trị hệ thống mẫu cũ)
+      - `resources/views/Dashboard/Dashboard.blade.php` (Giao diện Dashboard chính)
+    - Khắc phục hoàn toàn tình trạng tab trình duyệt hiển thị favicon mặc định là khối hộp đỏ của Laravel.
+
+### 40. Tài liệu hóa và Chú thích chi tiết hệ thống Chi tiết sản phẩm (Product Detail Walkthrough & Comments)
+- **Tài liệu hóa chi tiết:**
+  - Tạo mới file walkthrough hệ thống chi tiết sản phẩm (`artifacts/product_detail_walkthrough.md`) bao gồm:
+    - Sơ đồ kiến trúc luồng dữ liệu (Route → Controller → Services/Models → Views/Partials → JS).
+    - Phân tích chi tiết 10 khối giao diện chính và cấu trúc CSS tùy biến.
+    - Sơ đồ ER Database liên quan đến sản phẩm (Variants, Specs, Reviews, Cross-sells, Combos, Flash Sales).
+    - Phân tích 20+ hàm Javascript phục vụ Gallery, chọn biến thể, AJAX mua hàng, Countdown Flash Sale, Trả góp, Sticky Bar, Specs Toggle.
+- **Bổ sung chú thích mã nguồn (Comments):**
+  - **`app/Models/Product.php`**: Bổ sung PHPDoc và chú thích chi tiết tiếng Việt cho các mối quan hệ (`category`, `productSpecifications`, `variants`, `flashSaleProducts`, `wishlistRecentlyViewed`) và các query scopes (`filterCategory`, `finalPriceBetween`, `searchKeyword`, `filterBySpecs`, `sortBy`) giúp dễ dàng bảo trì.
+  - **`routes/web.php`**: Bổ sung chú thích phân nhóm các route liên quan đến sản phẩm ngoài frontend bao gồm lọc nâng cao, route sản phẩm di sản (legacy redirect) và chi tiết sản phẩm.
+
+### 41. Nâng cấp hệ thống khởi tạo dự án - Smart Setup Wizard (Orchestrator v8.0 INITIALIZE)
+- **Mục tiêu:** Nâng cấp chức năng khởi tạo dự án `[6] INITIALIZE` từ một chuỗi lệnh gộp đơn giản thành một bộ công cụ **Smart Setup Wizard** có giao diện tương tác trực quan cao, nhiều lựa chọn linh hoạt và có khả năng phát hiện lỗi tự động.
+- **Tính năng triển khai:**
+  - **[1] FAST SETUP (Cài đặt nhanh):** Tự động phát hiện và đề xuất bỏ qua `composer install` / `npm install` nếu thư mục `vendor` / `node_modules` đã có sẵn nhằm tối ưu hóa thời gian chờ đợi. Kiểm tra và tự động sao chép cấu hình `.env`, tự tạo `APP_KEY`, tự động đồng bộ hóa liên kết thư mục `public/storage` (Storage Link), và cho phép thực thi migration + seeders dữ liệu mẫu ngay lập tức.
+  - **[2] DRIVER SETUP (Thiết lập CSDL):** Chuyển đổi và thiết lập cơ sở dữ liệu động:
+    - **SQLite:** Tự tạo tệp tin `database/database.sqlite` (nếu thiếu), tự cập nhật `.env` sang `DB_CONNECTION=sqlite`, đồng thời ẩn/comment-out toàn bộ cấu hình MySQL không cần thiết bằng Powershell in-place replacement siêu tốc.
+    - **MySQL:** Hỗ trợ giao diện nhập cấu hình trực quan, tự lưu giá trị mặc định (Host: `127.0.0.1`, Port: `3306`, Database: `dienmay_pro`, Username: `root`) nếu người dùng chỉ nhấn Enter. Sử dụng Powershell động cập nhật chuẩn xác dữ liệu vào `.env`.
+  - **[3] CLEAN REBUILD (Cài đặt lại sạch):** Trình dọn dẹp hệ thống chuyên sâu, tự động xóa sạch `vendor/`, `node_modules/`, `.env`, `package-lock.json`, và `database.sqlite` cũ, sau đó tái thiết lập toàn bộ môi trường và tải lại thư viện hoàn toàn mới 100%.
+- **Các file sửa đổi:**
+  - `start.bat` (Thư mục gốc dự án)
+
+### 42. Hệ thống xác thực API Sanctum chuyên sâu (API Sanctum Authentication Suite)
+- **Mục tiêu:** Triển khai hệ thống xác thực API chuẩn bảo mật bằng Laravel Sanctum thay thế cho hệ thống lưu trữ session tùy chỉnh cũ, phục vụ kết nối di động và API tích hợp.
+- **Tính năng triển khai:**
+  - **Sanctum Trait Integration:** Bổ sung trait `Laravel\Sanctum\HasApiTokens` vào Model `User.php`. Thêm các PHPDoc và `@mixin` block vào `User.php` và `Role.php` để hỗ trợ IDE tối đa và loại bỏ cảnh báo lỗi linting.
+  - **Auth API Controller (`AuthController.php`):** Định nghĩa 3 phương thức API: `login()` (Xác thực thông tin đăng nhập, trả về Bearer Token, từ chối tài khoản Banned), `me()` (Trả về thông tin tài khoản hiện tại qua `UserResource`), và `logout()` (Thu hồi token hiện tại `currentAccessToken()->delete()`).
+  - **Custom Guard Middleware (`ApiAuthMiddleware.php`):** Middleware lọc quyền truy cập API qua Sanctum guard, kiểm tra trạng thái cấm hoạt động của tài khoản (`is_banned`). Nếu bị khóa, hệ thống lập tức thu hồi toàn bộ token hoạt động của user và trả về lỗi `403 Forbidden`.
+  - **Automated API Testing Suite (`ApiAuthTest.php`):** Viết đầy đủ các ca kiểm thử tự động (Feature Tests) bao gồm: Đăng nhập thành công, Đăng nhập thất bại (sai mật khẩu/email), Lỗi kiểm duyệt dữ liệu đầu vào (Validation errors), Đăng nhập bằng tài khoản bị khóa (Banned), Truy cập profile hợp lệ/không hợp lệ, và Thu hồi token hoàn chỉnh khi Logout.
+  - **Postman API Collection (`DienMayPro_Auth_API.postman_collection.json`):** Cung cấp bộ sưu tập Postman hoàn chỉnh được lưu trong thư mục `scratch`, tích hợp sẵn Test Script tự động trích xuất token lưu vào biến môi trường để gọi các API tiếp theo.
+- **Các file sửa đổi / tạo mới:**
+  - `app/Models/User.php` (Sửa đổi)
+  - `app/Models/Role.php` (Sửa đổi)
+  - `app/Http/Controllers/Api/AuthController.php` (Tạo mới)
+  - `app/Http/Middleware/ApiAuthMiddleware.php` (Tạo mới)
+  - `bootstrap/app.php` (Sửa đổi)
+  - `routes/api.php` (Sửa đổi)
+  - `tests/Feature/ApiAuthTest.php` (Tạo mới)
+  - `scratch/DienMayPro_Auth_API.postman_collection.json` (Tạo mới)
+
+### 43. Tích hợp AI Tự động xử lý đơn hàng (AI Order Auto-Processing)
+- **Hạ tầng & Cơ sở dữ liệu:**
+  - Tạo file migration `2026_05_30_233351_add_ai_fields_to_orders_table.php` bổ sung các cột `ai_status`, `ai_risk_score`, và `ai_analysis` vào bảng `orders`.
+  - Tạo file migration `2026_05_30_235500_create_ai_order_logs_table.php` định nghĩa bảng `ai_order_logs` lưu trữ lịch sử quét AI.
+  - Tạo Model `App\Models\AIOrderLog.php` liên kết với bảng `ai_order_logs`.
+  - Tạo file seeder `database/seeders/AITestOrderSeeder.php` tạo 10 đơn hàng thử nghiệm có ngày tạo từ `2026-05-29` đến `2026-05-31` cùng các thông tin/ghi chú đặc thù (bao gồm đơn thường, đơn rác, SĐT ảo...) để thử nghiệm quét rủi ro AI hàng loạt. Hoạt động qua lệnh `php artisan db:seed --class=AITestOrderSeeder`.
+- **Dịch vụ AI & Queue Job:**
+  - Thiết kế `app/Services/AIOrderService.php` kết nối trực tiếp với Google Gemini API (sử dụng model fallback linh hoạt `gemini-3.1-flash-lite`, `gemini-3.5-flash` và cơ chế parse JSON an toàn) để đánh giá rủi ro đơn hàng dựa trên thông tin người nhận, SĐT, địa chỉ và ghi chú.
+  - Tích hợp thêm logic tự động xử lý trạng thái đơn hàng: tự động chuyển sang `Processing` (Duyệt đơn) nếu điểm rủi ro `risk_score < 30`, hoặc chuyển sang `Cancelled` (Hủy đơn) nếu điểm rủi ro `risk_score >= 80`.
+  - Lưu vết lịch sử phân tích AI vào bảng `ai_order_logs` với cách kích hoạt tương ứng (`auto` / `manual`).
+  - Gửi thông báo tự động cho Quản trị viên (qua `NotificationService`) khi AI hoàn tất phân tích và đưa ra quyết định xử lý đơn hàng.
+  - Tạo Queue Job `app/Jobs/ProcessOrderWithAI.php` để xử lý phân tích đơn hàng ngầm dưới background, bảo toàn tốc độ giao dịch cho người dùng.
+- **Controller & Router:**
+  - Nâng cấp `show` method trong `OrderController.php` để trả thêm các trường thông tin AI dạng JSON phục vụ Modal chi tiết.
+  - Xây dựng phương thức `reanalyze` trong `OrderController.php` xử lý yêu cầu quét lại rủi ro đơn hàng thủ công từ Admin qua AJAX (truyền triggerType `manual`).
+  - Xây dựng phương thức `aiLogs` để xử lý phân trang và hiển thị danh sách nhật ký quét của AI.
+  - Tích hợp bộ lọc khoảng ngày tạo đơn hàng (`start_date` và `end_date` qua `whereDate`) vào phương thức `index` trong `OrderController.php`.
+  - Xây dựng phương thức `batchGetIds` trong `OrderController.php` lấy danh sách ID đơn hàng cần quét trong một khoảng thời gian tạo đơn nhất định và tiêu chí lọc (Tất cả / Chưa quét).
+  - Khai báo các route POST `/orders/{id}/reanalyze`, GET `/orders/ai-logs`, và POST `/orders/batch-get-ids` trong `routes/admin.php`.
+- **Giao diện Admin (Frontend):**
+  - Cập nhật view `resources/views/admin/orders/index.blade.php`:
+    - Hiển thị badge trạng thái AI màu sắc tương ứng dưới mã đơn hàng (`Approved`, `Flagged`, `Risk`, `Checking`) ở bảng danh sách.
+    - Bổ sung nút **Lịch sử quét AI** bên cạnh tiêu đề trang để truy cập nhanh trang log.
+    - Bổ sung nút **Quét AI hàng loạt** hiển thị popup chọn ngày (từ ngày...đến ngày...) và thực hiện quét tuần tự AJAX thông minh kèm progress bar và logging console động thời gian thực.
+    - Tích hợp form bộ lọc hợp nhất gồm ô Tìm kiếm, ô chọn **Từ ngày** và **Đến ngày** ngay phía trên danh sách tab trạng thái đơn hàng giúp lọc đơn nhanh chóng và lưu trạng thái lọc khi chuyển tab.
+    - Bổ sung card phân tích rủi ro AI động trong Modal chi tiết đơn hàng (gồm Nhãn đánh giá, Thanh đo mức độ rủi ro, và Nhận định chi tiết).
+    - Tích hợp nút **Quét lại** kèm AJAX gọi API `reanalyze`, tải spinner động và cập nhật dữ liệu phản hồi tức thì lên Modal qua SweetAlert2 mà không cần reload trang.
+  - Thiết kế mới view `resources/views/admin/orders/ai_logs.blade.php` hiển thị bảng lịch sử làm việc chi tiết của AI với bộ lọc trạng thái và cách kích hoạt chuyên nghiệp, kèm theo nút **Quét AI hàng loạt** đồng bộ.
+
+### 44. Phân Hệ Gợi Ý Sản Phẩm & Bán Chéo Cá Nhân Hóa (AI Recommendation & Dynamic Pricing)
+- **Kiến trúc & Cấu hình:**
+  - Tích hợp **Google Gemini API** (sử dụng API key sẵn có `GEMINI_API_KEY` từ file cấu hình `.env`).
+  - Hỗ trợ cơ chế **Fallback (Safe-mode)**: Tự động dùng danh sách combo tĩnh từ cơ sở dữ liệu (`product_combos`) nếu không có cấu hình API key, API quá tải hoặc lỗi định dạng phản hồi từ AI.
+  - Áp dụng cơ chế **Caching**: Cache kết quả gợi ý và định giá combo theo cặp (User/Session ID + Product ID) trong vòng 15 phút, giúp tăng tốc độ tải trang chi tiết sản phẩm và tiết kiệm lượt gọi API.
+- **Backend Services & Logic:**
+  - **CrossSellService.php:**
+    - Xây dựng phương thức `getAICrossSellCombos($product, $user, $cartItems)` gửi prompt phân tích ngữ cảnh (thông tin sản phẩm đang xem, hạng thành viên của khách hàng, lịch sử xem sản phẩm gần đây, lịch sử mua hàng, và các sản phẩm đang có trong giỏ hàng) tới Gemini API.
+    - Cung cấp danh sách ứng viên đề xuất gồm tối đa 15 sản phẩm cùng danh mục và sản phẩm phụ kiện thuộc `ACCESSORY_CATEGORY_IDS`.
+    - AI trả về câu lý do gợi ý cá nhân hóa lịch sự và thân thiện (`ai_reason`) để thuyết phục khách hàng mà không trực tiếp nhắc đến tên hạng thành viên để tránh gây cảm nhận phân biệt giai cấp (ví dụ: trả về "ưu đãi đặc biệt dành riêng cho bạn" thay vì "dành cho hạng Đồng").
+  - **ProductController.php (Frontend):**
+    - Cập nhật phương thức `show` gọi hàm `getAICrossSellCombos` từ `CrossSellService` để lấy danh sách combo được tối ưu bằng AI thay cho cách lấy tĩnh cũ.
+  - **CartController.php (Admin/Cart):**
+    - Tích hợp xác thực bảo mật giá trị giảm giá combo ở phía Server trong phương thức `add`.
+    - Khi thêm sản phẩm mua kèm vào giỏ hàng, server sẽ kiểm tra chéo giá trị ưu đãi từ Cache Combo AI của user đó. Nếu không tìm thấy, hệ thống tự động fallback kiểm tra mối quan hệ combo tĩnh từ database, ngăn chặn hoàn toàn việc can thiệp giá từ phía Client-side.
+- **Frontend UI & Trải nghiệm người dùng:**
+  - **_combo_bundle.blade.php:**
+    - Bổ sung CSS tùy chỉnh cho hiệu ứng viền phát sáng gradient lấp lánh `.ai-optimized-section` khi combo được AI tối ưu.
+    - Gắn nhãn AI Badge lấp lánh (`AI Gợi Ý Tối Ưu`) trên tiêu đề mục combo.
+    - Hiển thị thông báo giải thích ngắn gọn về định giá ưu đãi từ AI.
+    - Tích hợp khối **Nhận định tối ưu từ AI** hiển thị lý do cá nhân hóa ngắn gọn ngay bên trong hộp tổng kết Combo (`combo-summary`) giúp tăng tỷ lệ chuyển đổi.
+- **Kiểm thử:**
+  - Viết file script chạy thử nghiệm `scratch_test_ai_recommendation.php` để giả lập quá trình gọi API gợi ý cho User hạng Vàng và hạng Đồng/Khách vãng lai, kiểm chứng tốc độ phản hồi và độ chính xác của logic định giá động.
+
+### 45. Tích hợp AI vào Phân hệ Đăng bài & Duyệt bài cộng điểm (Article UGC Moderation & SEO Assistant)
+- **Database & Model:**
+  - Thêm migration `2026_05_31_130000_add_ai_and_seo_fields_to_articles_table.php` bổ sung các trường lưu trữ tag động (`tags`), thông tin SEO (`seo_title`, `seo_description`, `seo_keywords`, `seo_score`) và điểm số AI (`ai_quality_score`, `ai_moderation_verdict`, `ai_analysis`, `ai_checked`).
+  - Cập nhật model `Article.php` cast JSON sang mảng cho các trường `tags`, `seo_keywords`, `ai_analysis`.
+- **Dịch vụ AI:**
+  - Xây dựng `ArticleAIService.php` tích hợp Google Gemini API để phân tích chất lượng bài viết, kiểm duyệt nội dung (spam, nhạy cảm, đạo văn), sinh hashtag động và gợi ý tối ưu SEO.
+- **Controller & Router:**
+  - Cập nhật `ArticleFrontendController.php` để gọi `ArticleAIService` khi tạo/sửa bài viết.
+  - Tự động duyệt bài viết và tặng 20 điểm thưởng tích lũy ví nếu bài viết đạt điểm chất lượng cao (`quality_score >= 80`) và an toàn (`approved`).
+  - Xây dựng route POST `/lifestyle/ai-assist` nhận AJAX kiểm tra SEO và chất lượng nội dung theo thời gian thực.
+- **Frontend Views:**
+  - `create.blade.php`: Tích hợp widget Trợ lý AI & SEO ở cột bên phải cho phép chạy phân tích và áp dụng nhanh đề xuất tiêu đề/meta. Loại bỏ hoàn toàn các thông báo alert() mặc định của trình duyệt, thay thế bằng hộp thoại cảnh báo SweetAlert2 và thông báo Toast góc trên cùng bên phải siêu đẹp, tăng tính đồng bộ và trải nghiệm người dùng cao cấp.
+  - `show.blade.php`: Tích hợp hiển thị danh sách dynamic tags ở chân bài viết và tối ưu hóa thẻ title/meta SEO động.
+  - `index.blade.php`: Cập nhật bộ lọc tag để hiển thị thêm các hashtag động thịnh hành từ DB và hiển thị tag trên mỗi card bài viết.
+- **Kiểm thử:**
+  - Viết file script chạy thử nghiệm `scratch_test_article_ai.php` để boot Laravel, gọi AI phân tích bài viết mẫu độc lập và kiểm chứng cấu trúc JSON phản hồi từ Gemini API.
+
+### 46. Tích hợp Lịch sử Kiểm duyệt AI vào trang quản lý bài viết Admin (Admin Articles AI Audit History)
+- **Backend Controller:**
+  - Cập nhật `App\Http\Controllers\Admin\ArticleController.php` để tính toán chính xác số liệu thống kê toàn cục (`total`, `approved`, `pending`, `rejected`, `ai_checked`).
+  - Hỗ trợ tham số truy vấn bộ lọc `status = 'ai_checked'` để lọc nhanh danh sách các bài viết đã được AI kiểm duyệt và quét nội dung.
+- **Frontend Admin Panel (`resources/views/admin/articles/index.blade.php`):**
+  - **KPI Cards Grid:** Nâng cấp từ 4 cột lên 5 cột, bổ sung thêm card thống kê số lượng bài viết **Đã quét AI**.
+  - **Filter Chips:** Bổ sung chip lọc trạng thái **Đã quét AI**.
+  - **Cột Kiểm duyệt AI:** Thêm cột mới hiển thị nhãn nhận định của AI (`An toàn`, `Xem xét`, `Vi phạm`) kèm chất lượng/SEO score dạng tóm tắt.
+  - **SweetAlert2 Audit Details Popup:** Tích hợp mã script AJAX/Event hiển thị popup chi tiết Nhật ký kiểm duyệt AI: điểm số, báo cáo spam, độ trùng lặp (đạo văn), từ ngữ nhạy cảm và danh sách dynamic tags được tạo bởi AI.
+- **Kiểm thử:**
+  - Sử dụng browser subagent để truy cập quản trị `/admin/articles` và xác nhận hoạt động của card thống kê, bộ lọc và popup chi tiết kiểm duyệt AI SweetAlert2.
+
+### 47. Hoàn thiện Hệ thống Kiểm duyệt và Từ chối bài viết AI (AI UGC Article Moderation & Rejection Finalized)
+- **Backend & Controllers:**
+  - Bổ sung phương thức `reject(string $id)` vào `Admin\ArticleController` để quản trị viên từ chối trực tiếp các bài viết UGC đang ở trạng thái `pending`.
+  - Tích hợp xử lý tự động từ chối bài viết (cập nhật trạng thái `rejected` khi `moderation_verdict === 'rejected'`) trong phương thức `store` và `update` của `ArticleFrontendController.php` khi khách hàng đăng hoặc sửa bài viết.
+  - Sửa đổi cơ chế cộng điểm thưởng của `update` để kiểm tra chính xác bài viết đã từng được cộng điểm trước đây (`hadPointsBefore = $article->reward_points_awarded > 0`) nhằm tránh việc cộng trùng lặp điểm khi người dùng chỉnh sửa bài viết nhiều lần.
+- **Frontend Views:**
+  - Đăng ký form ẩn `reject_form` trong `resources/views/admin/articles/form.blade.php` phục vụ nút "Từ chối bài viết" của Admin hoạt động chuẩn xác.
+  - Tối ưu hóa UI client-side trong `resources/views/articles/create.blade.php`: cập nhật layout grid hiển thị 3 cột điểm (Chất lượng bài, Điểm SEO, và Điểm thưởng AI đề xuất), tối ưu hiển thị tag, và trích xuất logic render AI sang hàm `renderAiResult(data)` để tái sử dụng.
+  - Tự động hiển thị kết quả phân tích AI đã lưu khi khách hàng chỉnh sửa bài viết cũ bằng cách pre-load `preloadedData` và render lên UI trong sự kiện `DOMContentLoaded`.
+- **Kiểm thử & Đánh giá:**
+  - Viết file test Feature hoàn chỉnh tại `tests/Feature/ArticleModerationTest.php` kiểm chứng: tự động duyệt bài viết chất lượng cao, tự động từ chối bài viết vi phạm của khách hàng, admin duyệt bài cộng điểm, admin từ chối bài viết, và cơ chế chống cộng điểm thưởng trùng lặp khi edit bài viết.
+  - Chạy thử nghiệm thành công 6/6 test cases của `ArticleModerationTest` đạt trạng thái OK (bao gồm cả test case duyệt hàng loạt đạt chuẩn AI).
+
+### 48. Bổ sung nút Duyệt hàng loạt bài viết đạt chuẩn AI (Bulk Approve AI-Qualified Articles)
+- **Backend & Controller & Routes:**
+  - Xây dựng phương thức `bulkApproveAi()` trong `Admin\ArticleController.php` để lấy toàn bộ các bài viết UGC đang ở trạng thái `pending`, đã được AI quét (`ai_checked = 1`) và được AI đánh giá là an toàn/hợp lệ (`ai_moderation_verdict = 'approved'`).
+  - Lặp qua từng bài viết, trích xuất điểm thưởng đề xuất trong `ai_analysis` (hoặc mặc định là 20 điểm nếu thiếu) và thực hiện gọi hàm nghiệp vụ `$article->approveAndReward($points)`.
+  - Khai báo route POST `/admin/articles/bulk-approve-ai` ánh xạ vào hàm `bulkApproveAi` trong `routes/admin.php`.
+- **Frontend View (Admin Articles Index):**
+  - Cập nhật `resources/views/admin/articles/index.blade.php`: Bổ sung kiểm tra sự tồn tại của các bài viết chờ duyệt đạt chuẩn AI. Nếu có, hiển thị một nút bấm/form màu emerald đẹp mắt **"Duyệt bài đạt chuẩn AI hàng loạt"** tích hợp hiệu ứng icon lấp lánh và SweetAlert2 xác nhận hành động trước khi submit.
+  - Tích hợp SweetAlert2 thay thế hoàn toàn hộp thoại xác nhận gốc (`confirm()`) cho cả hành động **Duyệt bài đạt chuẩn AI hàng loạt** và hành động **Xóa bài viết** giúp nâng cao đáng kể thẩm mỹ giao diện quản trị.
+  - Cập nhật `resources/views/admin/layouts/master.blade.php`: Tích hợp hiển thị Toast thông báo thành công / lỗi bằng SweetAlert2 tự động ở góc trên bên phải màn hình khi phát hiện có dữ liệu flash session từ server trả về.
+- **Kiểm thử:**
+  - Bổ sung test case `test_admin_bulk_approve_ai_articles` trong `tests/Feature/ArticleModerationTest.php` kiểm tra duyệt hàng loạt chính xác các bài viết đạt chuẩn AI, trong khi vẫn bỏ qua các bài viết bị gắn cờ (`flagged`) hoặc chưa được AI phân tích. Chạy kiểm thử thành công tuyệt đối.
+
+### 49. Tạo Seeder dữ liệu mẫu cho bài viết (AI UGC Articles Test Seeder)
+- **Hạ tầng & Dữ liệu mẫu:**
+  - Tạo file seeder `database/seeders/AITestArticleSeeder.php` tự động khởi tạo 10 bài viết mẫu với đầy đủ các trạng thái thực tế phục vụ quá trình kiểm thử giao diện Admin:
+    - 4 bài viết chờ duyệt đạt chuẩn AI (`moderation_verdict = 'approved'`), chất lượng từ 80% trở lên kèm điểm thưởng đề xuất phong phú (iPhone 15, Laptop văn phòng, Samsung S24 Ultra, Pin máy hút bụi).
+    - 2 bài viết bị gắn cờ cần xem xét (`moderation_verdict = 'flagged'`) do chia sẻ link bẻ khóa phần mềm hoặc phần mềm theo dõi điện thoại.
+    - 1 bài viết bị AI từ chối trực tiếp (`moderation_verdict = 'rejected'`) do nội dung spam viết hoa vô nghĩa.
+    - 2 bài viết chưa từng được quét qua bởi AI (`ai_checked = 0`).
+    - 1 bài viết đã được duyệt trước đó (`status = 'approved'`).
+  - Chạy lệnh `php artisan db:seed --class=AITestArticleSeeder` thành công để nạp ngay dữ liệu mẫu vào database.
+
+### 50. Tích hợp AI Chẩn đoán lỗi Thiết bị & Phân công kỹ thuật viên tự động (Phân hệ Sửa chữa & Bảo hành)
+- **Hạ tầng & Cơ sở dữ liệu:**
+  - Tạo migration `2026_05_31_140000_add_ai_fields_to_repair_tickets_table.php` bổ sung các trường thông tin chẩn đoán lỗi bằng AI (JSON & văn bản) và ảnh đính kèm của thiết bị vào bảng `repair_tickets`.
+  - Cập nhật Model `RepairTicket.php` để cast các trường JSON sang mảng (`ai_probable_causes`, `ai_risk_warnings`, `ai_dispatch_reason`, v.v.) và khai báo đầy đủ `$fillable`.
+- **Dịch vụ AI:**
+  - Xây dựng `RepairAIService.php` tích hợp Google Gemini API (model `gemini-2.0-flash`) hỗ trợ phân tích tình trạng lỗi của thiết bị từ mô tả văn bản kết hợp với AI Vision phân tích hình ảnh (sọc màn hình, vỡ kính, lỗi hệ điều hành...).
+  - Tự động gợi ý phân công kỹ thuật viên phù hợp dựa trên mô tả lỗi, mức độ phức tạp và tay nghề/lịch sử của kỹ thuật viên trong hệ thống (Smart Job Dispatching).
+- **Controller & Router:**
+  - Đăng ký API AJAX `/profile/repair-tickets/ai-diagnose` hỗ trợ khách hàng chẩn đoán lỗi thiết bị trực tiếp trên giao diện Client.
+  - Cập nhật phương thức `storeRepairTicket` trong `ProfileController.php` để lưu vết đầy đủ các trường thông tin chẩn đoán AI cùng ảnh thiết bị lên database khi gửi form đăng ký.
+- **Giao diện Client (Frontend):**
+  - Cập nhật view `profile.blade.php`:
+    - Tải ảnh thiết bị kèm preview trực quan thời gian thực bằng JS (`FileReader`).
+    - Nút bấm **Phân tích & Chẩn đoán lỗi bằng AI** với hiệu ứng loading và hiển thị **AI Report Card** cực đẹp (Chẩn đoán lỗi, khoảng giá dự kiến, nguyên nhân, khuyến cáo, và kỹ thuật viên gợi ý).
+    - Cập nhật timeline theo dõi trong **Tracking Modal** hiển thị chi tiết hình ảnh thiết bị lỗi và báo cáo chẩn đoán AI.
+- **Giao diện Admin (Quản trị):**
+  - Cập nhật view danh sách `admin/repair-tickets/index.blade.php`: Hiển thị badge màu tím **AI Chẩn Đoán** tinh tế bên cạnh mã phiếu giúp phân biệt phiếu được AI phân tích.
+  - Cập nhật view chỉnh sửa `admin/repair-tickets/edit.blade.php`:
+    - Thiết kế bố cục 2 cột hiển thị mô tả lỗi song song với hình ảnh thiết bị thực tế do khách hàng gửi lên.
+    - Bổ sung khối **Kết quả chẩn đoán tự động bằng AI (Google Gemini)** cực kỳ chuyên nghiệp và trực quan giúp Admin/Kỹ thuật viên đưa ra quyết định nhanh chóng.
+
+### 51. Nâng cấp các tính năng AI Chatbot nâng cao (Tư vấn tồn kho theo biến thể, Dynamic Couponing & Auto Repair Booking)
+- **Frontend & View:**
+  - Cập nhật `resources/views/partials/chatbot.blade.php`: Truyền thêm tham số `message_count` lấy từ độ dài của danh sách tin nhắn hiện tại `messageList.length` trong AJAX payload của `callBackend` để theo dõi thời gian tương tác của khách hàng.
+- **Backend & Controller (ChatbotController.php):**
+  - **Tư vấn kho hàng theo biến thể:** Tích hợp eager loading quan hệ `variants.inventoryItems` trong phương thức `searchProducts`. Trích xuất thông tin tồn kho thực tế của từng biến thể (màu sắc, dung lượng) để bổ sung vào dữ liệu RAG cho AI tư vấn chính xác.
+  - **Dynamic Couponing:** Triển khai cơ chế tự động phát hành mã giảm giá 5% độc quyền (`CouponFlashSale`) khi `message_count >= 5` và lưu mã giảm giá vào session để tránh trùng lặp. Prompt của AI được bổ sung chỉ thị giới thiệu mã giảm giá này khi người dùng đắn đo hoặc hỏi về ưu đãi.
+  - **Đặt lịch sửa chữa tự động qua chat (Auto Repair Booking):** Huấn luyện AI trích xuất thông tin người dùng cung cấp (tên, số điện thoại, email, mô tả lỗi, IMEI/Serial và ngày hẹn) dưới dạng thẻ JSON đặc biệt `[[CREATE_REPAIR_TICKET: {...}]]`. Backend tự động parse thẻ này để tạo bản ghi nháp `RepairTicket` trong database, đồng thời thay thế thẻ này bằng thông tin xác nhận đặt lịch hẹn rõ ràng (ví dụ: mã số phiếu, giờ hẹn cụ thể).
+- **Kiểm thử:**
+  - Tạo script kiểm thử độc lập `C:\Users\ANH QUY\.gemini\antigravity\brain\23a894ae-d308-45b4-8241-d38e49982684\scratch\test_chatbot_logic.php` mô phỏng hành trình đặt lịch và nhận ưu đãi qua Chatbot. Script chạy thành công tuyệt đối và tạo thành công phiếu sửa chữa trong DB.
+
+### 52. Tổng hợp toàn bộ các tính năng AI trong dự án
+- **Tài liệu hóa:** Tạo file `tong_hop_tich_hop_ai.md` tại thư mục gốc của dự án, tổng hợp đầy đủ 5 phân hệ tích hợp AI bao gồm: (1) Quét rủi ro đơn hàng tự động, (2) Gợi ý bán chéo cá nhân hóa, (3) Đăng & Kiểm duyệt bài viết UGC kèm tối ưu SEO và tặng điểm thưởng, (4) Chẩn đoán lỗi thiết bị & gợi ý phân công kỹ thuật viên tự động, (5) Chatbot hỗ trợ khách hàng nâng cao.
+
+
 

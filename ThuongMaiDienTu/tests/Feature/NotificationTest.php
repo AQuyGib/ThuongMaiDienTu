@@ -312,7 +312,7 @@ class NotificationTest extends TestCase
 
         $response = $this->actingAs($this->admin)
             ->post(route('admin.notifications.store'), [
-                'target' => 'users',
+                'target' => 'all',
                 'title' => 'Chiến dịch test',
                 'content' => 'Nội dung test',
             ]);

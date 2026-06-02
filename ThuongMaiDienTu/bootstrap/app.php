@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->alias([
             'api.locale' => \App\Http\Middleware\ResolveApiLocale::class,
+            'api.auth' => \App\Http\Middleware\ApiAuthMiddleware::class,
         ]);
         $middleware->api(append: [
             \App\Http\Middleware\ResolveApiLocale::class,
