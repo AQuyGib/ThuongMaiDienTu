@@ -2,9 +2,10 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable {
-    use SoftDeletes;
+    use SoftDeletes, HasApiTokens;
 
     protected $primaryKey = 'user_id';
     const UPDATED_AT = null;

@@ -1,3 +1,8 @@
+{{-- ============================================================
+     WELCOME.BLADE.PHP: TRANG CHÀO MỪNG MẶC ĐỊNH CỦA LARAVEL
+     Lưu ý: Dự án DienMayPRO sử dụng home.blade.php làm trang chủ chính thức.
+     Tệp này được giữ lại làm tham chiếu cấu hình mặc định của Laravel.
+     ============================================================ --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>

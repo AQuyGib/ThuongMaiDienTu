@@ -45,6 +45,11 @@ return [
     'footer_return_policy'  => 'Return Policy',
     'footer_privacy'        => 'Privacy Policy',
     'footer_connect'        => 'Connect with us',
+    'footer_subscribe'      => 'Subscribe to promotions',
+    'footer_warranty_lookup'=> 'Warranty lookup',
+    'footer_compare'        => 'Compare products',
+    'footer_all_products'   => 'All products',
+    'footer_rewards_history'=> 'Points history',
 
     // ===== MEGA MENU EXTRA =====
     'rewards_page'          => 'Rewards',
@@ -101,4 +106,45 @@ return [
     'repair_step_done_service'      => 'Performed service:',
     'repair_step_done_fee'          => 'Actual service fee:',
     'repair_step_done_invoice'      => 'Service invoice code:',
+
+    // ===== LOGIN & REGISTER =====
+    'login_tab'                     => 'Login',
+    'register_tab'                  => 'Register',
+    'login_google'                  => 'Sign in with Google',
+    'email_label'                   => 'Email',
+    'password_label'                => 'Password',
+    'confirm_password_label'        => 'Confirm',
+    'forgot_password_link'          => 'Forgot password?',
+    'full_name_label'               => 'Full name',
+    'reg_btn'                       => 'Register Now',
+    'login_btn'                     => 'Login Now',
+    'or_divider'                    => 'or',
+    'home_btn'                      => 'Home',
+    'active_badge'                  => 'Active',
+    'smart_shopping_title'          => 'Smart electronics',
+    'smart_shopping_highlight'      => 'shopping',
+    'banner_features_desc'          => 'Thousands of genuine products at the best prices.<br>Fast delivery · Genuine warranty · 30-day refund.',
+    'stat_products'                 => 'Products',
+    'stat_satisfaction'             => 'Satisfaction',
+    'stat_delivery'                 => 'Delivery',
+    'placeholder_email'             => 'Enter email address',
+    'placeholder_password'          => '••••••••',
+    'placeholder_fullname'          => 'Enter full name',
+    'welcome_back_slogan'           => 'Welcome back',
+    'login_register_title'          => 'Login / Register',
+
+    // ===== VALIDATION ERRORS =====
+    'error_banned'                  => 'Your account has been banned.',
+    'error_invalid_credentials'     => 'Incorrect email or password.',
+    'error_email_unique'            => 'This email is already in use.',
+    'error_password_confirmed'      => 'The password confirmation does not match.',
+    'error_fullname_required'       => 'Full name is required.',
+    'error_email_required'          => 'Email is required and must be a valid email.',
+    'error_password_min'            => 'Password must be at least 8 characters.',
+
+    // ===== REMEMBER & TERMS =====
+    'remember_me'                   => 'Remember me',
+    'accept_terms_text'             => 'I agree to the store\'s :terms and :privacy.',
+    'terms_link'                    => 'Terms of Service',
+    'privacy_link'                  => 'Privacy Policy',
 ];

@@ -1174,7 +1174,6 @@
 
         currentVideoId = id;
         updateLikeButtonUI(id);
-        incrementViews(id);
 
         const mp4Player = document.getElementById('main-video-player');
         const ytPlayer = document.getElementById('main-youtube-player');
@@ -1335,11 +1334,16 @@
                                     </div>
                                     <p class="text-gray-600 text-xs mt-1 leading-relaxed break-words">${escapeHTML(c.content)}</p>
                                     
-                                    <!-- Nút Trả lời -->
+                                    <!-- Nút Trả lời & Báo cáo -->
                                     <div class="flex items-center gap-3 mt-1.5">
                                         <button class="text-[10px] font-bold text-primary hover:underline flex items-center gap-1" onclick="toggleVideoReplyForm(${c.id})">
                                             <i class="fa-solid fa-reply text-[8px]"></i> Trả lời
                                         </button>
+                                        ${currentUserId ? `
+                                            <button class="text-[10px] font-bold text-red-500 hover:underline flex items-center gap-1" onclick="reportVideoComment(${c.id})">
+                                                <i class="fa-solid fa-flag text-[8px]"></i> Báo cáo
+                                            </button>
+                                        ` : ''}
                                     </div>
 
                                     <!-- Form Trả lời -->
@@ -1500,7 +1504,8 @@
                 input.value = '';
                 toggleVideoReplyForm(parentId);
                 loadComments(currentVideoId);
-                showToast('Gửi phản hồi thành công!', 'success');
+                const isWarning = data.message && (data.message.includes('chờ') || data.message.includes('nhạy cảm') || data.message.includes('kiểm duyệt'));
+                showToast(data.message || 'Gửi phản hồi thành công!', isWarning ? 'warning' : 'success');
             } else {
                 showToast(data.message || 'Không thể gửi phản hồi.', 'error');
             }
@@ -1512,6 +1517,32 @@
                 console.error('Error submitting reply:', err);
                 showToast('Lỗi máy chủ, vui lòng thử lại.', 'error');
             }
+        });
+    }
+
+    window.reportVideoComment = function(commentId) {
+        if (!confirm('Bạn có chắc chắn muốn báo cáo bình luận vi phạm này?')) return;
+
+        fetch(`/videos/comments/${commentId}/report`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message || 'Báo cáo thành công!', 'success');
+                loadComments(currentVideoId);
+            } else {
+                showToast(data.message || 'Không thể báo cáo bình luận.', 'error');
+            }
+        })
+        .catch(err => {
+            console.error('Error reporting comment:', err);
+            showToast('Lỗi kết nối máy chủ.', 'error');
         });
     }
 
@@ -1598,7 +1629,8 @@
             if (data.success) {
                 textarea.value = '';
                 loadComments(currentVideoId);
-                showToast('Đăng bình luận thành công!', 'success');
+                const isWarning = data.message && (data.message.includes('chờ') || data.message.includes('nhạy cảm') || data.message.includes('kiểm duyệt'));
+                showToast(data.message || 'Đăng bình luận thành công!', isWarning ? 'warning' : 'success');
             } else {
                 showToast(data.message || 'Không thể đăng bình luận.', 'error');
             }
@@ -1625,11 +1657,9 @@
             if (videoExists && urlVideoId != currentVideoId) {
                 playVideo(urlVideoId, true);
             } else if (videoExists && urlVideoId == currentVideoId) {
-                incrementViews(currentVideoId);
                 loadComments(currentVideoId);
             }
         } else if (currentVideoId) {
-            incrementViews(currentVideoId);
             loadComments(currentVideoId);
         }
 
@@ -1680,6 +1710,14 @@
                     // Đúp chuột bên phải: tua tiến 10s
                     mp4Player.currentTime = Math.min(mp4Player.duration || 0, mp4Player.currentTime + 10);
                     showToast('Tua nhanh 10 giây', 'info');
+                }
+            });
+
+            // Lắng nghe sự kiện xem xong video (ended) để tăng lượt xem
+            mp4Player.addEventListener('ended', () => {
+                if (currentVideoId) {
+                    incrementViews(currentVideoId);
+                    showToast('Cảm ơn bạn đã xem hết video! Lượt xem đã được ghi nhận.', 'success');
                 }
             });
         }

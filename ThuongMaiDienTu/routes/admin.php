@@ -8,6 +8,8 @@ use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\InventoryMovementController;
+use App\Http\Controllers\Admin\InventoryAuditController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\PageController;
@@ -52,8 +54,11 @@ Route::delete('/videos/comments/{comment}', [VideoManagementController::class, '
 
 
 // ===== Quản lý Đơn hàng =====
+Route::get('orders/ai-logs', [OrderController::class, 'aiLogs'])->name('orders.aiLogs');
+Route::post('orders/batch-get-ids', [OrderController::class, 'batchGetIds'])->name('orders.batchGetIds');
 Route::resource('orders', OrderController::class);
 Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+Route::post('orders/{id}/reanalyze', [OrderController::class, 'reanalyze'])->name('orders.reanalyze');
 
 // CRUD Quyền hạn & Tài khoản (Permissions)
 Route::resource('permissions', UserController::class)->names([
@@ -81,8 +86,10 @@ Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.qr');
 
 // ===== Quản lý Bài viết (Articles / Ecosystem) =====
+Route::post('articles/bulk-approve-ai', [ArticleController::class, 'bulkApproveAi'])->name('articles.bulk-approve-ai');
 Route::resource('articles', ArticleController::class);
 Route::post('articles/{id}/approve', [ArticleController::class, 'approve'])->name('articles.approve');
+Route::post('articles/{id}/reject', [ArticleController::class, 'reject'])->name('articles.reject');
 
 // ===== Quản lý Nhà Cung Cấp =====
 Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
@@ -131,6 +138,7 @@ Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->n
 
 // ===== Quản lý IMEI & Cảnh báo tồn kho =====
 Route::get('/inventory/warnings', [InventoryController::class, 'warningList'])->name('inventory.warnings');
+Route::get('/inventory/movements', [InventoryMovementController::class, 'index'])->name('inventory.movements');
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 Route::put('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.updateStatus');
 
@@ -139,6 +147,10 @@ Route::get('/api/inventory-by-warehouse', [\App\Http\Controllers\Admin\Warehouse
 Route::post('/warehouse-transfers/{id}/complete', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'complete'])->name('warehouse-transfers.complete');
 Route::post('/warehouse-transfers/{id}/cancel', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'cancel'])->name('warehouse-transfers.cancel');
 Route::resource('warehouse-transfers', \App\Http\Controllers\Admin\WarehouseTransferController::class);
+
+// ===== Kiểm kê & Cân bằng kho =====
+Route::post('/inventory-audits/{id}/reconcile', [InventoryAuditController::class, 'reconcile'])->name('inventory-audits.reconcile');
+Route::resource('inventory-audits', InventoryAuditController::class);
 
 // ===== Quản lý Sổ Quỹ (Cashbook) =====
 Route::post('cashbooks/bulk-destroy', [CashbookController::class, 'bulkDestroy'])->name('cashbooks.bulkDestroy');

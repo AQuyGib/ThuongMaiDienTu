@@ -4,7 +4,12 @@
 @section('page-title', 'Dashboard thông báo')
 
 @section('content')
+<!-- TRANG DASHBOARD PHÂN TÍCH VÀ THỐNG KÊ THÔNG BÁO CHO QUẢN TRỊ VIÊN
+     Cung cấp cái nhìn trực quan về tổng số lượng thông báo được phát hành, tỷ lệ chưa đọc, 
+     biểu đồ biến động theo ngày/tháng và cơ cấu phân loại thông báo.
+-->
 <div class="space-y-6">
+    <!-- KHỐI TIÊU ĐỀ TRANG VÀ CÁC NÚT ĐIỀU HƯỚNG NHANH -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
             <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Dashboard thông báo</h1>
@@ -20,6 +25,7 @@
         </div>
     </div>
 
+    <!-- KHỐI HỘP THỐNG KÊ NHANH (STATS CARDS) -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
             <div class="text-xs font-bold uppercase tracking-widest text-slate-400">Tổng</div>
@@ -39,9 +45,12 @@
         </div>
     </div>
 
+    <!-- NẠP THÀNH PHẦN BIỂU ĐỒ DÙNG CHUNG (CHARTS COMPONENT) -->
     @include('admin.notifications.partials.charts')
 
+    <!-- BỐ CỤC PHÂN TÍCH CƠ CẤU VÀ GỢI Ý VẬN HÀNH -->
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <!-- Top các loại thông báo phổ biến nhất trong hệ thống -->
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
             <h2 class="font-black text-slate-900 text-lg mb-2">Top loại thông báo</h2>
             <div class="space-y-3">
@@ -53,6 +62,7 @@
                 @endforeach
             </div>
         </div>
+        <!-- Gợi ý vận hành và các mẹo quản trị -->
         <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
             <h2 class="font-black text-slate-900 text-lg mb-2">Gợi ý vận hành</h2>
             <ul class="space-y-3 text-slate-600 text-sm leading-6">
@@ -64,3 +74,4 @@
     </div>
 </div>
 @endsection
+

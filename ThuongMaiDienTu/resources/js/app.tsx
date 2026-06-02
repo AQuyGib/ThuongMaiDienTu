@@ -202,13 +202,15 @@ document.addEventListener('click', (e) => {
         if (anchor.href.includes('logout') || anchor.href.includes('export') || anchor.href.includes('/pdf') || anchor.hasAttribute('download')) return;
 
         // These sections use page-specific layouts/styles or heavy tables; force full reload to avoid broken UI state
+        // Note: '/admin/comments' is forced to reload so that page-specific blade push scripts (like SweetAlert, modal listeners) execute fresh.
         if (
             anchor.href.includes('/admin/inventory') ||
             anchor.href.includes('/admin/purchase-orders') ||
             anchor.href.includes('/admin/products') ||
             anchor.href.includes('/admin/videos') ||
             anchor.href.includes('/admin/service-invoices') ||
-            anchor.href.includes('/admin/repair-tickets')
+            anchor.href.includes('/admin/repair-tickets') ||
+            anchor.href.includes('/admin/comments')
         ) {
             window.location.href = anchor.href;
             return;

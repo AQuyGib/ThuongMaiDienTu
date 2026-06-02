@@ -23,6 +23,24 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+            .saved-address-card.selected {
+                border-color: #2563eb !important;
+                background: #eff6ff !important;
+                box-shadow: 0 10px 25px rgba(37, 99, 235, 0.12);
+            }
+            .saved-address-badge {
+                position: absolute;
+                top: -0.75rem;
+                right: 1rem;
+                background: #ffffff;
+                border: 1px solid #bfdbfe;
+                color: #2563eb;
+                padding: 0.35rem 0.75rem;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+            }
     </style>
 @endpush
 
@@ -83,11 +101,66 @@
                     <button id="checkout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:bg-gray-400 disabled:shadow-none mb-3" onclick="window.proceedToCheckout()">
                         TIẾN HÀNH THANH TOÁN
                     </button>
+
+                        @auth
+                            @php
+                                $savedAddresses = Auth::user()->addresses()->orderByDesc('is_default')->get();
+                            @endphp
+                            @if($savedAddresses->isNotEmpty())
+                                <div class="mb-4 rounded-3xl border border-blue-200 bg-blue-50/80 p-4 relative">
+                                    <div class="saved-address-badge flex items-center gap-2">
+                                        <i class="fa-solid fa-map-pin"></i>
+                                        <span>Chọn địa chỉ</span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3 mb-3">
+                                        <div>
+                                            <h3 class="font-semibold text-gray-800">Chọn từ địa chỉ đã lưu</h3>
+                                            <p class="text-xs text-gray-600">Địa chỉ đã thêm trong hồ sơ của bạn</p>
+                                        </div>
+                                        <button type="button" onclick="toggleSavedAddressList()" class="text-blue-600 text-sm font-semibold hover:underline">Mở</button>
+                                    </div>
+                                    <div id="saved-addresses-panel" class="space-y-3 hidden">
+                                        @foreach($savedAddresses as $address)
+                                            @php
+                                                $fullAddress = trim(implode(', ', array_filter([
+                                                    $address->street,
+                                                    $address->ward,
+                                                    $address->district,
+                                                    $address->city,
+                                                ])));
+                                            @endphp
+                                            <button type="button" class="saved-address-card w-full text-left rounded-3xl border border-gray-200 bg-white p-4 transition hover:border-blue-500 hover:shadow-sm flex items-start justify-between gap-3"
+                                                data-address-id="{{ $address->id }}"
+                                                data-address-full="{{ e($fullAddress) }}"
+                                                onclick="selectSavedCartAddress(this)">
+                                                <div class="flex-1">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="text-sm font-semibold text-gray-800">{{ $address->name ?: 'Địa chỉ' }}</span>
+                                                        @if($address->is_default)
+                                                            <span class="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white bg-blue-600 rounded-full">Mặc định</span>
+                                                        @endif
+                                                    </div>
+                                                    <p class="text-sm text-gray-500 mt-2">{{ $address->phone ?: Auth::user()->phone_number }}</p>
+                                                    <p class="text-sm text-gray-500 mt-2 line-clamp-2">{{ $fullAddress }}</p>
+                                                </div>
+                                                <span class="saved-address-check hidden text-blue-600 text-2xl">
+                                                    <i class="fa-solid fa-check-circle"></i>
+                                                </span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                    <div id="selected-saved-address-summary" class="mt-3 hidden rounded-3xl border border-blue-200 bg-white p-3 text-sm text-gray-700">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-check text-blue-600"></i>
+                                            <span class="font-semibold">Địa chỉ đã chọn:</span>
+                                        </div>
+                                        <p id="selected-saved-address-text" class="mt-2"></p>
+                                    </div>
+                                </div>
+                            @endif
+                        @endauth
                     
-                    <!-- Link tính phí vận chuyển -->
-                    <a id="shipping-link" href="{{ Route::has('cart.shipping') ? route('cart.shipping') : (Route::has('shipping.calc') ? route('shipping.calc') : '#') }}" class="block w-full text-center border border-[#0047b3] text-[#0047b3] font-semibold py-2 rounded-lg hover:bg-blue-50 transition-colors">
-                        <i class="fa-solid fa-truck-fast mr-1"></i> Kiểm tra phí giao hàng
-                    </a>
+
 
                     <div class="mt-4 text-center">
                         <a href="{{ url('/') }}" class="text-sm text-[#0047b3] hover:underline">
@@ -297,13 +370,41 @@
             checkAll.checked = window.cartData.every(i => i.selected);
         }
         
-        // Cập nhật link tính phí vận chuyển với tổng tiền (nếu cần)
-        const shippingLink = document.getElementById('shipping-link');
-        if (shippingLink && shippingLink.href !== '#') {
-            const url = new URL(shippingLink.href, window.location.origin);
-            url.searchParams.set('total', total);
-            shippingLink.href = url.toString();
+
+
+    window.selectedSavedAddressId = '';
+    window.selectedSavedAddressText = '';
+
+    function toggleSavedAddressList() {
+        const panel = document.getElementById('saved-addresses-panel');
+        if (!panel) return;
+        panel.classList.toggle('hidden');
+    }
+
+    function selectSavedCartAddress(button) {
+        const addressId = button.dataset.addressId;
+        const addressText = button.dataset.addressFull;
+        if (!addressId) return;
+
+        window.selectedSavedAddressId = addressId;
+        window.selectedSavedAddressText = addressText;
+        localStorage.setItem('selectedCartAddressId', addressId);
+        localStorage.setItem('selectedCartAddressText', addressText);
+
+        document.querySelectorAll('.saved-address-card').forEach(card => {
+            const isSelected = card === button;
+            card.classList.toggle('selected', isSelected);
+            const check = card.querySelector('.saved-address-check');
+            if (check) check.classList.toggle('hidden', !isSelected);
+        });
+
+        const summary = document.getElementById('selected-saved-address-summary');
+        const summaryText = document.getElementById('selected-saved-address-text');
+        if (summary && summaryText) {
+            summaryText.innerText = addressText;
+            summary.classList.remove('hidden');
         }
+    }
     };
 
     window.toggleAll = (isChecked) => {
@@ -484,11 +585,27 @@
     window.proceedToCheckout = () => {
         const selectedItems = window.cartData.filter(i => i.selected);
         if (selectedItems.length > 0) {
-            window.location.href = `{{ url('/pay') }}`;
+            @auth
+                let checkoutUrl = `{{ route('cart.pay') }}`;
+                if (window.selectedSavedAddressId) {
+                    checkoutUrl += `?saved_address_id=${encodeURIComponent(window.selectedSavedAddressId)}`;
+                }
+                window.location.href = checkoutUrl;
+            @else
+                window.location.href = `{{ route('login_register') }}`;
+            @endauth
         }
     };
 
     document.addEventListener('DOMContentLoaded', () => {
+        window.selectedSavedAddressId = localStorage.getItem('selectedCartAddressId') || '';
+        window.selectedSavedAddressText = localStorage.getItem('selectedCartAddressText') || '';
+        if (window.selectedSavedAddressId && window.selectedSavedAddressText) {
+            const button = document.querySelector(`.saved-address-card[data-address-id="${window.selectedSavedAddressId}"]`);
+            if (button) {
+                selectSavedCartAddress(button);
+            }
+        }
         initializeData();
         window.renderCart();
     });
