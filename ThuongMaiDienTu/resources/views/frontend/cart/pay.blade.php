@@ -28,8 +28,10 @@
         $prefilledName = $user->full_name;
         $prefilledPhone = $user->phone_number;
         
-        $defaultAddress = $user->addresses()->where('is_default', 1)->first() 
-            ?? $user->addresses()->first();
+        $addresses = $user->addresses()->orderByDesc('is_default')->get();
+        $defaultAddress = $addresses->where('is_default', 1)->first() 
+            ?? $addresses->first();
+        $selectedAddressId = $defaultAddress->id ?? null;
             
         if ($defaultAddress) {
             // Lưu ý: $defaultAddress->name là nhãn địa chỉ ("Nhà riêng", "Văn phòng"),
@@ -337,6 +339,24 @@
             </optgroup>
           </select>
 
+          @if(Auth::check() && isset($addresses) && $addresses->isNotEmpty())
+            <div class="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <div class="text-sm font-semibold text-gray-700">Chọn địa chỉ đã lưu</div>
+                <p class="text-xs text-gray-500">Chọn địa chỉ đã lưu để tự động điền thông tin giao hàng.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="openSavedAddressModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition">
+                  <i class="fa-solid fa-map-marker-alt"></i>
+                  Chọn từ địa chỉ đã lưu
+                </button>
+                <a href="{{ route('profile.index') }}" class="text-sm text-blue-600 hover:underline">Quản lý địa chỉ</a>
+              </div>
+            </div>
+          @endif
+
+          <input type="hidden" id="saved_address_id" name="saved_address_id" value="{{ $selectedAddressId }}">
+
           <div class="flex justify-between items-center mb-1">
             <label class="block text-sm font-semibold text-gray-700">Địa chỉ chi tiết (Số nhà, tên đường, phường/xã, quận/huyện) *</label>
             <span id="counter-address" class="text-xs text-gray-400 font-medium">0/150</span>
@@ -346,6 +366,51 @@
             value="{{ Auth::check() ? $prefilledAddress : '' }}" placeholder="VD: 123 Đường Lê Lợi, Phường Bến Thành, Quận 1">
           <p id="err-address" class="text-xs text-red-500 mt-1 hidden"></p>
         </div>
+
+        @if(Auth::check() && isset($addresses) && $addresses->isNotEmpty())
+          <div id="saved-address-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4 overflow-y-auto">
+            <div class="w-full max-w-2xl rounded-3xl bg-white shadow-2xl overflow-hidden border border-gray-100">
+              <div class="flex items-start justify-between gap-4 p-6 border-b border-gray-200">
+                <div>
+                  <h3 class="text-base font-bold text-gray-900">Chọn địa chỉ nhận hàng</h3>
+                  <p class="text-sm text-gray-500 mt-1">Nhấn vào địa chỉ để tự động điền thông tin giao hàng trên trang thanh toán.</p>
+                </div>
+                <button type="button" onclick="closeSavedAddressModal()" class="text-gray-400 hover:text-gray-700">
+                  <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+              </div>
+              <div class="max-h-[420px] overflow-y-auto p-6 space-y-3">
+                @foreach($addresses as $address)
+                  @php
+                    $savedAddressLabel = trim($address->name ?: ($address->type ?: 'Địa chỉ'));
+                    $savedAddressFull = trim(implode(', ', array_filter([$address->street, $address->ward, $address->district, $address->city])));
+                    $savedSelected = $selectedAddressId === $address->id;
+                  @endphp
+                  <button type="button" onclick="selectSavedAddress(this)"
+                    class="saved-address-card w-full text-left p-4 border rounded-3xl transition shadow-sm hover:border-blue-500 flex items-start justify-between gap-3 {{ $savedSelected ? 'border-blue-600 bg-blue-50' : 'border-gray-200 bg-white' }}"
+                    data-address-id="{{ $address->id }}"
+                    data-full-address="{{ e($savedAddressFull) }}"
+                    data-city="{{ e($address->city) }}">
+                    <div class="min-w-0">
+                      <div class="font-semibold text-sm text-gray-900">{{ $savedAddressLabel }}</div>
+                      <div class="text-xs text-gray-500 mt-1 break-words">{{ $savedAddressFull }}</div>
+                    </div>
+                    <div class="text-right">
+                      @if($address->is_default)
+                        <span class="inline-flex px-3 py-1 text-[11px] font-semibold uppercase tracking-wider bg-blue-100 text-blue-700 rounded-full">Mặc định</span>
+                      @endif
+                      <div class="text-xs text-gray-400 mt-2">{{ $user->phone_number }}</div>
+                    </div>
+                  </button>
+                @endforeach
+              </div>
+              <div class="flex items-center justify-between gap-3 p-5 border-t border-gray-200">
+                <a href="{{ route('profile.index') }}" class="text-sm text-blue-600 hover:underline">Thêm / sửa địa chỉ</a>
+                <button type="button" onclick="closeSavedAddressModal()" class="px-5 py-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition">Đóng</button>
+              </div>
+            </div>
+          </div>
+        @endif
         <div class="mt-4">
           <div class="flex justify-between items-center mb-1">
             <label class="block text-sm font-semibold text-gray-700">Ghi chú (tùy chọn)</label>
@@ -562,6 +627,90 @@ function calculateShipping() {
   }
 
   updateTotals();
+}
+
+function findProvinceCodeFromCity(city) {
+  if (!city) return '';
+  const text = city.toLowerCase();
+  if (text.includes('hồ chí minh') || text.includes('hcm')) return 'hcm';
+  if (text.includes('hà nội') || text.includes('hn')) return 'hn';
+  if (text.includes('bình dương')) return 'bd';
+  if (text.includes('đồng nai')) return 'dnai';
+  if (text.includes('long an')) return 'la';
+  if (text.includes('tiền giang')) return 'tg';
+  if (text.includes('vũng tàu') || text.includes('bà rịa')) return 'vt';
+  if (text.includes('bắc ninh')) return 'bn';
+  if (text.includes('hưng yên')) return 'hy';
+  if (text.includes('hà nam')) return 'hnam';
+  if (text.includes('vĩnh phúc')) return 'vp';
+  if (text.includes('hải phòng')) return 'hp';
+  if (text.includes('cần thơ')) return 'ct';
+  if (text.includes('hòa bình')) return 'hb';
+  if (text.includes('nam định') || text.includes('ninh bình')) return 'nb';
+  if (text.includes('an giang')) return 'ag';
+  if (text.includes('kiên giang')) return 'kg';
+  if (text.includes('đồng tháp')) return 'dt';
+  if (text.includes('trà vinh') || text.includes('vĩnh long')) return 'tv';
+  if (text.includes('bến tre') || text.includes('sóc trăng')) return 'bte';
+  if (text.includes('đà nẵng')) return 'dn';
+  if (text.includes('quảng nam') || text.includes('quảng ngãi')) return 'qng';
+  if (text.includes('bình định') || text.includes('phú yên')) return 'bdinh';
+  if (text.includes('khánh hòa') || text.includes('nha trang')) return 'nth';
+  if (text.includes('thanh hóa') || text.includes('nghệ an')) return 'th';
+  if (text.includes('quảng bình') || text.includes('quảng trị')) return 'qbi';
+  if (text.includes('thừa thiên') || text.includes('huế')) return 'hue';
+  if (text.includes('gia lai') || text.includes('kon tum')) return 'gl';
+  if (text.includes('đắk lắk') || text.includes('đắk nông')) return 'dkl';
+  if (text.includes('lào cai') || text.includes('yên bái')) return 'lc';
+  if (text.includes('điện biên') || text.includes('lai châu')) return 'dbi';
+  if (text.includes('sơn la')) return 'ss';
+  if (text.includes('cao bằng') || text.includes('bắc kạn')) return 'cb';
+  if (text.includes('lạng sơn') || text.includes('hà giang')) return 'ls';
+  if (text.includes('cà mau') || text.includes('bạc liêu')) return 'cm';
+  return 'other';
+}
+
+function selectSavedAddress(button) {
+  const fullAddress = button.dataset.fullAddress || '';
+  const city = button.dataset.city || '';
+  const addressId = button.dataset.addressId || '';
+
+  document.getElementById('inp-address').value = fullAddress;
+  const savedAddressIdInput = document.getElementById('saved_address_id');
+  if (savedAddressIdInput) {
+    savedAddressIdInput.value = addressId;
+  }
+
+  const provinceCode = findProvinceCodeFromCity(city);
+  const provinceSelect = document.getElementById('inp-province');
+  if (provinceSelect && provinceCode) {
+    provinceSelect.value = provinceCode;
+    calculateShipping();
+  }
+
+  document.querySelectorAll('.saved-address-card').forEach(card => {
+    card.classList.remove('border-blue-600','bg-blue-50');
+    card.classList.add('border-gray-200','bg-white');
+  });
+
+  button.classList.add('border-blue-600','bg-blue-50');
+  button.classList.remove('border-gray-200','bg-white');
+  checkFormValidity();
+  closeSavedAddressModal();
+}
+
+function openSavedAddressModal() {
+  const modal = document.getElementById('saved-address-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSavedAddressModal() {
+  const modal = document.getElementById('saved-address-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
 }
 
 // ---- LOAD CART FROM SESSIONSTORAGE ----
@@ -858,6 +1007,7 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   const province = provSel ? provSel.value : '';
   const addr = document.getElementById('inp-address').value.trim();
   const note = document.getElementById('inp-note').value.trim();
+  const savedAddressId = document.getElementById('saved_address_id') ? document.getElementById('saved_address_id').value : '';
   const discountInp = document.getElementById('discount-code');
   const discountCode = discountInp && discountInp.readOnly ? discountInp.value.trim().toUpperCase() : '';
 
@@ -882,6 +1032,7 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
     province: province,
     address: addr,
     note: note,
+    saved_address_id: savedAddressId,
     payment_method: currentMethod,
     discount_code: discountCode
   };
