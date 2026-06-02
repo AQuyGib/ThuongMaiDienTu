@@ -2,66 +2,118 @@
      Bao gồm 4 cột chính hiển thị thông tin hotline, giới thiệu doanh nghiệp, chính sách cửa hàng và liên kết mạng xã hội.
      Tất cả nội dung được bản địa hóa động qua hệ thống đa ngôn ngữ `__('ui.key')`.
 -->
+@php
+    $col2Links = [];
+    if (!empty($globalSettings['footer_col_2_links'])) {
+        try {
+            $col2Links = json_decode($globalSettings['footer_col_2_links'], true) ?: [];
+        } catch(\Exception $e) {}
+    }
+    
+    $col3Links = [];
+    if (!empty($globalSettings['footer_col_3_links'])) {
+        try {
+            $col3Links = json_decode($globalSettings['footer_col_3_links'], true) ?: [];
+        } catch(\Exception $e) {}
+    }
+@endphp
 <footer class="footer">
     <div class="container footer-grid">
         <!-- Cột 1: Thông tin số hotline hỗ trợ khách hàng -->
         <div class="footer-col">
-            <h4>{{ __('ui.footer_hotline') }}</h4>
+            <h4>{{ $globalSettings['footer_col_1_title'] ?? __('ui.footer_hotline') }}</h4>
             <ul>
-                <li>{{ __('ui.footer_call_buy') }} <strong>1800.1060</strong> (7:30 - 22:00)</li>
-                <li>{{ __('ui.footer_tech') }} <strong>1800.1763</strong> (7:30 - 22:00)</li>
-                <li>{{ __('ui.footer_complaint') }} <strong>1800.1062</strong> (8:00 - 21:30)</li>
-                <li>{{ __('ui.footer_warranty_line') }} <strong>1800.1064</strong> (8:00 - 21:00)</li>
+                <li>{{ __('ui.footer_call_buy') }} <strong>{{ $globalSettings['footer_hotline_buy'] ?? '1800.1060' }}</strong> (7:30 - 22:00)</li>
+                <li>{{ __('ui.footer_tech') }} <strong>{{ $globalSettings['footer_hotline_tech'] ?? '1800.1763' }}</strong> (7:30 - 22:00)</li>
+                <li>{{ __('ui.footer_complaint') }} <strong>{{ $globalSettings['footer_hotline_complaint'] ?? '1800.1062' }}</strong> (8:00 - 21:30)</li>
+                <li>{{ __('ui.footer_warranty_line') }} <strong>{{ $globalSettings['footer_hotline_warranty'] ?? '1800.1064' }}</strong> (8:00 - 21:00)</li>
+                @if(!empty($globalSettings['address']))
+                    <li style="margin-top: 15px; font-size: 12px; line-height: 1.4;"><i class="fa-solid fa-location-dot" style="margin-right: 5px;"></i> {{ $globalSettings['address'] }}</li>
+                @endif
+                @if(!empty($globalSettings['email']))
+                    <li style="font-size: 12px;"><i class="fa-solid fa-envelope" style="margin-right: 5px;"></i> {{ $globalSettings['email'] }}</li>
+                @endif
             </ul>
         </div>
 
         <!-- Cột 2: Giới thiệu và thông tin tuyển dụng, cửa hàng -->
         <div class="footer-col">
-            <h4>{{ __('ui.footer_about') }}</h4>
+            <h4>{{ $globalSettings['footer_col_2_title'] ?? __('ui.footer_about') }}</h4>
             <ul>
-                <li><a href="#">{{ __('ui.footer_about_company') }}</a></li>
-                <li><a href="{{ route('products.index') }}">{{ __('ui.footer_all_products') }}</a></li>
-                <li><a href="{{ route('articles.index') }}">{{ __('ui.tech_news') }}</a></li>
-                <li><a href="{{ route('videos.index') }}">{{ __('ui.video_corner') }}</a></li>
-                <li><a href="#">{{ __('ui.footer_careers') }}</a></li>
-                <li><a href="#">{{ __('ui.footer_feedback') }}</a></li>
-                <li><a href="#">{{ __('ui.footer_find_store') }}</a></li>
+                @if(!empty($col2Links))
+                    @foreach($col2Links as $lnk)
+                        <li><a href="{{ $lnk['url'] }}">{{ $lnk['label'] }}</a></li>
+                    @endforeach
+                @else
+                    <li><a href="#">{{ __('ui.footer_about_company') }}</a></li>
+                    <li><a href="{{ route('products.index') }}">{{ __('ui.footer_all_products') }}</a></li>
+                    <li><a href="{{ route('articles.index') }}">{{ __('ui.tech_news') }}</a></li>
+                    <li><a href="{{ route('videos.index') }}">{{ __('ui.video_corner') }}</a></li>
+                    <li><a href="#">{{ __('ui.footer_careers') }}</a></li>
+                    <li><a href="#">{{ __('ui.footer_feedback') }}</a></li>
+                    <li><a href="#">{{ __('ui.footer_find_store') }}</a></li>
+                @endif
             </ul>
         </div>
 
         <!-- Cột 3: Các chính sách dịch vụ quan trọng (Có đường dẫn tích hợp) -->
         <div class="footer-col">
-            <h4>{{ __('ui.footer_policies') }}</h4>
+            <h4>{{ $globalSettings['footer_col_3_title'] ?? __('ui.footer_policies') }}</h4>
             <ul>
-                <!-- Đường dẫn đến trang tích điểm và vòng quay đổi quà -->
-                <li><a href="{{ route('rewards.index') }}">{{ __('ui.footer_vip_points') }}</a></li>
-                <li><a href="{{ route('rewards.history') }}">{{ __('ui.footer_rewards_history') }}</a></li>
-                <!-- Các chính sách bảo hành và đổi trả tĩnh phục vụ cho Chatbot RAG tham chiếu -->
-                <li><a href="{{ route('policy.warranty') }}">{{ __('ui.footer_warranty_policy') }}</a></li>
-                <li><a href="{{ route('policy.return') }}">{{ __('ui.footer_return_policy') }}</a></li>
-                <li><a href="{{ route('warranty.index') }}">{{ __('ui.footer_warranty_lookup') }}</a></li>
-                <li><a href="{{ route('cart.tracking') }}">{{ __('ui.topbar_track_order') }}</a></li>
-                <li><a href="{{ route('compare.index') }}">{{ __('ui.footer_compare') }}</a></li>
-                <li><a href="{{ route('security') }}">{{ __('ui.footer_privacy') }}</a></li>
+                @if(!empty($col3Links))
+                    @foreach($col3Links as $lnk)
+                        <li><a href="{{ $lnk['url'] }}">{{ $lnk['label'] }}</a></li>
+                    @endforeach
+                @else
+                    <!-- Đường dẫn đến trang tích điểm và vòng quay đổi quà -->
+                    <li><a href="{{ route('rewards.index') }}">{{ __('ui.footer_vip_points') }}</a></li>
+                    <li><a href="{{ route('rewards.history') }}">{{ __('ui.footer_rewards_history') }}</a></li>
+                    <!-- Các chính sách bảo hành và đổi trả tĩnh phục vụ cho Chatbot RAG tham chiếu -->
+                    <li><a href="{{ route('policy.warranty') }}">{{ __('ui.footer_warranty_policy') }}</a></li>
+                    <li><a href="{{ route('policy.return') }}">{{ __('ui.footer_return_policy') }}</a></li>
+                    <li><a href="{{ route('warranty.index') }}">{{ __('ui.footer_warranty_lookup') }}</a></li>
+                    <li><a href="{{ route('cart.tracking') }}">{{ __('ui.topbar_track_order') }}</a></li>
+                    <li><a href="{{ route('compare.index') }}">{{ __('ui.footer_compare') }}</a></li>
+                    <li><a href="{{ route('security') }}">{{ __('ui.footer_privacy') }}</a></li>
+                @endif
             </ul>
         </div>
 
         <!-- Cột 4: Biểu tượng liên kết mạng xã hội (Social Media) -->
         <div class="footer-col">
-            <h4>{{ __('ui.footer_connect') }}</h4>
+            <h4>{{ $globalSettings['footer_col_4_title'] ?? __('ui.footer_connect') }}</h4>
             <div class="social-icons">
-                <i class="fa-brands fa-facebook"></i>
-                <i class="fa-brands fa-youtube"></i>
-                <i class="fa-brands fa-tiktok"></i>
-                <i class="fa-brands fa-instagram"></i>
+                @if(!empty($globalSettings['social_facebook']))
+                    <a href="{{ $globalSettings['social_facebook'] }}" target="_blank"><i class="fa-brands fa-facebook"></i></a>
+                @else
+                    <i class="fa-brands fa-facebook"></i>
+                @endif
+
+                @if(!empty($globalSettings['social_youtube']))
+                    <a href="{{ $globalSettings['social_youtube'] }}" target="_blank"><i class="fa-brands fa-youtube"></i></a>
+                @else
+                    <i class="fa-brands fa-youtube"></i>
+                @endif
+
+                @if(!empty($globalSettings['social_tiktok']))
+                    <a href="{{ $globalSettings['social_tiktok'] }}" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
+                @else
+                    <i class="fa-brands fa-tiktok"></i>
+                @endif
+
+                @if(!empty($globalSettings['social_instagram']))
+                    <a href="{{ $globalSettings['social_instagram'] }}" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+                @else
+                    <i class="fa-brands fa-instagram"></i>
+                @endif
             </div>
         </div>
 
         <!-- Cột 5: Đăng ký nhận thông tin khuyến mãi -->
         <div class="footer-col footer-col-subscribe">
-            <h4>{{ __('ui.footer_subscribe') ?? 'Khuyến mãi' }}</h4>
+            <h4>{{ $globalSettings['footer_col_5_title'] ?? __('ui.footer_subscribe') ?? 'Khuyến mãi' }}</h4>
             <p style="font-size: 12px; color: #555; margin-bottom: 12px; line-height: 1.4;">
-                Đăng ký ngay để nhận ưu đãi <strong>giảm 10%</strong> cho đơn hàng đầu tiên!
+                {!! $globalSettings['footer_subscribe_desc'] ?? 'Đăng ký ngay để nhận ưu đãi <strong>giảm 10%</strong> cho đơn hàng đầu tiên!' !!}
             </p>
             <form action="#" method="POST" style="display:flex; flex-direction:column; gap:8px;" onsubmit="event.preventDefault(); showPromoSuccess();">
                 <input type="email" placeholder="Email của bạn *" required style="width:100%; padding:8px 12px; border:1px solid #ccc; border-radius:6px; font-size:12px; outline:none; background:#f8f9fa;">
@@ -116,6 +168,10 @@
                 <a href="{{ route('search.index', ['query' => 'Xiaomi 17T']) }}">Xiaomi 17T</a>
             </div>
         </div>
+    </div>
+
+    <div class="container footer-copyright-bar" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; text-align: center; opacity: 0.8; font-family: sans-serif; clear: both; width: 100%;">
+        <p>{{ $globalSettings['footer_copyright'] ?? ('© ' . date('Y') . ' ' . ($globalSettings['site_name'] ?? 'DIENMAYPRO') . ' - DESIGNED BY DIENMAYPRO. All Rights Reserved.') }}</p>
     </div>
 
     <style>

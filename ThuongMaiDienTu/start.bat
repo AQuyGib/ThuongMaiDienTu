@@ -107,7 +107,7 @@ echo    [1] DEV MODE          - Che do Lap trinh (Hot Reloading bang Vite Server
 echo    [2] STABLE RUN        - Che do On dinh (Chay bang file Production Build - nhanh hon)
 echo    [3] RESET DATABASE    - [CANH BAO] Lam moi toan bo Database va Nap du lieu gia lap
 echo    [4] VIEW SITEMAP      - Xem danh sach lien ket website hoat dong
-echo    [5] SUPER PIPELINE    - [ONE CLICK] Tu A-Z + Reset DB + Chay website ngay
+echo    [5] FAST REBUILD ^& RUN - [ONE CLICK] Reset DB + Rebuild Vite + Mo Server ngay
 echo    [6] INITIALIZE        - Tai moi thu vien (Composer Install + NPM Install)
 echo    [7] UPGRADE SYSTEM    - [SUA LOI] Dong bo hoa va Cap nhat lai khoa composer.lock
 echo    [8] HEALTH DIAGNOSTIC - [MOI] Kiem tra suc khoe toan dien he thong du an
@@ -121,7 +121,7 @@ if "%choice%"=="1" goto DEV_MODE
 if "%choice%"=="2" goto STABLE_RUN
 if "%choice%"=="3" goto RESET_DB
 if "%choice%"=="4" goto VIEW_SITEMAP
-if "%choice%"=="5" goto SUPER_PIPELINE
+if "%choice%"=="5" goto PIPELINE_STANDARD
 if "%choice%"=="6" goto INITIALIZE
 if "%choice%"=="7" goto UPGRADE_ALL
 if "%choice%"=="8" goto DIAGNOSTICS
@@ -180,7 +180,7 @@ if exist vendor (
 )
 if !run_composer! equ 1 (
     echo.
-    echo    [2/5] [ HANH DONG ] Dang tai backend packages (Composer)...
+    echo    [2/5] [ HANH DONG ] Dang tai backend packages [Composer]...
     call !COMPOSER_CMD! install --prefer-dist --ignore-platform-reqs
     echo    ^|---> [OK] Tai backend packages hoan tat.
 ) else (
@@ -198,7 +198,7 @@ if exist node_modules (
 )
 if !run_npm! equ 1 (
     echo.
-    echo    [3/5] [ HANH DONG ] Dang tai frontend packages (NPM)...
+    echo    [3/5] [ HANH DONG ] Dang tai frontend packages [NPM]...
     call npm install
     echo    ^|---> [OK] Tai frontend packages hoan tat.
 ) else (
@@ -382,23 +382,27 @@ echo    [1] SQLITE [Mac dinh / Khuyen dung cho dev nhanh]
 echo    [2] MYSQL  [Dung database chung voi XAMPP/Laragon]
 set /p rebuild_db_driver="   >> Lua chon driver [1-2]: "
 
-if "!rebuild_db_driver!"=="2" (
-    set "db_host=127.0.0.1"
-    set /p db_host="   >> Nhap DB Host [Mac dinh: 127.0.0.1]: "
-    set "db_port=3306"
-    set /p db_port="   >> Nhap DB Port [Mac dinh: 3306]: "
-    set "db_name=dienmay_pro"
-    set /p db_name="   >> Nhap ten database [Mac dinh: dienmay_pro]: "
-    set "db_user=root"
-    set /p db_user="   >> Nhap Username [Mac dinh: root]: "
-    set "db_pass="
-    set /p db_pass="   >> Nhap Password [Mac dinh: bo trong]: "
-    
-    powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=mysql'; $c = $c -replace '^DB_HOST=.*', 'DB_HOST=!db_host!'; $c = $c -replace '^DB_PORT=.*', 'DB_PORT=!db_port!'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=!db_name!'; $c = $c -replace '^DB_USERNAME=.*', 'DB_USERNAME=!db_user!'; $c = $c -replace '^DB_PASSWORD=.*', 'DB_PASSWORD=!db_pass!'; $c | Out-File -encoding utf8 .env"
-) else (
-    type nul > database\database.sqlite
-    powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=sqlite'; $c = $c -replace '^DB_HOST=.*', '#DB_HOST=127.0.0.1'; $c = $c -replace '^DB_PORT=.*', '#DB_PORT=3306'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=database/database.sqlite'; $c = $c -replace '^DB_USERNAME=.*', '#DB_USERNAME=root'; $c = $c -replace '^DB_PASSWORD=.*', '#DB_PASSWORD='; $c | Out-File -encoding utf8 .env"
-)
+if "!rebuild_db_driver!"=="2" goto REBUILD_DB_MYSQL
+
+:REBUILD_DB_SQLITE
+type nul > database\database.sqlite
+powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=sqlite'; $c = $c -replace '^DB_HOST=.*', '#DB_HOST=127.0.0.1'; $c = $c -replace '^DB_PORT=.*', '#DB_PORT=3306'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=database/database.sqlite'; $c = $c -replace '^DB_USERNAME=.*', '#DB_USERNAME=root'; $c = $c -replace '^DB_PASSWORD=.*', '#DB_PASSWORD='; $c | Out-File -encoding utf8 .env"
+goto REBUILD_DB_DONE
+
+:REBUILD_DB_MYSQL
+set "db_host=127.0.0.1"
+set /p db_host="   >> Nhap DB Host [Mac dinh: 127.0.0.1]: "
+set "db_port=3306"
+set /p db_port="   >> Nhap DB Port [Mac dinh: 3306]: "
+set "db_name=dienmay_pro"
+set /p db_name="   >> Nhap ten database [Mac dinh: dienmay_pro]: "
+set "db_user=root"
+set /p db_user="   >> Nhap Username [Mac dinh: root]: "
+set "db_pass="
+set /p db_pass="   >> Nhap Password [Mac dinh: bo trong]: "
+powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=mysql'; $c = $c -replace '^DB_HOST=.*', 'DB_HOST=!db_host!'; $c = $c -replace '^DB_PORT=.*', 'DB_PORT=!db_port!'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=!db_name!'; $c = $c -replace '^DB_USERNAME=.*', 'DB_USERNAME=!db_user!'; $c = $c -replace '^DB_PASSWORD=.*', 'DB_PASSWORD=!db_pass!'; $c | Out-File -encoding utf8 .env"
+
+:REBUILD_DB_DONE
 
 echo.
 echo    [5/6] Dang chay 'composer install' de nap lai Backend...
@@ -561,7 +565,7 @@ goto SUPER_PIPELINE
 cls
 echo.
 echo    ====================================================================
-echo    [ PIPELINE STANDARD ] DANG THUC HIEN TIEU CHUAN TOAN DIEN
+echo    [ FAST REBUILD ^& RUN ] RESET CSDL + BIEN DICH VITE + KHOI CHAY MOI TRUONG
 echo    ====================================================================
 echo.
 
@@ -682,22 +686,27 @@ echo    [3/8] Thiet lap CSDL cho he thong:
 echo    [1] SQLITE [Mac dinh / Khuyen dung cho moi truong dev cuc nhanh]
 echo    [2] MYSQL  [Dung CSDL XAMPP/Laragon]
 set /p pipe_db_driver="   >> Chon CSDL (1-2) [Mac dinh: 1]: "
-if "!pipe_db_driver!"=="2" (
-    set "db_host=127.0.0.1"
-    set /p db_host="   >> Nhap DB Host [Mac dinh: 127.0.0.1]: "
-    set "db_port=3306"
-    set /p db_port="   >> Nhap DB Port [Mac dinh: 3306]: "
-    set "db_name=dienmay_pro"
-    set /p db_name="   >> Nhap ten database [Mac dinh: dienmay_pro]: "
-    set "db_user=root"
-    set /p db_user="   >> Nhap Username [Mac dinh: root]: "
-    set "db_pass="
-    set /p db_pass="   >> Nhap Password [Mac dinh: bo trong]: "
-    powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=mysql'; $c = $c -replace '^DB_HOST=.*', 'DB_HOST=!db_host!'; $c = $c -replace '^DB_PORT=.*', 'DB_PORT=!db_port!'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=!db_name!'; $c = $c -replace '^DB_USERNAME=.*', 'DB_USERNAME=!db_user!'; $c = $c -replace '^DB_PASSWORD=.*', 'DB_PASSWORD=!db_pass!'; $c | Out-File -encoding utf8 .env"
-) else (
-    type nul > database\database.sqlite
-    powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=sqlite'; $c = $c -replace '^DB_HOST=.*', '#DB_HOST=127.0.0.1'; $c = $c -replace '^DB_PORT=.*', '#DB_PORT=3306'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=database/database.sqlite'; $c = $c -replace '^DB_USERNAME=.*', '#DB_USERNAME=root'; $c = $c -replace '^DB_PASSWORD=.*', '#DB_PASSWORD='; $c | Out-File -encoding utf8 .env"
-)
+if "!pipe_db_driver!"=="2" goto PIPE_DB_MYSQL
+
+:PIPE_DB_SQLITE
+type nul > database\database.sqlite
+powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=sqlite'; $c = $c -replace '^DB_HOST=.*', '#DB_HOST=127.0.0.1'; $c = $c -replace '^DB_PORT=.*', '#DB_PORT=3306'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=database/database.sqlite'; $c = $c -replace '^DB_USERNAME=.*', '#DB_USERNAME=root'; $c = $c -replace '^DB_PASSWORD=.*', '#DB_PASSWORD='; $c | Out-File -encoding utf8 .env"
+goto PIPE_DB_DONE
+
+:PIPE_DB_MYSQL
+set "db_host=127.0.0.1"
+set /p db_host="   >> Nhap DB Host [Mac dinh: 127.0.0.1]: "
+set "db_port=3306"
+set /p db_port="   >> Nhap DB Port [Mac dinh: 3306]: "
+set "db_name=dienmay_pro"
+set /p db_name="   >> Nhap ten database [Mac dinh: dienmay_pro]: "
+set "db_user=root"
+set /p db_user="   >> Nhap Username [Mac dinh: root]: "
+set "db_pass="
+set /p db_pass="   >> Nhap Password [Mac dinh: bo trong]: "
+powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=mysql'; $c = $c -replace '^DB_HOST=.*', 'DB_HOST=!db_host!'; $c = $c -replace '^DB_PORT=.*', 'DB_PORT=!db_port!'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=!db_name!'; $c = $c -replace '^DB_USERNAME=.*', 'DB_USERNAME=!db_user!'; $c = $c -replace '^DB_PASSWORD=.*', 'DB_PASSWORD=!db_pass!'; $c | Out-File -encoding utf8 .env"
+
+:PIPE_DB_DONE
 echo    ^|---> [OK] Thiet lap database hoan tat.
 
 :: 4. Composer install
@@ -887,7 +896,7 @@ if "%log_choice%"=="1" (
         powershell -command "Get-Content storage\logs\laravel.log -Tail 30"
     ) else (
         color 0a
-        echo    [+] Khong co bat ky nhat ky loi nao duoc ghi nhan (Moi thu hoat dong rat tot!).
+        echo    [+] Khong co bat ky nhat ky loi nao duoc ghi nhan [Moi thu hoat dong rat tot!].
     )
     echo.
     color 0e
@@ -982,9 +991,9 @@ netstat -o -n -a | findstr :8000 > nul
 if %errorlevel% equ 0 (
     color 0e
     echo    [!] Canh bao: Cong 8000 hien tai dang bi chiem dung boi tien trinh khac!
-    echo    [1] Tu dong giai phong cong 8000 (Tat ung dung dang chan)
-    echo    [2] Chuyen sang khoi chay tren cong phu (Cong 8080)
-    set /p port_choice="   >> Nhap lua chon (1-2): "
+    echo    [1] Tu dong giai phong cong 8000 [Tat ung dung dang chan]
+    echo    [2] Chuyen sang khoi chay tren cong phu [Cong 8080]
+    set /p port_choice="   >> Nhap lua chon [1-2]: "
     if "!port_choice!"=="1" (
         for /f "tokens=5" %%p in ('netstat -aon ^| findstr :8000') do (
             taskkill /f /pid %%p >nul 2>&1
