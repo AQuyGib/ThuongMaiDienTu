@@ -7,8 +7,8 @@
 @endpush
 
 @section('content')
-<div class="bg-gray-50 text-gray-800 font-sans p-6 min-h-screen pt-12">
-    <div class="max-w-4xl mx-auto flex flex-col md:flex-row gap-6">
+<div class="bg-gray-50 text-gray-800 font-sans p-6 min-h-screen flex items-center justify-center">
+    <div class="max-w-4xl w-full mx-auto flex flex-col md:flex-row gap-6 items-center justify-center">
         
         <!-- CỘT BÊN TRÁI: KHUNG ĐIỀU KHIỂN & ƯỚC TÍNH PHÍ VẬN CHUYỂN -->
         <div class="flex-1 bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100 flex flex-col h-fit">
