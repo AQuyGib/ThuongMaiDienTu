@@ -481,7 +481,6 @@ class CartController extends Controller
      * Phương thức placeOrder(): Xử lý ghi nhận và tạo đơn hàng từ form checkout (dành cho API cũ).
      * Bọc toàn bộ quá trình cập nhật database trong một DB Transaction để đảm bảo tính an toàn dữ liệu.
      */
->
     public function placeOrder(Request $request, PointsService $pointsService)
     {
         // Xác thực các trường dữ liệu thông tin giao hàng cơ bản

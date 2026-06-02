@@ -83,11 +83,6 @@
                     <button id="checkout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:bg-gray-400 disabled:shadow-none mb-3" onclick="window.proceedToCheckout()">
                         TIẾN HÀNH THANH TOÁN
                     </button>
-                    
-                    <!-- Link tính phí vận chuyển -->
-                    <a id="shipping-link" href="{{ Route::has('cart.shipping') ? route('cart.shipping') : (Route::has('shipping.calc') ? route('shipping.calc') : '#') }}" class="block w-full text-center border border-[#0047b3] text-[#0047b3] font-semibold py-2 rounded-lg hover:bg-blue-50 transition-colors">
-                        <i class="fa-solid fa-truck-fast mr-1"></i> Kiểm tra phí giao hàng
-                    </a>
 
                     <div class="mt-4 text-center">
                         <a href="{{ url('/') }}" class="text-sm text-[#0047b3] hover:underline">
@@ -295,14 +290,6 @@
         const checkAll = document.getElementById('selectAllCheckbox');
         if (checkAll && window.cartData.length > 0) {
             checkAll.checked = window.cartData.every(i => i.selected);
-        }
-        
-        // Cập nhật link tính phí vận chuyển với tổng tiền (nếu cần)
-        const shippingLink = document.getElementById('shipping-link');
-        if (shippingLink && shippingLink.href !== '#') {
-            const url = new URL(shippingLink.href, window.location.origin);
-            url.searchParams.set('total', total);
-            shippingLink.href = url.toString();
         }
     };
 
