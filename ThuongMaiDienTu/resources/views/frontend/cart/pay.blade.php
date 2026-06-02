@@ -29,9 +29,17 @@
         $prefilledPhone = $user->phone_number;
         
         $addresses = $user->addresses()->orderByDesc('is_default')->get();
-        $defaultAddress = $addresses->where('is_default', 1)->first() 
-            ?? $addresses->first();
-        $selectedAddressId = $defaultAddress->id ?? null;
+      $defaultAddress = $addresses->where('is_default', 1)->first() 
+        ?? $addresses->first();
+      // If a saved_address_id is passed via query (from cart page), prefer it
+      $requestedSavedId = request()->query('saved_address_id');
+      if ($requestedSavedId) {
+        $requested = $addresses->where('id', $requestedSavedId)->first();
+        if ($requested) {
+          $defaultAddress = $requested;
+        }
+      }
+      $selectedAddressId = $defaultAddress->id ?? null;
             
         if ($defaultAddress) {
             // Lưu ý: $defaultAddress->name là nhãn địa chỉ ("Nhà riêng", "Văn phòng"),
@@ -124,6 +132,10 @@
                 } else {
                     $prefilledProvince = 'other';
                 }
+            }
+            // If saved address has its own phone, prefer it over user phone
+            if (!empty($defaultAddress->phone)) {
+              $prefilledPhone = $defaultAddress->phone;
             }
         } else {
             // Fallback: lấy từ users.address (format: "street, ward, district, city")
@@ -350,7 +362,7 @@
                   <i class="fa-solid fa-map-marker-alt"></i>
                   Chọn từ địa chỉ đã lưu
                 </button>
-                <a href="{{ route('profile.index') }}" class="text-sm text-blue-600 hover:underline">Quản lý địa chỉ</a>
+                {{-- Quản lý địa chỉ đã được ẩn theo yêu cầu: chỉ giữ nút chọn địa chỉ --}}
               </div>
             </div>
           @endif
@@ -368,8 +380,8 @@
         </div>
 
         @if(Auth::check() && isset($addresses) && $addresses->isNotEmpty())
-          <div id="saved-address-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4 overflow-y-auto">
-            <div class="w-full max-w-2xl rounded-3xl bg-white shadow-2xl overflow-hidden border border-gray-100">
+          <div id="saved-address-modal" class="fixed inset-0 z-[99999] hidden flex items-center justify-center bg-black/50 p-4">
+            <div class="w-full max-w-2xl rounded-3xl bg-white shadow-2xl overflow-hidden border border-gray-100" style="max-height:90vh; overflow:auto;">
               <div class="flex items-start justify-between gap-4 p-6 border-b border-gray-200">
                 <div>
                   <h3 class="text-base font-bold text-gray-900">Chọn địa chỉ nhận hàng</h3>
@@ -1033,6 +1045,7 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
     address: addr,
     note: note,
     saved_address_id: savedAddressId,
+    shipping_fee: shippingVal,
     payment_method: currentMethod,
     discount_code: discountCode
   };
