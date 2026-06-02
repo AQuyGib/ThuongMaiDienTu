@@ -210,7 +210,6 @@
               class="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-400 outline-none"
               value="{{ session('applied_coupon_code') }}"
               placeholder="VD: SUMMER30">
-            <!-- Nút bấm gửi AJAX để kích hoạt hoặc hủy bỏ mã giảm giá -->
             <button type="button" onclick="applyDiscount()" id="btn-discount"
               class="px-4 bg-gray-800 text-white text-sm rounded-lg font-semibold hover:bg-gray-900 transition whitespace-nowrap">
               Áp dụng

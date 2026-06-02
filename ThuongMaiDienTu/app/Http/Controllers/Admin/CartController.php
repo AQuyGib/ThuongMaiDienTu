@@ -441,6 +441,7 @@ class CartController extends Controller
         ]);
     }
 
+
     /**
      * Phương thức validateVoucher(): Xác thực mã giảm giá (voucher) nhập vào qua AJAX.
      * Tính toán số tiền được giảm và lưu vào Session.
@@ -448,6 +449,7 @@ class CartController extends Controller
     public function validateVoucher(Request $request)
     {
         // Xác thực mã code và tổng tiền hàng gửi lên
+
         $data = $request->validate([
             'code' => ['required', 'string', 'max:50'],
             'subtotal' => ['required', 'integer', 'min:1'],
