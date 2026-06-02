@@ -97,8 +97,8 @@
                         </div>
                     </div>
 
-                    <!-- Nút thanh toán -->
-                    <button id="checkout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:bg-gray-400 disabled:shadow-none mb-3" onclick="window.proceedToCheckout()">
+                    <!-- Nút Tiến hành thanh toán: Sẽ bị vô hiệu hóa (disabled) nếu không có sản phẩm nào được chọn checkbox -->
+                    <button type="button" id="checkout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:bg-gray-400 disabled:shadow-none mb-3" onclick="window.proceedToCheckout(event)">
                         TIẾN HÀNH THANH TOÁN
                     </button>
 
@@ -582,7 +582,14 @@
         });
     }
 
-    window.proceedToCheckout = () => {
+    /**
+     * 9. ĐIỀU HƯỚNG SANG TRANG THANH TOÁN (PROCEED TO CHECKOUT)
+     * Kiểm tra đăng nhập bằng directive auth của Blade.
+     * Nếu đã đăng nhập chuyển đến trang nhập địa chỉ thanh toán (`cart.pay`).
+     * Ngược lại chuyển đến màn hình đăng nhập/đăng ký (`login_register`).
+     */
+    window.proceedToCheckout = (event) => {
+        if (event) event.preventDefault();
         const selectedItems = window.cartData.filter(i => i.selected);
         if (selectedItems.length > 0) {
             @auth
@@ -593,7 +600,7 @@
                 window.location.href = checkoutUrl;
             @else
                 window.location.href = `{{ route('login_register') }}`;
-            @endauth
+            @endif
         }
     };
 
@@ -608,6 +615,13 @@
         }
         initializeData();
         window.renderCart();
+
+        @if(session('error'))
+            showToast("{{ session('error') }}", 'error');
+        @endif
+        @if(session('success'))
+            showToast("{{ session('success') }}", 'success');
+        @endif
     });
 </script>
 @endpush
