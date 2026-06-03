@@ -30,6 +30,7 @@
   - Added `min_rank` constraint to each lucky wheel configuration (None, Bronze, Silver, Gold, Diamond), allowing rank restrictions for custom wheels.
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
+  - Merged `master` into branch `Vinhem/Tinhphivanchuyen` successfully to sync the latest project developments.
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
   - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
@@ -43,6 +44,12 @@
   - Bổ sung bình luận tiếng Việt chi tiết cho toàn bộ mã nguồn JavaScript lọc sản phẩm (`product-filter.js`) giúp lập trình viên và quản trị viên dễ dàng nắm bắt logic.
   - Bổ sung bình luận tiếng Việt siêu chi tiết, dễ hiểu cho các lập trình viên khác tại `ProductController.php`, `ProductFilterController.php`, và `ProductFilterService.php` giải thích cặn kẽ các logic lọc AJAX, gợi ý bán chéo FBT, Combo sản phẩm, và cơ chế bảo mật server-side.
   - Hoàn tất tài liệu hóa chi tiết bằng comment tiếng Việt trong `PointsService.php` (Tích điểm & phân hạng), `CrossSellService.php` (Gợi ý bán chéo phân tầng), `ArticleController.php` (Admin CRUD bài viết), `ArticleFrontendController.php` (Khách hàng đăng bài & duyệt bài cộng điểm), `Article.php` (Model bài viết) và toàn bộ các file views liên quan đến Articles ở cả Frontend và Admin Dashboard.
+- **Tối ưu hóa UI Tỉnh/Thành phố & Đồng bộ Phí Giao Hàng (`Vinhem/Tinhphivanchuyen`):**
+  - **Sửa lỗi load danh sách Tỉnh/Thành phố:** Thay thế API `esgoo.net` (đang bị lỗi phản hồi cực chậm, gây treo dropdown) trong file `profile.blade.php` bằng kho dữ liệu tĩnh từ `raw.githubusercontent.com/kenzouno1/DiaGioiHanhChinhVN`. Tốc độ load cải thiện từ >20s xuống <200ms, mang lại trải nghiệm tức thì khi thêm địa chỉ mới.
+  - **Đồng bộ tính năng "Chọn địa chỉ đã lưu" sang trang Ước tính phí giao hàng:** Bổ sung logic hiển thị modal "Chọn địa chỉ đã lưu" vào file `ShippingCosts.blade.php` (tương tự như trang `pay.blade.php`), tự động map Tỉnh/Thành phố từ địa chỉ của người dùng để gán cho chức năng tính phí vận chuyển dựa vào hàm `findProvinceCodeFromCity` (ví dụ 'hcm', 'hn').
+  - **Truyền dữ liệu xuống View:** Cập nhật `CartController::shipping()` trong Admin controller để truy vấn `$addresses` của user đăng nhập và truyền xuống cho view `ShippingCosts.blade.php`.
+  - **Ẩn Tỉnh/Thành phố ở trang thanh toán:** Ẩn menu thả xuống chọn Tỉnh/Thành phố ở form trang `/pay` (`pay.blade.php`) theo yêu cầu. Bỏ qua validate trường `province` phía frontend, thiết lập thành `nullable` trong `CartController` (mặc định 'other' nếu khách hàng không chọn từ địa chỉ đã lưu).
+
 ## Files Changed
 - **Testing & Bug Fixes:**
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/ServiceInvoiceController.php`

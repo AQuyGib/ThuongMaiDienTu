@@ -207,7 +207,9 @@ class CartController extends Controller
             ];
         })->filter()->values();
 
-        return view('frontend.cart.ShippingCosts', compact('cartItems'));
+        $addresses = auth()->check() ? auth()->user()->addresses()->orderByDesc('is_default')->get() : collect();
+
+        return view('frontend.cart.ShippingCosts', compact('cartItems', 'addresses'));
     }
 
     public function checkout()
@@ -607,14 +609,14 @@ class CartController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
             'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
-            'province' => ['required', 'string', 'in:hcm,hn,bd,dnai,la,tg,vt,bn,hy,hnam,vp,hp,ct,hb,nb,ag,kg,dt,tv,bte,dn,qng,bdinh,nth,th,qbi,hue,gl,dkl,lc,dbi,ss,cb,ls,cm,other'],
+            'province' => ['nullable', 'string', 'in:hcm,hn,bd,dnai,la,tg,vt,bn,hy,hnam,vp,hp,ct,hb,nb,ag,kg,dt,tv,bte,dn,qng,bdinh,nth,th,qbi,hue,gl,dkl,lc,dbi,ss,cb,ls,cm,other'],
             'address' => ['required', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
             'note' => ['nullable', 'string', 'max:250'],
         ]);
 
         $name = $request->input('name');
         $phone = $request->input('phone');
-        $province = $request->input('province');
+        $province = $request->input('province', 'other');
         $address = $request->input('address');
         $note = $request->input('note');
         $paymentMethod = $request->input('payment_method') === 'qr' ? 'VNPAY' : 'COD';

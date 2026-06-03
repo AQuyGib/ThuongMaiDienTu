@@ -2420,17 +2420,20 @@
         document.getElementById('addrWard').disabled = true;
     }
 
+    let vnData = [];
+
+
+
     /**
      * TẢI DANH SÁCH TỈNH THÀNH (PROVINCES FETCH API)
-     * Sử dụng API công cộng của Esgoo.
+     * Sử dụng thư viện dữ liệu tĩnh Github cho tốc độ tải cực nhanh.
      */
     function fetchProvincesData() {
-        fetch('https://esgoo.net/api-tinhthanh/1/0.htm')
+        fetch('https://raw.githubusercontent.com/kenzouno1/DiaGioiHanhChinhVN/master/data.json')
             .then(res => res.json())
             .then(data => {
-                if(data.error === 0) {
-                    populateCities(data.data);
-                }
+                vnData = data;
+                populateCities(data);
             })
             .catch(err => console.error('Error fetching provinces:', err));
     }
@@ -2452,11 +2455,11 @@
         citySelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
         data.forEach(city => {
             // Lọc chỉ lấy các tỉnh thành nằm trong whitelist
-            if (provinceIdMap.hasOwnProperty(city.id)) {
-                let displayName = provinceIdMap[city.id];
+            if (provinceIdMap.hasOwnProperty(city.Id)) {
+                let displayName = provinceIdMap[city.Id];
                 let option = document.createElement('option');
                 option.value = displayName;
-                option.dataset.code = city.id;
+                option.dataset.code = city.Id;
                 option.textContent = displayName;
                 citySelect.appendChild(option);
             }
@@ -2474,26 +2477,20 @@
         wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
         wardSelect.disabled = true;
 
-        if (cityCode) {
-            fetch('https://esgoo.net/api-tinhthanh/2/' + cityCode + '.htm')
-                .then(res => res.json())
-                .then(data => {
-                    districtSelect.innerHTML = '<option value="">Chọn Quận/Huyện</option>';
-                    if(data.error === 0 && data.data) {
-                        data.data.forEach(dist => {
-                            let option = document.createElement('option');
-                            let displayName = (isEnglish && dist.full_name_en) ? dist.full_name_en : dist.full_name;
-                            option.value = displayName;
-                            option.dataset.code = dist.id;
-                            option.textContent = displayName;
-                            districtSelect.appendChild(option);
-                        });
-                        districtSelect.disabled = false;
-                    }
-                })
-                .catch(err => {
-                    districtSelect.innerHTML = '<option value="">Chọn Quận/Huyện</option>';
+        if (cityCode && vnData.length > 0) {
+            const city = vnData.find(c => c.Id === cityCode);
+            districtSelect.innerHTML = '<option value="">Chọn Quận/Huyện</option>';
+            if(city && city.Districts) {
+                city.Districts.forEach(dist => {
+                    let option = document.createElement('option');
+                    let displayName = dist.Name;
+                    option.value = displayName;
+                    option.dataset.code = dist.Id;
+                    option.textContent = displayName;
+                    districtSelect.appendChild(option);
                 });
+                districtSelect.disabled = false;
+            }
         } else {
             districtSelect.innerHTML = '<option value="">Chọn Quận/Huyện</option>';
         }
@@ -2502,30 +2499,28 @@
     // Lắng nghe sự kiện thay đổi Quận/Huyện để tải danh sách Phường/Xã
     document.getElementById('addrDistrict').addEventListener('change', function() {
         const distCode = this.options[this.selectedIndex].dataset.code;
+        const cityCode = document.getElementById('addrCity').options[document.getElementById('addrCity').selectedIndex]?.dataset?.code;
         const wardSelect = document.getElementById('addrWard');
         
         wardSelect.innerHTML = '<option value="">Đang tải Phường/Xã...</option>';
         wardSelect.disabled = true;
 
-        if (distCode) {
-            fetch('https://esgoo.net/api-tinhthanh/3/' + distCode + '.htm')
-                .then(res => res.json())
-                .then(data => {
-                    wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
-                    if(data.error === 0 && data.data) {
-                        data.data.forEach(ward => {
-                            let option = document.createElement('option');
-                            let displayName = (isEnglish && ward.full_name_en) ? ward.full_name_en : ward.full_name;
-                            option.value = displayName;
-                            option.textContent = displayName;
-                            wardSelect.appendChild(option);
-                        });
-                        wardSelect.disabled = false;
-                    }
-                })
-                .catch(err => {
-                    wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
-                });
+        if (distCode && cityCode && vnData.length > 0) {
+            const city = vnData.find(c => c.Id === cityCode);
+            if(city && city.Districts) {
+                const dist = city.Districts.find(d => d.Id === distCode);
+                wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
+                if(dist && dist.Wards) {
+                    dist.Wards.forEach(ward => {
+                        let option = document.createElement('option');
+                        let displayName = ward.Name;
+                        option.value = displayName;
+                        option.textContent = displayName;
+                        wardSelect.appendChild(option);
+                    });
+                    wardSelect.disabled = false;
+                }
+            }
         } else {
             wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
         }
