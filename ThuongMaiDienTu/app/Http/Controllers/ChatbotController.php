@@ -52,12 +52,27 @@ class ChatbotController extends Controller
      */
     public function chat(Request $request)
     {
+        // Thực hiện validate dữ liệu đầu vào chống spam chuỗi cực dài (DoS)
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'prompt' => ['required', 'string', 'max:500'],
+            'context' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
         // Lấy câu hỏi từ người dùng và làm sạch khoảng trắng thừa ở hai đầu
         $prompt = trim($request->input('prompt', ''));
         // Ngữ cảnh sản phẩm khách hàng đang xem (nếu khách đang ở trang chi tiết sản phẩm)
         $currentProductContext = trim($request->input('context', ''));
-        // Số lượng tin nhắn đã gửi trong phiên chat này
-        $messageCount = (int)$request->input('message_count', 0);
+        
+        // Tăng số lượng tin nhắn trong Session Laravel để phòng chống F12 Client-side Bypass
+        $sessionCount = session()->get('chatbot_message_count', 0) + 1;
+        session()->put('chatbot_message_count', $sessionCount);
 
         // Kiểm tra nếu câu hỏi trống thì phản hồi yêu cầu người dùng nhập lại
         if (!$prompt) {
@@ -86,7 +101,7 @@ class ChatbotController extends Controller
 
         // TỰ ĐỘNG PHÁT HÀNH MÃ GIẢM GIÁ (DYNAMIC COUPONING)
         $couponInstruction = '';
-        if ($messageCount >= 5 && !session()->has('chatbot_coupon_code')) {
+        if ($sessionCount >= 5 && !session()->has('chatbot_coupon_code')) {
             $couponCode = 'CHAT5_' . strtoupper(\Illuminate\Support\Str::random(5));
             try {
                 \App\Models\CouponFlashSale::create([
