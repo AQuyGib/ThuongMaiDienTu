@@ -4,7 +4,6 @@
 
 @section('content')
 <div class="max-w-[1400px] mx-auto space-y-8">
-    <!-- Tiêu đề trang quản lý Voucher -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div class="flex items-center gap-4">
             <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shadow-sm">
@@ -21,7 +20,6 @@
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
-        <!-- CỘT BÊN TRÁI (4/12): BIỂU MẪU TẠO MỚI HOẶC CHỈNH SỬA VOUCHER -->
         <div class="xl:col-span-4">
             <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden sticky top-8">
                 <div class="px-6 py-5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white">
@@ -32,7 +30,6 @@
                 </div>
                 <div class="p-6">
                     @php
-                        // Lấy trạng thái kiểu giảm giá hiện tại (mặc định là fixed tiền VNĐ)
                         $editingDiscountType = $editingVoucher->discount_type ?? 'fixed';
                         $editingDiscountValue = $editingVoucher->discount_val ?? '';
                     @endphp
@@ -42,7 +39,6 @@
                             @method('PUT')
                         @endif
 
-                        <!-- Mã Voucher (Tự động uppercase khi nhập bằng CSS) -->
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">Mã voucher <span class="text-rose-500">*</span></label>
                             <input type="text" name="code" required maxlength="50" value="{{ old('code', $editingVoucher->code ?? '') }}"
@@ -53,9 +49,7 @@
                             @enderror
                         </div>
 
-                        <!-- Cấu hình kiểu giảm giá -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Kiểu giảm: Theo tiền cố định hoặc Theo phần trăm -->
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-2">Kiểu giảm <span class="text-rose-500">*</span></label>
                                 <select name="discount_type" id="discount_type"
@@ -67,7 +61,6 @@
                                     <p class="mt-2 text-xs text-rose-600 font-semibold">{{ $message }}</p>
                                 @enderror
                             </div>
-                            <!-- Số tiền giảm cố định (VNĐ) -->
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-2">Giá giảm (VNĐ)</label>
                                 <input type="number" id="discount_fixed" name="discount_fixed" min="1" value="{{ old('discount_fixed', $editingDiscountType === 'fixed' ? $editingDiscountValue : '') }}"
@@ -79,7 +72,6 @@
                             </div>
                         </div>
 
-                        <!-- Phần trăm giảm (%) -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-2">Giảm theo phần trăm (%)</label>
@@ -94,9 +86,7 @@
                             <div></div>
                         </div>
 
-                        <!-- Cấu hình khung thời gian có hiệu lực -->
                         <div class="grid grid-cols-1 gap-4">
-                            <!-- Thời gian bắt đầu phát hành -->
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-2">Bắt đầu</label>
                                 <input type="datetime-local" name="start_time"
@@ -107,7 +97,6 @@
                                 @enderror
                             </div>
 
-                            <!-- Thời gian hết hạn sử dụng -->
                             <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-2">Kết thúc</label>
                                 <input type="datetime-local" name="end_time"
@@ -119,7 +108,6 @@
                             </div>
                         </div>
 
-                        <!-- Nhóm nút bấm xác nhận hành động -->
                         <div class="flex gap-3 pt-2">
                             <button type="submit" class="flex-1 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-200">
                                 {{ $editingVoucher ? 'Lưu thay đổi' : 'Tạo voucher' }}
@@ -133,7 +121,6 @@
             </div>
         </div>
 
-        <!-- CỘT BÊN PHẢI (8/12): BẢNG THỐNG KÊ TOÀN BỘ VOUCHER -->
         <div class="xl:col-span-8">
             <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="px-6 py-5 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
@@ -163,7 +150,6 @@
                                     $start = $voucher->start_time ? \Carbon\Carbon::parse($voucher->start_time) : null;
                                     $end = $voucher->end_time ? \Carbon\Carbon::parse($voucher->end_time) : null;
 
-                                    // Phân loại trạng thái voucher dựa trên thời gian hiện tại
                                     if ($start && $now->lt($start)) {
                                         $status = 'Sắp diễn ra';
                                         $statusClass = 'bg-amber-100 text-amber-700 border-amber-200';
@@ -177,12 +163,10 @@
                                 @endphp
 
                                 <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <!-- Mã và ID Voucher -->
                                     <td class="px-6 py-4">
                                         <div class="font-bold text-slate-800 uppercase">{{ $voucher->code }}</div>
                                         <div class="text-[11px] text-slate-400 mt-0.5 italic">ID: #VC-{{ $voucher->promo_id }}</div>
                                     </td>
-                                    <!-- Mức chiết khấu định dạng VNĐ / Phần trăm -->
                                     <td class="px-6 py-4">
                                         @if(($voucher->discount_type ?? 'fixed') === 'percent')
                                             <span class="text-indigo-600 font-black">{{ rtrim(rtrim(number_format((float) $voucher->discount_val, 2, '.', ''), '0'), '.') }}%</span>
@@ -190,7 +174,6 @@
                                             <span class="text-indigo-600 font-black">{{ number_format($voucher->discount_val, 0, ',', '.') }}đ</span>
                                         @endif
                                     </td>
-                                    <!-- Khung thời gian hoạt động -->
                                     <td class="px-6 py-4">
                                         <div class="text-xs text-slate-600">
                                             <span class="font-semibold">Từ:</span>
@@ -201,13 +184,11 @@
                                             {{ $end ? $end->format('H:i d/m/Y') : 'Không giới hạn' }}
                                         </div>
                                     </td>
-                                    <!-- Huy hiệu trạng thái -->
                                     <td class="px-6 py-4 text-center">
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border {{ $statusClass }}">
                                             {{ $status }}
                                         </span>
                                     </td>
-                                    <!-- Nút thao tác Sửa / Xóa -->
                                     <td class="px-6 py-4 text-right">
                                         <div class="flex items-center justify-end gap-2">
                                             <a href="{{ route('admin.vouchers.index', ['edit' => $voucher->promo_id]) }}"
@@ -233,7 +214,6 @@
                     </table>
                 </div>
 
-                <!-- Thanh phân trang (Pagination) -->
                 @if($vouchers->hasPages())
                     <div class="px-6 py-4 bg-slate-50 border-t border-slate-100">
                         {{ $vouchers->links() }}
@@ -252,12 +232,6 @@
         const fixedInput = document.getElementById('discount_fixed');
         const percentInput = document.getElementById('discount_percent');
 
-        /**
-         * ĐỒNG BỘ CÁC Ô NHẬP LIỆU GIÁ TRỊ GIẢM GIÁ (SYNC DISCOUNT INPUTS VALUE)
-         * Tùy thuộc vào kiểu giảm giá được chọn từ thẻ select (fixed / percent):
-         * - Nếu là percent: Vô hiệu hóa input fixed, bắt buộc nhập input percent, làm sạch giá trị input fixed.
-         * - Nếu là fixed: Vô hiệu hóa input percent, bắt buộc nhập input fixed, làm sạch giá trị input percent.
-         */
         function syncDiscountInputs() {
             const isPercent = discountType.value === 'percent';
             fixedInput.disabled = isPercent;
@@ -273,10 +247,9 @@
             }
         }
 
-        // Đăng ký sự kiện thay đổi trên dropdown loại giảm giá
         if (discountType && fixedInput && percentInput) {
             discountType.addEventListener('change', syncDiscountInputs);
-            syncDiscountInputs(); // Tự động gọi lần đầu khi DOM sẵn sàng để đồng bộ hóa dữ liệu có sẵn từ Database
+            syncDiscountInputs();
         }
     })();
 </script>

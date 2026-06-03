@@ -5,11 +5,7 @@
 @push('styles')
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* ============================================================
-           CSS TÙY CHỈNH CHO GIỎ HÀNG SHOPPING CART
-           ============================================================ */
-           
-        /* Ẩn mũi tên tăng giảm số lượng mặc định trên các trình duyệt Chrome/Safari/Firefox */
+        /* Ẩn mũi tên tăng giảm mặc định của input number */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
             -webkit-appearance: none; 
@@ -19,7 +15,7 @@
             -moz-appearance: textfield;
         }
         
-        /* Tiện ích ẩn thanh cuộn ngang/dọc nhưng vẫn giữ chức năng cuộn */
+        /* Ẩn thanh cuộn của danh mục */
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -27,6 +23,24 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+            .saved-address-card.selected {
+                border-color: #2563eb !important;
+                background: #eff6ff !important;
+                box-shadow: 0 10px 25px rgba(37, 99, 235, 0.12);
+            }
+            .saved-address-badge {
+                position: absolute;
+                top: -0.75rem;
+                right: 1rem;
+                background: #ffffff;
+                border: 1px solid #bfdbfe;
+                color: #2563eb;
+                padding: 0.35rem 0.75rem;
+                border-radius: 9999px;
+                font-size: 0.75rem;
+                font-weight: 700;
+                box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+            }
     </style>
 @endpush
 
@@ -34,7 +48,7 @@
 
 <main class="flex-grow bg-gray-50 min-h-screen">
     <div class="max-w-6xl mx-auto px-4 pb-20 pt-8">
-        <!-- Breadcrumb: Hỗ trợ điều hướng nhanh về trang chủ -->
+        <!-- Breadcrumb đơn giản -->
         <nav class="text-sm text-gray-500 mb-4">
             <a href="{{ url('/') }}" class="hover:text-[#0047b3]">Trang chủ</a> 
             <span class="mx-2">/</span> 
@@ -45,33 +59,25 @@
             <i class="fa-solid fa-cart-shopping text-[#0047b3]"></i> Giỏ hàng của bạn
         </h1>
 
-        <!-- Layout 2 Cột chính:
-             - Cột bên trái (2/3 chiều rộng): Chứa bảng checkbox điều khiển chọn tất cả, nút xóa và danh sách sản phẩm render động.
-             - Cột bên phải (1/3 chiều rộng): Khung thông tin thanh toán (Tạm tính, Khuyến mãi, Phí vận chuyển) ghim cố định khi cuộn trang (Sticky).
-        -->
         <div class="flex flex-col lg:flex-row gap-6">
-            <!-- CÓT TRÁI: DANH SÁCH CÁC SẢN PHẨM TRONG GIỎ HÀNG -->
+            <!-- Cột trái: Danh sách sản phẩm -->
             <div class="w-full lg:w-2/3 flex flex-col gap-4">
-                <!-- Thanh công cụ giỏ hàng: Chọn tất cả và xóa nhanh -->
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <!-- Checkbox điều khiển chọn tất cả trạng thái sản phẩm để thanh toán -->
                         <input type="checkbox" id="selectAllCheckbox" class="w-5 h-5 text-blue-600 rounded cursor-pointer border-gray-300 focus:ring-blue-500" checked onchange="window.toggleAll(this.checked)">
                         <label for="selectAllCheckbox" class="cursor-pointer select-none font-medium">
                             Chọn tất cả (<span id="total-items-count-text">0</span> sản phẩm)
                         </label>
                     </div>
-                    <!-- Nút xóa sạch toàn bộ giỏ hàng -->
                     <button onclick="window.clearCart()" class="text-sm text-red-500 hover:underline">Xóa tất cả</button>
                 </div>
 
-                <!-- Container chứa danh sách sản phẩm: Sẽ được Javascript render động bằng AJAX -->
                 <div id="cart-items-container" class="flex flex-col gap-4">
-                    <!-- Javascript sẽ tự động chèn HTML của các sản phẩm tại đây -->
+                    <!-- Sản phẩm sẽ được render bằng JS ở đây -->
                 </div>
             </div>
 
-            <!-- CỘT PHẢI: BẢNG TỔNG HỢP VÀ TÍNH TOÁN THANH TOÁN (STICKY CARD) -->
+            <!-- Cột phải: Tóm tắt đơn hàng (Sticky) -->
             <div class="w-full lg:w-1/3">
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 sticky top-4">
                     <h2 class="text-lg font-bold mb-4 border-b pb-2">Tóm tắt đơn hàng</h2>
@@ -95,11 +101,66 @@
                     <button type="button" id="checkout-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:bg-gray-400 disabled:shadow-none mb-3" onclick="window.proceedToCheckout(event)">
                         TIẾN HÀNH THANH TOÁN
                     </button>
+
+                        @auth
+                            @php
+                                $savedAddresses = Auth::user()->addresses()->orderByDesc('is_default')->get();
+                            @endphp
+                            @if($savedAddresses->isNotEmpty())
+                                <div class="mb-4 rounded-3xl border border-blue-200 bg-blue-50/80 p-4 relative">
+                                    <div class="saved-address-badge flex items-center gap-2">
+                                        <i class="fa-solid fa-map-pin"></i>
+                                        <span>Chọn địa chỉ</span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3 mb-3">
+                                        <div>
+                                            <h3 class="font-semibold text-gray-800">Chọn từ địa chỉ đã lưu</h3>
+                                            <p class="text-xs text-gray-600">Địa chỉ đã thêm trong hồ sơ của bạn</p>
+                                        </div>
+                                        <button type="button" onclick="toggleSavedAddressList()" class="text-blue-600 text-sm font-semibold hover:underline">Mở</button>
+                                    </div>
+                                    <div id="saved-addresses-panel" class="space-y-3 hidden">
+                                        @foreach($savedAddresses as $address)
+                                            @php
+                                                $fullAddress = trim(implode(', ', array_filter([
+                                                    $address->street,
+                                                    $address->ward,
+                                                    $address->district,
+                                                    $address->city,
+                                                ])));
+                                            @endphp
+                                            <button type="button" class="saved-address-card w-full text-left rounded-3xl border border-gray-200 bg-white p-4 transition hover:border-blue-500 hover:shadow-sm flex items-start justify-between gap-3"
+                                                data-address-id="{{ $address->id }}"
+                                                data-address-full="{{ e($fullAddress) }}"
+                                                onclick="selectSavedCartAddress(this)">
+                                                <div class="flex-1">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="text-sm font-semibold text-gray-800">{{ $address->name ?: 'Địa chỉ' }}</span>
+                                                        @if($address->is_default)
+                                                            <span class="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white bg-blue-600 rounded-full">Mặc định</span>
+                                                        @endif
+                                                    </div>
+                                                    <p class="text-sm text-gray-500 mt-2">{{ $address->phone ?: Auth::user()->phone_number }}</p>
+                                                    <p class="text-sm text-gray-500 mt-2 line-clamp-2">{{ $fullAddress }}</p>
+                                                </div>
+                                                <span class="saved-address-check hidden text-blue-600 text-2xl">
+                                                    <i class="fa-solid fa-check-circle"></i>
+                                                </span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                    <div id="selected-saved-address-summary" class="mt-3 hidden rounded-3xl border border-blue-200 bg-white p-3 text-sm text-gray-700">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fa-solid fa-check text-blue-600"></i>
+                                            <span class="font-semibold">Địa chỉ đã chọn:</span>
+                                        </div>
+                                        <p id="selected-saved-address-text" class="mt-2"></p>
+                                    </div>
+                                </div>
+                            @endif
+                        @endauth
                     
-                    <!-- Nút liên kết tính toán chi phí vận chuyển động dựa trên địa chỉ -->
-                    <a id="shipping-link" href="{{ Route::has('cart.shipping') ? route('cart.shipping') : (Route::has('shipping.calc') ? route('shipping.calc') : '#') }}" class="block w-full text-center border border-[#0047b3] text-[#0047b3] font-semibold py-2 rounded-lg hover:bg-blue-50 transition-colors">
-                        <i class="fa-solid fa-truck-fast mr-1"></i> Kiểm tra phí giao hàng
-                    </a>
+
 
                     <div class="mt-4 text-center">
                         <a href="{{ url('/') }}" class="text-sm text-[#0047b3] hover:underline">
@@ -110,7 +171,7 @@
             </div>
         </div>
 
-        <!-- PHẦN GỢI Ý: SẢN PHẨM CÓ THỂ QUAN TÂM (RECOMMENDED PRODUCTS) -->
+        <!-- Section: Gợi ý sản phẩm tương tự -->
         @if(isset($recommendedProducts) && $recommendedProducts->isNotEmpty())
             <div id="similar-products-section" class="mt-16">
                 <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800">
@@ -126,6 +187,7 @@
                             }
                         @endphp
                         <div class="product-card group relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                            <!-- Image Container -->
                             <div class="relative h-44 overflow-hidden bg-gray-50 p-4 flex items-center justify-center">
                                 @if($product->discount_percent)
                                     <span class="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
@@ -137,17 +199,21 @@
                                     onerror="this.src='https://loremflickr.com/400/400/technology?lock={{ $product->product_id }}'; this.onerror=null;">
                             </div>
                             
+                            <!-- Product Info -->
                             <div class="p-4">
+                                <!-- Category -->
                                 <div class="text-xs text-gray-400 mb-1">
                                     {{ $product->category->name ?? 'Điện máy' }}
                                 </div>
                                 
+                                <!-- Product Name -->
                                 <h3 class="text-sm font-bold text-gray-800 mb-2 line-clamp-2 min-h-[40px]" title="{{ $product->name }}">
                                     <a href="{{ route('product.show', $product->product_id) }}" class="hover:text-[#0047b3] transition-colors">
                                         {{ $product->name }}
                                     </a>
                                 </h3>
                                 
+                                <!-- Price -->
                                 <div class="flex items-center gap-2 mb-4">
                                     <span class="text-base font-bold text-red-600">
                                         {{ number_format($product->base_price, 0, ',', '.') }} ₫
@@ -159,6 +225,7 @@
                                     @endif
                                 </div>
                                 
+                                <!-- Buttons -->
                                 <div class="flex gap-2">
                                     <a href="{{ route('product.show', $product->product_id) }}"
                                         class="flex-1 text-center bg-[#0047b3] text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all shadow-sm hover:shadow-md">
@@ -182,40 +249,37 @@
     </div>
 </main>
 
+
 @endsection
 
 @push('scripts')
 <script>
-    // Định nghĩa đối tượng toàn cục chứa thông tin các sản phẩm trong giỏ
+    // Khởi tạo dữ liệu
     window.cartData = [];
 
-    /**
-     * 1. KHỞI TẠO DỮ LIỆU GIỎ HÀNG TỪ BACKEND LARAVEL
-     * Lấy mảng dữ liệu $cartItems đã được convert sang JSON từ blade view, gán vào window.cartData.
-     */
     function initializeData() {
-        window.cartData = {!! isset($cartItems) ? json_encode($cartItems) : "[]" !!};
+        try {
+            // Lấy dữ liệu từ Laravel gửi qua
+            const raw = '{!! isset($cartItems) ? json_encode($cartItems) : "[]" !!}';
+            window.cartData = JSON.parse(raw);
+            
+            // Nếu Controller không truyền data thì raw là "[]", JSON.parse vẫn trả về mảng rỗng.
+        } catch (e) {
+            console.warn("Lỗi parse dữ liệu giỏ hàng:", e);
+            window.cartData = [];
+        }
     }
 
-    /**
-     * Tiện ích định dạng số tiền tệ sang dạng chuỗi tiền VND (Ví dụ: 1000000 -> 1.000.000đ)
-     */
     const formatMoney = (amount) => {
         return new Intl.NumberFormat('vi-VN').format(amount || 0) + 'đ';
     };
 
-    /**
-     * 2. DỰNG GIAO DIỆN GIỎ HÀNG ĐỘNG (RENDER DOM)
-     * Đọc từ window.cartData và chèn code HTML tương ứng cho từng sản phẩm vào khung `cart-items-container`.
-     * Xử lý trường hợp giỏ hàng trống (hiển thị thông báo, tắt nút chọn tất cả, ẩn gợi ý).
-     */
     window.renderCart = () => {
         const container = document.getElementById('cart-items-container');
         if (!container) return;
         
         container.innerHTML = ''; 
 
-        // Nếu giỏ hàng trống hoàn toàn
         if (window.cartData.length === 0) {
             container.innerHTML = `
                 <div class="bg-white p-12 text-center rounded-lg shadow-sm border border-dashed border-gray-300">
@@ -235,13 +299,11 @@
             return;
         }
 
-        // Hiện section gợi ý nếu giỏ hàng có sản phẩm
         const similarSection = document.getElementById('similar-products-section');
         if (similarSection) {
             similarSection.style.display = 'block';
         }
 
-        // Render từng item
         window.cartData.forEach(item => {
             const itemHTML = `
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-start gap-4 relative transition-all hover:border-blue-200" id="item-${item.id}">
@@ -258,20 +320,17 @@
                         <p class="text-red-600 font-bold text-lg mt-1">${formatMoney(item.price)}</p>
                         
                         <div class="flex items-center mt-3 border w-max rounded-lg bg-gray-50">
-                            <!-- Nút giảm số lượng -->
                             <button class="w-8 h-8 flex items-center justify-center hover:bg-gray-200 transition-colors rounded-l-lg" 
                                     onclick="window.changeQuantity(${item.id}, -1)">
                                 <i class="fa-solid fa-minus text-xs"></i>
                             </button>
                             <span class="w-10 text-center font-bold text-sm">${item.quantity}</span>
-                            <!-- Nút tăng số lượng -->
                             <button class="w-8 h-8 flex items-center justify-center hover:bg-gray-200 transition-colors rounded-r-lg" 
                                     onclick="window.changeQuantity(${item.id}, 1)">
                                 <i class="fa-solid fa-plus text-xs"></i>
                             </button>
                         </div>
                     </div>
-                    <!-- Nút xóa nhanh sản phẩm đơn lẻ -->
                     <button class="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition-colors p-1" 
                             onclick="window.deleteItem(${item.id})" title="Xóa">
                         <i class="fa-solid fa-trash-can"></i>
@@ -283,12 +342,6 @@
         window.updateSummary();
     };
 
-    /**
-     * 3. TÍNH TOÁN TÓM TẮT TIỀN ĐƠN HÀNG (TOTAL SUMMARY)
-     * Lọc ra các sản phẩm đang được check chọn (item.selected === true) để cộng dồn tiền.
-     * Cập nhật thông số số lượng sản phẩm đang chọn, tiền tạm tính, tổng tiền cuối cùng lên giao diện.
-     * Đồng bộ checkbox 'Chọn tất cả' dựa trên việc tất cả sản phẩm có được check hay không.
-     */
     window.updateSummary = () => {
         let total = 0;
         let count = 0;
@@ -309,29 +362,51 @@
         if (elCount) elCount.innerText = count;
         if (elTotalList) elTotalList.innerText = window.cartData.length;
         
-        // Vô hiệu hóa nút thanh toán nếu không có sản phẩm nào được chọn
         const btn = document.getElementById('checkout-btn');
         if (btn) btn.disabled = count === 0;
 
-        // Tự động check/uncheck nút Chọn tất cả dựa vào dữ liệu mảng
         const checkAll = document.getElementById('selectAllCheckbox');
         if (checkAll && window.cartData.length > 0) {
             checkAll.checked = window.cartData.every(i => i.selected);
         }
         
-        // Truyền tổng số tiền sang URL tính phí vận chuyển
-        const shippingLink = document.getElementById('shipping-link');
-        if (shippingLink && shippingLink.href !== '#') {
-            const url = new URL(shippingLink.href, window.location.origin);
-            url.searchParams.set('total', total);
-            shippingLink.href = url.toString();
+
+
+    window.selectedSavedAddressId = '';
+    window.selectedSavedAddressText = '';
+
+    function toggleSavedAddressList() {
+        const panel = document.getElementById('saved-addresses-panel');
+        if (!panel) return;
+        panel.classList.toggle('hidden');
+    }
+
+    function selectSavedCartAddress(button) {
+        const addressId = button.dataset.addressId;
+        const addressText = button.dataset.addressFull;
+        if (!addressId) return;
+
+        window.selectedSavedAddressId = addressId;
+        window.selectedSavedAddressText = addressText;
+        localStorage.setItem('selectedCartAddressId', addressId);
+        localStorage.setItem('selectedCartAddressText', addressText);
+
+        document.querySelectorAll('.saved-address-card').forEach(card => {
+            const isSelected = card === button;
+            card.classList.toggle('selected', isSelected);
+            const check = card.querySelector('.saved-address-check');
+            if (check) check.classList.toggle('hidden', !isSelected);
+        });
+
+        const summary = document.getElementById('selected-saved-address-summary');
+        const summaryText = document.getElementById('selected-saved-address-text');
+        if (summary && summaryText) {
+            summaryText.innerText = addressText;
+            summary.classList.remove('hidden');
         }
+    }
     };
 
-    /**
-     * 4. AJAX: TỔNG HỢP TRẠNG THÁI CHỌN TẤT CẢ (TOGGLE SELECT ALL)
-     * Gửi yêu cầu POST lên server để cập nhật đồng bộ trạng thái chọn của toàn bộ giỏ hàng.
-     */
     window.toggleAll = (isChecked) => {
         fetch('{{ route("cart.toggleAll") }}', {
             method: 'POST',
@@ -348,13 +423,9 @@
                 window.renderCart();
             }
         })
-        .catch(err => console.error("Lỗi đồng bộ trạng thái chọn tất cả:", err));
+        .catch(err => console.error(err));
     };
 
-    /**
-     * 5. AJAX: BẬT TẮT CHỌN TỪNG SẢN PHẨM ĐƠN LẺ (TOGGLE SELECT ITEM)
-     * Gửi yêu cầu POST lên server để cập nhật trạng thái chọn của sản phẩm chỉ định.
-     */
     window.toggleItem = (id, isChecked) => {
         fetch('{{ route("cart.toggleSelect") }}', {
             method: 'POST',
@@ -372,19 +443,14 @@
                 window.updateSummary();
             }
         })
-        .catch(err => console.error("Lỗi đồng bộ trạng thái chọn sản phẩm:", err));
+        .catch(err => console.error(err));
     };
 
-    /**
-     * 6. AJAX: CẬP NHẬT TĂNG/GIẢM SỐ LƯỢNG SẢN PHẨM (CHANGE QUANTITY)
-     * Gửi yêu cầu cập nhật số lượng của sản phẩm trong DB bằng Fetch API.
-     * Cập nhật lại số đếm ở Header badge khi thành công.
-     */
     window.changeQuantity = (id, delta) => {
         const item = window.cartData.find(i => i.id === id);
         if(item) {
             const newQty = item.quantity + delta;
-            if(newQty < 1) return; // Số lượng tối thiểu phải là 1
+            if(newQty < 1) return;
 
             fetch('{{ route("cart.update") }}', {
                 method: 'POST',
@@ -401,7 +467,6 @@
                     window.renderCart();
                     showToast("Đã cập nhật số lượng");
                     
-                    // Đồng bộ lại Badge giỏ hàng trên Header
                     const badge = document.getElementById('headerCartBadge');
                     if (badge && res.cart_count !== undefined) {
                         badge.innerText = res.cart_count;
@@ -412,16 +477,12 @@
                 }
             })
             .catch(err => {
-                console.error("Lỗi cập nhật số lượng sản phẩm:", err);
+                console.error(err);
                 showToast("Đã xảy ra lỗi!", 'error');
             });
         }
     };
 
-    /**
-     * 7. AJAX: XÓA SẢN PHẨM ĐƠN LẺ (DELETE ITEM)
-     * Sử dụng SweetAlert2 hiển thị cảnh báo xác nhận trước khi gửi yêu cầu POST xóa sản phẩm.
-     */
     window.deleteItem = async (id) => {
         const result = await Swal.fire({
             title: 'Xóa sản phẩm?',
@@ -447,12 +508,11 @@
             .then(response => response.json())
             .then(res => {
                 if(res.status === 'success') {
-                    // Lọc bỏ sản phẩm bị xóa khỏi window.cartData và vẽ lại giao diện
                     window.cartData = window.cartData.filter(i => i.id !== id);
                     window.renderCart();
                     showToast("Đã xóa sản phẩm", "info");
                     
-                    // Cập nhật số badge trên Header
+                    // Cập nhật số badge trên Header nếu có
                     const badge = document.getElementById('headerCartBadge');
                     if (badge && res.cart_count !== undefined) {
                         badge.innerText = res.cart_count;
@@ -460,14 +520,10 @@
                     }
                 }
             })
-            .catch(err => console.error("Lỗi xóa sản phẩm:", err));
+            .catch(err => console.error(err));
         }
     };
 
-    /**
-     * 8. AJAX: XÓA SẠCH TOÀN BỘ GIỎ HÀNG (CLEAR CART)
-     * Gửi yêu cầu POST làm trống giỏ hàng sau khi người dùng xác nhận thông qua Swal.
-     */
     window.clearCart = async () => {
         const result = await Swal.fire({
             title: 'Làm trống giỏ hàng?',
@@ -503,13 +559,10 @@
                     }
                 }
             })
-            .catch(err => console.error("Lỗi làm trống giỏ hàng:", err));
+            .catch(err => console.error(err));
         }
     };
 
-    /**
-     * Hàm hiển thị thông báo Toast góc phải màn hình bằng SweetAlert2
-     */
     function showToast(msg, type = "success") {
         const Toast = Swal.mixin({
             toast: true,
@@ -539,16 +592,27 @@
         if (event) event.preventDefault();
         const selectedItems = window.cartData.filter(i => i.selected);
         if (selectedItems.length > 0) {
-            @if(Auth::check())
-                window.location.href = `{{ route('cart.pay') }}`;
+            @auth
+                let checkoutUrl = `{{ route('cart.pay') }}`;
+                if (window.selectedSavedAddressId) {
+                    checkoutUrl += `?saved_address_id=${encodeURIComponent(window.selectedSavedAddressId)}`;
+                }
+                window.location.href = checkoutUrl;
             @else
                 window.location.href = `{{ route('login_register') }}`;
             @endif
         }
     };
 
-    // Gọi các hàm thiết lập ban đầu sau khi DOM đã sẵn sàng
     document.addEventListener('DOMContentLoaded', () => {
+        window.selectedSavedAddressId = localStorage.getItem('selectedCartAddressId') || '';
+        window.selectedSavedAddressText = localStorage.getItem('selectedCartAddressText') || '';
+        if (window.selectedSavedAddressId && window.selectedSavedAddressText) {
+            const button = document.querySelector(`.saved-address-card[data-address-id="${window.selectedSavedAddressId}"]`);
+            if (button) {
+                selectSavedCartAddress(button);
+            }
+        }
         initializeData();
         window.renderCart();
 

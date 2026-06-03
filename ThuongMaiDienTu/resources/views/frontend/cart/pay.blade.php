@@ -4,35 +4,234 @@
 @push('styles')
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-/* ============================================================
-   CSS HIỆU ỨNG TƯƠNG TÁC GIAO DIỆN THANH TOÁN (CHECKOUT)
-   ============================================================ */
-
-/* Trạng thái checked của phương thức thanh toán: Đổi màu viền và màu nền sang xanh nhạt */
 .pay-radio:checked ~ .pay-label { border-color:#2563eb; background:#eff6ff; }
 .pay-radio:checked ~ .pay-label .dot-outer { border-color:#2563eb; }
 .pay-radio:checked ~ .pay-label .dot-inner { opacity:1; }
-
-/* Ẩn/hiện panel hướng dẫn chi tiết cho từng phương thức thanh toán */
 .method-panel { display:none; }
 .method-panel.active { display:block; }
-
-/* Hiệu ứng quét dòng sáng neon xanh lục trên mã QR Code giả lập */
 @keyframes scanLine {
   0%,100%{top:0;opacity:0} 50%{top:calc(100% - 4px);opacity:1}
 }
 .qr-scan-line { animation: scanLine 2.5s ease-in-out infinite; }
-
-/* Trạng thái hoàn thành của vòng tròn các bước thanh toán (Progress Step Done) */
 .step-done { background:#16a34a!important; }
 </style>
 @endpush
 
 @section('content')
+@php
+    $prefilledName = '';
+    $prefilledPhone = '';
+    $prefilledProvince = '';
+    $prefilledAddress = '';
+    if (Auth::check()) {
+        $user = Auth::user();
+        $prefilledName = $user->full_name;
+        $prefilledPhone = $user->phone_number;
+        
+        $addresses = $user->addresses()->orderByDesc('is_default')->get();
+      $defaultAddress = $addresses->where('is_default', 1)->first() 
+        ?? $addresses->first();
+      // If a saved_address_id is passed via query (from cart page), prefer it
+      $requestedSavedId = request()->query('saved_address_id');
+      if ($requestedSavedId) {
+        $requested = $addresses->where('id', $requestedSavedId)->first();
+        if ($requested) {
+          $defaultAddress = $requested;
+        }
+      }
+      $selectedAddressId = $defaultAddress->id ?? null;
+            
+        if ($defaultAddress) {
+            // Lưu ý: $defaultAddress->name là nhãn địa chỉ ("Nhà riêng", "Văn phòng"),
+            // KHÔNG phải tên người nhận. Tên người nhận lấy từ users.full_name.
+            
+            $addrParts = [];
+            if (!empty($defaultAddress->street)) {
+                $addrParts[] = $defaultAddress->street;
+            }
+            if (!empty($defaultAddress->ward)) {
+                $addrParts[] = $defaultAddress->ward;
+            }
+            if (!empty($defaultAddress->district)) {
+                $addrParts[] = $defaultAddress->district;
+            }
+            $prefilledAddress = implode(', ', $addrParts);
+            
+            if (!empty($defaultAddress->city)) {
+                $cityStr = mb_strtolower($defaultAddress->city);
+                if (str_contains($cityStr, 'hồ chí minh') || str_contains($cityStr, 'hcm')) {
+                    $prefilledProvince = 'hcm';
+                } elseif (str_contains($cityStr, 'hà nội') || str_contains($cityStr, 'hn')) {
+                    $prefilledProvince = 'hn';
+                } elseif (str_contains($cityStr, 'bình dương')) {
+                    $prefilledProvince = 'bd';
+                } elseif (str_contains($cityStr, 'đồng nai')) {
+                    $prefilledProvince = 'dnai';
+                } elseif (str_contains($cityStr, 'long an')) {
+                    $prefilledProvince = 'la';
+                } elseif (str_contains($cityStr, 'tiền giang')) {
+                    $prefilledProvince = 'tg';
+                } elseif (str_contains($cityStr, 'vũng tàu') || str_contains($cityStr, 'bà rịa')) {
+                    $prefilledProvince = 'vt';
+                } elseif (str_contains($cityStr, 'bắc ninh')) {
+                    $prefilledProvince = 'bn';
+                } elseif (str_contains($cityStr, 'hưng yên')) {
+                    $prefilledProvince = 'hy';
+                } elseif (str_contains($cityStr, 'hà nam')) {
+                    $prefilledProvince = 'hnam';
+                } elseif (str_contains($cityStr, 'vĩnh phúc')) {
+                    $prefilledProvince = 'vp';
+                } elseif (str_contains($cityStr, 'hải phòng')) {
+                    $prefilledProvince = 'hp';
+                } elseif (str_contains($cityStr, 'cần thơ')) {
+                    $prefilledProvince = 'ct';
+                } elseif (str_contains($cityStr, 'hòa bình')) {
+                    $prefilledProvince = 'hb';
+                } elseif (str_contains($cityStr, 'nam định') || str_contains($cityStr, 'ninh bình')) {
+                    $prefilledProvince = 'nb';
+                } elseif (str_contains($cityStr, 'an giang')) {
+                    $prefilledProvince = 'ag';
+                } elseif (str_contains($cityStr, 'kiên giang')) {
+                    $prefilledProvince = 'kg';
+                } elseif (str_contains($cityStr, 'đồng tháp')) {
+                    $prefilledProvince = 'dt';
+                } elseif (str_contains($cityStr, 'trà vinh') || str_contains($cityStr, 'vĩnh long')) {
+                    $prefilledProvince = 'tv';
+                } elseif (str_contains($cityStr, 'bến tre') || str_contains($cityStr, 'sóc trăng')) {
+                    $prefilledProvince = 'bte';
+                } elseif (str_contains($cityStr, 'đà nẵng')) {
+                    $prefilledProvince = 'dn';
+                } elseif (str_contains($cityStr, 'quảng nam') || str_contains($cityStr, 'quảng ngãi')) {
+                    $prefilledProvince = 'qng';
+                } elseif (str_contains($cityStr, 'bình định') || str_contains($cityStr, 'phú yên')) {
+                    $prefilledProvince = 'bdinh';
+                } elseif (str_contains($cityStr, 'khánh hòa') || str_contains($cityStr, 'nha trang')) {
+                    $prefilledProvince = 'nth';
+                } elseif (str_contains($cityStr, 'thanh hóa') || str_contains($cityStr, 'nghệ an')) {
+                    $prefilledProvince = 'th';
+                } elseif (str_contains($cityStr, 'quảng bình') || str_contains($cityStr, 'quảng trị')) {
+                    $prefilledProvince = 'qbi';
+                } elseif (str_contains($cityStr, 'thừa thiên') || str_contains($cityStr, 'huế')) {
+                    $prefilledProvince = 'hue';
+                } elseif (str_contains($cityStr, 'gia lai') || str_contains($cityStr, 'kon tum')) {
+                    $prefilledProvince = 'gl';
+                } elseif (str_contains($cityStr, 'đắk lắk') || str_contains($cityStr, 'đắk nông')) {
+                    $prefilledProvince = 'dkl';
+                } elseif (str_contains($cityStr, 'lào cai') || str_contains($cityStr, 'yên bái')) {
+                    $prefilledProvince = 'lc';
+                } elseif (str_contains($cityStr, 'điện biên') || str_contains($cityStr, 'lai châu')) {
+                    $prefilledProvince = 'dbi';
+                } elseif (str_contains($cityStr, 'sơn la')) {
+                    $prefilledProvince = 'ss';
+                } elseif (str_contains($cityStr, 'cao bằng') || str_contains($cityStr, 'bắc kạn')) {
+                    $prefilledProvince = 'cb';
+                } elseif (str_contains($cityStr, 'lạng sơn') || str_contains($cityStr, 'hà giang')) {
+                    $prefilledProvince = 'ls';
+                } elseif (str_contains($cityStr, 'cà mau') || str_contains($cityStr, 'bạc liêu')) {
+                    $prefilledProvince = 'cm';
+                } else {
+                    $prefilledProvince = 'other';
+                }
+            }
+            // If saved address has its own phone, prefer it over user phone
+            if (!empty($defaultAddress->phone)) {
+              $prefilledPhone = $defaultAddress->phone;
+            }
+        } else {
+            // Fallback: lấy từ users.address (format: "street, ward, district, city")
+            if (!empty($user->address)) {
+                $parts = explode(',', $user->address);
+                if (count($parts) >= 2) {
+                    $cityPart = trim(end($parts));
+                    $cityStr = mb_strtolower($cityPart);
+                    // Strip city (phần cuối) khỏi địa chỉ để tránh trùng lặp với dropdown
+                    $addressParts = array_slice($parts, 0, count($parts) - 1);
+                    $prefilledAddress = trim(implode(',', $addressParts));
+                    // Map city → province code
+                    if (str_contains($cityStr, 'hồ chí minh') || str_contains($cityStr, 'hcm')) {
+                        $prefilledProvince = 'hcm';
+                    } elseif (str_contains($cityStr, 'hà nội') || str_contains($cityStr, 'hn')) {
+                        $prefilledProvince = 'hn';
+                    } elseif (str_contains($cityStr, 'bình dương')) {
+                        $prefilledProvince = 'bd';
+                    } elseif (str_contains($cityStr, 'đồng nai')) {
+                        $prefilledProvince = 'dnai';
+                    } elseif (str_contains($cityStr, 'long an')) {
+                        $prefilledProvince = 'la';
+                    } elseif (str_contains($cityStr, 'tiền giang')) {
+                        $prefilledProvince = 'tg';
+                    } elseif (str_contains($cityStr, 'vũng tàu') || str_contains($cityStr, 'bà rịa')) {
+                        $prefilledProvince = 'vt';
+                    } elseif (str_contains($cityStr, 'bắc ninh')) {
+                        $prefilledProvince = 'bn';
+                    } elseif (str_contains($cityStr, 'hưng yên')) {
+                        $prefilledProvince = 'hy';
+                    } elseif (str_contains($cityStr, 'hà nam')) {
+                        $prefilledProvince = 'hnam';
+                    } elseif (str_contains($cityStr, 'vĩnh phúc')) {
+                        $prefilledProvince = 'vp';
+                    } elseif (str_contains($cityStr, 'hải phòng')) {
+                        $prefilledProvince = 'hp';
+                    } elseif (str_contains($cityStr, 'cần thơ')) {
+                        $prefilledProvince = 'ct';
+                    } elseif (str_contains($cityStr, 'hòa bình')) {
+                        $prefilledProvince = 'hb';
+                    } elseif (str_contains($cityStr, 'nam định') || str_contains($cityStr, 'ninh bình')) {
+                        $prefilledProvince = 'nb';
+                    } elseif (str_contains($cityStr, 'an giang')) {
+                        $prefilledProvince = 'ag';
+                    } elseif (str_contains($cityStr, 'kiên giang')) {
+                        $prefilledProvince = 'kg';
+                    } elseif (str_contains($cityStr, 'đồng tháp')) {
+                        $prefilledProvince = 'dt';
+                    } elseif (str_contains($cityStr, 'trà vinh') || str_contains($cityStr, 'vĩnh long')) {
+                        $prefilledProvince = 'tv';
+                    } elseif (str_contains($cityStr, 'bến tre') || str_contains($cityStr, 'sóc trăng')) {
+                        $prefilledProvince = 'bte';
+                    } elseif (str_contains($cityStr, 'đà nẵng')) {
+                        $prefilledProvince = 'dn';
+                    } elseif (str_contains($cityStr, 'quảng nam') || str_contains($cityStr, 'quảng ngãi')) {
+                        $prefilledProvince = 'qng';
+                    } elseif (str_contains($cityStr, 'bình định') || str_contains($cityStr, 'phú yên')) {
+                        $prefilledProvince = 'bdinh';
+                    } elseif (str_contains($cityStr, 'khánh hòa') || str_contains($cityStr, 'nha trang')) {
+                        $prefilledProvince = 'nth';
+                    } elseif (str_contains($cityStr, 'thanh hóa') || str_contains($cityStr, 'nghệ an')) {
+                        $prefilledProvince = 'th';
+                    } elseif (str_contains($cityStr, 'quảng bình') || str_contains($cityStr, 'quảng trị')) {
+                        $prefilledProvince = 'qbi';
+                    } elseif (str_contains($cityStr, 'thừa thiên') || str_contains($cityStr, 'huế')) {
+                        $prefilledProvince = 'hue';
+                    } elseif (str_contains($cityStr, 'gia lai') || str_contains($cityStr, 'kon tum')) {
+                        $prefilledProvince = 'gl';
+                    } elseif (str_contains($cityStr, 'đắk lắk') || str_contains($cityStr, 'đắk nông')) {
+                        $prefilledProvince = 'dkl';
+                    } elseif (str_contains($cityStr, 'lào cai') || str_contains($cityStr, 'yên bái')) {
+                        $prefilledProvince = 'lc';
+                    } elseif (str_contains($cityStr, 'điện biên') || str_contains($cityStr, 'lai châu')) {
+                        $prefilledProvince = 'dbi';
+                    } elseif (str_contains($cityStr, 'sơn la')) {
+                        $prefilledProvince = 'ss';
+                    } elseif (str_contains($cityStr, 'cao bằng') || str_contains($cityStr, 'bắc kạn')) {
+                        $prefilledProvince = 'cb';
+                    } elseif (str_contains($cityStr, 'lạng sơn') || str_contains($cityStr, 'hà giang')) {
+                        $prefilledProvince = 'ls';
+                    } elseif (str_contains($cityStr, 'cà mau') || str_contains($cityStr, 'bạc liêu')) {
+                        $prefilledProvince = 'cm';
+                    } else {
+                        $prefilledProvince = 'other';
+                    }
+                } else {
+                    $prefilledAddress = $user->address;
+                }
+            }
+        }
+    }
+@endphp
 <div class="bg-gray-50 min-h-screen py-8">
 <div class="max-w-6xl mx-auto px-4">
 
-  <!-- BREADCRUMB: ĐIỀU HƯỚNG LIÊN KẾT NHANH -->
+  {{-- Breadcrumb --}}
   <nav class="text-sm text-gray-500 mb-6">
     <a href="{{ url('/') }}" class="hover:text-blue-600">Trang chủ</a>
     <span class="mx-2">/</span>
@@ -41,7 +240,7 @@
     <span class="text-gray-800 font-semibold">Thanh toán</span>
   </nav>
 
-  <!-- THANH TIẾN TRÌNH THANH TOÁN (PROGRESS STEPS BAR) -->
+  {{-- Progress Steps --}}
   <div class="flex items-center gap-3 mb-8">
     <div class="flex items-center gap-2">
       <div class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold">✓</div>
@@ -59,54 +258,171 @@
     </div>
   </div>
 
-  <!-- BIỂU MẪU ĐẶT HÀNG AJAX -->
   <form id="checkout-form" method="POST" action="{{ route('cart.place-order') }}" class="flex flex-col lg:flex-row gap-6">
     @csrf
-    <!-- Input ẩn lưu phương thức thanh toán và điểm thưởng sử dụng để gửi lên Backend -->
     <input type="hidden" name="payment_method" id="payment_method_input" value="COD">
     <input type="hidden" name="wallet_points_used" id="wallet_points_used_input" value="0">
 
-    <!-- ============================================================
-         CỘT TRÁI (3/5 chiều rộng): THÔNG TIN NGƯỜI NHẬN & PHƯƠNG THỨC THANH TOÁN
-         ============================================================ -->
+    {{-- ===== CỘT TRÁI ===== --}}
     <div class="w-full lg:w-3/5 space-y-5">
 
-      <!-- Khối 1: Thông tin liên hệ và địa chỉ giao hàng -->
+      {{-- Thông tin người nhận --}}
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 class="text-base font-bold mb-4 flex items-center gap-2 text-gray-800">
           <span class="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
           Thông tin người nhận
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- Họ và tên khách hàng -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Họ và tên *</label>
             <input id="inp-name" name="customer_name" type="text" required maxlength="50"
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
-              value="{{ Auth::check() ? Auth::user()->name : '' }}" placeholder="Nguyễn Văn A">
+              value="{{ Auth::check() ? $prefilledName : '' }}" placeholder="Nguyễn Văn A">
             <p id="err-name" class="text-xs text-red-500 mt-1 hidden"></p>
           </div>
-          <!-- Số điện thoại giao hàng -->
           <div>
             <label class="block text-sm font-semibold text-gray-700 mb-1">Số điện thoại *</label>
             <input id="inp-phone" name="customer_phone" type="tel" required maxlength="10"
               class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
-              value="{{ Auth::check() && Auth::user()->phone ? Auth::user()->phone : '' }}" placeholder="0901234567">
+              value="{{ Auth::check() ? $prefilledPhone : '' }}" placeholder="0901234567">
             <p id="err-phone" class="text-xs text-red-500 mt-1 hidden"></p>
           </div>
         </div>
-        <!-- Địa chỉ nhận hàng chi tiết -->
         <div class="mt-4">
+          <label class="block text-sm font-semibold text-gray-700 mb-1">Tỉnh/Thành phố *</label>
+          <select id="inp-province" name="province" required
+            class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white transition text-sm cursor-pointer mb-3">
+            <option value="" disabled {{ $prefilledProvince ? '' : 'selected' }}>-- Chọn Tỉnh/Thành phố --</option>
+
+            {{-- Nhóm 1: Nội thành (< 30 km) --}}
+            <optgroup label="🏙️ Nội thành — Phí 20.000đ (Miễn phí từ 10tr)">
+                <option value="hcm" data-fee="20000" data-threshold="10000000" {{ $prefilledProvince === 'hcm' ? 'selected' : '' }}>TP. Hồ Chí Minh</option>
+                <option value="hn"  data-fee="20000" data-threshold="10000000" {{ $prefilledProvince === 'hn' ? 'selected' : '' }}>TP. Hà Nội</option>
+            </optgroup>
+
+            {{-- Nhóm 2: Vùng lân cận (30 – 150 km) --}}
+            <optgroup label="🚐 Vùng lân cận (30–150 km) — Phí 35.000đ (Miễn phí từ 10tr)">
+                <option value="bd"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'bd' ? 'selected' : '' }}>Tỉnh Bình Dương</option>
+                <option value="dnai" data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'dnai' ? 'selected' : '' }}>Tỉnh Đồng Nai</option>
+                <option value="la"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'la' ? 'selected' : '' }}>Tỉnh Long An</option>
+                <option value="tg"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'tg' ? 'selected' : '' }}>Tỉnh Tiền Giang</option>
+                <option value="vt"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'vt' ? 'selected' : '' }}>Tỉnh Bà Rịa – Vũng Tàu</option>
+                <option value="bn"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'bn' ? 'selected' : '' }}>Tỉnh Bắc Ninh</option>
+                <option value="hy"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'hy' ? 'selected' : '' }}>Tỉnh Hưng Yên</option>
+                <option value="hnam" data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'hnam' ? 'selected' : '' }}>Tỉnh Hà Nam</option>
+                <option value="vp"   data-fee="35000" data-threshold="10000000" {{ $prefilledProvince === 'vp' ? 'selected' : '' }}>Tỉnh Vĩnh Phúc</option>
+            </optgroup>
+
+            {{-- Nhóm 3: Vùng trung bình (150 – 400 km) --}}
+            <optgroup label="🚚 Vùng trung bình (150–400 km) — Phí 50.000đ (Miễn phí từ 10tr)">
+                <option value="hp"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'hp' ? 'selected' : '' }}>TP. Hải Phòng</option>
+                <option value="ct"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'ct' ? 'selected' : '' }}>TP. Cần Thơ</option>
+                <option value="hb"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'hb' ? 'selected' : '' }}>Tỉnh Hòa Bình</option>
+                <option value="nb"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'nb' ? 'selected' : '' }}>Tỉnh Nam Định & Ninh Bình</option>
+                <option value="ag"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'ag' ? 'selected' : '' }}>Tỉnh An Giang</option>
+                <option value="kg"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'kg' ? 'selected' : '' }}>Tỉnh Kiên Giang</option>
+                <option value="dt"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'dt' ? 'selected' : '' }}>Tỉnh Đồng Tháp</option>
+                <option value="tv"   data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'tv' ? 'selected' : '' }}>Tỉnh Trà Vinh & Vĩnh Long</option>
+                <option value="bte"  data-fee="50000" data-threshold="10000000" {{ $prefilledProvince === 'bte' ? 'selected' : '' }}>Tỉnh Bến Tre & Sóc Trăng</option>
+            </optgroup>
+
+            {{-- Nhóm 4: Vùng xa (400 – 700 km) --}}
+            <optgroup label="✈️ Vùng xa (400–700 km) — Phí 70.000đ (Miễn phí từ 10tr)">
+                <option value="dn"   data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'dn' ? 'selected' : '' }}>TP. Đà Nẵng</option>
+                <option value="qng"  data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'qng' ? 'selected' : '' }}>Tỉnh Quảng Nam & Quảng Ngãi</option>
+                <option value="bdinh" data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'bdinh' ? 'selected' : '' }}>Tỉnh Bình Định & Phú Yên</option>
+                <option value="nth"  data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'nth' ? 'selected' : '' }}>Tỉnh Khánh Hòa (Nha Trang)</option>
+                <option value="th"   data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'th' ? 'selected' : '' }}>Tỉnh Thanh Hóa & Nghệ An</option>
+                <option value="qbi"  data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'qbi' ? 'selected' : '' }}>Tỉnh Quảng Bình & Quảng Trị</option>
+                <option value="hue"  data-fee="70000" data-threshold="10000000" {{ $prefilledProvince === 'hue' ? 'selected' : '' }}>Tỉnh Thừa Thiên – Huế</option>
+            </optgroup>
+
+            {{-- Nhóm 5: Vùng rất xa (> 700 km) --}}
+            <optgroup label="🗺️ Vùng rất xa (> 700 km) — Phí 100.000đ (Miễn phí từ 10tr)">
+                <option value="gl"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'gl' ? 'selected' : '' }}>Tỉnh Gia Lai & Kon Tum</option>
+                <option value="dkl"  data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'dkl' ? 'selected' : '' }}>Tỉnh Đắk Lắk & Đắk Nông</option>
+                <option value="lc"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'lc' ? 'selected' : '' }}>Tỉnh Lào Cai & Yên Bái</option>
+                <option value="dbi"  data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'dbi' ? 'selected' : '' }}>Tỉnh Điện Biên & Lai Châu</option>
+                <option value="ss"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'ss' ? 'selected' : '' }}>Tỉnh Sơn La & Hòa Bình</option>
+                <option value="cb"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'cb' ? 'selected' : '' }}>Tỉnh Cao Bằng & Bắc Kạn</option>
+                <option value="ls"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'ls' ? 'selected' : '' }}>Tỉnh Lạng Sơn & Hà Giang</option>
+                <option value="cm"   data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'cm' ? 'selected' : '' }}>Tỉnh Cà Mau & Bạc Liêu</option>
+                <option value="other" data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'other' ? 'selected' : '' }}>Tỉnh thành khác / Hải đảo</option>
+            </optgroup>
+          </select>
+
+          @if(Auth::check() && isset($addresses) && $addresses->isNotEmpty())
+            <div class="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <div class="text-sm font-semibold text-gray-700">Chọn địa chỉ đã lưu</div>
+                <p class="text-xs text-gray-500">Chọn địa chỉ đã lưu để tự động điền thông tin giao hàng.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="openSavedAddressModal()" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition">
+                  <i class="fa-solid fa-map-marker-alt"></i>
+                  Chọn từ địa chỉ đã lưu
+                </button>
+                {{-- Quản lý địa chỉ đã được ẩn theo yêu cầu: chỉ giữ nút chọn địa chỉ --}}
+              </div>
+            </div>
+          @endif
+
+          <input type="hidden" id="saved_address_id" name="saved_address_id" value="{{ $selectedAddressId }}">
+
           <div class="flex justify-between items-center mb-1">
-            <label class="block text-sm font-semibold text-gray-700">Địa chỉ giao hàng *</label>
+            <label class="block text-sm font-semibold text-gray-700">Địa chỉ chi tiết (Số nhà, tên đường, phường/xã, quận/huyện) *</label>
             <span id="counter-address" class="text-xs text-gray-400 font-medium">0/150</span>
           </div>
           <input id="inp-address" name="shipping_address" type="text" required maxlength="150"
             class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm"
-            placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
+            value="{{ Auth::check() ? $prefilledAddress : '' }}" placeholder="VD: 123 Đường Lê Lợi, Phường Bến Thành, Quận 1">
           <p id="err-address" class="text-xs text-red-500 mt-1 hidden"></p>
         </div>
-        <!-- Ghi chú vận chuyển bổ sung -->
+
+        @if(Auth::check() && isset($addresses) && $addresses->isNotEmpty())
+          <div id="saved-address-modal" class="fixed inset-0 z-[99999] hidden flex items-center justify-center bg-black/50 p-4">
+            <div class="w-full max-w-2xl rounded-3xl bg-white shadow-2xl overflow-hidden border border-gray-100" style="max-height:90vh; overflow:auto;">
+              <div class="flex items-start justify-between gap-4 p-6 border-b border-gray-200">
+                <div>
+                  <h3 class="text-base font-bold text-gray-900">Chọn địa chỉ nhận hàng</h3>
+                  <p class="text-sm text-gray-500 mt-1">Nhấn vào địa chỉ để tự động điền thông tin giao hàng trên trang thanh toán.</p>
+                </div>
+                <button type="button" onclick="closeSavedAddressModal()" class="text-gray-400 hover:text-gray-700">
+                  <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+              </div>
+              <div class="max-h-[420px] overflow-y-auto p-6 space-y-3">
+                @foreach($addresses as $address)
+                  @php
+                    $savedAddressLabel = trim($address->name ?: ($address->type ?: 'Địa chỉ'));
+                    $savedAddressFull = trim(implode(', ', array_filter([$address->street, $address->ward, $address->district, $address->city])));
+                    $savedSelected = $selectedAddressId === $address->id;
+                  @endphp
+                  <button type="button" onclick="selectSavedAddress(this)"
+                    class="saved-address-card w-full text-left p-4 border rounded-3xl transition shadow-sm hover:border-blue-500 flex items-start justify-between gap-3 {{ $savedSelected ? 'border-blue-600 bg-blue-50' : 'border-gray-200 bg-white' }}"
+                    data-address-id="{{ $address->id }}"
+                    data-full-address="{{ e($savedAddressFull) }}"
+                    data-city="{{ e($address->city) }}">
+                    <div class="min-w-0">
+                      <div class="font-semibold text-sm text-gray-900">{{ $savedAddressLabel }}</div>
+                      <div class="text-xs text-gray-500 mt-1 break-words">{{ $savedAddressFull }}</div>
+                    </div>
+                    <div class="text-right">
+                      @if($address->is_default)
+                        <span class="inline-flex px-3 py-1 text-[11px] font-semibold uppercase tracking-wider bg-blue-100 text-blue-700 rounded-full">Mặc định</span>
+                      @endif
+                      <div class="text-xs text-gray-400 mt-2">{{ $user->phone_number }}</div>
+                    </div>
+                  </button>
+                @endforeach
+              </div>
+              <div class="flex items-center justify-between gap-3 p-5 border-t border-gray-200">
+                <a href="{{ route('profile.index') }}" class="text-sm text-blue-600 hover:underline">Thêm / sửa địa chỉ</a>
+                <button type="button" onclick="closeSavedAddressModal()" class="px-5 py-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition">Đóng</button>
+              </div>
+            </div>
+          </div>
+        @endif
         <div class="mt-4">
           <div class="flex justify-between items-center mb-1">
             <label class="block text-sm font-semibold text-gray-700">Ghi chú (tùy chọn)</label>
@@ -119,7 +435,7 @@
         </div>
       </div>
 
-      <!-- Khối 2: Lựa chọn Phương thức thanh toán (COD hoặc chuyển khoản qua mã QR) -->
+      {{-- Phương thức thanh toán --}}
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 class="text-base font-bold mb-4 flex items-center gap-2 text-gray-800">
           <span class="w-7 h-7 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
@@ -127,7 +443,7 @@
         </h2>
         <div class="space-y-3" id="payment-methods">
 
-          <!-- Tùy chọn 1: Chuyển khoản ngân hàng qua mã QR (Mặc định chọn) -->
+          {{-- QR Code --}}
           <div class="relative">
             <input type="radio" name="payment_method" id="pm-qr" value="qr" class="pay-radio sr-only" checked>
             <label for="pm-qr" onclick="selectMethod('qr')"
@@ -148,7 +464,7 @@
             </label>
           </div>
 
-          <!-- Tùy chọn 2: Thanh toán khi nhận hàng (COD) -->
+          {{-- COD --}}
           <div class="relative">
             <input type="radio" name="payment_method" id="pm-cod" value="cod" class="pay-radio sr-only">
             <label for="pm-cod" onclick="selectMethod('cod')"
@@ -167,7 +483,8 @@
           </div>
         </div>
 
-        <!-- Panel hướng dẫn thêm đối với phương thức COD -->
+
+        {{-- COD Panel --}}
         <div id="cod-panel" class="mt-5 p-4 bg-green-50 border border-green-200 rounded-2xl method-panel">
           <div class="flex items-start gap-3">
             <i class="fa-solid fa-circle-info text-green-600 mt-0.5"></i>
@@ -180,9 +497,7 @@
       </div>
     </div>
 
-    <!-- ============================================================
-         CỘT PHẢI (2/5 chiều rộng): TÓM TẮT ĐƠN HÀNG, KHUYẾN MÃI VÀ NÚT XÁC NHẬN ĐẶT HÀNG
-         ============================================================ -->
+    {{-- ===== CỘT PHẢI ===== --}}
     <div class="w-full lg:w-2/5">
       <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sticky top-4">
         <h2 class="text-base font-bold mb-4 text-gray-800 border-b pb-3 flex items-center justify-between">
@@ -190,27 +505,24 @@
           <span id="item-badge" class="text-xs bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full font-bold">0 sản phẩm</span>
         </h2>
 
-        <!-- Khung danh sách các sản phẩm tóm lược trong giỏ hàng (hỗ trợ cuộn dọc) -->
+        {{-- Danh sách sản phẩm --}}
         <div id="order-items" class="space-y-3 mb-5 max-h-56 overflow-y-auto pr-1">
           <p class="text-sm text-gray-400 text-center py-6">Đang tải đơn hàng...</p>
         </div>
 
-        <!-- Khung áp dụng Coupon giảm giá -->
+        {{-- Mã giảm giá --}}
         <div class="mb-5 bg-gray-50 rounded-xl border border-gray-100 p-4">
           <div class="flex justify-between items-center mb-2">
             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide">Mã giảm giá</label>
-            <!-- Đường dẫn chuyển nhanh sang trang xem toàn bộ Voucher khả dụng -->
             <a href="{{ route('cart.discount-code') }}" class="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 transition">
               <i class="fa-solid fa-ticket text-sm"></i> Chọn Voucher
             </a>
           </div>
           <div class="flex gap-2">
-            <!-- Ô nhập mã coupon -->
             <input id="discount-code" type="text"
               class="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-400 outline-none"
               value="{{ session('applied_coupon_code') }}"
               placeholder="VD: SUMMER30">
-            <!-- Nút bấm gửi AJAX để kích hoạt hoặc hủy bỏ mã giảm giá -->
             <button type="button" onclick="applyDiscount()" id="btn-discount"
               class="px-4 bg-gray-800 text-white text-sm rounded-lg font-semibold hover:bg-gray-900 transition whitespace-nowrap">
               Áp dụng
@@ -219,7 +531,6 @@
           <p id="discount-msg" class="text-xs mt-2 hidden font-medium"></p>
         </div>
 
-        <!-- Khung Điểm tiêu dùng: Hướng dẫn người dùng sang trang đổi thưởng /rewards -->
         <div class="mb-5 bg-blue-50 rounded-xl border border-blue-100 p-4">
           <div class="flex items-center justify-between mb-2">
             <label class="block text-xs font-bold text-blue-700 uppercase tracking-wide">Điểm tiêu dùng</label>
@@ -228,7 +539,7 @@
           <p class="text-[11px] text-blue-700 mb-2">Điểm đã được chuyển sang trang đổi thưởng <a href="{{ route('rewards.index') }}" class="font-semibold underline">/rewards</a>.</p>
         </div>
 
-        <!-- Khối hiển thị phân tích số tiền đơn hàng -->
+        {{-- Tóm tắt tiền --}}
         <div class="space-y-2.5 text-sm border-t pt-4">
           <div class="flex justify-between text-gray-600">
             <span>Tạm tính</span>
@@ -236,7 +547,7 @@
           </div>
           <div class="flex justify-between text-gray-600">
             <span>Phí vận chuyển</span>
-            <span class="font-medium text-green-600">Miễn phí</span>
+            <span id="sum-shipping" class="font-medium text-gray-800">Chưa chọn khu vực</span>
           </div>
           <div id="sum-discount-row" class="flex justify-between text-gray-600 hidden">
             <span>Giảm giá</span>
@@ -254,7 +565,7 @@
           <input type="hidden" name="discount_amount" id="discount_amount_input" value="0">
         </div>
 
-        <!-- Nút đặt hàng: Mặc định bị khóa (disabled) cho đến khi người dùng điền đủ thông tin hợp lệ ở cột trái -->
+        {{-- Nút đặt hàng --}}
         <button type="submit" id="btn-order"
           class="w-full mt-5 bg-red-600 text-white py-3.5 rounded-xl font-bold text-base hover:bg-red-700 transition-all shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed disabled:shadow-none"
           disabled>
@@ -267,11 +578,11 @@
       </div>
     </div>
 
-  </form>
+  </div>
 </div>
 </div>
 
-<!-- LỚP PHỦ THÀNH CÔNG (SUCCESS OVERLAY): Báo đặt hàng COD thành công -->
+{{-- Success Overlay --}}
 <div id="success-overlay" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
   <div class="bg-white rounded-3xl p-10 text-center max-w-sm mx-4 shadow-2xl">
     <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
@@ -288,22 +599,133 @@
 
 @push('scripts')
 <script>
-// ---- CẤU HÌNH NGÂN HÀNG CƠ BẢN ----
+// ---- CONFIG ----
 const BANK = { id: 'MB', account: '123456789', name: 'DIENMAYPRO' };
 
-// ---- TRẠNG THÁI SỐ LIỆU BAN ĐẦU ----
+// ---- STATE ----
 let cartItems = [];
 let subtotalVal = 0;
 let discountVal = 0;
+let shippingVal = 0;
 let currentMethod = 'cod';
 
-// Tiện ích định dạng VND
+// ---- FORMAT ----
 const fmt = n => new Intl.NumberFormat('vi-VN').format(n || 0) + 'đ';
 
-/**
- * 1. NẠP DỮ LIỆU SẢN PHẨM GIỎ HÀNG TỪ LARAVEL
- * Nhận dữ liệu truyền từ controller qua $cartItems và chuyển thành Object JS.
- */
+// ---- CALCULATE SHIPPING ----
+function calculateShipping() {
+  const provSel = document.getElementById('inp-province');
+  if (!provSel) return;
+  const opt = provSel.options[provSel.selectedIndex];
+  if (!opt || opt.value === '') {
+    shippingVal = 0;
+    document.getElementById('sum-shipping').textContent = 'Chưa chọn khu vực';
+    updateTotals();
+    return;
+  }
+
+  const baseFee = parseInt(opt.getAttribute('data-fee')) || 0;
+  const threshold = parseInt(opt.getAttribute('data-threshold')) || 0;
+  
+  // Tổng tạm tính sau giảm giá
+  const currentTotal = subtotalVal - discountVal;
+
+  if (currentTotal >= threshold) {
+    shippingVal = 0;
+    document.getElementById('sum-shipping').innerHTML = `<span class="line-through text-gray-400 mr-1.5">${fmt(baseFee)}</span><span class="text-green-600 font-bold">Miễn phí</span>`;
+  } else {
+    shippingVal = baseFee;
+    document.getElementById('sum-shipping').textContent = fmt(baseFee);
+  }
+
+  updateTotals();
+}
+
+function findProvinceCodeFromCity(city) {
+  if (!city) return '';
+  const text = city.toLowerCase();
+  if (text.includes('hồ chí minh') || text.includes('hcm')) return 'hcm';
+  if (text.includes('hà nội') || text.includes('hn')) return 'hn';
+  if (text.includes('bình dương')) return 'bd';
+  if (text.includes('đồng nai')) return 'dnai';
+  if (text.includes('long an')) return 'la';
+  if (text.includes('tiền giang')) return 'tg';
+  if (text.includes('vũng tàu') || text.includes('bà rịa')) return 'vt';
+  if (text.includes('bắc ninh')) return 'bn';
+  if (text.includes('hưng yên')) return 'hy';
+  if (text.includes('hà nam')) return 'hnam';
+  if (text.includes('vĩnh phúc')) return 'vp';
+  if (text.includes('hải phòng')) return 'hp';
+  if (text.includes('cần thơ')) return 'ct';
+  if (text.includes('hòa bình')) return 'hb';
+  if (text.includes('nam định') || text.includes('ninh bình')) return 'nb';
+  if (text.includes('an giang')) return 'ag';
+  if (text.includes('kiên giang')) return 'kg';
+  if (text.includes('đồng tháp')) return 'dt';
+  if (text.includes('trà vinh') || text.includes('vĩnh long')) return 'tv';
+  if (text.includes('bến tre') || text.includes('sóc trăng')) return 'bte';
+  if (text.includes('đà nẵng')) return 'dn';
+  if (text.includes('quảng nam') || text.includes('quảng ngãi')) return 'qng';
+  if (text.includes('bình định') || text.includes('phú yên')) return 'bdinh';
+  if (text.includes('khánh hòa') || text.includes('nha trang')) return 'nth';
+  if (text.includes('thanh hóa') || text.includes('nghệ an')) return 'th';
+  if (text.includes('quảng bình') || text.includes('quảng trị')) return 'qbi';
+  if (text.includes('thừa thiên') || text.includes('huế')) return 'hue';
+  if (text.includes('gia lai') || text.includes('kon tum')) return 'gl';
+  if (text.includes('đắk lắk') || text.includes('đắk nông')) return 'dkl';
+  if (text.includes('lào cai') || text.includes('yên bái')) return 'lc';
+  if (text.includes('điện biên') || text.includes('lai châu')) return 'dbi';
+  if (text.includes('sơn la')) return 'ss';
+  if (text.includes('cao bằng') || text.includes('bắc kạn')) return 'cb';
+  if (text.includes('lạng sơn') || text.includes('hà giang')) return 'ls';
+  if (text.includes('cà mau') || text.includes('bạc liêu')) return 'cm';
+  return 'other';
+}
+
+function selectSavedAddress(button) {
+  const fullAddress = button.dataset.fullAddress || '';
+  const city = button.dataset.city || '';
+  const addressId = button.dataset.addressId || '';
+
+  document.getElementById('inp-address').value = fullAddress;
+  const savedAddressIdInput = document.getElementById('saved_address_id');
+  if (savedAddressIdInput) {
+    savedAddressIdInput.value = addressId;
+  }
+
+  const provinceCode = findProvinceCodeFromCity(city);
+  const provinceSelect = document.getElementById('inp-province');
+  if (provinceSelect && provinceCode) {
+    provinceSelect.value = provinceCode;
+    calculateShipping();
+  }
+
+  document.querySelectorAll('.saved-address-card').forEach(card => {
+    card.classList.remove('border-blue-600','bg-blue-50');
+    card.classList.add('border-gray-200','bg-white');
+  });
+
+  button.classList.add('border-blue-600','bg-blue-50');
+  button.classList.remove('border-gray-200','bg-white');
+  checkFormValidity();
+  closeSavedAddressModal();
+}
+
+function openSavedAddressModal() {
+  const modal = document.getElementById('saved-address-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSavedAddressModal() {
+  const modal = document.getElementById('saved-address-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+// ---- LOAD CART FROM SESSIONSTORAGE ----
 function loadCart() {
   try {
     const raw = '{!! json_encode($cartItems) !!}';
@@ -316,10 +738,6 @@ function loadCart() {
   renderItems();
 }
 
-/**
- * 2. RENDER DANH SÁCH SẢN PHẨM TÓM TẮT
- * Vẽ lại danh sách sản phẩm ở cột phải.
- */
 function renderItems() {
   const el = document.getElementById('order-items');
   if (!cartItems.length) {
@@ -327,7 +745,6 @@ function renderItems() {
     document.getElementById('btn-order').disabled = true;
     return;
   }
-  // Tính tổng tiền tạm tính trước khi chiết khấu
   subtotalVal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
   el.innerHTML = cartItems.map(i => `
     <div class="flex justify-between items-start gap-3 text-sm">
@@ -338,21 +755,16 @@ function renderItems() {
       <span class="shrink-0 font-bold text-gray-800">${fmt(i.price * i.quantity)}</span>
     </div>`).join('');
   document.getElementById('item-badge').textContent = cartItems.length + ' sản phẩm';
-  updateTotals();
+  // Nếu đã chọn tỉnh từ trước (sau khi reload), tính phí
+  calculateShipping();
   checkFormValidity();
 }
 
-/**
- * 3. CẬP NHẬT TỔNG TIỀN CỦA ĐƠN HÀNG
- * Lấy tạm tính trừ giảm giá coupon để ra thành tiền cuối cùng.
- */
 function updateTotals() {
-  const total = subtotalVal - discountVal;
+  const total = subtotalVal - discountVal + shippingVal;
   document.getElementById('sum-subtotal').textContent = fmt(subtotalVal);
   document.getElementById('sum-total').textContent = fmt(total > 0 ? total : 0);
   document.getElementById('discount_amount_input').value = discountVal;
-  
-  // Hiển thị/ẩn hàng giảm giá coupon
   if (discountVal > 0) {
     document.getElementById('sum-discount-row').classList.remove('hidden');
     document.getElementById('sum-discount').textContent = '-' + fmt(discountVal);
@@ -361,15 +773,12 @@ function updateTotals() {
   }
 }
 
-/**
- * 4. LỰA CHỌN PHƯƠNG THỨC THANH TOÁN (COD HOẶC QR BANK)
- * Thay đổi viền nhãn, màu chấm tròn radio giả lập, ẩn/hiện các panel hướng dẫn tương ứng.
- */
+// ---- QR (Đã chuyển sang trang maQR) ----
+// ---- PAYMENT METHOD ----
 function selectMethod(method) {
   currentMethod = method;
-  document.getElementById('payment_method_input').value = method.toUpperCase();
 
-  // Reset toàn bộ giao diện viền của các label phương thức
+  // Reset all labels
   document.querySelectorAll('.pay-label').forEach(l => {
     l.classList.remove('border-blue-500','bg-blue-50','border-pink-400','bg-pink-50','border-green-400','bg-green-50');
     l.classList.add('border-gray-200');
@@ -377,14 +786,11 @@ function selectMethod(method) {
     l.querySelector('.dot-inner').style.opacity = '0';
   });
 
-  // Áp dụng class active màu sắc tương ứng cho phương thức được chọn
+  // Activate selected
   const sel = document.querySelector(`label[for="pm-${method}"]`);
   if (sel) {
     sel.classList.remove('border-gray-200');
-    const colors = {
-        qr: ['border-blue-500', 'bg-blue-50', '#2563eb'], 
-        cod: ['border-green-500', 'bg-green-50', '#16a34a']
-    };
+    const colors = {qr:['border-blue-500','bg-blue-50','#2563eb'], cod:['border-green-500','bg-green-50','#16a34a']};
     const [bc, bg, dc] = colors[method] || colors.qr;
     sel.classList.add(bc, bg);
     sel.querySelector('.dot-outer').style.borderColor = dc;
@@ -392,21 +798,18 @@ function selectMethod(method) {
     sel.querySelector('.dot-inner').style.backgroundColor = dc;
   }
 
-  // Ẩn/hiện panel mô tả chi tiết của phương thức COD
+  // Show/hide panels
   document.getElementById('cod-panel')?.classList.remove('active');
-  if (method === 'cod') {
+  if (method === 'qr') {
+    // Không hiện panel QR nữa, sẽ redirect khi bấm xác nhận
+  } else {
     document.getElementById('cod-panel')?.classList.add('active');
   }
 
   checkFormValidity();
 }
 
-/**
- * 5. AJAX: ÁP DỤNG / HỦY BỎ MÃ GIẢM GIÁ (COUPON DISCOUNT)
- * Gọi Fetch API lên route `cart.apply-coupon`.
- * Nếu áp dụng thành công: Khóa input sang readonly, đổi nút thành "Xóa", hiển thị text báo thành công.
- * Nếu bấm Xóa: Mở khóa input, reset số tiền chiết khấu, đổi nút về "Áp dụng".
- */
+// ---- DISCOUNT ----
 function applyDiscount() {
   const inp = document.getElementById('discount-code');
   const btn = document.getElementById('btn-discount');
@@ -453,7 +856,6 @@ function applyDiscount() {
       updateTotals();
     });
   } else {
-    // Luồng HỦY bỏ coupon đang áp dụng
     fetch('{{ route("cart.apply-coupon") }}', {
       method: 'POST',
       headers: {
@@ -475,14 +877,7 @@ function applyDiscount() {
   }
 }
 
-/**
- * 6. KIỂM TRA HỢP LỆ TOÀN BỘ BIỂU MẪU Ở CLIENT-SIDE (FORM VALIDATION LOGIC)
- * - Họ tên: Không chứa số, không chứa ký tự đặc biệt, dài 2-50 ký tự.
- * - SĐT: Bắt đầu bằng 0, độ dài 9-10 chữ số, không chứa chữ.
- * - Địa chỉ: Dài 10-150 ký tự, không chứa ký tự đặc biệt (chỉ cho phép , . - /). Cập nhật số đếm ký tự thực tế.
- * - Ghi chú: Tối đa 250 ký tự. Cập nhật số đếm ký tự thực tế.
- * Nếu tất cả đều hợp lệ, thuộc tính disabled trên nút đặt hàng sẽ được gỡ bỏ.
- */
+// ---- FORM VALIDITY ----
 function checkFormValidity() {
   const nameInp = document.getElementById('inp-name');
   const phoneInp = document.getElementById('inp-phone');
@@ -504,7 +899,7 @@ function checkFormValidity() {
   let addrValid = true;
   let noteValid = true;
 
-  // 6.1. Họ và tên validation
+  // 1. Họ và tên validation
   if (name.length > 0 && /\d/.test(name)) {
     if (errName) {
       errName.textContent = 'Nhập họ và tên bằng chữ';
@@ -534,7 +929,7 @@ function checkFormValidity() {
     if (name.trim().length === 0) nameValid = false;
   }
 
-  // 6.2. Số điện thoại validation
+  // 2. Số điện thoại validation
   if (/[a-zA-Z]/.test(phone)) {
     if (errPhone) {
       errPhone.textContent = 'Bạn chỉ nhập số';
@@ -552,7 +947,7 @@ function checkFormValidity() {
     if (phone.length === 0) phoneValid = false;
   }
 
-  // 6.3. Địa chỉ giao hàng validation
+  // 3. Địa chỉ giao hàng validation
   const addrLen = addr.length;
   const counterAddr = document.getElementById('counter-address');
   if (counterAddr) {
@@ -581,7 +976,7 @@ function checkFormValidity() {
     if (addrLen === 0) addrValid = false;
   }
 
-  // 6.4. Ghi chú validation
+  // 4. Ghi chú validation
   const noteLen = note.length;
   const counterNote = document.getElementById('counter-note');
   if (counterNote) {
@@ -597,35 +992,34 @@ function checkFormValidity() {
     if (errNote) errNote.classList.add('hidden');
   }
 
-  // Bật/tắt nút Xác nhận đặt hàng
+  const provSel = document.getElementById('inp-province');
+  const provValid = provSel && provSel.value !== '';
+
   const btn = document.getElementById('btn-order');
   if (btn) {
-    btn.disabled = !(nameValid && phoneValid && addrValid && noteValid);
+    btn.disabled = !(nameValid && phoneValid && addrValid && noteValid && provValid);
   }
 }
 
-// Lắng nghe sự kiện gõ phím trên tất cả các input để kích hoạt hàm check liên tục
 ['inp-name', 'inp-phone', 'inp-address', 'inp-note'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', checkFormValidity);
 });
+document.getElementById('inp-province')?.addEventListener('change', () => {
+  calculateShipping();
+  checkFormValidity();
+});
 
-/**
- * 7. AJAX SUBMIT - GỬI ĐƠN HÀNG LÊN SERVER PHÍA SAU
- * - Double check tính hợp lệ của dữ liệu trước khi gửi.
- * - Khóa nút và thay đổi nhãn sang "Đang xử lý..." để chống spam request (Double Submit Prevention).
- * - Gửi Fetch POST lên `/cart/confirm` kèm token CSRF.
- * - Nếu thành công:
- *   + Tải lại badge giỏ hàng trên Header bằng cách fetch `/cart/count`.
- *   + Nếu là thanh toán COD: Hiện lớp phủ thành công `success-overlay` tại chỗ.
- *   + Nếu là thanh toán QR: Điều hướng sang trang mã QR ngân hàng động (`/cart/qr?order_id=...`).
- */
+// ---- SUBMIT ----
 document.getElementById('checkout-form')?.addEventListener('submit', function (e) {
   e.preventDefault();
 
   const name = document.getElementById('inp-name').value.trim();
   const phone = document.getElementById('inp-phone').value.trim();
+  const provSel = document.getElementById('inp-province');
+  const province = provSel ? provSel.value : '';
   const addr = document.getElementById('inp-address').value.trim();
   const note = document.getElementById('inp-note').value.trim();
+  const savedAddressId = document.getElementById('saved_address_id') ? document.getElementById('saved_address_id').value : '';
   const discountInp = document.getElementById('discount-code');
   const discountCode = discountInp && discountInp.readOnly ? discountInp.value.trim().toUpperCase() : '';
 
@@ -633,8 +1027,9 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   const isPhoneInvalid = /[a-zA-Z]/.test(phone) || !/^0[0-9]{8,9}$/.test(phone);
   const isAddrInvalid = addr.length < 10 || addr.length > 150 || /[!@#$%^&*()_+=\[\]{}|\\:;"'<>?~`]/.test(addr);
   const isNoteInvalid = note.length > 250;
+  const isProvinceInvalid = province === '';
 
-  if (isNameInvalid || isPhoneInvalid || isAddrInvalid || isNoteInvalid) {
+  if (isNameInvalid || isPhoneInvalid || isAddrInvalid || isNoteInvalid || isProvinceInvalid) {
     alert('Vui lòng kiểm tra lại thông tin nhập vào hợp lệ!');
     return;
   }
@@ -646,8 +1041,11 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   const data = {
     name: name,
     phone: phone,
+    province: province,
     address: addr,
     note: note,
+    saved_address_id: savedAddressId,
+    shipping_fee: shippingVal,
     payment_method: currentMethod,
     discount_code: discountCode
   };
@@ -663,7 +1061,6 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   .then(response => response.json())
   .then(res => {
     if (res.status === 'success') {
-      // AJAX cập nhật lại Badge số lượng giỏ hàng trên Header
       const badge = document.getElementById('headerCartBadge');
       if (badge) {
         fetch('{{ route("cart.count") }}')
@@ -674,7 +1071,6 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
           });
       }
 
-      // Xử lý điều hướng/hiển thị tùy phương thức
       if (currentMethod === 'qr') {
         window.location.href = "{{ route('cart.qr') }}?order_id=" + res.order_id;
       } else {
@@ -694,12 +1090,11 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   });
 });
 
-// Khởi chạy các thiết lập ban đầu sau khi tải trang
+// ---- INIT ----
 document.addEventListener('DOMContentLoaded', () => {
   loadCart();
-  selectMethod('cod'); // COD được chọn làm mặc định ban đầu
+  selectMethod('cod');
   
-  // Tự động kiểm tra và áp dụng voucher nếu có sẵn trong session của PHP
   const initialCode = document.getElementById('discount-code').value.trim();
   if (initialCode) {
     applyDiscount();
