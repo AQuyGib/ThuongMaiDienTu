@@ -247,3 +247,4 @@ Route::get('/api/products/search-compare', [CompareController::class, 'searchCom
 // AI Chatbot
 use App\Http\Controllers\ChatbotController;
 Route::post('/chatbot', [ChatbotController::class, 'chat'])->name('chatbot.chat');
+Route::post('/chatbot/create-ticket', [ChatbotController::class, 'createTicketFromChat'])->name('chatbot.create-ticket');
