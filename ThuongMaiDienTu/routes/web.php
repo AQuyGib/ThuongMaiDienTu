@@ -250,8 +250,12 @@ Route::get('/api/category-products/{id}', [SearchController::class, 'getProducts
 use App\Http\Controllers\Frontend\WarrantyController;
 use App\Http\Controllers\PolicyController;
 
-Route::get('/chinh-sach-bao-hanh', [PolicyController::class, 'warranty'])->name('policy.warranty');
-Route::get('/chinh-sach-doi-tra', [PolicyController::class, 'returnPolicy'])->name('policy.return');
+Route::get('/warranty-policy', [PolicyController::class, 'warranty'])->name('policy.warranty');
+Route::get('/return-policy-info', [PolicyController::class, 'returnPolicy'])->name('policy.return');
+
+// Redirect cũ → mới (giữ SEO / bookmark cũ không bị 404)
+Route::redirect('/chinh-sach-bao-hanh', '/warranty-policy', 301);
+Route::redirect('/chinh-sach-doi-tra', '/return-policy-info', 301);
 Route::get('/warranty', [WarrantyController::class, 'index'])->name('warranty.index');
 Route::post('/warranty/lookup', [WarrantyController::class, 'lookup'])->name('warranty.lookup');
 Route::post('/warranty/claim', [WarrantyController::class, 'storeClaim'])->name('warranty.claim.store');
