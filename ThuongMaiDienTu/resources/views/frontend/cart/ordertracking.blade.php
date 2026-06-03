@@ -4,6 +4,13 @@
 
 @push('styles')
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            }
+        }
+    </script>
     <style>
         /* ============================================================
            CSS ĐƯỜNG DẪN TIẾN TRÌNH VÀ ICON TRẠNG THÁI (TIMELINE)

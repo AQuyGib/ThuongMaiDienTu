@@ -4,6 +4,13 @@
 
 @push('styles')
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            }
+        }
+    </script>
     <style>
         /* Ẩn mũi tên tăng giảm mặc định của input number */
         input[type=number]::-webkit-inner-spin-button, 
