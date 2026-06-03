@@ -376,19 +376,13 @@ export default function EmployeeModalForm({ employee, roles, isOpen, onClose, on
                 <div className="relative">
                   <select
                     {...register('role_id')}
-                    disabled={saving || !isEdit}
-                    className={`w-full px-4 h-12 border ${errors.role_id ? 'border-rose-500 focus:border-rose-500' : 'border-slate-100 dark:border-slate-700 focus:border-blue-500'} ${!isEdit ? 'bg-slate-100 dark:bg-slate-800/40 text-slate-400 cursor-not-allowed select-none' : 'bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 cursor-pointer'} rounded-2xl font-bold text-sm outline-none transition-all appearance-none disabled:opacity-80`}
+                    disabled={saving}
+                    className={`w-full px-4 h-12 border ${errors.role_id ? 'border-rose-500 focus:border-rose-500' : 'border-slate-100 dark:border-slate-700 focus:border-blue-500'} bg-slate-50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 cursor-pointer rounded-2xl font-bold text-sm outline-none transition-all appearance-none disabled:opacity-80`}
                   >
-                    {!isEdit ? (
-                      <option value="4">Mặc định: Nhân viên</option>
-                    ) : (
-                      <>
-                        <option value="">Chọn vai trò...</option>
-                        {roles.map(r => (
-                          <option key={r.role_id} value={r.role_id.toString()}>{r.name}</option>
-                        ))}
-                      </>
-                    )}
+                    <option value="">Chọn vai trò...</option>
+                    {roles.map(r => (
+                      <option key={r.role_id} value={r.role_id.toString()}>{r.name}</option>
+                    ))}
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                     <Shield size={16} />

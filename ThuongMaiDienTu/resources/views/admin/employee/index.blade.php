@@ -6,7 +6,7 @@
 @section('content')
 <div class="container-fluid">
     {{-- React Mount Point cho Employee Manager --}}
-    <div id="admin-employee-management" data-props="{{ json_encode(['employees' => $employees, 'roles' => $roles, 'stats' => $stats]) }}">
+    <div id="admin-employee-management" data-props="{{ json_encode(['employees' => $employees, 'roles' => $roles, 'stats' => $stats, 'auth_id' => auth()->id()]) }}">
         {{-- Trạng thái chờ trong lúc React component tải --}}
         <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 p-24 flex flex-col items-center justify-center text-center shadow-xl">
             <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-6"></div>

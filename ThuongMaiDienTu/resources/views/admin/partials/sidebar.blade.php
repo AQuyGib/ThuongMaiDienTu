@@ -17,7 +17,7 @@
         ],
         [
             'label' => $isEn ? 'Orders' : 'Đơn hàng',
-            'route' => Route::has('admin.orders.index') ? route('admin.orders.index') : '#',
+            'route' => \Route::has('admin.orders.index') ? route('admin.orders.index') : '#',
             'icon' => 'fa-solid fa-shopping-bag',
             'active' => request()->is('admin/orders*'),
             'section' => $isEn ? 'Business' : 'Kinh doanh'
@@ -150,7 +150,7 @@
         ]
     ];
 
-    if(Auth::check() && Auth::user()->role_id == 1) {
+    if(\Auth::check() && \Auth::user()->role_id == 1) {
         $menu[] = [
             'label' => $isEn ? 'Accounts' : 'Tài khoản',
             'route' => route('admin.users.index'),
@@ -167,14 +167,14 @@
         ];
         $menu[] = [
             'label' => $isEn ? 'System Settings' : 'Cài đặt hệ thống',
-            'route' => Route::has('admin.settings.index') ? route('admin.settings.index') : '#',
+            'route' => \Route::has('admin.settings.index') ? route('admin.settings.index') : '#',
             'icon' => 'fa-solid fa-cog',
             'active' => request()->routeIs('admin.settings.index'),
             'section' => $isEn ? 'Settings' : 'Thiết lập'
         ];
         $menu[] = [
             'label' => $isEn ? 'Activity Logs' : 'Nhật ký hoạt động',
-            'route' => Route::has('admin.activity-logs.index') ? route('admin.activity-logs.index') : '#',
+            'route' => \Route::has('admin.activity-logs.index') ? route('admin.activity-logs.index') : '#',
             'icon' => 'fa-solid fa-clock-rotate-left',
             'active' => request()->is('admin/activity-logs*'),
             'section' => $isEn ? 'Settings' : 'Thiết lập'
@@ -183,9 +183,9 @@
 
     $props = [
         'user' => [
-            'full_name' => Auth::user()->full_name ?? 'Admin',
-            'role_name' => optional(Auth::user()->role)->name ?? 'Administrator',
-            'email' => Auth::user()->email ?? ''
+            'full_name' => \Auth::user()->full_name ?? 'Admin',
+            'role_name' => optional(\Auth::user()->role)->name ?? 'Administrator',
+            'email' => \Auth::user()->email ?? ''
         ],
         'menu' => $menu,
         'homeRoute' => route('admin.dashboard'),

@@ -100,5 +100,29 @@ class UserSeeder extends Seeder
                 ]
             );
         }
+
+        // Tạo thêm 50 nhân viên ảo (role_id = 4)
+        $ho = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ', 'Ngô', 'Dương'];
+        $dem = ['Văn', 'Thành', 'Minh', 'Đức', 'Quốc', 'Hữu', 'Anh', 'Khánh', 'Hoàng', 'Tuấn', 'Ngọc', 'Xuân'];
+        $ten = ['Nam', 'Hùng', 'Hải', 'Sơn', 'Dũng', 'Khánh', 'Tuấn', 'Tùng', 'Đạt', 'Linh', 'Quang', 'Huy', 'Thịnh', 'Trung', 'Phong', 'Kiên', 'Hoàng', 'Bảo'];
+
+        for ($i = 1; $i <= 50; $i++) {
+            $fullName = $ho[array_rand($ho)] . ' ' . $dem[array_rand($dem)] . ' ' . $ten[array_rand($ten)];
+            $email = 'employee.' . $i . '@dienmaypro.com.vn';
+            $phone = '09' . str_pad($i, 8, '0', STR_PAD_LEFT);
+            
+            User::updateOrCreate(
+                ['email' => $email],
+                [
+                    'role_id'       => 4, // Nhân viên / Kỹ thuật viên
+                    'full_name'     => $fullName,
+                    'password_hash' => Hash::make('staff123'),
+                    'member_tier'   => 'Dong',
+                    'status'        => $i % 10 === 0 ? 'Banned' : 'Active', // Cho vài người bị khóa để đa dạng trạng thái
+                    'phone_number'  => $phone,
+                    'created_at'    => now()->subDays(rand(1, 100)),
+                ]
+            );
+        }
     }
 }

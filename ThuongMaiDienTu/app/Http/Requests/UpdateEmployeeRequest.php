@@ -37,7 +37,7 @@ class UpdateEmployeeRequest extends FormRequest
             'role_id' => 'required|exists:roles,role_id|not_in:3', // 3 là role_id của Khách hàng, nhân viên không thể có vai trò này
             'status' => 'required|in:Active,Banned',
             'version' => 'required|integer', // Dùng cho Optimistic Locking
-            'last_updated_at' => 'required|string', // Mốc thời gian cập nhật cuối cùng
+            'last_updated_at' => 'nullable|string', // Mốc thời gian cập nhật cuối cùng
         ];
     }
 

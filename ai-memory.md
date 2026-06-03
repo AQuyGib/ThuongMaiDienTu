@@ -1,6 +1,18 @@
 # Project Memory
 
 ## Current State & Focus
+- **Nâng cao Quản lý Nhân viên — Giai đoạn 2 (Phase 2):**
+  - **Batch Actions:** Thêm checkbox chọn nhiều nhân viên (EmployeeTable) + floating bar cố định ở bottom cho 3 thao tác hàng loạt: Kích hoạt / Khóa / Xóa mềm. Backend route `POST /admin/employees/batch-action` xử lý trong DB::transaction.
+  - **Active Filter Chips:** Hiển thị chip trực quan bên dưới thanh lọc (tìm kiếm, vai trò, trạng thái, sắp xếp) với nút × xóa từng chip + nút "Xóa tất cả".
+  - **Reset bộ lọc:** Nút Reset toàn bộ bộ lọc về trạng thái mặc định khi có bất kỳ bộ lọc nào đang hoạt động.
+  - **Keyboard Shortcuts:** `Escape` đóng modal/drawer/bỏ chọn batch, `Ctrl+K` focus ô tìm kiếm.
+  - **Drawer nâng cấp:** Thêm badge `#EMP-{id}`, trạng thái online/offline (dựa trên `isOnline()` model), thời gian đăng nhập gần nhất từ `loginHistories`.
+  - **Backend:** `EmployeeResource.php` thêm `last_login_at` + `is_online`. `EmployeeController.php` eager load `loginHistories` + method `batchAction()`. Route `employees.batch-action` đã đăng ký.
+  - Build thành công: `npm run build` ✅ (0 errors, 5.14s).
+- **Kích hoạt chức năng Phân trang Nhân sự hoạt động:**
+  - Làm phẳng cấu trúc dữ liệu phân trang trả về trong `EmployeeController.php` để đưa các trường `current_page`, `last_page`, `per_page`, `total`, `from`, `to`, `links` ra ngoài cùng cấp với `data`.
+  - Khắc phục triệt để lỗi React component (`EmployeeManager.tsx` & `EmployeeTable.tsx`) không đọc được các trường metadata bị lồng trong cấu trúc `meta` mặc định của Laravel API Resource.
+  - Đảm bảo các chỉ số số trang, thanh trượt hiển thị chính xác range `Hiển thị X - Y trong tổng số Z` hoạt động vô cùng trơn tru và trực quan.
 - **Tích hợp nhánh AI & Hoàn tất Merge (Merge Branch AnhQuy/TichHopAI into master):**
   - Thực hiện merge thành công nhánh `AnhQuy/TichHopAI` vào nhánh `master` và giải quyết xung đột thủ công trong file `ThuongMaiDienTu/ai-memory.md` bằng cách hợp nhất lịch sử phát triển của cả hai nhánh một cách khoa học.
   - Đồng bộ và cài đặt toàn bộ dependencies mới của dự án bằng lệnh `composer install --ignore-platform-reqs`, giúp tải đầy đủ các thư viện hỗ trợ AI và API Sanctum.
@@ -241,6 +253,12 @@
   - `ThuongMaiDienTu/resources/views/admin/service-invoices/edit.blade.php`
   - `ThuongMaiDienTu/resources/views/admin/service-invoices/index.blade.php`
   - `ThuongMaiDienTu/resources/views/frontend/profile.blade.php`
+- **Employee Premium Exports Upgrade:**
+  - `ThuongMaiDienTu/app/Exports/EmployeeExport.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/EmployeeController.php`
+  - `ThuongMaiDienTu/resources/views/admin/employee/pdf_report.blade.php`
+  - `ThuongMaiDienTu/resources/js/components/EmployeeManager.tsx`
+  - `ThuongMaiDienTu/routes/admin.php`
 - **Lucky Wheel (Dynamic Configurations & Rank Restrictions):**
   - `ThuongMaiDienTu/resources/views/frontend/rewards/index.blade.php`
   - `ThuongMaiDienTu/resources/views/admin/rewards/index.blade.php`
@@ -339,6 +357,38 @@
 - **Merge Master vào xuanhoa/CRUD_NhanVien & Giải quyết Xung đột:**
   - **AppServiceProvider.php:** Giải quyết xung đột bằng cách gộp thành công định nghĩa `Gate::policy` cho `EmployeePolicy` (từ nhánh CRUD_NhanVien) vào trong hàm `boot()` chung với các hàm hạ tầng khác của `master` (`bootInfrastructure`, `bootLoginHistory`, và `bootObservers`).
   - **sidebar.blade.php:** Giải quyết xung đột bằng cách giữ lại menu điều hướng "Employees / Nhân viên" (từ nhánh CRUD_NhanVien) trong nhóm phân hệ `Settings / Thiết lập` cho Admin, đồng thời chuyển hóa nhãn hiển thị sang dạng hỗ trợ song ngữ Anh-Việt (`$isEn ? 'Employees' : 'Nhân viên'`) đồng nhất 100% với phong cách giao diện của `master`.
+  - **Sửa lỗi Phân hệ Nhân viên không chạy (Stuck Loading Spinner):** 
+    - **Lỗi 1 (TypeScript TDZ):** Khắc phục lỗi biên dịch TypeScript `ReferenceError: Cannot access 'mutate' before initialization` trong `EmployeeManager.tsx` bằng cách chuyển hook `useEffect` đồng bộ BroadcastChannel xuống khai báo phía dưới hàm `useSWR` (nơi sinh ra biến `mutate`).
+    - **Lỗi 2 (SPA Soft-Navigation):** Khai báo bổ sung tuyến đường `/admin/employees` vào danh sách ngoại lệ (force full page reloads) trong cơ chế soft-navigation của `app.tsx`, đảm bảo trình duyệt tải và ánh xạ thành công các props và React component sạch sẽ từ server mà không bị rò rỉ hoặc thiếu cấu trúc DOM.
+    - **Lỗi 3 (API 500 unreadCount):** Khắc phục lỗi `Failed to load resource: the server responded with a status of 500 (Internal Server Error)` tại endpoint `/admin/notifications/unread-count` bằng cách bổ sung hàm `unreadCount` bị thiếu trong `NotificationCampaignController.php`. Lỗi 500 này trước đây đã gây crash luồng JavaScript khi Topbar cố gắng lấy số lượng thông báo chưa đọc, gián tiếp chặn toàn bộ tiến trình React mount component `EmployeeManager`.
+
+- **Đại trùng tu nâng cấp Phân hệ Quản lý Nhân sự (Employee Management) Premium:**
+  - **API toggle-status:** Thêm API PATCH `/admin/employees/{employee}/toggle-status` và hàm `toggleStatus` trong `EmployeeController.php` để đảo nhanh trạng thái Active <-> Banned của nhân viên. Tích hợp phân quyền Gate chặt chẽ và chặn tuyệt đối không cho Admin tự khóa tài khoản của chính mình (lỗi 403).
+  - **Lọc nhanh bằng thẻ số liệu (Stat Cards Filtering):** Tích hợp sự kiện onClick vào 4 thẻ số liệu thống kê hàng đầu. Người dùng click vào thẻ để chuyển đổi nhanh bộ lọc danh sách (Tổng nhân sự, Đang làm việc, Tạm dừng, Quản lý cấp cao) một cách cực kỳ trực quan và êm mượt.
+  - **Biểu đồ cơ cấu trực quan (Chart.js Doughnut):** Tích hợp biểu đồ Doughnut từ `chart.js/auto` hiển thị trực quan tỷ lệ phân bổ nhân sự (Admin, Quản lý, Nhân viên) cập nhật theo thời gian thực và hỗ trợ đóng/mở (toggle) êm mượt.
+  - **Inline Status Toggle Badge:** Chuyển đổi cột hiển thị trạng thái của `EmployeeTable.tsx` thành nút badge tương tác. Click vào để đảo ngược trạng thái nhân viên kèm optimistic mutation cập nhật UI lập tức và gọi API PATCH.
+  - **Right Slide-out Profile Drawer:** Xây dựng component Drawer trượt từ bên phải cực kỳ sang trọng hiển thị hồ sơ chi tiết của nhân viên (Avatar gradient, Email, SĐT, Trạng thái, Ngày tham gia, Version) kèm bảng tác vụ nhanh.
+  - **Client-side CSV Export Engine:** Thêm nút xuất dữ liệu CSV, tạo file Blob trực tiếp ở Client-side hỗ trợ hoàn hảo tiếng Việt có dấu Unicode UTF-8 BOM (`\uFEFF`) giúp hiển thị chính xác 100% khi mở bằng Microsoft Excel.
+  - **Truyền auth_id:** Truyền an toàn ID của admin hiện tại từ view Blade `index.blade.php` vào React props để thực hiện các kiểm tra nghiệp vụ và phân quyền chính xác.
+  - **Seed ảo 50 nhân viên:** Cập nhật [UserSeeder.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/database/seeders/UserSeeder.php) sinh ngẫu nhiên 50 nhân viên ảo với thông tin (Họ tên tiếng Việt phong phú, Email tuần tự, SĐT đẹp độc nhất, phân phối trạng thái hoạt động/khóa và ngày tạo sinh động) phục vụ test bộ lọc và phân trang hoàn hảo.
+  - **Nâng cấp phân trang hiển thị số trang động:** Tái cấu trúc bộ phân trang của [EmployeeTable.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/EmployeeTable.tsx) từ chỗ chỉ có nút Trước/Tiếp sang dạng hiển thị danh sách số trang trực quan thông minh (sử dụng thuật toán `getPageNumbers` hiển thị số trang xung quanh trang hiện tại kết hợp dấu lửng ellipsis `...` khi có nhiều trang), nâng tầm trải nghiệm ERP cao cấp.
+  - **Phân trang 10 nhân viên & Chỉ số From-To:** Đã sửa cấu hình từ 15 thành đúng 10 nhân viên/trang trong [EmployeeController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/EmployeeController.php), đồng thời nâng cấp giao diện hiển thị khoảng chỉ số thực tế trên trang `Hiển thị [from] - [to] trong tổng số [total]` thay vì chỉ hiển thị chữ tổng số chung chung.
+  - **Mặc định sắp xếp cũ nhất (Oldest First):** Chuyển đổi trạng thái sắp xếp mặc định của cả Frontend [EmployeeManager.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/EmployeeManager.tsx) và Backend [EmployeeController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/EmployeeController.php) sang `'oldest'` (tức ID tăng dần). Điều này giúp trang 1 luôn mặc định hiển thị tuần tự từ nhân viên 1 đến 10, thay vì hiển thị ngược từ 41 đến 50 như khi sắp xếp theo Mới nhất.
+
+- **Bắt lỗi & Nâng cấp Nền tảng Quản lý Nhân viên và Thông báo (Latest Updates):**
+  - **Sửa lỗi N+1 Query tại `isOnline()`:** Bổ sung kiểm tra `$this->relationLoaded('sessions')` trong model `User.php` để tận dụng danh sách sessions đã được eager load từ `EmployeeController`, giảm thiểu số lượng truy vấn xuống cơ sở dữ liệu.
+  - **Sửa lỗi Validation `last_updated_at`:** Chuyển cấu hình trường `last_updated_at` trong `UpdateEmployeeRequest.php` từ `required` sang `nullable`, khắc phục triệt để lỗi validation 422 khi chỉnh sửa các nhân viên mới tạo (có giá trị `updated_at` là null).
+  - **Mở khóa chọn Vai trò khi tạo Nhân viên mới:** Cho phép Quản trị viên thay đổi vai trò (Admin, Manager, Staff) của nhân viên mới ngay khi tạo trong `EmployeeModalForm.tsx` (trước đó trường này bị khóa cứng và mặc định chỉ cho chọn "Nhân viên").
+  - **Đồng bộ hóa signature `onSave`:** Cập nhật prop `onSave` trong component `EmployeeManager.tsx` để chấp nhận đầy đủ tham số đầu vào (`savedEmployee`, `isEditMode`) đồng nhất với định nghĩa TypeScript trong `EmployeeModalFormProps`.
+  - **Dọn dẹp namespace dư thừa:** Xóa bỏ khai báo namespace trùng lặp không hợp lệ (`App\Http\Controllers`) ở đầu tệp `NotificationCampaignController.php`, bảo đảm tệp tuân thủ tiêu chuẩn PSR-4 của Laravel Autoloader.
+  - **Nâng cấp Xuất dữ liệu Nhân viên Premium (Excel/PDF/CSV):**
+    - **Lớp Excel Export:** Tạo mới `EmployeeExport.php` định dạng styled sheet, tô tiêu đề cột màu Indigo `#4F46E5`, dòng kẻ viền mỏng và tô màu xen kẽ zebra, kèm highlight trạng thái (Đang làm việc: xanh lá, Tạm dừng: đỏ).
+    - **Giao diện PDF Báo cáo:** Tạo mới `pdf_report.blade.php` định dạng Landscape A4 dùng font tiếng Việt `DejaVu Sans`. Thiết kế khối thống kê KPI chi tiết và bảng danh sách nhân viên sử dụng các thẻ màu (badge) sinh động cho trạng thái và vai trò.
+    - **Tích hợp Shared Query Filter:** Nâng cấp `EmployeeController.php` trích xuất hàm query lọc dữ liệu chung, đồng bộ bộ lọc hoạt động trên giao diện với tệp xuất Excel/PDF tương ứng.
+    - **Giao diện Dropdown UI:** Tích hợp menu trượt premium trong `EmployeeManager.tsx` cho phép chọn xuất Excel (.xlsx), PDF (.pdf) hoặc CSV nhanh, tự động đóng menu khi click bên ngoài hoặc nhấn nút Escape.
+
+
+
 
 
 

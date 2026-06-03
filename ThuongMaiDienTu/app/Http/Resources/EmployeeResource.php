@@ -29,6 +29,11 @@ class EmployeeResource extends JsonResource
             'version' => $this->version ?? 1,
             'created_at' => $this->created_at ? $this->created_at->format('d/m/Y H:i') : null,
             'updated_at' => $this->updated_at ? $this->updated_at->toDateTimeString() : null,
+            'last_login_at' => $this->whenLoaded('loginHistories', function () {
+                $latest = $this->loginHistories->first();
+                return $latest?->login_at;
+            }),
+            'is_online' => $this->isOnline(),
         ];
     }
 }

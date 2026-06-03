@@ -114,6 +114,9 @@ class User extends Authenticatable {
 
     public function isOnline()
     {
+        if ($this->relationLoaded('sessions')) {
+            return $this->sessions->isNotEmpty();
+        }
         return $this->sessions()->where('last_active', '>=', now()->subMinutes(5))->exists();
     }
 
