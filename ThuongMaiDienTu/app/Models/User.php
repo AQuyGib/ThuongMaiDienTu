@@ -1,8 +1,12 @@
 <?php
 namespace App\Models;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable {
+    use SoftDeletes, HasApiTokens;
+
     protected $primaryKey = 'user_id';
     const UPDATED_AT = null;
     protected $guarded = [];
@@ -19,6 +23,24 @@ class User extends Authenticatable {
     public function addresses()
     {
         return $this->hasMany(UserAddress::class, 'user_id', 'user_id');
+    }
+
+    public function rewardRedemptions()
+    {
+        return $this->hasMany(RewardRedemption::class, 'user_id', 'user_id');
+    }
+
+    public function luckyWheelSpins()
+    {
+        return $this->hasMany(LuckyWheelSpin::class, 'user_id', 'user_id');
+    }
+
+    public function pointWallet() {
+        return $this->hasOne(UserPoint::class, 'user_id', 'user_id');
+    }
+
+    public function rewardPoints() {
+        return $this->hasMany(RewardPoint::class, 'user_id');
     }
 
     /**
@@ -61,13 +83,42 @@ class User extends Authenticatable {
     public function orders() {
         return $this->hasMany(Order::class, 'user_id');
     }
-    public function rewardPoints() {
+    public function rewardPointsLegacy() {
         return $this->hasMany(RewardPoint::class, 'user_id');
     }
     public function wishlists() {
         return $this->hasMany(WishlistRecentlyViewed::class, 'user_id');
     }
+    public function notifications() {
+        return $this->hasMany(Notification::class, 'user_id', 'user_id')->latest('notification_id');
+    }
     public function articles() {
         return $this->hasMany(Article::class, 'author_id');
+    }
+
+    public function salesOrders() {
+        return $this->hasMany(Order::class, 'staff_id', 'user_id');
+    }
+
+    public function loginHistories() {
+        return $this->hasMany(LoginHistory::class, 'user_id');
+    }
+
+    public function repairTickets() {
+        return $this->hasMany(RepairTicket::class, 'technician_id', 'user_id');
+    }
+
+    public function customerRepairTickets() {
+        return $this->hasMany(RepairTicket::class, 'user_id', 'user_id');
+    }
+
+    public function isOnline()
+    {
+        return $this->sessions()->where('last_active', '>=', now()->subMinutes(5))->exists();
+    }
+
+    public function videoComments()
+    {
+        return $this->hasMany(VideoComment::class, 'user_id', 'user_id');
     }
 }

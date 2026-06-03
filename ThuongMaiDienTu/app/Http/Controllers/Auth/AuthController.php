@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\CompareController;
 
 class AuthController extends Controller
 {
@@ -31,13 +32,18 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required|min:8',
+        ], [
+            'email.required' => __('ui.error_email_required'),
+            'email.email' => __('ui.error_email_required'),
+            'password.required' => __('ui.error_password_min'),
+            'password.min' => __('ui.error_password_min'),
         ]);
 
         $user = User::where('email', $request->email)->first();
 
         if ($user && Hash::check($request->password, $user->password_hash)) {
             if ($user->status === 'Banned') {
-                return back()->withErrors(['login_error' => 'Tài khoản của bạn đã bị khóa.'])->withInput();
+                return back()->withErrors(['login_error' => __('ui.error_banned')])->withInput();
             }
 
             // Kiểm tra 2FA
@@ -60,11 +66,14 @@ class AuthController extends Controller
 
             // Không có 2FA → đăng nhập bình thường
             Auth::login($user, $request->has('remember'));
+            $currentLocale = session('locale', 'vi');
             $request->session()->regenerate();
+            session(['locale' => $currentLocale]);
+            CompareController::migrateSessionToDb();
             return redirect()->route('home');
         }
 
-        return back()->withErrors(['login_error' => 'Email hoặc mật khẩu không chính xác.'])->withInput();
+        return back()->withErrors(['login_error' => __('ui.error_invalid_credentials')])->withInput();
     }
 
 
@@ -78,8 +87,13 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
         ], [
-            'email.unique' => 'Email này đã được sử dụng.',
-            'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
+            'full_name.required' => __('ui.error_fullname_required'),
+            'email.required' => __('ui.error_email_required'),
+            'email.email' => __('ui.error_email_required'),
+            'email.unique' => __('ui.error_email_unique'),
+            'password.required' => __('ui.error_password_min'),
+            'password.min' => __('ui.error_password_min'),
+            'password.confirmed' => __('ui.error_password_confirmed'),
         ]);
 
         if ($validator->fails()) {
@@ -91,12 +105,16 @@ class AuthController extends Controller
             'email' => $request->email,
             'password_hash' => Hash::make($request->password),
             'is_2fa_enabled' => 0,
-            'role_id' => 2, // 2 là Khách hàng
+            'role_id' => 3, // 3 là Khách hàng
             'status' => 'Active',
             'member_tier' => 'Dong'
         ]);
 
         Auth::login($user);
+        if (!session()->has('locale')) {
+            session(['locale' => 'vi']);
+        }
+        CompareController::migrateSessionToDb();
         return redirect()->route('home');
     }
 
@@ -105,9 +123,16 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        // Đăng xuất người dùng khỏi hệ thống
         Auth::logout();
+        
+        // Hủy bỏ và xóa sạch toàn bộ dữ liệu trong session hiện tại
         $request->session()->invalidate();
+        
+        // Làm mới (regenerate) CSRF token để ngăn chặn tấn công giả mạo yêu cầu
         $request->session()->regenerateToken();
+        
+        // Quay về trang chủ sau khi đã đăng xuất thành công
         return redirect()->route('home');
     }
 }

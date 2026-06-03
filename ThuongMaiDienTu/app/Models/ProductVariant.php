@@ -22,6 +22,8 @@ class ProductVariant extends Model {
             $this->color,
             $this->ram,
             $this->rom_capacity,
+            $this->cpu_chip,
+            $this->gpu_chip,
         ]);
         return implode(' / ', $parts) ?: '—';
     }
@@ -31,5 +33,19 @@ class ProductVariant extends Model {
     }
     public function inventoryItems() {
         return $this->hasMany(InventoryItem::class, 'variant_id');
+    }
+
+    /**
+     * Lấy số lượng tồn kho thực tế (In_Stock)
+     */
+    public function getInStockCountAttribute() {
+        return $this->inventoryItems()->where('status', 'In_Stock')->count();
+    }
+
+    /**
+     * Kiểm tra xem biến thể này có dưới hoặc bằng mức tồn an toàn hay không
+     */
+    public function getIsLowStockAttribute() {
+        return $this->in_stock_count <= ($this->safe_stock ?? 5);
     }
 }
