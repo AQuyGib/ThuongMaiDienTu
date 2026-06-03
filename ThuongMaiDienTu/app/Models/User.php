@@ -14,6 +14,8 @@ class User extends Authenticatable {
     protected $casts = [
         'two_factor_expires_at' => 'datetime',
         'is_2fa_enabled' => 'boolean',
+        'chatbot_banned_until' => 'datetime',
+        'comment_banned_until' => 'datetime',
     ];
 
     public function getAuthPassword() {

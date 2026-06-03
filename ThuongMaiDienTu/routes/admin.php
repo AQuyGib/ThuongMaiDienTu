@@ -71,6 +71,7 @@ Route::resource('permissions', UserController::class)->names([
 Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
 Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
 Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
+Route::post('permissions/{id}/unban-chatbot', [UserController::class, 'unbanChatbot'])->name('users.unban-chatbot');
 
 // Quản lý Vai trò (Roles)
 Route::resource('roles', RoleController::class)->names([

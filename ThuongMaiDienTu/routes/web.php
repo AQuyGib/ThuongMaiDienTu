@@ -262,5 +262,5 @@ use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\InstallmentController;
 
 Route::post('/chatbot', [ChatbotController::class, 'chat'])->name('chatbot.chat');
+Route::post('/chatbot/create-ticket', [ChatbotController::class, 'createTicketFromChat'])->name('chatbot.create-ticket');
 Route::post('/installments/register', [InstallmentController::class, 'register'])->name('installments.register')->middleware('auth');
-
