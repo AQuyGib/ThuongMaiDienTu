@@ -196,3 +196,15 @@ Route::put('repair-tickets/{repairTicket}', [RepairTicketInvoiceController::clas
 Route::delete('repair-tickets/{repairTicket}', [RepairTicketInvoiceController::class, 'destroyTicket'])->name('repair-tickets.destroy');
 Route::get('repair-tickets/{repairTicket}/invoice/create', [RepairTicketInvoiceController::class, 'create'])->name('repair-tickets.invoice.create');
 Route::post('repair-tickets/invoice', [RepairTicketInvoiceController::class, 'store'])->name('repair-tickets.invoice.store');
+
+// ===== Chat Hub (Communication Hub) =====
+use App\Http\Controllers\Admin\ChatController;
+Route::get('/chat/init', [ChatController::class, 'init'])->name('chat.init');
+Route::post('/chat/rooms', [ChatController::class, 'createRoom'])->name('chat.rooms.create');
+Route::delete('/chat/rooms/{room_id}', [ChatController::class, 'deleteRoom'])->name('chat.rooms.delete');
+Route::post('/chat/rooms/{room_id}/members', [ChatController::class, 'addMember'])->name('chat.rooms.members.add');
+Route::delete('/chat/rooms/{room_id}/members/{user_id}', [ChatController::class, 'removeMember'])->name('chat.rooms.members.remove');
+Route::post('/chat/rooms/{room_id}/role', [ChatController::class, 'updateRole'])->name('chat.rooms.role.update');
+Route::post('/chat/messages', [ChatController::class, 'sendMessage'])->name('chat.messages.send');
+Route::post('/chat/messages/{message_id}/react', [ChatController::class, 'toggleReaction'])->name('chat.messages.react');
+

@@ -1,10 +1,12 @@
 import React from 'react';
 import { isEn, t } from '../helpers';
+import CommunicationHub from './CommunicationHub';
 
 // Định nghĩa kiểu dữ liệu cho Props truyền vào Topbar
 interface AdminTopbarProps {
     pageTitle: string; // Tiêu đề của trang hiện tại
     todayDate: string; // Ngày hiện tại truyền từ Controller/Blade
+    userRoleId: number; // Vai trò của user (1: Admin, 2: Manager, 4: Staff)
 }
 
 /**
@@ -12,7 +14,7 @@ interface AdminTopbarProps {
  * Quản lý đồng hồ thời gian thực tế, chế độ toàn màn hình,
  * và danh mục chọn ngôn ngữ Dropdown quả địa cầu (English/Tiếng Việt).
  */
-const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate }) => {
+const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate, userRoleId }) => {
     // Trạng thái phóng to/thu nhỏ toàn màn hình
     const [isFullscreen, setIsFullscreen] = React.useState(false);
     
@@ -21,6 +23,10 @@ const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate }) => {
     
     // Trạng thái đóng/mở menu chọn ngôn ngữ dropdown
     const [isLangDropdownOpen, setIsLangDropdownOpen] = React.useState(false);
+
+    // Trạng thái đóng/mở Communication Hub
+    const [isHubOpen, setIsHubOpen] = React.useState(false);
+    const [unreadChatCount, setUnreadChatCount] = React.useState(3);
     
     // Sử dụng ref để kiểm tra vị trí click của chuột hỗ trợ click-outside
     const langDropdownRef = React.useRef<HTMLDivElement>(null);
@@ -77,7 +83,8 @@ const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate }) => {
     const currentLang = languages.find(l => l.code === (isEn() ? 'en' : 'vi')) || languages[0];
 
     return (
-        <header className="h-28 bg-white/90 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-12 z-10 shrink-0 sticky top-0 shadow-sm transition-all duration-300">
+        <>
+            <header className="h-28 bg-white/90 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-12 z-10 shrink-0 sticky top-0 shadow-sm transition-all duration-300">
             {/* Nhóm trái: Tiêu đề trang & Nút đóng mở Sidebar */}
             <div className="flex items-center gap-8 w-1/4">
                 <button 
@@ -170,10 +177,20 @@ const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate }) => {
                     </button>
 
                     {/* Nút nhắn tin nhanh */}
-                    <div className="relative group cursor-pointer w-10 h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl flex items-center justify-center transition-all">
-                        <i className="fa-solid fa-comment-dots text-sm"></i>
-                        <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-indigo-500 border-2 border-white rounded-full"></span>
-                    </div>
+                    {(userRoleId === 1 || userRoleId === 2) && (
+                        <button 
+                            onClick={() => setIsHubOpen(true)}
+                            className="relative group w-10 h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl flex items-center justify-center transition-all"
+                            title={t("Trung tâm liên lạc", "Communication Hub")}
+                        >
+                            <i className="fa-solid fa-comment-dots text-sm"></i>
+                            {unreadChatCount > 0 && (
+                                <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-indigo-500 text-white text-[8px] font-black flex items-center justify-center rounded-full border border-white animate-pulse">
+                                    {unreadChatCount}
+                                </span>
+                            )}
+                        </button>
+                    )}
 
                     {/* Nút thông báo */}
                     <div className="relative group cursor-pointer w-10 h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl flex items-center justify-center transition-all">
@@ -187,7 +204,15 @@ const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate }) => {
                     <i className="fa-solid fa-plus text-lg transition-transform group-hover:rotate-90"></i>
                 </button>
             </div>
-        </header>
+            </header>
+            {/* Communication Hub Drawer */}
+            <CommunicationHub 
+                isOpen={isHubOpen} 
+                onClose={() => setIsHubOpen(false)} 
+                onUnreadChange={(count) => setUnreadChatCount(count)} 
+                userRoleId={userRoleId}
+            />
+        </>
     );
 };
 

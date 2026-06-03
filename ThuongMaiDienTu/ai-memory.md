@@ -826,6 +826,39 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 
 ### 52. Tổng hợp toàn bộ các tính năng AI trong dự án
 - **Tài liệu hóa:** Tạo file `tong_hop_tich_hop_ai.md` tại thư mục gốc của dự án, tổng hợp đầy đủ 5 phân hệ tích hợp AI bao gồm: (1) Quét rủi ro đơn hàng tự động, (2) Gợi ý bán chéo cá nhân hóa, (3) Đăng & Kiểm duyệt bài viết UGC kèm tối ưu SEO và tặng điểm thưởng, (4) Chẩn đoán lỗi thiết bị & gợi ý phân công kỹ thuật viên tự động, (5) Chatbot hỗ trợ khách hàng nâng cao.
+- **Bỏ trợ lý AI PRO & Thêm/Xóa phòng chat & Thêm/Xóa thành viên & Chức năng Trưởng/Phó nhóm (Latest Updates):**
+  - **Loại bỏ Trợ lý AI PRO**: Xóa thành công cấu hình bot ảo 'Trợ lý AI PRO' khỏi danh sách thành viên (`ALL_MEMBERS`), danh sách phòng chat mặc định (`rooms`), lịch sử tin nhắn ban đầu (`messages`), và logic xử lý gửi tin nhắn (`handleSendMessage`) trong [CommunicationHub.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx).
+  - **Chức năng thêm phòng chat mới (`Thêm box chat`)**: Bổ sung nút bấm `Plus` (+) bên cạnh tiêu đề danh sách kênh, kích hoạt Modal Overlay premium nhập tên phòng, mô tả và chọn loại phòng (Công khai/Nhóm hoặc Riêng tư). Khi tạo xong, phòng mới chỉ chứa người tạo và sẵn sàng thêm các thành viên khác.
+  - **Chức năng xóa phòng chat (`Xóa box chat`)**: Thêm icon `Trash2` màu đỏ hiện trên hover bên cạnh mỗi phòng tùy chỉnh, tích hợp hộp thoại xác nhận (`confirm`) trước khi xóa. Tự động bảo vệ các kênh hệ thống cốt lõi (`💬 Kênh Nhân viên` / `staff` và `📢 Thông báo & Tin tức` / `announcement`) không cho phép xóa.
+  - **Quản lý thành viên & Bổ nhiệm chức vụ (Phiên bản Hoàn hảo)**:
+    - **Cấu hình động theo tài khoản đăng nhập**: Nhận diện tài khoản Admin (Nguyễn Văn An) hay Manager (Trần Thị Bình) dựa trên `userRoleId` để tự động gán nhãn "Bạn" (You) trên giao diện thành viên, hiển thị avatar tương ứng và đặt tên người gửi tin nhắn, tin nhắn hệ thống chính xác.
+    - **Thêm thành viên**: Tích hợp nút "Thêm thành viên" trong thanh trượt danh sách thành viên. Khi bấm sẽ hiện danh sách lọc động các thành viên hệ thống chưa tham gia phòng chat. Click chọn sẽ add ngay lập tức vào phòng kèm ghi nhận thông báo hệ thống tự động căn giữa tin nhắn (`📢 [Tên Bạn] đã thêm ... vào phòng chat.`).
+    - **Xóa thành viên (Mời rời khỏi phòng)**: Bổ sung tùy chọn "Xóa khỏi phòng" vào menu dropdown hành động. Chỉ khả dụng cho thành viên khác (chặn tự xóa bản thân). Khi xóa, hệ thống sẽ gửi một thông báo căn giữa (`📢 [Tên Bạn] đã mời ... rời khỏi phòng chat.`).
+    - **Phân quyền vai trò theo phòng (Leader / Co-leader / Member)**:
+      - **Trưởng nhóm (Leader)**: Toàn quyền bổ nhiệm/hạ chức vụ và xóa mọi thành viên trong phòng chat.
+      - **Phó nhóm (Co-leader)**: Chỉ có quyền bổ nhiệm/xóa các **Thành viên (Member)** thông thường; không thể quản trị Trưởng nhóm hay các Phó nhóm khác.
+      - **Thành viên (Member)**: Bị ẩn nút ba chấm hành động, không có quyền quản trị.
+      - *Phân quyền đặc cách*: Tài khoản global Admin (`userRoleId === 1`) luôn có toàn quyền quản trị cao nhất trên mọi phòng.
+      - Khi bổ nhiệm, hệ thống ghi nhận thông báo tự động: `📢 [Tên Bạn] đã bổ nhiệm ... làm [Trưởng nhóm/Phó nhóm/Thành viên] của phòng chat.`.
+  - **Phân quyền và bảo mật nâng cao**: Cấu hình prop `userRoleId` từ [AdminTopbar.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/AdminTopbar.tsx) xuống [CommunicationHub.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx). Bổ sung khối kiểm tra bảo vệ nghiêm ngặt: nếu `userRoleId !== 1 && userRoleId !== 2` (không phải Admin hoặc Manager) thì component `CommunicationHub` lập tức trả về `null` (chặn sử dụng triệt để).
+  - **Đồng bộ hóa & Nâng cấp Giao diện Thông báo Hỏi (Latest Alert/Confirm Dialog):**
+    - Đại tu hoàn chỉnh hệ thống thông báo hỏi (custom alert & confirm dialogs) bên trong [CommunicationHub.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx).
+    - Áp dụng phong cách thiết kế Glassmorphic Backdrop Blur (`bg-slate-950/40 backdrop-blur-md`) cùng thẻ card bo tròn mềm mại (`rounded-[2.5rem]`) với đường viền siêu mỏng phản chiếu ánh sáng (`border-white/20`).
+    - Nâng cấp Icon cảnh báo/thông báo lớn (`w-16 h-16`), định cấu hình màu HSL gradient tương thích với ngữ cảnh hành động (Rose/Crimson cho các thao tác hủy bỏ/xóa và Indigo/Blue cho thông tin chung).
+    - Chuyển đổi cấu trúc nút bấm thành dạng xếp chồng chiều dọc (`flex-col w-full`) sang trọng theo chuẩn thiết kế macOS/iOS mới, đi kèm các nút gradient phủ bóng mờ và phản hồi nhấn phím (`active:scale-95`).
+    - Khắc phục lỗi biên dịch `Expected ")" but found "{"` bằng cách bổ sung cú pháp đóng ngoặc `)}` bị thiếu ở cuối khối điều kiện JSX Modal tạo phòng mới (`isAddRoomOpen`).
 
-
-
+### 53. Tích hợp dữ liệu thật cho Kênh nhắn tin (Communication Hub)
+- **Hạ tầng & API (ChatController.php & admin.php & migration):**
+  - Đăng ký các REST API routes phục vụ CRUD phòng chat (`/chat/rooms`), thành viên (`/chat/rooms/{room_id}/members`), chức vụ/vai trò (`/chat/rooms/{room_id}/role`), gửi tin nhắn có đính kèm file (`/chat/messages`), và tương tác cảm xúc emoji (`/chat/messages/{message_id}/react`) trong `routes/admin.php`.
+  - Tích hợp kiểm tra bảng tự động trong `ChatController@init`: Tự động gọi `Artisan::call('migrate')` lập tức nếu bất kỳ bảng nào trong 3 bảng chat bị thiếu (`chat_rooms`, `chat_room_members`, `chat_messages`), bảo đảm hệ thống tự động migrate không cần chạy lệnh thủ công.
+  - **Sửa lỗi MySQL Foreign Key Constraint Mismatch (errno: 150):** Khắc phục lỗi kiểu dữ liệu cột `user_id` và `sender_id` trong migration (`2026_06_03_184100_create_chat_tables.php`) từ `unsignedBigInteger` thành `unsignedInteger` để khớp hoàn toàn với kiểu dữ liệu của cột `user_id` trong bảng `users` (`$table->increments(...)`).
+  - **Cơ chế drop tồn tại:** Thêm `Schema::dropIfExists` cho 3 bảng chat ở đầu `up()` để ngăn chặn lỗi xung đột "Table already exists" nếu migration trước bị gián đoạn giữa chừng.
+  - Xây dựng logic Eloquent toàn diện lưu trữ tin nhắn, phòng chat và danh sách thành viên thực tế từ các bảng `chat_rooms`, `chat_room_members`, `chat_messages` liên kết chặt chẽ với bảng `users`.
+- **Giao diện Client (CommunicationHub.tsx):**
+  - Tích hợp fetch API `/admin/chat/init` ngay khi mở panel để load danh sách phòng, tin nhắn cũ và danh sách nhân viên thực tế.
+  - Loại bỏ hoàn toàn mảng mock tĩnh `ALL_MEMBERS` và thay bằng trạng thái `allEmployees` đồng bộ trực tiếp từ database.
+  - Thay đổi toàn bộ các hàm handler sự kiện (gửi tin nhắn, tải file đính kèm thực tế, reaction emoji, thêm/xóa thành viên, đổi chức vụ thành viên, xóa phòng chat) từ mô phỏng giả lập sang gọi Axios trực tiếp tới REST backend, đảm bảo tính đồng bộ dữ liệu thời gian thực.
+- **Sửa lỗi Integrity Constraint Violation (role_id foreign key check failed):**
+  - Khắc phục lỗi khi đăng ký/đăng nhập Google, hệ thống cố gắng lưu user mới với `role_id = 3` nhưng bảng `roles` bị trống dẫn đến vi phạm ràng buộc khóa ngoại `users_role_id_foreign`.
+  - Tích hợp cơ chế tự động điền (self-healing roles seeder) trong `AppServiceProvider@bootInfrastructure`. Nếu bảng `roles` rỗng, hệ thống sẽ tự động chèn 4 vai trò cốt lõi (`Admin`, `Quản lý`, `Khách hàng`, `Nhân viên`) vào database để đảm bảo toàn bộ luồng đăng ký/đăng nhập qua Google hay qua email diễn ra trơn tru.

@@ -1,6 +1,11 @@
 # Project Memory
 
 ## Current State & Focus
+- **Tích hợp dữ liệu thật cho Kênh nhắn tin (Communication Hub):**
+  - **Kết nối API & Database:** Thay thế toàn bộ dữ liệu mock trong component React `CommunicationHub.tsx` bằng các request `axios` live gọi đến hệ thống REST backend.
+  - **Artisan Migrate Tự Động:** Tích hợp gọi Artisan migrate tự động ngay trong hàm `init()` của `ChatController.php` để tự động tạo các bảng cơ sở dữ liệu `chat_rooms`, `chat_room_members`, `chat_messages` nếu chưa được migrate, hạn chế việc phải chạy thủ công từ terminal.
+  - **Đồng bộ hóa CRUD Room & Messages:** Toàn bộ các thao tác tạo/xóa phòng, thêm/xóa thành viên, phân quyền vai trò (leader, co-leader, member), gửi tin nhắn kèm file đính kèm thực tế, và thả biểu cảm emoji đều được đồng bộ hóa và lưu trữ trực tiếp vào cơ sở dữ liệu qua REST endpoints.
+  - **Dọn dẹp code:** Xóa bỏ mảng mock `ALL_MEMBERS` và các hàm phản hồi giả lập để đảm bảo giao diện sử dụng 100% dữ liệu thực từ hệ thống.
 - **Nâng cao Quản lý Nhân viên — Giai đoạn 2 (Phase 2):**
   - **Batch Actions:** Thêm checkbox chọn nhiều nhân viên (EmployeeTable) + floating bar cố định ở bottom cho 3 thao tác hàng loạt: Kích hoạt / Khóa / Xóa mềm. Backend route `POST /admin/employees/batch-action` xử lý trong DB::transaction.
   - **Active Filter Chips:** Hiển thị chip trực quan bên dưới thanh lọc (tìm kiếm, vai trò, trạng thái, sắp xếp) với nút × xóa từng chip + nút "Xóa tất cả".
@@ -266,6 +271,11 @@
   - `ThuongMaiDienTu/resources/views/admin/employee/pdf_report.blade.php`
   - `ThuongMaiDienTu/resources/js/components/EmployeeManager.tsx`
   - `ThuongMaiDienTu/routes/admin.php`
+- **Communication Hub (General Chat Room) Upgrade:**
+  - `ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx`
+  - `ThuongMaiDienTu/resources/js/components/AdminTopbar.tsx`
+  - `ThuongMaiDienTu/routes/admin.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/ChatController.php`
 - **Lucky Wheel (Dynamic Configurations & Rank Restrictions):**
   - `ThuongMaiDienTu/resources/views/frontend/rewards/index.blade.php`
   - `ThuongMaiDienTu/resources/views/admin/rewards/index.blade.php`
@@ -393,10 +403,46 @@
     - **Giao diện PDF Báo cáo:** Tạo mới `pdf_report.blade.php` định dạng Landscape A4 dùng font tiếng Việt `DejaVu Sans`. Thiết kế khối thống kê KPI chi tiết và bảng danh sách nhân viên sử dụng các thẻ màu (badge) sinh động cho trạng thái và vai trò.
     - **Tích hợp Shared Query Filter:** Nâng cấp `EmployeeController.php` trích xuất hàm query lọc dữ liệu chung, đồng bộ bộ lọc hoạt động trên giao diện với tệp xuất Excel/PDF tương ứng.
     - **Giao diện Dropdown UI:** Tích hợp menu trượt premium trong `EmployeeManager.tsx` cho phép chọn xuất Excel (.xlsx), PDF (.pdf) hoặc CSV nhanh, tự động đóng menu khi click bên ngoài hoặc nhấn nút Escape.
-
-
-
-
-
-
-
+  - **Xây dựng Trung tâm liên lạc hoàn hảo (Communication Hub):**
+    - **Tạo mới `CommunicationHub.tsx`:** Thiết kế slide-over Drawer 2 cột (hoặc 3 cột khi mở danh sách thành viên) chuyên nghiệp với phong cách Glassmorphism và tối ưu hóa chế độ Dark Mode.
+    - **Kênh & Kịch bản Phòng chat:**
+      - *Kênh Nhân viên (Staff Lounge)*: Trao đổi tự do cho tất cả nhân sự (mô phỏng tin nhắn trả lời tự động).
+      - *Thông báo & Tin tức (News & Announcements)*: Kênh phát tin tức 1 chiều chỉ Admin được gửi.
+      - *Ban Quản lý & Admin (Executive Suite)*: Phòng họp kín bảo mật cao chỉ dành riêng cho Admin/Manager.
+      - *Trợ lý AI PRO*: Tích hợp trực tiếp gọi API AJAX đến `/chatbot` ở backend để phản hồi dữ liệu thực.
+    - **Tính năng tương tác cao cấp**:
+      - *Trích dẫn & Trả lời (Quote Reply)*: Phản hồi tin nhắn cụ thể kèm box trích dẫn.
+      - *Thả cảm xúc Emoji (Reactions)*: Like 👍, Thả tim ❤️, Thả lửa 🔥, Cười 😂, Ngạc nhiên 😮 trên từng tin nhắn.
+      - *Xem trước tệp đính kèm*: Chọn file/ảnh hiển thị thumbnail hoặc icon tài liệu trong chat bubble.
+      - *Chỉ báo soạn tin & Trạng thái đọc*: Typing Indicator động và biểu tượng tick kép xanh báo Đã xem (Read Receipts).
+      - *Âm thanh thông báo thông minh (Web Audio API)*: Phát chime/ping êm tai bằng code tổng hợp tần số trực tiếp, không phụ thuộc file audio tĩnh.
+    - **Đồng bộ hóa trên `AdminTopbar.tsx`**: Nút bong bóng chat topbar kích hoạt mở Hub, hiển thị số tin nhắn chưa đọc tổng cộng dưới dạng Badge đỏ nhấp nháy động.
+- **Bỏ trợ lý AI PRO & Thêm/Xóa phòng chat & Quản lý thành viên (Latest Updates):**
+  - **Loại bỏ Trợ lý AI PRO**: Xóa thành công cấu hình bot ảo 'Trợ lý AI PRO' khỏi danh sách thành viên (`ALL_MEMBERS`), danh sách phòng chat mặc định (`rooms`), lịch sử tin nhắn ban đầu (`messages`), và logic xử lý gửi tin nhắn (`handleSendMessage`) trong [CommunicationHub.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx).
+  - **Chức năng thêm phòng chat mới (`Thêm box chat`)**: Bổ sung nút bấm `Plus` (+) bên cạnh tiêu đề danh sách kênh, kích hoạt Modal Overlay premium nhập tên phòng, mô tả và chọn loại phòng (Công khai/Nhóm hoặc Riêng tư). Khi tạo xong, phòng mới chỉ chứa người tạo và sẵn sàng thêm các thành viên khác.
+  - **Chức năng xóa phòng chat (`Xóa box chat`)**: Thêm icon `Trash2` màu đỏ hiện trên hover bên cạnh mỗi phòng tùy chỉnh, tích hợp hộp thoại xác nhận (`confirm`) trước khi xóa. Tự động bảo vệ các kênh hệ thống cốt lõi (`💬 Kênh Nhân viên` / `staff` và `📢 Thông báo & Tin tức` / `announcement`) không cho phép xóa.
+  - **Quản lý thành viên & Bổ nhiệm chức vụ (Phiên bản Hoàn hảo)**:
+    - **Cấu hình động theo tài khoản đăng nhập**: Nhận diện tài khoản Admin (Nguyễn Văn An) hay Manager (Trần Thị Bình) dựa trên `userRoleId` để tự động gán nhãn "Bạn" (You) trên giao diện thành viên, hiển thị avatar tương ứng và đặt tên người gửi tin nhắn, tin nhắn hệ thống chính xác.
+    - **Thêm thành viên**: Tích hợp nút "Thêm thành viên" trong thanh trượt danh sách thành viên. Khi bấm sẽ hiện danh sách lọc động các thành viên hệ thống chưa tham gia phòng chat. Click chọn sẽ add ngay lập tức vào phòng kèm ghi nhận thông báo hệ thống tự động căn giữa tin nhắn (`📢 [Tên Bạn] đã thêm ... vào phòng chat.`).
+    - **Xóa thành viên (Mời rời khỏi phòng)**: Bổ sung tùy chọn "Xóa khỏi phòng" vào menu dropdown hành động. Chỉ khả dụng cho thành viên khác (chặn tự xóa bản thân). Khi xóa, hệ thống sẽ gửi một thông báo căn giữa (`📢 [Tên Bạn] đã mời ... rời khỏi phòng chat.`).
+    - **Phân quyền vai trò theo phòng (Leader / Co-leader / Member)**:
+      - **Trưởng nhóm (Leader)**: Toàn quyền bổ nhiệm/hạ chức vụ và xóa mọi thành viên trong phòng chat.
+      - **Phó nhóm (Co-leader)**: Chỉ có quyền bổ nhiệm/xóa các **Thành viên (Member)** thông thường; không thể quản trị Trưởng nhóm hay các Phó nhóm khác.
+      - **Thành viên (Member)**: Bị ẩn nút ba chấm hành động, không có quyền quản trị.
+      - *Phân quyền đặc cách*: Tài khoản global Admin (`userRoleId === 1`) luôn có toàn quyền quản trị cao nhất trên mọi phòng.
+      - Khi bổ nhiệm, hệ thống ghi nhận thông báo tự động: `📢 [Tên Bạn] đã bổ nhiệm ... làm [Trưởng nhóm/Phó nhóm/Thành viên] của phòng chat.`.
+  - **Phân quyền và bảo mật nâng cao**: Cấu hình prop `userRoleId` từ [AdminTopbar.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/AdminTopbar.tsx) xuống [CommunicationHub.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx). Bổ sung khối kiểm tra bảo vệ nghiêm ngặt: nếu `userRoleId !== 1 && userRoleId !== 2` (không phải Admin hoặc Manager) thì component `CommunicationHub` lập tức trả về `null` (chặn sử dụng triệt để).
+  - **Đồng bộ hóa & Nâng cấp Giao diện Thông báo Hỏi (Latest Alert/Confirm Dialog):**
+    - Đại tu hoàn chỉnh hệ thống thông báo hỏi (custom alert & confirm dialogs) bên trong [CommunicationHub.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx).
+    - Áp dụng phong cách thiết kế Glassmorphic Backdrop Blur (`bg-slate-950/40 backdrop-blur-md`) cùng thẻ card bo tròn mềm mại (`rounded-[2.5rem]`) với đường viền siêu mỏng phản chiếu ánh sáng (`border-white/20`).
+    - Nâng cấp Icon cảnh báo/thông báo lớn (`w-16 h-16`), định cấu hình màu HSL gradient tương thích với ngữ cảnh hành động (Rose/Crimson cho các thao tác hủy bỏ/xóa và Indigo/Blue cho thông tin chung).
+    - Chuyển đổi cấu trúc nút bấm thành dạng xếp chồng chiều dọc (`flex-col w-full`) sang trọng theo chuẩn thiết kế macOS/iOS mới, đi kèm các nút gradient phủ bóng mờ và phản hồi nhấn phím (`active:scale-95`).
+    - Khắc phục lỗi biên dịch `Expected ")" but found "{"` bằng cách bổ sung cú pháp đóng ngoặc `)}` bị thiếu ở cuối khối điều kiện JSX Modal tạo phòng mới (`isAddRoomOpen`).
+- **Sửa lỗi MySQL Foreign Key Constraint Mismatch (errno: 150):**
+  - Phát hiện và sửa lỗi kiểu dữ liệu khóa ngoại: Kiểu của `user_id` và `sender_id` trong migration chat tables (`2026_06_03_184100_create_chat_tables.php`) là `unsignedBigInteger`, trong khi khóa chính `user_id` của bảng `users` là `unsignedInteger` (được tạo bởi `$table->increments(...)`).
+  - Đã cập nhật kiểu dữ liệu khóa ngoại thành `unsignedInteger` trong migration file để đồng bộ hoàn hảo với bảng `users`, giúp MySQL thực thi migration thành công 100%.
+  - Thêm cơ chế `Schema::dropIfExists` cho 3 bảng chat ở đầu phương thức `up()` của migration để tránh lỗi xung đột "Table already exists" khi chạy lại migration bị lỗi nửa chừng.
+  - Cập nhật hàm check trong `ChatController@init` để gọi Artisan migrate tự động nếu bất kỳ bảng nào trong 3 bảng chat bị thiếu (thay vì chỉ kiểm tra bảng `chat_rooms`).
+- **Sửa lỗi Integrity Constraint Violation (role_id foreign key check failed):**
+  - Khắc phục lỗi khi đăng ký/đăng nhập Google, hệ thống cố gắng lưu user mới với `role_id = 3` nhưng bảng `roles` bị trống dẫn đến vi phạm ràng buộc khóa ngoại `users_role_id_foreign`.
+  - Tích hợp cơ chế tự động điền (self-healing roles seeder) trong `AppServiceProvider@bootInfrastructure`. Nếu bảng `roles` rỗng, hệ thống sẽ tự động chèn 4 vai trò cốt lõi (`Admin`, `Quản lý`, `Khách hàng`, `Nhân viên`) vào database để đảm bảo toàn bộ luồng đăng ký/đăng nhập qua Google hay qua email diễn ra trơn tru.
