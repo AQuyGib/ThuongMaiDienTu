@@ -136,6 +136,16 @@ class ServiceInvoiceController extends Controller
             'created_by' => auth()->id(),
         ]);
 
+        if ($invoice->status === 'paid') {
+            \App\Models\Cashbook::create([
+                'type' => 'Income',
+                'amount' => $invoice->total_amount,
+                'description' => 'Thanh toán hóa đơn dịch vụ #' . $invoice->invoice_no . ' - Khách hàng: ' . $invoice->customer_name,
+                'reference_id' => $invoice->id,
+                'reference_type' => 'service_invoice',
+            ]);
+        }
+
         // 5. Nếu hóa đơn được xuất từ một phiếu sửa chữa, tự động lưu ngược thông tin hóa đơn vào phiếu sửa chữa đó
         if ($request->filled('repair_ticket_id')) {
             $repairTicket = \App\Models\RepairTicket::find($request->integer('repair_ticket_id'));
@@ -302,7 +312,23 @@ class ServiceInvoiceController extends Controller
             $updateData['issued_date'] = now()->toDateString();
         }
 
+        $oldStatus = $serviceInvoice->status;
         $serviceInvoice->update($updateData);
+
+        if ($serviceInvoice->status === 'paid' && $oldStatus !== 'paid') {
+            $exists = \App\Models\Cashbook::where('reference_id', $serviceInvoice->id)
+                ->where('reference_type', 'service_invoice')
+                ->exists();
+            if (!$exists) {
+                \App\Models\Cashbook::create([
+                    'type' => 'Income',
+                    'amount' => $serviceInvoice->total_amount,
+                    'description' => 'Thanh toán hóa đơn dịch vụ #' . $serviceInvoice->invoice_no . ' - Khách hàng: ' . $serviceInvoice->customer_name,
+                    'reference_id' => $serviceInvoice->id,
+                    'reference_type' => 'service_invoice',
+                ]);
+            }
+        }
 
         return redirect()->route('admin.service-invoices.index')->with('success', 'Cập nhật hóa đơn dịch vụ thành công.');
     }

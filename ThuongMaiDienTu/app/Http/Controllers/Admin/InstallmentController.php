@@ -424,7 +424,8 @@ class InstallmentController extends Controller
                             'type' => 'Income',
                             'amount' => $prepayInput,
                             'description' => 'Thu tiền trả trước hợp đồng trả góp #' . $installment->installment_code . ' - Khách hàng: ' . $installment->customer_name,
-                            'reference_id' => $installment->order_id,
+                            'reference_id' => $installment->id,
+                            'reference_type' => 'installment',
                         ]);
                     }
                 }
@@ -539,7 +540,8 @@ class InstallmentController extends Controller
                         'type' => 'Income',
                         'amount' => $installment->prepay_amount,
                         'description' => 'Thu tiền trả trước hợp đồng trả góp #' . $installment->installment_code . ' - Khách hàng: ' . $installment->customer_name,
-                        'reference_id' => $installment->order_id,
+                        'reference_id' => $installment->id,
+                        'reference_type' => 'installment',
                     ]);
                 }
             });
@@ -716,7 +718,8 @@ class InstallmentController extends Controller
                     'type' => 'Income',
                     'amount' => $payment->amount,
                     'description' => 'Thu tiền trả góp định kỳ thứ ' . $payment->term_number . '/' . $payment->installment->period . ' - Hợp đồng: #' . $payment->installment->installment_code . ' - Khách hàng: ' . $payment->installment->customer_name,
-                    'reference_id' => $payment->installment->order_id,
+                    'reference_id' => $payment->installment->id,
+                    'reference_type' => 'installment',
                 ]);
             });
 

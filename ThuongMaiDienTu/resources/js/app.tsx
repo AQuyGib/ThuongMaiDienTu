@@ -201,26 +201,9 @@ document.addEventListener('click', (e) => {
         // Skip logout, export, pdf or download routes
         if (anchor.href.includes('logout') || anchor.href.includes('export') || anchor.href.includes('/pdf') || anchor.hasAttribute('download')) return;
 
-        // These sections use page-specific layouts/styles or heavy tables; force full reload to avoid broken UI state
-        // Note: '/admin/comments' is forced to reload so that page-specific blade push scripts (like SweetAlert, modal listeners) execute fresh.
-        if (
-            anchor.href.includes('/admin/inventory') ||
-            anchor.href.includes('/admin/purchase-orders') ||
-            anchor.href.includes('/admin/products') ||
-            anchor.href.includes('/admin/videos') ||
-            anchor.href.includes('/admin/service-invoices') ||
-            anchor.href.includes('/admin/repair-tickets') ||
-            anchor.href.includes('/admin/comments')
-        ) {
-            window.location.href = anchor.href;
-            return;
-        }
-        
-        // If we are NOT in admin area, let the browser do a full reload to enter it
-        if (!isInAdminArea) return;
-
-        e.preventDefault();
-        softNavigate(anchor.href);
+        // Force full page reload for all admin routes to ensure blade styles, push scripts, and widgets run cleanly
+        window.location.href = anchor.href;
+        return;
     }
 });
 window.addEventListener('popstate', () => {

@@ -146,7 +146,7 @@ class OrderController extends Controller
             ]);
         }
 
-        return view('admin.orders.show', compact('order'));
+        return redirect()->route('admin.orders.index', ['open_order_id' => $id]);
     }
 
     /**
@@ -178,11 +178,44 @@ class OrderController extends Controller
                 if ($earned > 0) {
                     $pointsMessage = " Đã tích +{$earned} điểm cho khách hàng.";
                 }
+
+                // Ghi nhận doanh thu đơn hàng vào Sổ Quỹ
+                $exists = \App\Models\Cashbook::where('reference_id', $order->order_id)
+                    ->where('reference_type', 'order')
+                    ->exists();
+                if (!$exists) {
+                    \App\Models\Cashbook::create([
+                        'type' => 'Income',
+                        'amount' => $order->final_amount,
+                        'description' => 'Khách hàng thanh toán đơn hàng #' . $order->order_code,
+                        'reference_id' => $order->order_id,
+                        'reference_type' => 'order',
+                    ]);
+                }
             } elseif (strtolower($currentStatus) === 'cancelled') {
                 $refunded = (int) ($order->wallet_points_used ?? 0);
                 $revoked = (int) ($order->wallet_points_earned ?? 0);
                 if ($refunded > 0 || $revoked > 0) {
                     $pointsMessage = ' Đã xử lý hoàn/thu hồi điểm.';
+                }
+
+                // Nếu đơn hàng bị hủy, kiểm tra xem đã ghi nhận doanh thu chưa để ghi nhận hoàn tiền
+                $hasIncome = \App\Models\Cashbook::where('reference_id', $order->order_id)
+                    ->where('reference_type', 'order')
+                    ->where('type', 'Income')
+                    ->exists();
+                $hasRefund = \App\Models\Cashbook::where('reference_id', $order->order_id)
+                    ->where('reference_type', 'order')
+                    ->where('type', 'Expense')
+                    ->exists();
+                if ($hasIncome && !$hasRefund) {
+                    \App\Models\Cashbook::create([
+                        'type' => 'Expense',
+                        'amount' => $order->final_amount,
+                        'description' => 'Hoàn tiền hủy đơn hàng #' . $order->order_code,
+                        'reference_id' => $order->order_id,
+                        'reference_type' => 'order',
+                    ]);
                 }
             }
         }
