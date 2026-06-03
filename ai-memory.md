@@ -198,6 +198,7 @@
   - Added `min_rank` constraint to each lucky wheel configuration (None, Bronze, Silver, Gold, Diamond), allowing rank restrictions for custom wheels.
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
+  - Thực hiện merge thành công nhánh `AnhQuy/ToiUu` vào nhánh `master` (03/06/2026). Giải quyết xung đột thủ công trong file `ThuongMaiDienTu/app/Http/Controllers/RewardsController.php` liên quan đến validate loại vòng quay `wheel_type` (đã giữ lại cấu trúc validate chi tiết 4 tầng vòng quay standard, silver, gold, diamond của nhánh AnhQuy/ToiUu). Chạy thành công toàn bộ suite kiểm thử và đẩy các thay đổi lên remote.
   - Đã thực hiện merge nhánh `master` (remote `origin/master`) vào nhánh hiện tại `AnhQuy/ToiUu` thành công mà không xảy ra xung đột (03/06/2026). Toàn bộ các cập nhật giao diện, Live Theme Customizer, logic giỏ hàng/thanh toán và cải tiến trong `start.bat` từ master đã được đồng bộ hóa.
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
   - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
