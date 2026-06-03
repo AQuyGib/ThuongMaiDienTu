@@ -39,6 +39,9 @@ class FlashSaleProductController extends Controller
 
         // RÀNG BUỘC: Giá bán khuyến mại Flash Sale bắt buộc phải nhỏ hơn giá gốc của sản phẩm
         if ((float) $validated['sale_price'] >= (float) $product->base_price) {
+            if ($request->ajax()) {
+                return response()->json(['message' => 'Giá sale phải nhỏ hơn giá gốc của sản phẩm.'], 422);
+            }
             return back()->with('error', 'Giá sale phải nhỏ hơn giá gốc của sản phẩm.');
         }
 

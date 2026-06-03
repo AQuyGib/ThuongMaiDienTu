@@ -227,10 +227,14 @@ class RewardsService
                 throw new RuntimeException('Không đủ điểm để quay vòng may mắn này.');
             }
 
-            // Lấy danh sách các ô quà đang hoạt động của Vòng quay
+            // Lấy danh sách các ô quà đang hoạt động của Vòng quay và còn tồn kho (hoặc không giới hạn tồn kho)
             $allRewards = DB::table('reward_catalog')
                 ->where('reward_type', 'wheel_prize')
                 ->where('is_active', true)
+                ->where(function($query) {
+                    $query->whereNull('stock')
+                          ->orWhere('stock', '>', 0);
+                })
                 ->get();
 
             // Lọc ra các quà thuộc tầng vòng quay tương ứng (standard, silver, gold)
@@ -288,6 +292,20 @@ class RewardsService
                 'wallet_total_used' => ((int) $wallet->wallet_total_used) + $spinCost,
                 'updated_at' => now(),
             ]);
+
+            // Giảm số lượng tồn kho của quà tặng vòng quay (nếu có giới hạn tồn kho)
+            if (! is_null($reward->stock)) {
+                $lockedReward = DB::table('reward_catalog')
+                    ->where('reward_id', $reward->reward_id)
+                    ->lockForUpdate()
+                    ->first();
+                if ($lockedReward && ! is_null($lockedReward->stock)) {
+                    DB::table('reward_catalog')->where('reward_id', $reward->reward_id)->update([
+                        'stock' => max(0, (int) $lockedReward->stock - 1),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
 
             // Sinh mã code trúng thưởng
             $spinCode = 'SPN' . now()->format('YmdHis') . Str::upper(Str::random(6));

@@ -408,8 +408,8 @@ Tích hợp Google Gemini API qua Backend RAG.
     {{-- Input gửi tin nhắn --}}
     <div class="chatbot-input-area">
         <input type="text" id="chatbot-input" class="chatbot-input" placeholder="{{ __('ui.chatbot_placeholder') }}"
-            onkeypress="if(event.key==='Enter') chatbotSend()">
-        <button class="chatbot-send-btn" onclick="chatbotSend()">
+            maxlength="500" onkeypress="if(event.key==='Enter') chatbotSend()">
+        <button id="chatbot-send-btn" class="chatbot-send-btn" onclick="chatbotSend()">
             <i class="fa-solid fa-paper-plane" style="font-size: 14px;"></i>
         </button>
     </div>
@@ -442,6 +442,9 @@ Tích hợp Google Gemini API qua Backend RAG.
     </div>
 </div>
 
+{{-- DOMPurify Library for DOM XSS prevention --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js"></script>
+
 {{-- JavaScript Chatbot --}}
 <script>
     // Sử dụng biểu thức tự chạy (IIFE) để đóng gói mã nguồn, tránh rò rỉ biến ra phạm vi global
@@ -453,6 +456,7 @@ Tích hợp Google Gemini API qua Backend RAG.
         const chatMessages = document.getElementById('chatbot-messages');
         const chatInput = document.getElementById('chatbot-input');
         const chatFab = document.getElementById('chatbot-fab');
+        const chatSendBtn = document.getElementById('chatbot-send-btn');
 
         let hasWelcomed = false; // Đánh dấu đã hiển thị tin nhắn chào mừng chưa
         let messageList = []; // Mảng lưu lịch sử tin nhắn trong phiên làm việc hiện tại
@@ -600,7 +604,9 @@ Tích hợp Google Gemini API qua Backend RAG.
         function appendMsg(text, role, save = true) {
             const div = document.createElement('div');
             div.className = 'chatbot-msg ' + role;
-            div.innerHTML = text;
+            // Dọn dẹp mã HTML độc hại bằng DOMPurify để ngăn chặn lỗ hổng DOM-based XSS
+            const cleanText = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(text, { ADD_ATTR: ['target'] }) : text;
+            div.innerHTML = cleanText;
             chatMessages.appendChild(div);
             chatMessages.scrollTop = chatMessages.scrollHeight; // Tự động cuộn khung chat xuống đáy tin nhắn mới nhất
 
@@ -695,6 +701,10 @@ Tích hợp Google Gemini API qua Backend RAG.
             const text = chatInput.value.trim();
             if (!text) return;
 
+            // Vô hiệu hóa input và nút gửi để tránh spam request liên tục
+            chatInput.disabled = true;
+            if (chatSendBtn) chatSendBtn.disabled = true;
+
             appendMsg(text, 'user');
             chatInput.value = ''; // Làm sạch ô nhập liệu
             showLoading();
@@ -724,6 +734,11 @@ Tích hợp Google Gemini API qua Backend RAG.
                 console.error('Chatbot error:', error);
                 // Hiển thị thông báo lỗi màu đỏ nổi bật để người dùng nhận biết
                 appendMsg('<b style="color:#ef4444">' + {!! json_encode(__('ui.chatbot_error'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!} + '</b><br><span style="font-size:12px;color:#6b7280">' + error.message + '</span>', 'ai', false);
+            } finally {
+                // Kích hoạt lại input và nút gửi sau khi hoàn thành phản hồi hoặc gặp lỗi
+                chatInput.disabled = false;
+                if (chatSendBtn) chatSendBtn.disabled = false;
+                chatInput.focus();
             }
         };
     })();

@@ -484,6 +484,11 @@ class ProfileController extends Controller
         }
         $result['technician_name'] = $techName;
 
+        // Sinh token bảo mật ngẫu nhiên và lưu kết quả chẩn đoán vào session để đối chiếu khi submit form
+        $diagnoseToken = \Illuminate\Support\Str::uuid()->toString();
+        session()->put('ai_diagnose_' . $diagnoseToken, $result);
+        $result['diagnose_token'] = $diagnoseToken;
+
         return response()->json($result);
     }
 
@@ -552,27 +557,32 @@ class ProfileController extends Controller
             }
         }
 
-        // Xử lý dữ liệu chẩn đoán AI
-        $aiDiagnosed = $request->boolean('ai_diagnosed', false);
+        // Xử lý dữ liệu chẩn đoán AI bảo mật từ Session thay vì hidden input
+        $aiDiagnoseToken = $request->input('ai_diagnose_token');
+        $sessionKey = 'ai_diagnose_' . $aiDiagnoseToken;
+        $aiDiagnosed = false;
         $aiData = [];
 
-        if ($aiDiagnosed) {
+        if ($aiDiagnoseToken && session()->has($sessionKey)) {
+            $diagResult = session()->get($sessionKey);
+            $aiDiagnosed = true;
             $aiData = [
                 'ai_diagnosed' => true,
-                'ai_fault_type' => $request->ai_fault_type,
-                'ai_probable_causes' => json_decode($request->ai_probable_causes, true) ?: [],
-                'ai_risk_warnings' => json_decode($request->ai_risk_warnings, true) ?: [],
-                'ai_replacement_parts' => $request->ai_replacement_parts,
-                'ai_estimated_cost_min' => $request->filled('ai_estimated_cost_min') ? (int) $request->ai_estimated_cost_min : null,
-                'ai_estimated_cost_max' => $request->filled('ai_estimated_cost_max') ? (int) $request->ai_estimated_cost_max : null,
-                'ai_complexity_level' => $request->ai_complexity_level,
-                'ai_recommended_skills' => json_decode($request->ai_recommended_skills, true) ?: [],
-                'ai_dispatch_reason' => $request->ai_dispatch_reason,
-                'technician_id' => $request->filled('assigned_technician_id') ? $request->integer('assigned_technician_id') : null,
-                'ai_diagnosed_at' => now(),
+                'ai_fault_type' => $diagResult['ai_fault_type'] ?? null,
+                'ai_probable_causes' => $diagResult['ai_probable_causes'] ?? [],
+                'ai_risk_warnings' => $diagResult['ai_risk_warnings'] ?? [],
+                'ai_replacement_parts' => $diagResult['ai_replacement_parts'] ?? null,
+                'ai_estimated_cost_min' => $diagResult['ai_estimated_cost_min'] ?? null,
+                'ai_estimated_cost_max' => $diagResult['ai_estimated_cost_max'] ?? null,
+                'ai_complexity_level' => $diagResult['ai_complexity_level'] ?? null,
+                'ai_recommended_skills' => $diagResult['ai_recommended_skills'] ?? [],
+                'ai_dispatch_reason' => $diagResult['ai_dispatch_reason'] ?? null,
+                'technician_id' => $diagResult['assigned_technician_id'] ?? null,
+                'ai_diagnosed_at' => $diagResult['ai_diagnosed_at'] ?? now(),
             ];
+            session()->forget($sessionKey); // Xóa token khỏi session sau khi dùng để tránh replay attack
         } else {
-            // Tự động chẩn đoán ở backend nếu client không gọi trước
+            // Tự động chẩn đoán ở backend nếu client không gọi trước hoặc token hết hạn/không hợp lệ
             try {
                 $aiService = app(\App\Services\RepairAIService::class);
                 $diagResult = $aiService->diagnoseFault($request->issue_desc, $imagePath ? public_path($imagePath) : null);
