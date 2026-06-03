@@ -503,6 +503,18 @@
     .order-table { width: 100%; border-collapse: collapse; }
     .order-table th, .order-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
     .order-table th { background: #f9fafb; font-weight: 600; color: #555; }
+    .order-details-row {
+        background: #f8fafc;
+        border-top: none;
+    }
+    .btn-claim-action {
+        transition: all 0.2s ease-in-out;
+    }
+    .btn-claim-action:hover {
+        transform: translateY(-1px);
+        filter: brightness(0.95);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+    }
     .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
     .status-pending { background: #fef08a; color: #854d0e; }
     .status-completed { background: #dcfce7; color: #166534; }
@@ -991,13 +1003,14 @@
                                         <th>Ngày Đặt</th>
                                         <th>Tổng Tiền</th>
                                         <th>Trạng Thái</th>
+                                        <th>Hành Động</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($orders as $order)
                                     <tr>
-                                        <td><strong>#{{ $order->order_id }}</strong></td>
-                                        <td>Không xác định</td>
+                                        <td><strong>#{{ $order->order_code ?? $order->order_id }}</strong></td>
+                                        <td>{{ $order->created_at ? \Carbon\Carbon::parse($order->created_at)->format('d/m/Y') : 'Không xác định' }}</td>
                                         <td style="color: #e21033; font-weight: bold;">{{ number_format($order->final_amount ?? 0, 0, ',', '.') }}đ</td>
                                         <td>
                                             @if($order->status == 'Pending')
@@ -1009,6 +1022,97 @@
                                             @else
                                                 <span class="status-badge status-cancelled">{{ $order->status }}</span>
                                             @endif
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn-expand" onclick="toggleOrderDetails({{ $order->order_id }})" style="background: none; border: none; color: #0046ab; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                                                <i class="fa-solid fa-chevron-down" id="icon-{{ $order->order_id }}"></i> Chi tiết
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr id="details-{{ $order->order_id }}" class="order-details-row" style="display: none; background: #f8fafc;">
+                                        <td colspan="5" style="padding: 15px 20px;">
+                                            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 15px; font-size: 12px; color: #475569; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px; gap: 10px;">
+                                                <div><i class="fa-regular fa-calendar"></i> <strong>Ngày đặt:</strong> {{ $order->created_at ? \Carbon\Carbon::parse($order->created_at)->format('d/m/Y H:i') : 'Không xác định' }}</div>
+                                                @if($order->status == 'Delivered' && $order->delivered_at)
+                                                    <div style="color: #15803d;"><i class="fa-solid fa-circle-check"></i> <strong>Ngày nhận hàng (Kích hoạt bảo hành):</strong> <strong>{{ \Carbon\Carbon::parse($order->delivered_at)->format('d/m/Y') }}</strong></div>
+                                                @endif
+                                            </div>
+                                            <div style="font-weight: bold; margin-bottom: 12px; color: #475569; font-size: 13px;">Sản phẩm trong đơn hàng:</div>
+                                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                                @foreach($order->details as $detail)
+                                                    @php
+                                                        $variant = $detail->inventoryItem->variant ?? null;
+                                                        $product = $variant->product ?? null;
+                                                        
+                                                        // Resolve product image
+                                                        $image = null;
+                                                        if ($product) {
+                                                            $thumb = $product->thumbnail;
+                                                            if ($thumb && \Illuminate\Support\Str::startsWith($thumb, 'http')) {
+                                                                $image = $thumb;
+                                                            } else {
+                                                                $rawImages = $product->images;
+                                                                if ($rawImages) {
+                                                                    $arr = is_string($rawImages) ? json_decode($rawImages, true) : $rawImages;
+                                                                    $first = is_array($arr) && count($arr) > 0 ? $arr[0] : null;
+                                                                    if ($first && \Illuminate\Support\Str::startsWith($first, 'http')) {
+                                                                        $image = $first;
+                                                                    } elseif ($first) {
+                                                                        $image = asset('storage/' . ltrim($first, '/'));
+                                                                    }
+                                                                }
+                                                                if (!$image) {
+                                                                    $image = $thumb ? asset('uploads/products/' . $thumb) : null;
+                                                                }
+                                                            }
+                                                        }
+                                                        
+                                                        $productName = $detail->product_name ?? ($product->name ?? 'Sản phẩm không xác định');
+                                                        if ($variant && $variant->label) {
+                                                            $productName .= ' - ' . $variant->label;
+                                                        }
+                                                        
+                                                        $item = $detail->inventoryItem;
+                                                        $canClaimWarranty = $item ? $item->canClaimWarranty($order) : false;
+                                                        $canClaimReturn = $item ? $item->canClaimReturn($order) : false;
+                                                    @endphp
+                                                    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; gap: 15px; flex-wrap: wrap;">
+                                                        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 250px;">
+                                                            <img src="{{ $image ?? 'https://via.placeholder.com/50x50?text=SP' }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0;" onerror="this.src='/images/no-image.png'">
+                                                            <div>
+                                                                <div style="font-weight: 600; color: #1e293b; font-size: 13px;">{{ $productName }}</div>
+                                                                @if($item && $item->imei_serial)
+                                                                    <div style="font-size: 11px; color: #64748b; font-family: monospace; margin-top: 2px;">
+                                                                        IMEI/Serial: <strong style="color: #0f172a;">{{ $item->imei_serial }}</strong>
+                                                                    </div>
+                                                                @endif
+                                                                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Số lượng: 1 | Đơn giá: {{ number_format($detail->price ?? 0, 0, ',', '.') }}đ</div>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Buttons for claims (Warranty, returns) -->
+                                                        @if($order->status == 'Delivered' && $item && $item->imei_serial)
+                                                            <div style="display: flex; gap: 8px;">
+                                                                @if($canClaimWarranty)
+                                                                    <button type="button" class="btn-claim-action" onclick="triggerProfileRepairModal('{{ $item->imei_serial }}', '{{ addslashes($productName) }}')" style="background: #0046ab; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                                                        <i class="fa-solid fa-screwdriver-wrench"></i> Yêu cầu sửa chữa/bảo hành
+                                                                    </button>
+                                                                @endif
+                                                                
+                                                                @if($canClaimReturn)
+                                                                    <button type="button" class="btn-claim-action" onclick="triggerProfileClaimModal('{{ $item->imei_serial }}', '{{ addslashes($productName) }}', 'return')" style="background: #f59e0b; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                                                        <i class="fa-solid fa-rotate-left"></i> Yêu cầu đổi trả
+                                                                    </button>
+                                                                @endif
+                                                                
+                                                                @if(!$canClaimWarranty && !$canClaimReturn)
+                                                                    <span style="font-size: 11px; color: #94a3b8; font-style: italic;">Hết hạn hỗ trợ</span>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endforeach
+                                            </div>
                                         </td>
                                     </tr>
                                     @endforeach
@@ -2086,6 +2190,64 @@
         </div>
     </div>
 </div>
+<!-- Modal Gửi Yêu Cầu Đổi Trả -->
+<div id="claimModal" class="student-modal-overlay">
+    <div class="student-modal" style="max-width: 500px; width: 95%;">
+        <div class="student-modal-header" style="background: #f59e0b;">
+            <h3>Gửi yêu cầu dịch vụ đổi trả / bảo hành</h3>
+            <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 18px;" onclick="closeProfileClaimModal()"></i>
+        </div>
+        <div class="student-modal-body" style="max-height: 75vh; overflow-y: auto;">
+            <form id="claimForm" onsubmit="submitProfileClaim(event)" enctype="multipart/form-data">
+                @csrf
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Sản phẩm</label>
+                    <input type="text" id="modalProductName" class="form-control" style="background: #f8fafc; color: #64748b;" readonly>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Mã IMEI/Serial</label>
+                    <input type="text" id="modalImei" name="imei_serial" class="form-control" style="background: #f8fafc; color: #64748b; font-family: monospace;" readonly>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Loại yêu cầu</label>
+                    <select id="modalClaimType" name="claim_type" class="form-control" required>
+                        <option value="return">Đổi trả hàng hoàn tiền</option>
+                        <option value="exchange">Đổi máy mới/khác</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Họ tên</label>
+                        <input type="text" id="modalCustomerName" name="customer_name" value="{{ $user->full_name }}" class="form-control" required>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Số điện thoại</label>
+                        <input type="text" id="modalCustomerPhone" name="customer_phone" value="{{ $user->phone_number }}" class="form-control" required>
+                    </div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Email liên hệ</label>
+                    <input type="email" id="modalCustomerEmail" name="customer_email" value="{{ $user->email }}" class="form-control">
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Lý do yêu cầu</label>
+                    <textarea id="modalReason" name="reason" rows="3" placeholder="Mô tả cụ thể lỗi thiết bị hoặc lý do muốn đổi trả..." class="form-control" style="resize: none;" required></textarea>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">
+                        Hình ảnh hoặc Video minh họa <span style="font-weight: normal; color: #94a3b8;">(Tối đa 20MB, không bắt buộc)</span>
+                    </label>
+                    <input type="file" id="modalMediaFile" name="media_file" accept="image/*,video/*" class="form-control">
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Hỗ trợ định dạng ảnh hoặc video (tối đa 20MB)</div>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn-outline" style="margin-top:0;" onclick="closeProfileClaimModal()">Hủy</button>
+                    <button type="submit" class="btn-update" id="btnSubmitClaim" style="margin-top:0; background: #f59e0b;">Gửi yêu cầu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 @endsection
 
@@ -2929,6 +3091,13 @@
         removeRepairImage();
         document.getElementById('aiDiagnosisReport').style.display = 'none';
         document.getElementById('hidAiDiagnosed').value = '0';
+        
+        // Reset readonly attribute from IMEI input
+        const imeiInput = document.getElementById('repImeiSerial');
+        if (imeiInput) {
+            imeiInput.removeAttribute('readonly');
+            imeiInput.style.background = '';
+        }
     }
     function closeTrackingModal() {
         document.getElementById('trackingModal').classList.remove('active');
@@ -3265,5 +3434,137 @@
             openRepairModal();
         @endif
     });
+
+    // ============================================================
+    // DỊCH VỤ HẬU MÃI: ĐỔI TRẢ & BẢO HÀNH TRONG TAB ĐƠN HÀNG (POST-PURCHASE TAB INTEGRATION)
+    // ============================================================
+    function toggleOrderDetails(orderId) {
+        const detailsRow = document.getElementById('details-' + orderId);
+        const caretIcon = document.getElementById('icon-' + orderId);
+        
+        if (detailsRow.style.display === 'none') {
+            detailsRow.style.display = 'table-row';
+            caretIcon.classList.remove('fa-chevron-down');
+            caretIcon.classList.add('fa-chevron-up');
+        } else {
+            detailsRow.style.display = 'none';
+            caretIcon.classList.remove('fa-chevron-up');
+            caretIcon.classList.add('fa-chevron-down');
+        }
+    }
+
+    function triggerProfileRepairModal(imei, productName) {
+        // Đóng modal sửa chữa nếu đang mở, reset form
+        closeRepairModal();
+        
+        // Điền IMEI/Serial
+        const imeiInput = document.getElementById('repImeiSerial');
+        if (imeiInput) {
+            imeiInput.value = imei;
+            imeiInput.setAttribute('readonly', 'readonly');
+            imeiInput.style.background = '#f8fafc';
+        }
+        
+        // Gợi ý mô tả lỗi gắn liền với sản phẩm
+        const descInput = document.getElementById('repIssueDesc');
+        if (descInput) {
+            descInput.value = "Yêu cầu sửa chữa/bảo hành cho sản phẩm: " + productName + "\nTình trạng lỗi chi tiết: ";
+        }
+        
+        // Mở modal sửa chữa
+        openRepairModal();
+    }
+
+    function triggerProfileClaimModal(imei, productName, type) {
+        document.getElementById('modalImei').value = imei;
+        document.getElementById('modalProductName').value = productName;
+        document.getElementById('modalClaimType').value = type;
+        
+        document.getElementById('modalReason').value = '';
+        const mediaInput = document.getElementById('modalMediaFile');
+        if (mediaInput) {
+            mediaInput.value = '';
+        }
+        
+        document.getElementById('claimModal').classList.add('active');
+    }
+
+    function closeProfileClaimModal() {
+        document.getElementById('claimModal').classList.remove('active');
+        document.getElementById('claimForm').reset();
+    }
+
+    function submitProfileClaim(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmitClaim');
+        const oldText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
+        
+        const mediaInput = document.getElementById('modalMediaFile');
+        if (mediaInput && mediaInput.files.length > 0) {
+            const file = mediaInput.files[0];
+            if (file.size > 20 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tệp quá lớn',
+                    text: 'Dung lượng hình ảnh hoặc video minh họa không được vượt quá 20MB.',
+                    confirmButtonColor: '#ef4444'
+                });
+                btn.disabled = false;
+                btn.innerHTML = oldText;
+                return;
+            }
+        }
+        
+        const formElement = document.getElementById('claimForm');
+        const formData = new FormData(formElement);
+        
+        fetch('/warranty/claim', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+            body: formData
+        })
+        .then(r => r.json().then(data => ({ status: r.status, body: data })))
+        .then(res => {
+            btn.disabled = false;
+            btn.innerHTML = oldText;
+            
+            if (res.status !== 200) {
+                let errorMsg = res.body.message || 'Đã có lỗi xảy ra.';
+                if (res.body.errors) {
+                    errorMsg = Object.values(res.body.errors).flat().join('<br>');
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi gửi yêu cầu',
+                    html: errorMsg,
+                    confirmButtonColor: '#ef4444'
+                });
+            } else {
+                closeProfileClaimModal();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công',
+                    text: res.body.message,
+                    confirmButtonColor: '#0046ab'
+                });
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = oldText;
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại.',
+                confirmButtonColor: '#ef4444'
+            });
+        });
+    }
 </script>
 @endpush

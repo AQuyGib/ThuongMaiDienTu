@@ -111,6 +111,23 @@
                             <p class="text-xs text-slate-600 leading-relaxed" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="{{ $claim->reason }}">
                                 {{ $claim->reason }}
                             </p>
+                            @if($claim->media_path)
+                                <div class="mt-2">
+                                    @php
+                                        $extension = pathinfo($claim->media_path, PATHINFO_EXTENSION);
+                                        $isVideo = in_array(strtolower($extension), ['mp4', 'mov', 'avi', 'mkv', 'webm', '3gp', 'm4v']);
+                                    @endphp
+                                    @if($isVideo)
+                                        <a href="{{ asset($claim->media_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 transition-colors">
+                                            <i class="fa-solid fa-video"></i> Xem video minh họa
+                                        </a>
+                                    @else
+                                        <a href="{{ asset($claim->media_path) }}" target="_blank" class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 transition-colors">
+                                            <i class="fa-solid fa-image"></i> Xem ảnh minh họa
+                                        </a>
+                                    @endif
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-xs text-slate-500">
                             {{ $claim->created_at ? $claim->created_at->format('d/m/Y H:i') : '—' }}

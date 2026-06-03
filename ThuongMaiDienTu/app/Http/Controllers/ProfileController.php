@@ -19,7 +19,7 @@ class ProfileController extends Controller
         $user = Auth::user();
         
         // Lấy tất cả đơn hàng
-        $orders = $user->orders()->orderBy('order_id', 'desc')->get();
+        $orders = $user->orders()->with('details.inventoryItem.variant.product')->orderBy('order_id', 'desc')->get();
         
         // Thống kê thành viên
         $totalOrders = $orders->count();

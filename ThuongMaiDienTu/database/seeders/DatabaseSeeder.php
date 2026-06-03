@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             PurchaseOrderSeeder::class,
             InventorySeeder::class,
             WarehouseTransferSeeder::class,
+            WarrantySeeder::class,
             RewardSeeder::class,
             RewardRuleSeeder::class,
             RewardHistorySeeder::class,

@@ -157,8 +157,47 @@ class WarrantyClaimSeeder extends Seeder
                 continue;
             }
 
+            $item = $items[$index];
+
+            // 1. Đảm bảo trạng thái thiết bị là Sold
+            $item->update(['status' => 'Sold']);
+
+            // 2. Thiết lập thông số bảo hành mẫu cho IMEI này hợp lệ với logic nghiệp vụ
+            $startDaysAgo = 10;
+            $durationMonths = 12;
+            $warrantyStatus = 'active';
+
+            if ($index == 2) {
+                // Lê Văn Cường - đổi trả bị từ chối do quá 30 ngày (ví dụ 45 ngày trước)
+                $startDaysAgo = 45;
+            } elseif ($index == 5) {
+                // Vũ Thị Thanh Hoa - bảo hành đã duyệt từ 60 ngày trước
+                $startDaysAgo = 60;
+            } elseif ($index == 7) {
+                // Đinh Thị Kim Liên - từ chối do hết hạn bảo hành
+                $startDaysAgo = 400;
+                $warrantyStatus = 'expired';
+            } elseif ($index == 9) {
+                // Bùi Thị Ngọc - bảo hành chờ duyệt từ 30 ngày trước
+                $startDaysAgo = 30;
+            }
+
+            $startDate = \Carbon\Carbon::now()->subDays($startDaysAgo);
+            $endDate = (clone $startDate)->addMonths($durationMonths);
+
+            \App\Models\Warranty::updateOrCreate(
+                ['item_id' => $item->item_id],
+                [
+                    'start_date'      => $startDate->toDateString(),
+                    'end_date'        => $endDate->toDateString(),
+                    'warranty_status' => $warrantyStatus,
+                    'warranty_type'   => 'manufacturer',
+                    'note'            => 'Bảo hành mẫu từ hệ thống seeder.',
+                ]
+            );
+
             // Kiểm tra xem claim đã tồn tại chưa (tránh duplicate khi seed nhiều lần)
-            $exists = WarrantyClaim::where('imei_serial', $items[$index]->imei_serial)
+            $exists = WarrantyClaim::where('imei_serial', $item->imei_serial)
                 ->where('claim_type', $sample['claim_type'])
                 ->exists();
 
@@ -168,7 +207,7 @@ class WarrantyClaimSeeder extends Seeder
 
             WarrantyClaim::create([
                 'user_id'        => (!empty($sample['use_user']) && $user) ? $user->user_id : null,
-                'imei_serial'    => $items[$index]->imei_serial,
+                'imei_serial'    => $item->imei_serial,
                 'customer_name'  => $sample['customer_name'],
                 'customer_phone' => $sample['customer_phone'],
                 'customer_email' => $sample['customer_email'],

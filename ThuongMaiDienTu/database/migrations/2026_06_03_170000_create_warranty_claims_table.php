@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->enum('claim_type', ['warranty', 'return', 'exchange']);
             $table->text('reason');
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->string('media_path', 255)->nullable();
             $table->text('admin_note')->nullable();
             $table->timestamps();
 

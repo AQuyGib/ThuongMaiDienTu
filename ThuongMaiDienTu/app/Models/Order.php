@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     protected $primaryKey = 'order_id';
-    public $timestamps = false;
     protected $guarded = [];
 
     public function user()
@@ -31,6 +30,12 @@ class Order extends Model
 
     protected static function booted()
     {
+        static::saving(function (Order $order) {
+            if ($order->isDirty('status') && strtolower((string)$order->status) === 'delivered' && !$order->delivered_at) {
+                $order->delivered_at = now();
+            }
+        });
+
         static::created(function (Order $order) {
             if ($order->user) {
                 app(NotificationService::class)->createForUser($order->user, [
