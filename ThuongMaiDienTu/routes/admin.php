@@ -68,6 +68,20 @@ Route::resource('permissions', UserController::class)->names([
     'destroy' => 'users.destroy',
 ])->except(['create', 'show', 'edit']);
 
+// CRUD Quản lý Nhân viên (Employee Management)
+Route::get('/employees/export/excel', [\App\Http\Controllers\Admin\EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
+Route::get('/employees/export/pdf', [\App\Http\Controllers\Admin\EmployeeController::class, 'exportPdf'])->name('employees.export.pdf');
+
+Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class)->names([
+    'index' => 'employees.index',
+    'store' => 'employees.store',
+    'update' => 'employees.update',
+    'destroy' => 'employees.destroy',
+])->except(['create', 'show', 'edit']);
+
+Route::patch('/employees/{employee}/toggle-status', [\App\Http\Controllers\Admin\EmployeeController::class, 'toggleStatus'])->name('employees.toggle-status');
+Route::post('/employees/batch-action', [\App\Http\Controllers\Admin\EmployeeController::class, 'batchAction'])->name('employees.batch-action');
+
 Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
 Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
 Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');

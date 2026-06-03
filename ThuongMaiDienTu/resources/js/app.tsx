@@ -13,6 +13,7 @@ const KPIDashboard = React.lazy(() => import('./components/KPIDashboard'));
 const ThemeSettings = React.lazy(() => import('./components/ThemeSettings'));
 const SecuritySettings = React.lazy(() => import('./components/SecuritySettings'));
 const VerifyOtp = React.lazy(() => import('./components/VerifyOtp'));
+const EmployeeManager = React.lazy(() => import('./components/EmployeeManager'));
 
 const mountedRoots = new Map<string, any>();
 
@@ -69,6 +70,7 @@ const init = () => {
     renderComponent('admin-theme-settings', ThemeSettings);
     renderComponent('security-settings-app', SecuritySettings);
     renderComponent('verify-otp-app', VerifyOtp);
+    renderComponent('admin-employee-management', EmployeeManager);
 
     // Legacy / Demo
     const demoContainer = document.getElementById('joly-demo');
@@ -207,6 +209,7 @@ document.addEventListener('click', (e) => {
             anchor.href.includes('/admin/inventory') ||
             anchor.href.includes('/admin/purchase-orders') ||
             anchor.href.includes('/admin/products') ||
+            anchor.href.includes('/admin/employees') ||
             anchor.href.includes('/admin/videos') ||
             anchor.href.includes('/admin/service-invoices') ||
             anchor.href.includes('/admin/repair-tickets') ||
