@@ -140,6 +140,18 @@
 .inst-months { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto;}
 .inst-month { border: 1px solid #ccc; padding: 8px 15px; border-radius: 8px; cursor: pointer; white-space: nowrap;}
 .inst-month.active { border-color: #0046ab; background: #eef2ff; color: #0046ab; font-weight: bold; }
+.inst-prepays { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto;}
+.inst-prepay { border: 1px solid #ccc; padding: 8px 15px; border-radius: 8px; cursor: pointer; white-space: nowrap;}
+.inst-prepay.active { border-color: #0046ab; background: #eef2ff; color: #0046ab; font-weight: bold; }
+
+/* Các class cho phần Thẻ Tín Dụng */
+.inst-grid { display: grid; gap: 10px; margin-bottom: 20px; }
+.inst-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.inst-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.inst-grid-btn { border: 1px solid #e5e7eb; padding: 12px 10px; border-radius: 8px; cursor: pointer; text-align: center; font-size: 13px; font-weight: 600; color: #555; background: #fff; transition: 0.2s; }
+.inst-grid-btn:hover { border-color: #0046ab; }
+.inst-grid-btn.active { border-color: #0046ab; color: #0046ab; background: #fff; box-shadow: 0 0 0 1px #0046ab; }
+.inst-section-title { font-size: 12px; font-weight: 700; color: #999; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
 
 /* Thanh điều hướng ảnh trong zoom gallery */
 .zoom-nav {
@@ -530,7 +542,15 @@
                     <div class="inst-company" onclick="selectCompany(this, 'HD Saison')">HD Saison</div>
                     <div class="inst-company" onclick="selectCompany(this, 'Mirae Asset')">Mirae Asset</div>
                 </div>
-                
+                <h4 style="margin-bottom:10px; font-size:14px;">Chọn mức trả trước</h4>
+                <div class="inst-prepays">
+                    <div class="inst-prepay" onclick="selectPrepay(this, 10)">10%</div>
+                    <div class="inst-prepay" onclick="selectPrepay(this, 20)">20%</div>
+                    <div class="inst-prepay active" onclick="selectPrepay(this, 30)">30%</div>
+                    <div class="inst-prepay" onclick="selectPrepay(this, 40)">40%</div>
+                    <div class="inst-prepay" onclick="selectPrepay(this, 50)">50%</div>
+                </div>
+
                 <h4 style="margin-bottom:10px; font-size:14px;">Chọn số tháng trả góp</h4>
                 <div class="inst-months">
                     <div class="inst-month" onclick="selectMonth(this, 3)">3 tháng</div>
@@ -546,7 +566,7 @@
                 <table class="inst-table">
                     <tr><th>Công ty</th><td id="instCompanyName" style="font-weight:bold; color:#0046ab;">Shinhan Finance</td></tr>
                     <tr><th>Giá mua trả góp</th><td id="instBasePrice">32.490.000đ</td></tr>
-                    <tr><th>Trả trước (30%)</th><td id="instPrepay" style="font-weight:bold;">9.747.000đ</td></tr>
+                    <tr><th id="instPrepayLabel">Trả trước (30%)</th><td id="instPrepay" style="font-weight:bold;">9.747.000đ</td></tr>
                     <tr><th>Lãi suất</th><td id="instInterestRate">0%</td></tr>
                     <tr><th>Giấy tờ cần có</th><td>CMND/CCCD + Bằng lái xe/Hộ khẩu</td></tr>
                     <tr><th>Góp mỗi tháng</th><td id="instMonthly" style="color:#d70018; font-weight:bold; font-size:16px;">3.790.500đ</td></tr>
@@ -559,41 +579,104 @@
 
             <!-- TAB 1: Trả góp qua thẻ tín dụng (Visa, MasterCard, JCB) -->
             <div id="instTabContent1" class="inst-tab-content" style="display:none;">
-                <h4 style="margin-bottom:10px; font-size:14px;">Chọn phương thức trả góp</h4>
-                <div style="border:1px solid #0046ab; border-radius:8px; padding:15px; margin-bottom:15px; background:#eef2ff;">
-                    <strong>Trả góp qua Onepay (thẻ Visa/MasterCard/JCB/Napas)</strong>
+                <div class="inst-section-title">CHỌN PHƯƠNG THỨC TRẢ GÓP</div>
+                <div style="border:1px solid #1a1a2e; border-radius:8px; padding:15px; margin-bottom:25px; background:#fff; display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="font-size:14px; color:#333;">Trả góp qua Onepay <span style="font-weight:normal">(thẻ Visa/MasterCard/JCB/Napas)</span></strong>
+                    <div style="display:flex; gap:5px; font-size:10px; color:#666; font-weight:bold;">
+                        <span style="border:1px solid #eee; padding:2px 6px; border-radius:4px;">Visa</span>
+                        <span style="border:1px solid #eee; padding:2px 6px; border-radius:4px;">Master</span>
+                        <span style="border:1px solid #eee; padding:2px 6px; border-radius:4px;">JCB</span>
+                    </div>
                 </div>
-                <div style="margin-bottom:10px;">1. Chọn ngân hàng trả góp</div>
-                <select style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px; outline:none;">
-                    <option>Vietcombank</option>
-                    <option>Techcombank</option>
-                    <option>MB Bank</option>
-                    <option>Sacombank</option>
-                    <option>VPBank</option>
-                </select>
-                <div style="margin-bottom:10px;">2. Chọn loại thẻ</div>
-                <select style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px; outline:none;">
-                    <option>Visa</option>
-                    <option>MasterCard</option>
-                    <option>JCB</option>
-                </select>
-                <div style="margin-bottom:10px;">3. Chọn số tiền và kỳ hạn trả góp</div>
-                <select style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px; outline:none;">
-                    <option>3 tháng - 0% lãi suất</option>
-                    <option>6 tháng - 0% lãi suất</option>
-                    <option>9 tháng - 1% lãi suất</option>
-                    <option>12 tháng - 1% lãi suất</option>
-                </select>
+
+                <div class="inst-section-title">1. CHỌN NGÂN HÀNG TRẢ GÓP</div>
+                <div class="inst-grid inst-grid-4">
+                    <div class="inst-grid-btn active" onclick="selectBank(this, 'Vietcombank')">Vietcombank</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'Techcombank')">Techcombank</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'Sacombank')">Sacombank</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'ACB')">ACB</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'MBBank')">MBBank</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'VPBank')">VPBank</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'VIB')">VIB</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'BIDV')">BIDV</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'VietinBank')">VietinBank</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'TPBank')">TPBank</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'HSBC')">HSBC</div>
+                    <div class="inst-grid-btn" onclick="selectBank(this, 'Shinhan Bank')">Shinhan Bank</div>
+                </div>
+
+                <div class="inst-section-title">2. CHỌN LOẠI THẺ</div>
+                <div class="inst-grid inst-grid-3">
+                    <div class="inst-grid-btn active" onclick="selectCard(this, 'Visa')">Visa</div>
+                    <div class="inst-grid-btn" onclick="selectCard(this, 'MasterCard')">MasterCard</div>
+                    <div class="inst-grid-btn" onclick="selectCard(this, 'JCB')">JCB</div>
+                </div>
+
+                <div class="inst-section-title">3. CHỌN SỐ TIỀN VÀ KỲ HẠN TRẢ GÓP</div>
+                <div class="inst-grid inst-grid-4">
+                    <div class="inst-grid-btn active" onclick="selectCreditMonth(this, 3)" style="display:flex; flex-direction:column; gap:4px;">
+                        <span>3 tháng</span>
+                        <span style="font-size:11px; color:#16a34a;">0% Lãi suất</span>
+                    </div>
+                    <div class="inst-grid-btn" onclick="selectCreditMonth(this, 6)" style="display:flex; flex-direction:column; gap:4px;">
+                        <span>6 tháng</span>
+                        <span style="font-size:11px; color:#d70018;">0.58% / tháng</span>
+                    </div>
+                    <div class="inst-grid-btn" onclick="selectCreditMonth(this, 9)" style="display:flex; flex-direction:column; gap:4px;">
+                        <span>9 tháng</span>
+                        <span style="font-size:11px; color:#d70018;">0.5% / tháng</span>
+                    </div>
+                    <div class="inst-grid-btn" onclick="selectCreditMonth(this, 12)" style="display:flex; flex-direction:column; gap:4px;">
+                        <span>12 tháng</span>
+                        <span style="font-size:11px; color:#d70018;">0.46% / tháng</span>
+                    </div>
+                </div>
+
+                <table class="inst-table" style="margin-top:20px; border-radius:8px; overflow:hidden;">
+                    <tr><th style="background:#fff; color:#666;">Ngân hàng</th><td id="instSelectedBank" style="font-weight:bold; text-align:right;">Vietcombank</td></tr>
+                    <tr><th style="background:#fff; color:#666;">Loại thẻ</th><td id="instSelectedCard" style="font-weight:bold; text-align:right;">Visa</td></tr>
+                </table>
             </div>
 
-            <!-- TAB 2: Mua trước trả sau (Kredivo) -->
+            <!-- TAB 2: Mua trước trả sau -->
             <div id="instTabContent2" class="inst-tab-content" style="display:none;">
-                <h4 style="margin-bottom:10px; font-size:14px;">Chọn phương thức trả góp</h4>
-                <div style="border:1px solid #0046ab; border-radius:8px; padding:15px; margin-bottom:15px; background:#eef2ff; display:flex; align-items:center; gap:10px;">
-                    <div style="background:#f26b21; color:#fff; font-weight:bold; padding:5px 10px; border-radius:4px;">Kredivo</div>
-                    <strong>Trả góp qua Kredivo</strong>
+                <div class="inst-section-title">CHỌN NHÀ CUNG CẤP MUA TRƯỚC TRẢ SAU</div>
+                <div class="inst-grid inst-grid-3">
+                    <div class="inst-grid-btn active" onclick="selectBNPL(this, 'Home PayLater')" style="display:flex; flex-direction:column; gap:6px; padding:15px;">
+                        <strong style="color:#333;">Home PayLater</strong>
+                        <span style="font-size:10px; color:#d70018;"><i class="fa-solid fa-fire"></i> HOT NHẤT</span>
+                    </div>
+                    <div class="inst-grid-btn" onclick="selectBNPL(this, 'Fundiin')" style="display:flex; flex-direction:column; gap:6px; padding:15px;">
+                        <strong style="color:#333;">Fundiin</strong>
+                        <span style="font-size:10px; color:#0046ab;"><i class="fa-solid fa-thumbs-up"></i> PHỔ BIẾN</span>
+                    </div>
+                    <div class="inst-grid-btn" onclick="selectBNPL(this, 'Kredivo')" style="display:flex; flex-direction:column; gap:6px; padding:15px;">
+                        <strong style="color:#333;">Kredivo</strong>
+                        <span style="font-size:10px; color:#f59e0b;"><i class="fa-solid fa-credit-card"></i> TOÀN CẦU</span>
+                    </div>
                 </div>
-                <p style="font-size:13px; color:#555;">Kredivo là giải pháp mua trước trả sau tiện lợi. Hạn mức lên đến 50 triệu đồng. Quy trình phê duyệt nhanh chóng, không cần thẻ tín dụng.</p>
+
+                <div style="background:#f8f9fa; border-radius:12px; padding:20px; margin-top:10px;">
+                    <h4 id="bnplTitle" style="margin-bottom:10px; font-size:16px; color:#333;">Home PayLater</h4>
+                    <p id="bnplDesc" style="font-size:14px; color:#555; line-height:1.6; margin:0;">
+                        Home PayLater là dịch vụ mua trước trả sau cực HOT của Home Credit. Hạn mức lên đến 25 triệu, không cần chứng minh thu nhập, lãi suất 0% cho kỳ hạn ngắn, xét duyệt siêu tốc chỉ trong 60 giây.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Thông tin người đăng ký chung -->
+            <div style="border-top:1px solid #eee; margin-top:25px; padding-top:20px;">
+                <div class="inst-section-title">THÔNG TIN NGƯỜI ĐĂNG KÝ</div>
+                <div style="display:flex; gap:15px; margin-bottom:15px;">
+                    <div style="flex:1;">
+                        <label style="display:block; font-size:12px; font-weight:bold; color:#777; margin-bottom:5px;">Họ và tên *</label>
+                        <input type="text" value="{{ auth()->check() ? auth()->user()->name : '' }}" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-size:14px;" placeholder="VD: Nguyễn Văn A">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="display:block; font-size:12px; font-weight:bold; color:#777; margin-bottom:5px;">Số điện thoại *</label>
+                        <input type="text" value="{{ auth()->check() ? auth()->user()->phone : '' }}" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-size:14px;" placeholder="VD: 0987654321">
+                    </div>
+                </div>
             </div>
             
             <div id="instTradeInArea" style="margin-top:20px; display:flex; gap:10px; align-items:center;">
@@ -980,6 +1063,7 @@ function toggleWishlist() {
 // --- PHÂN HỆ MÔ PHỎNG VÀ TÍNH TOÁN TRẢ GÓP (INSTALLMENT INTERACTIVE CALCULATION) ---
 let instCurrentBasePrice = basePrice;
 let instSelectedCompany = 'Shinhan Finance';
+let instSelectedPrepay = 30;
 let instSelectedMonth = 6;
 
 function checkAuthAndOpenInstallment() {
@@ -1015,9 +1099,7 @@ function switchInstTab(idx) {
 }
 
 function confirmInstallment() {
-    const msg = document.getElementById('instSuccessMsg');
-    msg.style.display = 'block';
-    msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    window.location.href = '/admin/installments';
 }
 
 // Đóng modal khi nhấn ra ngoài vùng nội dung modal
@@ -1042,6 +1124,51 @@ function selectMonth(el, month) {
     updateInstallmentTable();
 }
 
+function selectPrepay(el, prepay) {
+    document.querySelectorAll('.inst-prepay').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    instSelectedPrepay = parseInt(prepay);
+    updateInstallmentTable();
+}
+
+function selectBank(el, bankName) {
+    const parent = el.closest('.inst-grid');
+    parent.querySelectorAll('.inst-grid-btn').forEach(btn => btn.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('instSelectedBank').innerText = bankName;
+}
+
+function selectCard(el, cardName) {
+    const parent = el.closest('.inst-grid');
+    parent.querySelectorAll('.inst-grid-btn').forEach(btn => btn.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('instSelectedCard').innerText = cardName;
+}
+
+function selectCreditMonth(el, month) {
+    const parent = el.closest('.inst-grid');
+    parent.querySelectorAll('.inst-grid-btn').forEach(btn => btn.classList.remove('active'));
+    el.classList.add('active');
+}
+
+function selectBNPL(el, provider) {
+    const parent = el.closest('.inst-grid');
+    parent.querySelectorAll('.inst-grid-btn').forEach(btn => btn.classList.remove('active'));
+    el.classList.add('active');
+    
+    document.getElementById('bnplTitle').innerText = provider;
+    
+    let desc = '';
+    if(provider === 'Home PayLater') {
+        desc = 'Home PayLater là dịch vụ mua trước trả sau cực HOT của Home Credit. Hạn mức lên đến 25 triệu, không cần chứng minh thu nhập, lãi suất 0% cho kỳ hạn ngắn, xét duyệt siêu tốc chỉ trong 60 giây.';
+    } else if(provider === 'Fundiin') {
+        desc = 'Fundiin cho phép bạn mua sắm và thanh toán chia làm 3 kỳ hạn hoàn toàn không mất lãi suất. Thủ tục đơn giản chỉ cần CMND/CCCD và số điện thoại chính chủ.';
+    } else if(provider === 'Kredivo') {
+        desc = 'Kredivo là giải pháp mua trước trả sau tiện lợi. Hạn mức lên đến 50 triệu đồng. Quy trình phê duyệt nhanh chóng, không cần thẻ tín dụng, hỗ trợ trả góp lên đến 12 tháng.';
+    }
+    document.getElementById('bnplDesc').innerText = desc;
+}
+
 /**
  * Hàm: updateInstallmentTable
  * Công dụng: Tính toán các số liệu thực tế như khoản trả trước, trả góp mỗi tháng, lãi suất và chênh lệch dựa trên đối tác tài chính được lựa chọn.
@@ -1054,8 +1181,10 @@ function updateInstallmentTable() {
     document.getElementById('instCompanyName').innerText = instSelectedCompany;
     
     // Tính toán giả lập giá trị các gói tài chính
-    const prepay = Math.round(instCurrentBasePrice * 0.3); // Trả trước 30% mặc định
+    const prepay = Math.round(instCurrentBasePrice * (instSelectedPrepay / 100)); // Tính theo mức % được chọn
     const loan = instCurrentBasePrice - prepay; // Khoản tiền cần vay
+    
+    document.getElementById('instPrepayLabel').innerText = `Trả trước (${instSelectedPrepay}%)`;
     
     let interestRate = 0; // Tỷ lệ lãi suất hàng tháng
     let flatFee = 0;      // Phí bảo hiểm hoặc phí thu hộ hàng tháng

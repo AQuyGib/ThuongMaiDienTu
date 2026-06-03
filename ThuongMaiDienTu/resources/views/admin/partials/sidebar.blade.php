@@ -51,6 +51,13 @@
             'section' => $isEn ? 'Business' : 'Kinh doanh'
         ],
         [
+            'label' => $isEn ? 'Installment Requests' : 'Y/c Trả Góp',
+            'route' => route('admin.installments.index'),
+            'icon' => 'fa-solid fa-credit-card',
+            'active' => request()->is('admin/installments*'),
+            'section' => $isEn ? 'Business' : 'Kinh doanh'
+        ],
+        [
             'label' => $isEn ? 'Flash Sale' : 'Flash Sale',
             'route' => route('admin.flash-sales.index'),
             'icon' => 'fa-solid fa-bolt',

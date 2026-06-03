@@ -49,6 +49,19 @@
   - **Đồng bộ tính năng "Chọn địa chỉ đã lưu" sang trang Ước tính phí giao hàng:** Bổ sung logic hiển thị modal "Chọn địa chỉ đã lưu" vào file `ShippingCosts.blade.php` (tương tự như trang `pay.blade.php`), tự động map Tỉnh/Thành phố từ địa chỉ của người dùng để gán cho chức năng tính phí vận chuyển dựa vào hàm `findProvinceCodeFromCity` (ví dụ 'hcm', 'hn').
   - **Truyền dữ liệu xuống View:** Cập nhật `CartController::shipping()` trong Admin controller để truy vấn `$addresses` của user đăng nhập và truyền xuống cho view `ShippingCosts.blade.php`.
   - **Ẩn Tỉnh/Thành phố ở trang thanh toán:** Ẩn menu thả xuống chọn Tỉnh/Thành phố ở form trang `/pay` (`pay.blade.php`) theo yêu cầu. Bỏ qua validate trường `province` phía frontend, thiết lập thành `nullable` trong `CartController` (mặc định 'other' nếu khách hàng không chọn từ địa chỉ đã lưu).
+- **Phát triển chức năng Quản lý trả góp (`Vinhem/QuanLyTraGop`):**
+  - Cấu trúc lại giao diện Đăng ký trả góp Frontend (`installment.blade.php`) giống 100% bản mẫu mới nhất với 3 Tab chính hoạt động mượt mà (dùng AlpineJS):
+    1. **Trả góp qua công ty tài chính:** Có đầy đủ bảng chọn đối tác, mức trả trước, số tháng và bảng tính real-time.
+    2. **Trả góp qua thẻ tín dụng:** Chọn Ngân hàng trả góp, Loại thẻ (Visa/Master/JCB), Số tiền và kỳ hạn trả góp.
+    3. **Mua trước trả sau:** Chọn nhà cung cấp (Home PayLater, Fundiin, Kredivo) kèm thông tin giới thiệu.
+  - Tích hợp Form submit: Khi người dùng điền thông tin khách hàng và bấm "XÁC NHẬN TRẢ GÓP", hệ thống sẽ tự động bay vào trang Quản lý trả góp (route `/admin/installments`) để quản trị viên có thể xem.
+  - Tích hợp link "Y/c Trả Góp" vào menu Sidebar của Admin (`sidebar.blade.php`) và định nghĩa route `admin.installments.index` trỏ về View trả góp trong thư mục frontend theo như yêu cầu.
+  - Cập nhật Modal Đăng ký trả góp trong trang Chi tiết sản phẩm (`show.blade.php`): 
+    + Tab Công ty tài chính: Bổ sung dải nút "Chọn mức trả trước" (10% đến 50%) và xử lý tính toán lại bảng số liệu Gốc/Lãi theo tỷ lệ, loại bỏ fix cứng 30%.
+    + Tab Thẻ tín dụng: Chuyển đổi giao diện từ các ô select box nhàm chán sang dạng lưới nút bấm (Grid buttons) đẹp mắt cho Ngân hàng (12 nút), Loại thẻ (3 nút) và Kỳ hạn (4 nút), đồng thời thêm bảng tóm tắt Ngân hàng/Loại thẻ đã chọn bên dưới.
+    + Tab Mua trước trả sau (BNPL): Thiết kế lại theo dạng 3 nút lớn (Home PayLater, Fundiin, Kredivo) kèm theo icon nổi bật, tự động hiển thị mô tả tương ứng của từng đối tác bên dưới.
+    + Bổ sung khu vực "THÔNG TIN NGƯỜI ĐĂNG KÝ" chung cho mọi hình thức trả góp, tự động lấy `name` và `phone` của User đang đăng nhập (nếu có) để điền sẵn vào form.
+    + Chỉnh sửa sự kiện xác nhận trả góp để bay thẳng vào `/admin/installments`.
 
 ## Files Changed
 - **Testing & Bug Fixes:**

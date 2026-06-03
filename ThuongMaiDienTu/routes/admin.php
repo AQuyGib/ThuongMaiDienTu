@@ -35,6 +35,11 @@ use App\Http\Controllers\Admin\VideoManagementController;
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/kpi', [App\Http\Controllers\Admin\KPIController::class, 'index'])->name('kpi.index');
 
+// Quản lý trả góp (Installment)
+Route::get('/installments', function() {
+    return view('frontend.cart.installment');
+})->name('installments.index');
+
 // Cấu hình giao diện
 Route::get('/settings/theme', [ThemeSettingController::class, 'index'])->name('settings.theme');
 Route::post('/settings/theme', [ThemeSettingController::class, 'update'])->name('settings.theme.update');
