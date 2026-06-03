@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             RewardSeeder::class,
             RewardRuleSeeder::class,
             RewardHistorySeeder::class,
+            WarrantyClaimSeeder::class,
             VideoSeeder::class,
             ProductComboSeeder::class,
             HomeSectionSeeder::class,

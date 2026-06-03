@@ -103,4 +103,43 @@ class WarrantyController extends Controller
 
         return response()->json($result);
     }
+
+    /**
+     * Gửi yêu cầu bảo hành hoặc đổi trả
+     */
+    public function storeClaim(Request $request)
+    {
+        $request->validate([
+            'imei_serial'    => 'required|string|exists:inventory_items,imei_serial',
+            'customer_name'  => 'required|string|max:100',
+            'customer_phone' => 'required|string|max:20',
+            'customer_email' => 'nullable|email|max:100',
+            'claim_type'     => 'required|in:warranty,return,exchange',
+            'reason'         => 'required|string|max:1000',
+        ], [
+            'imei_serial.required' => 'Vui lòng cung cấp mã IMEI/Serial.',
+            'imei_serial.exists'   => 'Mã IMEI/Serial này không tồn tại trong hệ thống.',
+            'customer_name.required' => 'Vui lòng nhập họ tên.',
+            'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
+            'claim_type.required' => 'Vui lòng chọn loại yêu cầu.',
+            'claim_type.in' => 'Loại yêu cầu không hợp lệ.',
+            'reason.required' => 'Vui lòng nhập lý do cụ thể.',
+        ]);
+
+        \App\Models\WarrantyClaim::create([
+            'user_id'        => auth()->id(),
+            'imei_serial'    => $request->imei_serial,
+            'customer_name'  => $request->customer_name,
+            'customer_phone' => $request->customer_phone,
+            'customer_email' => $request->customer_email,
+            'claim_type'     => $request->claim_type,
+            'reason'         => $request->reason,
+            'status'         => 'pending',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Yêu cầu của bạn đã được gửi thành công. Ban quản trị sẽ sớm liên hệ duyệt yêu cầu!',
+        ]);
+    }
 }

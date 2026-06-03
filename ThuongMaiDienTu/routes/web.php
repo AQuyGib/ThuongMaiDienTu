@@ -215,6 +215,11 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::post('installments/{id}/reject', [\App\Http\Controllers\Admin\InstallmentController::class, 'reject'])->name('admin.installments.reject');
     Route::get('installments/{id}/invoice', [\App\Http\Controllers\Admin\InstallmentController::class, 'printInvoice'])->name('admin.installments.invoice');
     Route::post('installments/payments/{id}/pay', [\App\Http\Controllers\Admin\InstallmentController::class, 'payMonth'])->name('admin.installments.pay-month');
+
+    // Warranty Claim Management
+    Route::get('warranty-claims', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'index'])->name('admin.warranty-claims.index');
+    Route::post('warranty-claims/{id}/approve', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'approve'])->name('admin.warranty-claims.approve');
+    Route::post('warranty-claims/{id}/reject', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'reject'])->name('admin.warranty-claims.reject');
 });
 
 Route::middleware('auth')->group(function () {
@@ -249,6 +254,7 @@ Route::get('/chinh-sach-bao-hanh', [PolicyController::class, 'warranty'])->name(
 Route::get('/chinh-sach-doi-tra', [PolicyController::class, 'returnPolicy'])->name('policy.return');
 Route::get('/warranty', [WarrantyController::class, 'index'])->name('warranty.index');
 Route::post('/warranty/lookup', [WarrantyController::class, 'lookup'])->name('warranty.lookup');
+Route::post('/warranty/claim', [WarrantyController::class, 'storeClaim'])->name('warranty.claim.store');
 Route::get('/return-policy', [WarrantyController::class, 'returnPolicy'])->name('warranty.return');
 
 // Product Compare

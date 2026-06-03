@@ -60,6 +60,16 @@
 .btn-lookup.loading .spinner { display: inline-block; }
 .btn-lookup.loading .btn-text { display: none; }
 
+/* CTA Buttons in result card */
+.btn-create-ticket {
+    padding: 10px 20px; background: linear-gradient(135deg, #0046ab, #0061f2);
+    color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: 0.25s; display: inline-flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+}
+.btn-create-ticket:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,70,171,0.3); }
+.btn-create-ticket:active { transform: translateY(0); }
+
 .search-hint {
     display: flex; align-items: center; gap: 8px;
     font-size: 13px; color: #64748b;
@@ -450,6 +460,61 @@
         </div>
     </div>
 </div>
+
+<!-- Claim Request Modal -->
+<div id="claimModal" class="fixed inset-0 z-[9999] hidden" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center;">
+    <div id="claimModalContent" style="background: #fff; border-radius: 16px; width: 92%; max-width: 500px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); transform: scale(0.95); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease;">
+        <!-- Modal Header -->
+        <div style="padding: 16px 24px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Gửi yêu cầu dịch vụ</h3>
+            <button type="button" onclick="closeClaimModal()" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <!-- Modal Body -->
+        <form id="claimForm" style="padding: 24px;" onsubmit="submitClaim(event)">
+            @csrf
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Sản phẩm</label>
+                <input type="text" id="modalProductName" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #64748b;" readonly>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Mã IMEI/Serial</label>
+                <input type="text" id="modalImei" name="imei_serial" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #64748b; font-family: monospace;" readonly>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Loại yêu cầu</label>
+                <select id="modalClaimType" name="claim_type" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-weight: 500; outline: none; background: #fff;" required>
+                    <option value="warranty">Bảo hành sửa chữa</option>
+                    <option value="return">Đổi trả hàng hoàn tiền</option>
+                    <option value="exchange">Đổi máy mới/khách</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Họ tên</label>
+                    <input type="text" id="modalCustomerName" name="customer_name" value="{{ auth()->user() ? auth()->user()->full_name : '' }}" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;" required>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Số điện thoại</label>
+                    <input type="text" id="modalCustomerPhone" name="customer_phone" value="{{ auth()->user() ? auth()->user()->phone_number : '' }}" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;" required>
+                </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Email liên hệ</label>
+                <input type="email" id="modalCustomerEmail" name="customer_email" value="{{ auth()->user() ? auth()->user()->email : '' }}" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Lý do yêu cầu</label>
+                <textarea id="modalReason" name="reason" rows="3" placeholder="Mô tả cụ thể lỗi thiết bị hoặc lý do muốn đổi trả..." style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; resize: none;" required></textarea>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" class="btn-lookup" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px 20px;" onclick="closeClaimModal()">Hủy</button>
+                <button type="submit" class="btn-lookup" id="btnSubmitClaim" style="padding: 10px 20px;">Gửi yêu cầu</button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -620,6 +685,15 @@ function renderResult(d) {
             ${progressHTML}
             ${noteHTML}
             ${repairHTML}
+            
+            <div class="warranty-cta" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <button type="button" class="btn-create-ticket" onclick="openClaimModal('${d.imei}', '${d.product_name}', 'warranty')">
+                    <i class="fa-solid fa-screwdriver-wrench"></i> Yêu cầu bảo hành
+                </button>
+                <button type="button" class="btn-create-ticket" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="openClaimModal('${d.imei}', '${d.product_name}', 'return')">
+                    <i class="fa-solid fa-rotate-left"></i> Yêu cầu đổi trả
+                </button>
+            </div>
         </div>
     </div>`;
 }
@@ -630,6 +704,101 @@ function switchPolicyTab(tabId, el) {
     
     document.querySelectorAll('.policy-section').forEach(s => s.classList.remove('active'));
     document.getElementById(tabId).classList.add('active');
+}
+
+function openClaimModal(imei, productName, defaultType) {
+    document.getElementById('modalImei').value = imei;
+    document.getElementById('modalProductName').value = productName;
+    document.getElementById('modalClaimType').value = defaultType;
+    document.getElementById('modalReason').value = '';
+    
+    const modal = document.getElementById('claimModal');
+    const content = document.getElementById('claimModalContent');
+    
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
+    
+    setTimeout(() => {
+        content.style.transform = 'scale(1)';
+        content.style.opacity = '1';
+    }, 10);
+}
+
+function closeClaimModal() {
+    const modal = document.getElementById('claimModal');
+    const content = document.getElementById('claimModalContent');
+    
+    content.style.transform = 'scale(0.95)';
+    content.style.opacity = '0';
+    
+    setTimeout(() => {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }, 300);
+}
+
+function submitClaim(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitClaim');
+    const oldText = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
+    
+    const formData = {
+        imei_serial: document.getElementById('modalImei').value,
+        customer_name: document.getElementById('modalCustomerName').value,
+        customer_phone: document.getElementById('modalCustomerPhone').value,
+        customer_email: document.getElementById('modalCustomerEmail').value,
+        claim_type: document.getElementById('modalClaimType').value,
+        reason: document.getElementById('modalReason').value,
+    };
+    
+    fetch('{{ route("warranty.claim.store") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(r => r.json().then(data => ({ status: r.status, body: data })))
+    .then(res => {
+        btn.disabled = false;
+        btn.innerHTML = oldText;
+        
+        if (res.status !== 200) {
+            let errorMsg = res.body.message || 'Đã có lỗi xảy ra.';
+            if (res.body.errors) {
+                errorMsg = Object.values(res.body.errors).flat().join('<br>');
+            }
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi gửi yêu cầu',
+                html: errorMsg,
+                confirmButtonColor: '#ef4444'
+            });
+        } else {
+            closeClaimModal();
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công',
+                text: res.body.message,
+                confirmButtonColor: '#0046ab'
+            });
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = oldText;
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại.',
+            confirmButtonColor: '#ef4444'
+        });
+    });
 }
 </script>
 @endpush
