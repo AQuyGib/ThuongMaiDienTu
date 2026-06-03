@@ -23,6 +23,12 @@ class Order extends Model
         return $this->hasMany(OrderDetail::class, 'order_id');
     }
 
+    public function installment()
+    {
+        return $this->hasOne(Installment::class, 'order_id');
+    }
+
+
     protected static function booted()
     {
         static::created(function (Order $order) {

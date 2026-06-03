@@ -273,8 +273,10 @@ class TwoFactorController extends Controller
         }
 
         // Dọn dẹp session tạm thời
+        $currentLocale = session('locale', 'vi');
         session()->forget(['2fa_user_id', '2fa_remember']);
         $request->session()->regenerate();
+        session(['locale' => $currentLocale]);
 
         Log::info("User {$user->email} authenticated via 2FA successfully.");
 

@@ -35,7 +35,14 @@
             <tbody class="divide-y divide-gray-100 bg-white">
                 @forelse ($repairTickets as $repairTicket)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-4 font-semibold text-slate-800">#RT-{{ $repairTicket->ticket_id }}</td>
+                        <td class="px-4 py-4 font-semibold text-slate-800">
+                            <div>#RT-{{ $repairTicket->ticket_id }}</div>
+                            @if ($repairTicket->ai_diagnosed)
+                                <span class="inline-flex items-center gap-1 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-bold text-purple-700 border border-purple-200 mt-1 shadow-2xs">
+                                    <i class="fa-solid fa-robot text-[8px]"></i> AI Chẩn Đoán
+                                </span>
+                            @endif
+                        </td>
                         <td class="px-4 py-4">
                             <div class="font-medium text-gray-900">{{ $repairTicket->customer_name ?? '-' }}</div>
                             <div class="text-sm text-gray-500">{{ $repairTicket->customer_phone ?? '-' }}</div>

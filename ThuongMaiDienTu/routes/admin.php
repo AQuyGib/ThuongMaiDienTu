@@ -8,28 +8,27 @@ use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\InventoryMovementController;
+use App\Http\Controllers\Admin\InventoryAuditController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\AttributeController;
+use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Admin\FlashSaleProductController;
+use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\CashbookController;
 use App\Http\Controllers\Admin\ThemeSettingController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\RepairTicketInvoiceController;
 use App\Http\Controllers\Admin\ServiceInvoiceController;
+use App\Http\Controllers\Admin\VideoManagementController;
 
 /*
 |--------------------------------------------------------------------------
 | Admin Routes
 |--------------------------------------------------------------------------
-|
-| Chứa toàn bộ các route liên quan đến trang quản trị (CMS/ERP).
-| Các route này có tiền tố /admin và sử dụng name prefix admin.
-|
-| Lưu ý: Hiện tại chưa thêm middleware auth vì hệ thống đăng nhập
-| sẽ được xây dựng sau. Khi hoàn tất Auth, thêm ->middleware('auth')
-|
 */
 
 // Dashboard
@@ -41,9 +40,25 @@ Route::get('/settings/theme', [ThemeSettingController::class, 'index'])->name('s
 Route::post('/settings/theme', [ThemeSettingController::class, 'update'])->name('settings.theme.update');
 Route::post('/settings/theme/reset', [ThemeSettingController::class, 'reset'])->name('settings.theme.reset');
 
+// ===== Video Management =====
+Route::get('/videos', [VideoManagementController::class, 'index'])->name('videos.index');
+Route::get('/videos/create', [VideoManagementController::class, 'create'])->name('videos.create');
+Route::post('/videos', [VideoManagementController::class, 'store'])->name('videos.store');
+Route::get('/videos/{video}', [VideoManagementController::class, 'show'])->name('videos.show');
+Route::get('/videos/{video}/edit', [VideoManagementController::class, 'edit'])->name('videos.edit');
+Route::put('/videos/{video}', [VideoManagementController::class, 'update'])->name('videos.update');
+Route::patch('/videos/{video}/approve', [VideoManagementController::class, 'approve'])->name('videos.approve');
+Route::patch('/videos/{video}/hide', [VideoManagementController::class, 'hide'])->name('videos.hide');
+Route::delete('/videos/{video}', [VideoManagementController::class, 'destroy'])->name('videos.destroy');
+Route::delete('/videos/comments/{comment}', [VideoManagementController::class, 'destroyComment'])->name('videos.comments.destroy');
+
+
 // ===== Quản lý Đơn hàng =====
+Route::get('orders/ai-logs', [OrderController::class, 'aiLogs'])->name('orders.aiLogs');
+Route::post('orders/batch-get-ids', [OrderController::class, 'batchGetIds'])->name('orders.batchGetIds');
 Route::resource('orders', OrderController::class);
 Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+Route::post('orders/{id}/reanalyze', [OrderController::class, 'reanalyze'])->name('orders.reanalyze');
 
 // CRUD Quyền hạn & Tài khoản (Permissions)
 Route::resource('permissions', UserController::class)->names([
@@ -71,8 +86,10 @@ Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.qr');
 
 // ===== Quản lý Bài viết (Articles / Ecosystem) =====
+Route::post('articles/bulk-approve-ai', [ArticleController::class, 'bulkApproveAi'])->name('articles.bulk-approve-ai');
 Route::resource('articles', ArticleController::class);
 Route::post('articles/{id}/approve', [ArticleController::class, 'approve'])->name('articles.approve');
+Route::post('articles/{id}/reject', [ArticleController::class, 'reject'])->name('articles.reject');
 
 // ===== Quản lý Nhà Cung Cấp =====
 Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
@@ -82,22 +99,36 @@ Route::delete('/suppliers/{id}', [SupplierController::class, 'destroy'])->name('
 
 // ===== Quản lý Sản Phẩm & Danh Mục =====
 Route::resource('products', ProductController::class);
+Route::get('/products/{product}/translation/en', [\App\Http\Controllers\Admin\ProductTranslationController::class, 'edit'])->name('products.translation.edit');
+Route::put('/products/{product}/translation/en', [\App\Http\Controllers\Admin\ProductTranslationController::class, 'update'])->name('products.translation.update');
 Route::get('/products/export', [ProductController::class, 'exportExcel'])->name('products.export');
 Route::get('/products/template', [ProductController::class, 'downloadTemplate'])->name('products.template');
 Route::get('/products/import', [ProductController::class, 'importForm'])->name('products.import.form');
 Route::post('/products/import', [ProductController::class, 'importExcel'])->name('products.import');
 Route::resource('categories', CategoryController::class);
+Route::get('/categories/{category}/translation/en', [\App\Http\Controllers\Admin\CategoryTranslationController::class, 'edit'])->name('categories.translation.edit');
+Route::put('/categories/{category}/translation/en', [\App\Http\Controllers\Admin\CategoryTranslationController::class, 'update'])->name('categories.translation.update');
+Route::resource('attributes', AttributeController::class);
+Route::get('/attributes/{attribute}/translation/en', [\App\Http\Controllers\Admin\AttributeTranslationController::class, 'edit'])->name('attributes.translation.edit');
+Route::put('/attributes/{attribute}/translation/en', [\App\Http\Controllers\Admin\AttributeTranslationController::class, 'update'])->name('attributes.translation.update');
+Route::resource('pages', PageController::class);
+Route::get('/pages/{page}/translation/en', [\App\Http\Controllers\Admin\PageTranslationController::class, 'edit'])->name('pages.translation.edit');
+Route::put('/pages/{page}/translation/en', [\App\Http\Controllers\Admin\PageTranslationController::class, 'update'])->name('pages.translation.update');
 
 // ===== Flash Sale =====
 Route::resource('flash-sales', FlashSaleController::class)->except(['create', 'edit', 'show']);
 Route::post('flash-sales/{flash_sale}/products', [FlashSaleProductController::class, 'store'])->name('flash-sales.products.store');
 Route::delete('flash-sales/{flash_sale}/products/{flash_sale_product}', [FlashSaleProductController::class, 'destroy'])->name('flash-sales.products.destroy');
 
+// ===== Voucher =====
+Route::resource('vouchers', VoucherController::class)->except(['create', 'show', 'edit']);
+
 // ===== Quản lý Biến Thể & Bán Kèm =====
 Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'])->name('products.variants.store');
 Route::put('/products/{id}/variants/{variantId}', [ProductController::class, 'updateVariant'])->name('products.variants.update');
 Route::delete('/products/{id}/variants/{variantId}', [ProductController::class, 'destroyVariant'])->name('products.variants.destroy');
 Route::post('/products/{id}/cross-sells', [ProductController::class, 'syncCrossSells'])->name('products.cross-sells.sync');
+Route::post('/products/{id}/combos', [ProductController::class, 'syncCombos'])->name('products.combos.sync');
 
 // ===== Phiếu Nhập Kho =====
 Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
@@ -107,6 +138,7 @@ Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->n
 
 // ===== Quản lý IMEI & Cảnh báo tồn kho =====
 Route::get('/inventory/warnings', [InventoryController::class, 'warningList'])->name('inventory.warnings');
+Route::get('/inventory/movements', [InventoryMovementController::class, 'index'])->name('inventory.movements');
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 Route::put('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.updateStatus');
 
@@ -116,6 +148,9 @@ Route::post('/warehouse-transfers/{id}/complete', [\App\Http\Controllers\Admin\W
 Route::post('/warehouse-transfers/{id}/cancel', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'cancel'])->name('warehouse-transfers.cancel');
 Route::resource('warehouse-transfers', \App\Http\Controllers\Admin\WarehouseTransferController::class);
 
+// ===== Kiểm kê & Cân bằng kho =====
+Route::post('/inventory-audits/{id}/reconcile', [InventoryAuditController::class, 'reconcile'])->name('inventory-audits.reconcile');
+Route::resource('inventory-audits', InventoryAuditController::class);
 
 // ===== Quản lý Sổ Quỹ (Cashbook) =====
 Route::post('cashbooks/bulk-destroy', [CashbookController::class, 'bulkDestroy'])->name('cashbooks.bulkDestroy');

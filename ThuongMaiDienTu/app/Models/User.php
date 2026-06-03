@@ -2,9 +2,10 @@
 namespace App\Models;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable {
-    use SoftDeletes;
+    use SoftDeletes, HasApiTokens;
 
     protected $primaryKey = 'user_id';
     const UPDATED_AT = null;
@@ -111,11 +112,13 @@ class User extends Authenticatable {
         return $this->hasMany(RepairTicket::class, 'user_id', 'user_id');
     }
 
-    /**
-     * Kiểm tra người dùng có đang online không (trong vòng 5 phút qua)
-     */
     public function isOnline()
     {
         return $this->sessions()->where('last_active', '>=', now()->subMinutes(5))->exists();
+    }
+
+    public function videoComments()
+    {
+        return $this->hasMany(VideoComment::class, 'user_id', 'user_id');
     }
 }

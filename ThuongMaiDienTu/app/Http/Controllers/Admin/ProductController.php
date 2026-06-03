@@ -85,13 +85,13 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $product = Product::with(['category', 'variants', 'crossSells'])->findOrFail($id);
+        $product = Product::with(['category', 'variants', 'crossSells', 'comboProducts'])->findOrFail($id);
         
         // Lấy tất cả sản phẩm khác để admin có thể chọn bán kèm (loại trừ chính nó)
         // Trong thực tế nếu SP quá nhiều thì nên dùng AJAX search, ở đây ta lấy danh sách đơn giản
         $allProducts = Product::where('product_id', '!=', $id)
             ->orderBy('name')
-            ->get(['product_id', 'name', 'base_price']);
+            ->get(['product_id', 'name', 'base_price', 'thumbnail']);
 
         return view('admin.products.ProductDetail', compact('product', 'allProducts'));
     }
@@ -115,6 +115,38 @@ class ProductController extends Controller
 
         return redirect()->route('admin.products.show', $id)
             ->with('success', 'Cập nhật danh sách bán kèm thành công!');
+    }
+
+    /**
+     * Cập nhật danh sách combo mua kèm
+     */
+    public function syncCombos(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+        
+        $syncData = [];
+        if ($request->has('combo_product_ids')) {
+            foreach ($request->combo_product_ids as $index => $comboProductId) {
+                $discountType = $request->discount_types[$comboProductId] ?? 'fixed';
+                $discountValue = floatval($request->discount_values[$comboProductId] ?? 0);
+                
+                $syncData[$comboProductId] = [
+                    'discount_type' => $discountType,
+                    'discount_value' => $discountValue,
+                    'sort_order' => $index
+                ];
+            }
+        }
+        
+        $product->comboProducts()->sync($syncData);
+        
+        // Xóa cache hiển thị combo / cross-sell của sản phẩm
+        cache()->forget("cross_sell_v2_{$id}_user_" . (auth()->id() ?? 'guest'));
+        cache()->forget("cross_sell_v2_{$id}_user_guest");
+        cache()->forget("combo_products_{$id}");
+
+        return redirect()->route('admin.products.show', $id)
+            ->with('success', 'Cập nhật danh sách Combo mua kèm thành công!');
     }
 
     public function store(Request $request)

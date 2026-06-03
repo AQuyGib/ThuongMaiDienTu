@@ -6,10 +6,6 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed dữ liệu mẫu cho toàn bộ ứng dụng.
-     * Thứ tự chạy: Roles trước -> Users sau (do khóa ngoại role_id).
-     */
     public function run(): void
     {
         $this->call([
@@ -25,6 +21,22 @@ class DatabaseSeeder extends Seeder
             RewardSeeder::class,
             RewardRuleSeeder::class,
             RewardHistorySeeder::class,
+            VideoSeeder::class,
+            ProductComboSeeder::class,
+            HomeSectionSeeder::class,
+            OrderSeeder::class,
+            InventoryMovementSeeder::class,
+            InventoryAuditSeeder::class,
+            CommentSeeder::class,
+            ServiceInvoiceSeeder::class,
+            RepairTicketSeeder::class,
+            ArticleSeeder::class,
+            AITestArticleSeeder::class,
+            FlashSaleSeeder::class,
+            LargeProductSeeder::class,
+            WishlistRecentlyViewedSeeder::class,
+            InstallmentSeeder::class,
+            CashbookSeeder::class,
         ]);
     }
 }

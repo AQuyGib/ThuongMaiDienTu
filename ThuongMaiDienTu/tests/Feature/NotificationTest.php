@@ -14,6 +14,9 @@ use App\Models\InventoryItem;
 use App\Services\NotificationService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Cache;
+use App\Jobs\SendNotificationCampaignJob;
 use Tests\TestCase;
 
 class NotificationTest extends TestCase
@@ -297,5 +300,30 @@ class NotificationTest extends TestCase
         $this->assertEquals($variant->variant_id, $data['variant_id']);
         $this->assertEquals(5, $data['stock']);
         $this->assertEquals(10, $data['threshold']);
+    }
+
+    /**
+     * Test admin campaign store dispatches job and clears stats cache
+     */
+    public function test_store_campaign_dispatches_job_and_clears_cache(): void
+    {
+        Queue::fake();
+        Cache::put('admin_notifications_index_stats_and_charts', 'dummy-data', 3600);
+
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.notifications.store'), [
+                'target' => 'all',
+                'title' => 'Chiến dịch test',
+                'content' => 'Nội dung test',
+            ]);
+
+        $response->assertStatus(302);
+        $response->assertSessionHas('success');
+
+        // Phải dispatch Job gửi thông báo
+        Queue::assertPushed(SendNotificationCampaignJob::class);
+
+        // Phải xóa cache thống kê
+        $this->assertNull(Cache::get('admin_notifications_index_stats_and_charts'));
     }
 }
