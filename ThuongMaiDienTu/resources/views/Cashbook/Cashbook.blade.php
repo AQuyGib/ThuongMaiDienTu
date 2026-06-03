@@ -60,8 +60,9 @@
 
 @section('content')
 
-{{-- Toast Notifications Container --}}
+{{-- THÙNG CHỨA CÁC HỘP THÔNG BÁO TOAST (PHẢN HỒI KẾT QUẢ TỪ SERVER) --}}
 <div id="toast-container" class="fixed top-24 right-8 z-[200] flex flex-col gap-3 pointer-events-none">
+    {{-- Hiển thị Toast thông báo Thành công khi Session có biến 'success' --}}
     @if(session('success'))
         <div class="bg-white border-l-4 border-emerald-500 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-xl p-4 flex items-center gap-4 animate-slide-left toast-item transition-all duration-300 w-80">
             <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0">
@@ -74,6 +75,7 @@
         </div>
     @endif
 
+    {{-- Hiển thị Toast thông báo Thất bại khi Session có biến 'error' --}}
     @if(session('error'))
         <div class="bg-white border-l-4 border-rose-500 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-xl p-4 flex items-center gap-4 animate-slide-left toast-item transition-all duration-300 w-80">
             <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
@@ -86,19 +88,23 @@
         </div>
     @endif
 </div>
+
+{{-- BỐ CỤC CHÍNH CỦA TRANG QUẢN LÝ SỔ QUỸ --}}
 <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
 
-    {{-- Top Action Bar --}}
+    {{-- THANH TIÊU ĐỀ TRÊN CÙNG (TOP ACTION BAR) --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Quản lý Dòng tiền</h1>
             <p class="text-sm text-slate-500 font-medium">Theo dõi, kiểm soát thu chi và tối ưu hóa tài chính cửa hàng.</p>
         </div>
         <div class="flex items-center gap-3">
+            {{-- Hiển thị ngày giờ hiện tại theo định dạng tiếng Việt trên thiết bị lớn --}}
             <div class="hidden sm:flex bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm items-center gap-2">
                 <i class="fa-solid fa-calendar-day text-indigo-500"></i>
                 <span class="text-xs font-bold text-slate-600">{{ now('Asia/Ho_Chi_Minh')->locale('vi')->isoFormat('dddd, D/MM/YYYY') }}</span>
             </div>
+            {{-- Nút nhấn mở Modal thêm mới giao dịch --}}
             <button onclick="openModal('modal-add')"
                     class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-95">
                 <i class="fa-solid fa-plus"></i> Thêm giao dịch
@@ -106,9 +112,10 @@
         </div>
     </div>
 
-    {{-- Stats & Chart Row --}}
+    {{-- KHU VỰC THỐNG KÊ (STATS CARDS) & BIỂU ĐỒ XU HƯỚNG --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="space-y-4">
+            {{-- Thẻ Thống Kê Tổng Thu Nhập --}}
             <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center justify-between group hover:border-emerald-200 transition-all hover:shadow-emerald-100/50 hover:shadow-xl">
                 <div class="space-y-1">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Tổng thu nhập</p>
@@ -118,6 +125,8 @@
                     <i class="fa-solid fa-arrow-trend-up text-2xl"></i>
                 </div>
             </div>
+            
+            {{-- Thẻ Thống Kê Tổng Chi Phí --}}
             <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center justify-between group hover:border-rose-200 transition-all hover:shadow-rose-100/50 hover:shadow-xl">
                 <div class="space-y-1">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Tổng chi phí</p>
@@ -127,6 +136,8 @@
                     <i class="fa-solid fa-arrow-trend-down text-2xl"></i>
                 </div>
             </div>
+            
+            {{-- Thẻ Thống Kê Số Dư Hiện Tại (Màu sắc thay đổi động theo giá trị âm/dương) --}}
             <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center justify-between group {{ $balance >= 0 ? 'hover:border-blue-200 hover:shadow-indigo-100/50' : 'hover:border-rose-200 hover:shadow-rose-100/50' }} transition-all hover:shadow-xl">
                 <div class="space-y-1">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Số dư hiện tại</p>
@@ -139,6 +150,8 @@
                 </div>
             </div>
         </div>
+        
+        {{-- THÙNG CHỨA BIỂU ĐỒ XU HƯỚNG TÀI CHÍNH 7 NGÀY GẦN NHẤT --}}
         <div class="lg:col-span-2 bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden">
             <div class="flex items-center justify-between mb-8">
                 <div>
@@ -636,25 +649,25 @@
 </div>
 
 {{-- BULK ACTION BAR (FLOATING PILL AT BOTTOM) --}}
-<div id="bulk-action-bar" class="px-6 py-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.2)] animate-slide-up" style="display: none; align-items: center; gap: 1.5rem; background-color: white; border: 1px solid #e2e8f0; width: max-content; position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 9999;">
-    <div class="flex items-center gap-3">
-        <span class="w-auto px-2.5 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-black text-xs" id="selected-count">0</span>
-        <span class="font-bold text-slate-800 text-sm">giao dịch đã chọn</span>
+<div id="bulk-action-bar" class="px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-slide-up flex flex-wrap md:flex-nowrap items-center justify-center gap-3 md:gap-4 bg-white/95 backdrop-blur border border-slate-200 z-[9999]" style="display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 800px;">
+    <div class="flex items-center gap-2 shrink-0">
+        <span class="w-auto px-2 h-7 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-black text-xs" id="selected-count">0</span>
+        <span class="font-bold text-slate-800 text-xs md:text-sm">đã chọn</span>
     </div>
     
     @if ($cashbooks->total() > $cashbooks->count())
-    <div style="width: 1px; height: 24px; background-color: #e2e8f0;" class="bulk-divider"></div>
-    <div id="bulk-select-all-matching-container" style="display: none;" class="items-center gap-2 text-xs font-bold">
-        <span class="text-slate-500" id="bulk-matching-text">Đã chọn {{ $cashbooks->count() }} giao dịch trên trang này.</span>
-        <button type="button" onclick="selectAllMatching()" id="btn-select-all-matching" class="text-indigo-600 hover:text-indigo-800 underline transition-all">Chọn tất cả {{ $cashbooks->total() }} giao dịch</button>
-        <button type="button" onclick="clearSelectAllMatching()" id="btn-clear-select-all-matching" style="display: none;" class="text-rose-600 hover:text-rose-800 underline transition-all">Bỏ chọn toàn bộ</button>
+    <div style="width: 1px; height: 20px; background-color: #e2e8f0;" class="hidden md:block bulk-divider shrink-0"></div>
+    <div id="bulk-select-all-matching-container" style="display: none;" class="items-center gap-1.5 text-xs font-bold shrink-0 flex-wrap justify-center">
+        <span class="text-slate-500" id="bulk-matching-text">Đã chọn {{ $cashbooks->count() }} dòng.</span>
+        <button type="button" onclick="selectAllMatching()" id="btn-select-all-matching" class="text-indigo-600 hover:text-indigo-800 underline transition-all">Chọn tất cả {{ $cashbooks->total() }}</button>
+        <button type="button" onclick="clearSelectAllMatching()" id="btn-clear-select-all-matching" style="display: none;" class="text-rose-600 hover:text-rose-800 underline transition-all">Bỏ chọn</button>
     </div>
     @endif
 
-    <div style="width: 1px; height: 24px; background-color: #e2e8f0;"></div>
-    <div class="flex items-center gap-2">
-        <button type="button" onclick="cancelSelection()" class="px-4 py-2 rounded-xl text-slate-500 font-bold text-sm hover:bg-slate-100 transition-all">Hủy</button>
-        <button type="button" onclick="bulkDelete()" class="px-5 py-2 rounded-xl text-white font-black text-sm transition-all shadow-md" style="background-color: #e11d48;" onmouseover="this.style.backgroundColor='#be123c'" onmouseout="this.style.backgroundColor='#e11d48'">Xóa tất cả</button>
+    <div style="width: 1px; height: 20px; background-color: #e2e8f0;" class="hidden md:block shrink-0"></div>
+    <div class="flex items-center gap-2 shrink-0">
+        <button type="button" onclick="cancelSelection()" class="px-3.5 py-1.5 rounded-lg text-slate-500 font-bold text-xs hover:bg-slate-100 transition-all">Hủy</button>
+        <button type="button" onclick="bulkDelete()" class="px-4 py-1.5 rounded-lg text-white font-black text-xs transition-all shadow-md" style="background-color: #e11d48;" onmouseover="this.style.backgroundColor='#be123c'" onmouseout="this.style.backgroundColor='#e11d48'">Xóa tất cả</button>
     </div>
 </div>
 
