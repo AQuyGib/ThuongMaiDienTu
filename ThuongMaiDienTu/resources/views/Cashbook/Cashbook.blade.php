@@ -223,6 +223,9 @@
         {{-- Table Content --}}
         <form id="bulk-delete-form" action="{{ route('admin.cashbooks.bulkDestroy') }}" method="POST">
             @csrf
+            <input type="hidden" name="select_all_matching" id="select-all-matching" value="0">
+            <input type="hidden" name="search" value="{{ request('search') }}">
+            <input type="hidden" name="type" value="{{ request('type') }}">
             <div class="overflow-x-auto custom-scrollbar">
                 @if($cashbooks->isEmpty())
                     <div class="py-32 text-center">
@@ -635,9 +638,19 @@
 {{-- BULK ACTION BAR (FLOATING PILL AT BOTTOM) --}}
 <div id="bulk-action-bar" class="px-6 py-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.2)] animate-slide-up" style="display: none; align-items: center; gap: 1.5rem; background-color: white; border: 1px solid #e2e8f0; width: max-content; position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 9999;">
     <div class="flex items-center gap-3">
-        <span class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-black text-xs" id="selected-count">0</span>
+        <span class="w-auto px-2.5 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-black text-xs" id="selected-count">0</span>
         <span class="font-bold text-slate-800 text-sm">giao dịch đã chọn</span>
     </div>
+    
+    @if ($cashbooks->total() > $cashbooks->count())
+    <div style="width: 1px; height: 24px; background-color: #e2e8f0;" class="bulk-divider"></div>
+    <div id="bulk-select-all-matching-container" style="display: none;" class="items-center gap-2 text-xs font-bold">
+        <span class="text-slate-500" id="bulk-matching-text">Đã chọn {{ $cashbooks->count() }} giao dịch trên trang này.</span>
+        <button type="button" onclick="selectAllMatching()" id="btn-select-all-matching" class="text-indigo-600 hover:text-indigo-800 underline transition-all">Chọn tất cả {{ $cashbooks->total() }} giao dịch</button>
+        <button type="button" onclick="clearSelectAllMatching()" id="btn-clear-select-all-matching" style="display: none;" class="text-rose-600 hover:text-rose-800 underline transition-all">Bỏ chọn toàn bộ</button>
+    </div>
+    @endif
+
     <div style="width: 1px; height: 24px; background-color: #e2e8f0;"></div>
     <div class="flex items-center gap-2">
         <button type="button" onclick="cancelSelection()" class="px-4 py-2 rounded-xl text-slate-500 font-bold text-sm hover:bg-slate-100 transition-all">Hủy</button>
@@ -776,19 +789,62 @@
     function updateBulkBar() {
         // Đếm tổng số lượng checkbox đang được chọn
         const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+        const matchingContainer = document.getElementById('bulk-select-all-matching-container');
         // Nếu số lượng chọn lớn hơn 0, hiển thị thanh công cụ
         if (checkedCount > 0) {
             bulkBar.style.display = 'flex'; // Đặt kiểu hiển thị là flex để căn ngang
-            selectedCount.innerText = checkedCount; // Ghi đè số lượng lên nhãn
+            
+            // Nếu đang chọn toàn bộ trên tất cả các trang
+            if (document.getElementById('select-all-matching').value === '1') {
+                selectedCount.innerText = 'Tất cả {{ $cashbooks->total() }}';
+                if (matchingContainer) {
+                    matchingContainer.style.display = 'flex';
+                    document.getElementById('bulk-matching-text').innerText = 'Đang chọn tất cả {{ $cashbooks->total() }} giao dịch.';
+                    document.getElementById('btn-select-all-matching').style.display = 'none';
+                    document.getElementById('btn-clear-select-all-matching').style.display = 'inline-block';
+                }
+            } else {
+                selectedCount.innerText = checkedCount; // Ghi đè số lượng lên nhãn
+                if (matchingContainer) {
+                    // Nếu chọn tất cả dòng của trang này và tổng số bản ghi lớn hơn số lượng dòng hiện tại
+                    if (checkedCount === checkboxes.length && {{ $cashbooks->total() }} > checkedCount) {
+                        matchingContainer.style.display = 'flex';
+                        document.getElementById('bulk-matching-text').innerText = `Đã chọn ${checkedCount} giao dịch trên trang này.`;
+                        document.getElementById('btn-select-all-matching').style.display = 'inline-block';
+                        document.getElementById('btn-clear-select-all-matching').style.display = 'none';
+                    } else {
+                        matchingContainer.style.display = 'none';
+                    }
+                }
+            }
         } else {
             bulkBar.style.display = 'none'; // Ẩn thanh công cụ đi khi không có giao dịch nào được chọn
+            if (matchingContainer) {
+                matchingContainer.style.display = 'none';
+            }
+            document.getElementById('select-all-matching').value = '0';
         }
+    }
+
+    // Chọn tất cả các bản ghi khớp bộ lọc trên mọi trang
+    function selectAllMatching() {
+        document.getElementById('select-all-matching').value = '1';
+        updateBulkBar();
+    }
+
+    // Quay lại chỉ chọn các bản ghi trên trang hiện tại
+    function clearSelectAllMatching() {
+        document.getElementById('select-all-matching').value = '0';
+        updateBulkBar();
     }
 
     // Lắng nghe thay đổi của nút checkbox tổng (chọn tất cả)
     selectAll.addEventListener('change', () => {
         // Đặt thuộc tính checked của tất cả checkbox con bằng trạng thái của checkbox tổng
         checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        if (!selectAll.checked) {
+            document.getElementById('select-all-matching').value = '0';
+        }
         // Cập nhật lại thanh công cụ bulk bar
         updateBulkBar();
     });
@@ -798,6 +854,10 @@
         cb.addEventListener('change', () => {
             // Kiểm tra xem tất cả checkbox con đã được tích chọn hết chưa để tự động tích nút tổng
             selectAll.checked = [...checkboxes].every(c => c.checked);
+            // Nếu uncheck bất kỳ con nào, hủy bỏ chọn tất cả trang
+            if (!cb.checked) {
+                document.getElementById('select-all-matching').value = '0';
+            }
             // Cập nhật lại thanh công cụ bulk bar
             updateBulkBar();
         });
@@ -809,6 +869,7 @@
         checkboxes.forEach(cb => cb.checked = false);
         // Bỏ tích checkbox tổng
         selectAll.checked = false;
+        document.getElementById('select-all-matching').value = '0';
         // Cập nhật lại ẩn thanh công cụ bulk bar
         updateBulkBar();
     }

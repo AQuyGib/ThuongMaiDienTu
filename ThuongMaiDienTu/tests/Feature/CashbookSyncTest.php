@@ -312,4 +312,55 @@ class CashbookSyncTest extends TestCase
             ]);
         $response3->assertSessionHasErrors(['reference_id']);
     }
+
+    /**
+     * Test bulk delete matching specific query filters across multiple pages.
+     */
+    public function test_bulk_destroy_matching_filters(): void
+    {
+        $admin = $this->makeAdminUser();
+
+        // Create 2 Income cashbook transactions
+        Cashbook::create([
+            'type' => 'Income',
+            'amount' => 5000,
+            'description' => 'Thu tiền A',
+        ]);
+        Cashbook::create([
+            'type' => 'Income',
+            'amount' => 10000,
+            'description' => 'Thu tiền B',
+        ]);
+
+        // Create 1 Expense cashbook transaction
+        Cashbook::create([
+            'type' => 'Expense',
+            'amount' => 8000,
+            'description' => 'Chi tiền C',
+        ]);
+
+        $this->assertEquals(3, Cashbook::count());
+
+        // Perform bulk delete selecting matching 'Expense' filter
+        $response = $this->actingAs($admin)
+            ->post(route('admin.cashbooks.bulkDestroy'), [
+                'select_all_matching' => '1',
+                'type' => 'Expense',
+            ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect(route('admin.cashbooks.index'));
+
+        // Verify only 2 Income transactions remain, Expense transaction is deleted
+        $this->assertEquals(2, Cashbook::count());
+        $this->assertDatabaseMissing('cashbooks', [
+            'description' => 'Chi tiền C',
+        ]);
+        $this->assertDatabaseHas('cashbooks', [
+            'description' => 'Thu tiền A',
+        ]);
+        $this->assertDatabaseHas('cashbooks', [
+            'description' => 'Thu tiền B',
+        ]);
+    }
 }

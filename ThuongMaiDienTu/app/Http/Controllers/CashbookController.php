@@ -369,11 +369,40 @@ class CashbookController extends Controller
     }
 
     /**
-     * Hàm xóa hàng loạt các giao dịch được chọn cùng một lúc
+     * Hàm xóa nhiều giao dịch cùng lúc
+     * 
+     * Hỗ trợ hai chế độ xóa:
+     * 1. Xóa theo danh sách ID được tích chọn trên trang hiện tại.
+     * 2. Xóa toàn bộ các giao dịch khớp với điều kiện tìm kiếm/lọc hiện tại (trên tất cả các trang).
      */
     public function bulkDestroy(Request $request)
     {
-        // Xác thực mảng danh sách ID gửi lên
+        // Chế độ 2: Xóa toàn bộ các giao dịch khớp bộ lọc tìm kiếm trên tất cả các trang
+        if ($request->input('select_all_matching') == '1') {
+            // Khởi tạo câu truy vấn xóa
+            $query = Cashbook::query();
+            
+            // Áp dụng bộ lọc tìm kiếm
+            if ($request->filled('search')) {
+                $query->search($request->input('search'));
+            }
+            
+            // Áp dụng bộ lọc loại thu/chi
+            if ($request->filled('type')) {
+                $query->ofType($request->input('type'));
+            }
+
+            // Đếm tổng số lượng giao dịch sẽ bị xóa để thông báo
+            $count = $query->count();
+            
+            // Thực hiện xóa vĩnh viễn
+            $query->delete();
+
+            return redirect()->route('admin.cashbooks.index')
+                ->with('success', 'Đã xóa thành công toàn bộ ' . $count . ' giao dịch khớp với bộ lọc.');
+        }
+
+        // Chế độ 1: Xóa theo danh sách ID được chọn cụ thể (Mặc định)
         $request->validate([
             'ids'   => 'required|array|min:1',                        // Bắt buộc phải là mảng chứa ít nhất một phần tử
             'ids.*' => 'required|integer|exists:cashbooks,cashbook_id', // Mỗi phần tử trong mảng phải là ID số nguyên tồn tại trong DB
