@@ -670,11 +670,19 @@
                 <div style="display:flex; gap:15px; margin-bottom:15px;">
                     <div style="flex:1;">
                         <label style="display:block; font-size:12px; font-weight:bold; color:#777; margin-bottom:5px;">Họ và tên *</label>
-                        <input type="text" value="{{ auth()->check() ? auth()->user()->name : '' }}" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-size:14px;" placeholder="VD: Nguyễn Văn A">
+                        <input type="text" id="instName" value="{{ auth()->check() ? auth()->user()->name : '' }}" 
+                               style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-size:14px;" 
+                               placeholder="VD: Nguyễn Văn A"
+                               oninput="validateNameInput(this)">
+                        <div id="nameError" style="color:#d70018; font-size:11px; margin-top:4px; display:none;">Họ và tên không được chứa số hoặc ký tự đặc biệt!</div>
                     </div>
                     <div style="flex:1;">
                         <label style="display:block; font-size:12px; font-weight:bold; color:#777; margin-bottom:5px;">Số điện thoại *</label>
-                        <input type="text" value="{{ auth()->check() ? auth()->user()->phone : '' }}" style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-size:14px;" placeholder="VD: 0987654321">
+                        <input type="text" id="instPhone" value="{{ auth()->check() ? auth()->user()->phone : '' }}" 
+                               style="width:100%; padding:12px; border-radius:8px; border:1px solid #ddd; outline:none; font-size:14px;" 
+                               placeholder="VD: 0987654321"
+                               oninput="validatePhoneInput(this)">
+                        <div id="phoneError" style="color:#d70018; font-size:11px; margin-top:4px; display:none;">Số điện thoại chỉ được chứa chữ số!</div>
                     </div>
                 </div>
             </div>
@@ -1098,7 +1106,48 @@ function switchInstTab(idx) {
     });
 }
 
+function validateNameInput(el) {
+    const errorEl = document.getElementById('nameError');
+    if (/[^a-zA-ZÀ-ỹ\s]/.test(el.value)) {
+        errorEl.style.display = 'block';
+    } else {
+        errorEl.style.display = 'none';
+    }
+    el.value = el.value.replace(/[^a-zA-ZÀ-ỹ\s]/g, '').substring(0, 30);
+}
+
+function validatePhoneInput(el) {
+    const errorEl = document.getElementById('phoneError');
+    if (/[^0-9]/.test(el.value)) {
+        errorEl.style.display = 'block';
+    } else {
+        errorEl.style.display = 'none';
+    }
+    el.value = el.value.replace(/[^0-9]/g, '').substring(0, 9);
+}
+
 function confirmInstallment() {
+    const nameEl = document.getElementById('instName');
+    const phoneEl = document.getElementById('instPhone');
+    
+    if (nameEl) {
+        const nameVal = nameEl.value.trim();
+        if (nameVal.length < 1 || nameVal.length > 30) {
+            alert('Vui lòng nhập Họ và tên hợp lệ (từ 1 đến 30 ký tự).');
+            nameEl.focus();
+            return;
+        }
+    }
+    
+    if (phoneEl) {
+        const phoneVal = phoneEl.value.trim();
+        if (phoneVal.length !== 9) {
+            alert('Vui lòng nhập đúng 9 số điện thoại.');
+            phoneEl.focus();
+            return;
+        }
+    }
+
     window.location.href = '/admin/installments';
 }
 

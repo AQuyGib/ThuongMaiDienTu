@@ -60,7 +60,7 @@
     + Tab Công ty tài chính: Bổ sung dải nút "Chọn mức trả trước" (10% đến 50%) và xử lý tính toán lại bảng số liệu Gốc/Lãi theo tỷ lệ, loại bỏ fix cứng 30%.
     + Tab Thẻ tín dụng: Chuyển đổi giao diện từ các ô select box nhàm chán sang dạng lưới nút bấm (Grid buttons) đẹp mắt cho Ngân hàng (12 nút), Loại thẻ (3 nút) và Kỳ hạn (4 nút), đồng thời thêm bảng tóm tắt Ngân hàng/Loại thẻ đã chọn bên dưới.
     + Tab Mua trước trả sau (BNPL): Thiết kế lại theo dạng 3 nút lớn (Home PayLater, Fundiin, Kredivo) kèm theo icon nổi bật, tự động hiển thị mô tả tương ứng của từng đối tác bên dưới.
-    + Bổ sung khu vực "THÔNG TIN NGƯỜI ĐĂNG KÝ" chung cho mọi hình thức trả góp, tự động lấy `name` và `phone` của User đang đăng nhập (nếu có) để điền sẵn vào form.
+    + Bổ sung khu vực "THÔNG TIN NGƯỜI ĐĂNG KÝ" chung cho mọi hình thức trả góp, tự động lấy `name` và `phone` của User đang đăng nhập (nếu có) để điền sẵn vào form. Có tính năng validate chặt chẽ: Họ tên chỉ cho nhập chữ cái/khoảng trắng (từ 1 đến 30 ký tự), Số điện thoại không cho nhập chữ và bắt buộc phải nhập đủ 9 số. Hiển thị cảnh báo trực tiếp (dòng chữ đỏ) ngay lập tức khi người dùng nhập sai định dạng (ví dụ gõ số vào ô tên, gõ chữ vào ô số điện thoại).
     + Chỉnh sửa sự kiện xác nhận trả góp để bay thẳng vào `/admin/installments`.
 
 ## Files Changed
