@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Page extends Model
 {
-    use BaseTranslationTrait;
+    use BaseTranslationTrait, \App\Traits\HasAuditLog;
 
     protected $table = 'pages';
     protected $primaryKey = 'page_id';

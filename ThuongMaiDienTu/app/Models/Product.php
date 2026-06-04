@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Product extends Model
 {
-    use SoftDeletes, BaseTranslationTrait;
+    use SoftDeletes, BaseTranslationTrait, \App\Traits\HasAuditLog;
 
     /** @var string Tên cột khóa chính (không dùng 'id' mặc định của Laravel) */
     protected $primaryKey = 'product_id';

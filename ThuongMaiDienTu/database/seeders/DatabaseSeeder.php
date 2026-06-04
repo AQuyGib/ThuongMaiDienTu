@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             LargeProductSeeder::class,
             WishlistRecentlyViewedSeeder::class,
             InstallmentSeeder::class,
+            ActivityLogSeeder::class,
         ]);
     }
 }

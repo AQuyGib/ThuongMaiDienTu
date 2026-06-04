@@ -41,6 +41,25 @@ class AppServiceProvider extends ServiceProvider
 
         Schema::defaultStringLength(191);
 
+        // Auto-run migrations if critical tables are missing or schema is outdated
+        try {
+            $needsMigration = false;
+            
+            if (!Schema::hasTable('activity_logs') || !Schema::hasColumn('activity_logs', 'hash_chain')) {
+                $needsMigration = true;
+            }
+            
+            if (!Schema::hasTable('jobs') || !Schema::hasTable('failed_jobs')) {
+                $needsMigration = true;
+            }
+            
+            if ($needsMigration) {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            }
+        } catch (\Exception $e) {
+            // Ignore database connection issues on initial install
+        }
+
         // Auto-seed default roles if table is empty
         try {
             if (Schema::hasTable('roles') && \Illuminate\Support\Facades\DB::table('roles')->count() === 0) {
@@ -67,6 +86,13 @@ class AppServiceProvider extends ServiceProvider
                     'user_agent' => request()->userAgent(),
                     'login_at' => now(),
                 ]);
+
+                // Ghi nhận nhật ký bảo mật cho hành động đăng nhập
+                try {
+                    \App\Traits\HasAuditLog::logManualEvent('login', get_class($event->user), $event->user->user_id, null, null);
+                } catch (\Exception $e) {
+                    // Do not block login process if logging fails
+                }
             }
         );
     }

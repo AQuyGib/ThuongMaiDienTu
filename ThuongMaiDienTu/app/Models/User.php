@@ -5,7 +5,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable {
-    use SoftDeletes, HasApiTokens;
+    use SoftDeletes, HasApiTokens, \App\Traits\HasAuditLog;
 
     protected $primaryKey = 'user_id';
     const UPDATED_AT = null;
@@ -53,6 +53,8 @@ class User extends Authenticatable {
      */
     public function optimisticUpdate(int $expectedVersion, array $attributes): bool
     {
+        $oldValues = array_intersect_key($this->getRawOriginal(), array_flip(array_keys($attributes)));
+
         // Dùng WHERE version = ? để đảm bảo atomic check-and-update
         $affected = static::where($this->primaryKey, $this->getKey())
             ->where('version', $expectedVersion)
@@ -68,6 +70,15 @@ class User extends Authenticatable {
         $this->fill($attributes);
         $this->version = $expectedVersion + 1;
 
+        // Dispatch audit job vì query builder update không tự kích hoạt Eloquent event
+        try {
+            $newValues = array_merge($attributes, ['version' => $this->version]);
+            $oldValues['version'] = $expectedVersion;
+            self::dispatchAuditJob('updated', $this, $oldValues, $newValues);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log optimisticUpdate: " . $e->getMessage());
+        }
+
         return true;
     }
 
@@ -78,7 +89,7 @@ class User extends Authenticatable {
         return $this->hasMany(UserSession::class, 'user_id');
     }
     public function activityLogs() {
-        return $this->hasMany(ActivityLog::class, 'user_id');
+        return $this->morphMany(ActivityLog::class, 'causer');
     }
     public function orders() {
         return $this->hasMany(Order::class, 'user_id');

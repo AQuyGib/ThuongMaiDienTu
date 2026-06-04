@@ -141,6 +141,16 @@ class EmployeeController extends Controller
 
         $employees = $this->getFilteredEmployeesQuery($request)->get();
 
+        // Ghi nhật ký hoạt động
+        try {
+            \App\Traits\HasAuditLog::logManualEvent('export', User::class, null, null, [
+                'format' => 'Excel',
+                'record_count' => $employees->count(),
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log employee exportExcel: " . $e->getMessage());
+        }
+
         $filename = 'danh_sach_nhan_vien_' . now()->format('Ymd_His') . '.xlsx';
         return Excel::download(new EmployeeExport($employees), $filename);
     }
@@ -153,6 +163,16 @@ class EmployeeController extends Controller
         Gate::authorize('viewAny', User::class);
 
         $employees = $this->getFilteredEmployeesQuery($request)->get();
+
+        // Ghi nhật ký hoạt động
+        try {
+            \App\Traits\HasAuditLog::logManualEvent('export', User::class, null, null, [
+                'format' => 'PDF',
+                'record_count' => $employees->count(),
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log employee exportPdf: " . $e->getMessage());
+        }
 
         // Tính toán số liệu thống kê nhanh trên tập dữ liệu đã lọc để đưa vào báo cáo
         $total = $employees->count();

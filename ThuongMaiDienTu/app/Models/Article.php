@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class Article extends Model
 {
-    use HasFactory, SoftDeletes; // Sử dụng Factory để seed dữ liệu và SoftDeletes để hỗ trợ xóa tạm thời (thùng rác)
+    use HasFactory, SoftDeletes, \App\Traits\HasAuditLog; // Sử dụng Factory để seed dữ liệu, SoftDeletes để hỗ trợ xóa tạm thời, và HasAuditLog để ghi nhật ký hoạt động
 
     // Khai báo khóa chính của bảng là "article_id" thay vì cột "id" mặc định
     protected $primaryKey = 'article_id';

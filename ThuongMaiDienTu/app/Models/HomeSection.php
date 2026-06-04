@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class HomeSection extends Model
 {
+    use \App\Traits\HasAuditLog;
+
     protected $fillable = [
         'title', 'type', 'category_id', 'limit', 'sidebar_banner', 'sidebar_link', 'order', 'status'
     ];

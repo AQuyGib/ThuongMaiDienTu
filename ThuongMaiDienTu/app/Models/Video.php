@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Video extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, \App\Traits\HasAuditLog;
 
     protected $table = 'videos';
 

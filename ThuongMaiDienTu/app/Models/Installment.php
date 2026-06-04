@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasAuditLog;
 
 class Installment extends Model
 {
+    use HasAuditLog;
+
     protected $guarded = [];
 
     protected $casts = [
