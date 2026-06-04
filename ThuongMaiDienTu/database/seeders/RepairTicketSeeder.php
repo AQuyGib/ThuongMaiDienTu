@@ -80,6 +80,8 @@ class RepairTicketSeeder extends Seeder
                 'service_fee' => $invoice->subtotal,
                 'invoice_no' => $invoice->invoice_no,
                 'invoiced_at' => $invoice->created_at,
+                'created_at' => $invoice->created_at,
+                'updated_at' => $scheduled,
             ]);
             
             $invoiceIndex++;
@@ -109,6 +111,8 @@ class RepairTicketSeeder extends Seeder
                 'service_fee' => $service['fee'],
                 'invoice_no' => null,
                 'invoiced_at' => null,
+                'created_at' => $createdDate,
+                'updated_at' => $createdDate->copy()->addDays(rand(1, 2)),
             ]);
         }
 
@@ -148,6 +152,8 @@ class RepairTicketSeeder extends Seeder
                 'service_fee' => 0,
                 'invoice_no' => null,
                 'invoiced_at' => null,
+                'created_at' => $createdDate,
+                'updated_at' => $createdDate,
             ]);
         }
     }

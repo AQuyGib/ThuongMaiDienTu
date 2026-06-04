@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\VideoManagementController;
 // Dashboard
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/kpi', [App\Http\Controllers\Admin\KPIController::class, 'index'])->name('kpi.index');
+Route::get('/kpi/employee/{id}', [App\Http\Controllers\Admin\KPIController::class, 'employeeDetails'])->name('kpi.employee');
 
 // Cấu hình giao diện
 Route::get('/settings/theme', [ThemeSettingController::class, 'index'])->name('settings.theme');

@@ -10,7 +10,7 @@ class RepairTicket extends Model
     use HasFactory, \App\Traits\HasAuditLog;
 
     protected $primaryKey = 'ticket_id';
-    public $timestamps = false;
+    public $timestamps = true;
     
     protected $fillable = [
         'user_id',

@@ -665,3 +665,42 @@
 - **Hợp nhất Git và giải quyết xung đột Merge trong các file ai-memory.md:**
   - Giải quyết các xung đột merge phức tạp (Git conflicts) thành công trong cả hai tệp `ai-memory.md` ở thư mục gốc và thư mục con `ThuongMaiDienTu/ai-memory.md`, bảo đảm giữ lại đầy đủ lịch sử nâng cấp tính năng Advanced Audit Logs và SweetAlert2 Premium.
   - Thực hiện merge và commit trực tiếp toàn bộ các bản vá nóng vào nhánh `master` một cách an toàn.
+=======
+- **Nâng cấp Bảng điều khiển KPI (KPI Dashboard & Seeder Upgrades):**
+  - **Kích hoạt Timestamps:** Chuyển thuộc tính `public $timestamps = true;` trong model [RepairTicket.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/RepairTicket.php) giúp Laravel tự động ghi nhận thời gian khi tạo/sửa phiếu sửa chữa.
+  - **Phân bổ thời gian ảo lịch sử:** Cập nhật seeder [RepairTicketSeeder.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/database/seeders/RepairTicketSeeder.php) gán giá trị `created_at` và `updated_at` ngẫu nhiên lùi về 10 ngày trong quá khứ, giúp biểu đồ doanh thu và tăng trưởng hiển thị dữ liệu lịch sử chuẩn xác.
+  - **Sắp xếp & Giới hạn Bảng vàng:** Nâng cấp [KPIController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/KPIController.php) sắp xếp danh sách nhân viên bán hàng/kỹ thuật viên theo doanh thu và số ca sửa hoàn thành giảm dần, đồng thời giới hạn hiển thị **Top 10** nhân sự hàng đầu trên Leaderboard.
+  - **Thêm chỉ số Tỷ lệ Hoàn Thành Đơn Hàng:** Tích hợp tính toán tỷ lệ đơn Delivered trên tổng số đơn phát sinh và hiển thị card chỉ số mới kèm vòng xoay SVG Radial Gauge màu lục sáng trên [KPIDashboard.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/KPIDashboard.tsx).
+
+## Update: June 04, 2026 (Late Night)
+- **Hoàn thành Nâng cấp Bảng điều khiển KPI (KPI Dashboard Upgrade Phase 2):**
+  - **Tích hợp Drawer Chi tiết Nhân viên (Employee detailed KPI Drawer):**
+    - Thiết kế panel trượt slide-over (slide-out panel) tuyệt đẹp bằng Tailwind CSS cố định ở mép phải (`fixed inset-y-0 right-0 z-50`). Tích hợp backdrop phủ mờ mượt mà, hỗ trợ nhấn tắt khi click ngoài vùng panel.
+    - Tạo skeleton loading (hiệu ứng xung động gradient) khi đang tải dữ liệu chi tiết từ backend.
+    - Hiển thị đầy đủ thông tin cá nhân (Ảnh đại diện viết tắt họ tên, trạng thái Online/Offline bằng đèn nhấp nháy, email, SĐT, ID nhân viên).
+    - Hiển thị Thẻ điểm hiệu năng (Scorecard) tương ứng theo vai trò: đối với Sales hiển thị Doanh thu, Đơn hoàn thành, và AOV; đối với Kỹ thuật hiển thị Ca sửa xong, Tổng số phiếu tiếp nhận, và Tỷ lệ thành công kèm thanh progress màu lục.
+    - Hiển thị danh sách 10 giao dịch gần nhất của nhân sự: Mã đơn hàng/phiếu sửa chữa kèm mã RT, tên khách hàng, tên dịch vụ/IMEI, giá trị giao dịch, thời gian và nhãn trạng thái HSL trực quan.
+  - **Tích hợp Row Click trong Leaderboard Tables:**
+    - Cấu hình component `TableCard` nhận thêm prop `onRowClick` và gán sự kiện click vào các thẻ `tr` của bảng vàng danh dự Sales & Kỹ thuật.
+    - Thêm con trỏ `cursor-pointer` và hiệu ứng màu nền highlight thông minh (`hover:bg-indigo-50/40` cho Sales, `hover:bg-emerald-50/40` cho Tech).
+    - Đồng bộ hóa các sự kiện gọi API `/admin/kpi/employee/{id}` và tự động xác định chính xác role để hiển thị giao diện Scorecard phù hợp.
+  - **Nâng cấp Xuất file Excel Đẹp & Chuẩn xác (Excel Export Style & Encoding Upgrade):**
+    - Chuyển đổi từ export CSV trô phẳng sang xuất file Excel HTML Spreadsheet (`.xls`) đầy đủ kiểu dáng.
+    - Cấu hình style CSS trực tiếp (Segoe UI font, border collapse, margin/padding) và gán màu sắc tiêu chuẩn thương hiệu (Indigo `#4f46e5` cho Sales, Emerald `#10b981` cho Kỹ thuật) giúp bảng dữ liệu xuất ra có giao diện chuyên nghiệp như một báo cáo CRM thực tế.
+    - Tích hợp thẻ `<meta charset="UTF-8">` và tiền tố **UTF-8 BOM (`\uFEFF`)** ở đầu tệp nhị phân giúp Microsoft Excel trên Windows tự động mở bằng bảng mã UTF-8, giải quyết triệt để lỗi phông chữ (lỗi hiển thị dấu tiếng Việt như Nguyễn Văn A).
+    - Xuất file đúng định dạng tên chuẩn hóa: `[Bang_Vang_Sales/Bang_Vang_Ky_Thuat]_[Kỳ_lọc_thống_kê]_[Ngày_xuất].xls` (Ví dụ: `Bang_Vang_Sales_Thang_nay_04_06_2026.xls`), tự động nạp tiêu đề phụ và thời gian xuất báo cáo.
+  - **Sửa lỗi Phóng to biểu đồ & Vẽ vòng xoay Cơ cấu Sales (Chart Resize & Doughnut Circle Render Fix):**
+    - Tích hợp hàm `setTimeout` với độ trễ 100ms trong `useEffect` khởi tạo biểu đồ. Điều này đảm bảo Chart.js chỉ vẽ lại canvas sau khi quá trình thay đổi kích thước layout (Maximize/Minimize khi người dùng bấm nút phóng to) đã hoàn tất hoàn toàn, loại bỏ triệt để hiện tượng méo biểu đồ hoặc sai lệch kích cỡ canvas.
+    - Bật bộ lọc legend filter giới hạn hiển thị tối đa **Top 5** nhân viên xuất sắc nhất và giảm padding trên biểu đồ Doughnut cơ cấu doanh thu. Giải pháp này giúp tiết kiệm 70% không gian dọc, trả lại đủ diện tích trống để Chart.js hiển thị vòng tròn biểu đồ Doughnut cực kỳ to, đẹp và rõ nét thay vì bị đè bẹp biến mất bởi danh sách legend quá dài.
+  - **Tối ưu hóa Khả năng hiển thị Đa thiết bị (Mobile Responsiveness Upgrade):**
+    - Thiết kế lại thanh điều khiển biểu đồ (Line Chart Header): Chuyển đổi linh hoạt từ hàng ngang (`flex-row`) sang dạng xếp chồng dọc (`flex-col`) trên các màn hình di động nhỏ hẹp để ngăn chặn hoàn toàn lỗi tràn layout và vỡ giao diện nút bấm.
+    - Định dạng lại kích thước font chữ trên Card hiệu năng của Drawer: Sử dụng kiểu kích cỡ chữ thích ứng (`text-base sm:text-lg`) giúp các chỉ số doanh thu dài (như *72.000.000đ*) co giãn tự động và không bị tràn hay hiển thị xuống dòng trên các dòng điện thoại màn hình siêu nhỏ (như iPhone SE).
+    - Cải tiến độ rộng trượt của Drawer trên di động: Điều chỉnh padding bên trái (`pl-6 sm:pl-10`) giúp mở rộng tối đa vùng hiển thị nội dung trên màn hình điện thoại mà vẫn chừa lại 24px để người dùng nhấp ra ngoài để đóng.
+    - **Tái cấu trúc Layout biểu đồ (Flexbox Refactor):** Thay thế toàn bộ cơ chế căn lề tuyệt đối (`absolute inset-0 pt-16`) bằng luồng hộp mềm dẻo (`flex flex-col` cho container và `flex-1 w-full min-h-0 relative` cho canvas). Điều này giải quyết triệt để lỗi toggle buttons đè chồng chéo lên biểu đồ/trục số Y khi tiêu đề co giãn xuống dòng trên di động, giúp canvas tự động tính toán chính xác diện tích hiển thị còn lại.
+
+
+
+
+
+
+>>>>>>> xuanhoa/KPI
