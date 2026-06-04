@@ -19,12 +19,15 @@ interface SelectOption {
   icon?: React.ReactNode;
 }
 
-function CustomSelect({ options, value, onChange, placeholder, icon: LeftIcon }: {
+function CustomSelect({ options, value, onChange, placeholder, icon: LeftIcon, className = 'min-w-[160px]', buttonClassName = 'h-12', disabled = false }: {
   options: SelectOption[],
   value: string,
   onChange: (val: string) => void,
   placeholder: string,
-  icon?: React.ReactNode
+  icon?: React.ReactNode,
+  className?: string,
+  buttonClassName?: string,
+  disabled?: boolean
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,24 +44,31 @@ function CustomSelect({ options, value, onChange, placeholder, icon: LeftIcon }:
   }, []);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className={`relative ${className}`} ref={containerRef}>
       <button
         type="button"
+        disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-between h-12 px-4 gap-3 bg-slate-50 dark:bg-slate-800 border-2 ${isOpen ? 'border-blue-500 bg-white dark:bg-slate-900' : 'border-transparent'} rounded-2xl transition-all duration-300 min-w-[160px] group`}
+        className={`flex items-center justify-between px-5 gap-3 border-2 ${
+          disabled 
+            ? 'bg-slate-100 dark:bg-slate-800/20 border-transparent text-slate-400 dark:text-slate-600 cursor-not-allowed opacity-60' 
+            : isOpen 
+              ? 'border-blue-500 bg-white dark:bg-slate-900 shadow-lg shadow-blue-500/5' 
+              : 'border-transparent bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/50'
+        } rounded-2xl transition-all duration-300 w-full group ${buttonClassName}`}
       >
         <div className="flex items-center gap-2.5">
-          <div className={`${isOpen ? 'text-blue-500' : 'text-slate-400'} transition-colors`}>
+          <div className={`${disabled ? 'text-slate-300 dark:text-slate-700' : isOpen ? 'text-blue-500' : 'text-slate-400'} transition-colors`}>
             {LeftIcon}
           </div>
           <span className="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
-        <ChevronDown className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-500' : ''}`} size={16} />
+        {!disabled && <ChevronDown className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-500' : ''}`} size={16} />}
       </button>
 
-      {isOpen && (
+      {isOpen && !disabled && (
         <div className="absolute top-full left-0 mt-2 w-full min-w-[200px] bg-white/90 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-100 dark:border-slate-800 rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-none z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="p-2 max-h-[300px] overflow-y-auto custom-scrollbar">
             {options.map((option) => (
@@ -204,25 +214,25 @@ export default function UserManagement({ users: initialUsers, roles, stats: init
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 p-4 md:p-8 lg:p-12 font-sans selection:bg-blue-500 selection:text-white relative overflow-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 p-2 sm:p-4 md:p-8 lg:p-12 font-sans selection:bg-blue-500 selection:text-white relative overflow-hidden">
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="max-w-[1600px] mx-auto relative z-10 space-y-8 animate-in fade-in duration-500">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">{t('Hệ thống Quyền hạn', 'Role & Permission System')}</h1>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">{t('Hệ thống Quyền hạn', 'Role & Permission System')}</h1>
             <div className="flex items-center gap-3">
               <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <p className="text-slate-500 dark:text-slate-400 font-bold uppercase text-xs tracking-widest">{t('Hệ thống quản trị thời gian thực', 'Real-time Administration System')}</p>
+              <p className="text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] sm:text-xs tracking-wider sm:tracking-widest">{t('Hệ thống quản trị thời gian thực', 'Real-time Administration System')}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button variant="outline" className="h-12 px-6 gap-2 font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-2xl" onClick={() => window.location.href = '?export=csv'}>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+            <Button variant="outline" className="h-12 px-6 gap-2 font-bold border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all rounded-2xl w-full sm:w-auto justify-center" onClick={() => window.location.href = '?export=csv'}>
               <Download size={18} /> {t('Xuất dữ liệu', 'Export Data')}
             </Button>
-            <Button onClick={() => { setSelectedUser(null); setIsModalOpen(true); }} className="h-12 px-6 gap-2 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/20">
+            <Button onClick={() => { setSelectedUser(null); setIsModalOpen(true); }} className="h-12 px-6 gap-2 font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-2xl shadow-xl shadow-blue-500/20 w-full sm:w-auto justify-center">
               <Plus size={18} /> {t('Thêm tài khoản', 'Add Account')}
             </Button>
           </div>
@@ -412,8 +422,8 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none flex flex-wrap items-center gap-4">
-        <div className="relative flex-1 min-w-[280px]">
+      <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full">
+        <div className="relative flex-1 min-w-0 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
           <input
             type="text"
@@ -424,18 +434,18 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <CustomSelect options={roleOptions} value={filters.role_id} onChange={(val) => onFilterChange('role_id', val)} placeholder={t('Vai trò', 'Role')} icon={<Shield size={16} />} />
-          <CustomSelect options={statusOptions} value={filters.status} onChange={(val) => onFilterChange('status', val)} placeholder={t('Trạng thái', 'Status')} icon={<CheckCircle2 size={16} />} />
-          <CustomSelect options={sortOptions} value={filters.sort} onChange={(val) => onFilterChange('sort', val)} placeholder={t('Sắp xếp', 'Sort by')} icon={<Filter size={16} />} />
-          <Button variant="ghost" className="h-12 w-12 rounded-2xl text-slate-400 hover:text-rose-500 hover:bg-rose-50" onClick={() => onFilterChange('search', '')}>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <CustomSelect options={roleOptions} value={filters.role_id} onChange={(val) => onFilterChange('role_id', val)} placeholder={t('Vai trò', 'Role')} icon={<Shield size={16} />} className="flex-1 sm:flex-initial min-w-[120px]" />
+          <CustomSelect options={statusOptions} value={filters.status} onChange={(val) => onFilterChange('status', val)} placeholder={t('Trạng thái', 'Status')} icon={<CheckCircle2 size={16} />} className="flex-1 sm:flex-initial min-w-[120px]" />
+          <CustomSelect options={sortOptions} value={filters.sort} onChange={(val) => onFilterChange('sort', val)} placeholder={t('Sắp xếp', 'Sort by')} icon={<Filter size={16} />} className="flex-1 sm:flex-initial min-w-[120px]" />
+          <Button variant="ghost" className="h-12 w-12 rounded-2xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center shrink-0" onClick={() => onFilterChange('search', '')}>
             {loading ? <Loader2 className="animate-spin" size={20} /> : <XCircle size={20} />}
           </Button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl shadow-slate-200/40 dark:shadow-none overflow-hidden relative">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-2xl shadow-slate-200/40 dark:shadow-none overflow-hidden relative">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -598,6 +608,122 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+
+    const fullName = formData.get('full_name') as string;
+    const email = formData.get('email') as string;
+    const phoneNumber = formData.get('phone_number') as string;
+    const password = formData.get('password') as string;
+    const passwordConfirmation = formData.get('password_confirmation') as string;
+
+    const Swal = (window as any).Swal;
+
+    if (!fullName || fullName.trim() === '') {
+      Swal.fire({
+        title: t('Thiếu thông tin!', 'Missing Info!'),
+        text: t('Vui lòng nhập họ và tên đầy đủ.', 'Please enter full name.'),
+        icon: 'warning',
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!email || email.trim() === '') {
+      Swal.fire({
+        title: t('Thiếu thông tin!', 'Missing Info!'),
+        text: t('Vui lòng nhập địa chỉ email.', 'Please enter email address.'),
+        icon: 'warning',
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      setLoading(false);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Swal.fire({
+        title: t('Định dạng sai!', 'Invalid Format!'),
+        text: t('Vui lòng nhập email hợp lệ.', 'Please enter a valid email address.'),
+        icon: 'warning',
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Phone number validation
+    if (phoneNumber && phoneNumber.trim() !== '') {
+      const phoneRegex = /^(0|\+84|84)[3|5|7|8|9][0-9]{8}$/;
+      if (!phoneRegex.test(phoneNumber.trim())) {
+        Swal.fire({
+          title: t('Định dạng sai!', 'Invalid Format!'),
+          text: t(
+            'Số điện thoại không đúng định dạng Việt Nam (10 chữ số bắt đầu bằng 03, 05, 07, 08, 09).',
+            'Invalid Vietnamese phone number format (must be 10 digits starting with 03, 05, 07, 08, or 09).'
+          ),
+          icon: 'warning',
+          customClass: { popup: 'rounded-[2rem]' }
+        });
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Password validation
+    if (!isEdit && (!password || password.length < 8)) {
+      Swal.fire({
+        title: t('Mật khẩu quá ngắn!', 'Password Too Short!'),
+        text: t('Mật khẩu phải chứa ít nhất 8 ký tự.', 'Password must contain at least 8 characters.'),
+        icon: 'warning',
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (password && password.length < 8) {
+      Swal.fire({
+        title: t('Mật khẩu quá ngắn!', 'Password Too Short!'),
+        text: t('Mật khẩu phải chứa ít nhất 8 ký tự.', 'Password must contain at least 8 characters.'),
+        icon: 'warning',
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (password !== passwordConfirmation) {
+      Swal.fire({
+        title: t('Không trùng khớp!', 'Mismatch!'),
+        text: t('Mật khẩu xác nhận không khớp.', 'Password confirmation does not match.'),
+        icon: 'warning',
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (!roleId) {
+      Swal.fire({
+        title: t('Thiếu thông tin!', 'Missing Info!'),
+        text: t('Vui lòng chọn vai trò hệ thống.', 'Please select a system role.'),
+        icon: 'warning',
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (roleId === '3' && !memberTier) {
+      Swal.fire({
+        title: t('Thiếu thông tin!', 'Missing Info!'),
+        text: t('Vui lòng chọn hạng thành viên cho Khách hàng.', 'Please select a member tier for Customer.'),
+        icon: 'warning',
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+      setLoading(false);
+      return;
+    }
     
     try {
       const url = isEdit ? `/admin/permissions/${user.user_id}` : '/admin/permissions';
@@ -608,7 +734,6 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
         }
       });
       
-      const Swal = (window as any).Swal;
       await Swal.fire({
         title: t('Thành công!', 'Success!'),
         text: isEdit ? t('Đã cập nhật tài khoản.', 'Account updated.') : t('Đã tạo tài khoản mới.', 'New account created.'),
@@ -620,7 +745,6 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
       
       onSuccess();
     } catch (error: any) {
-      const Swal = (window as any).Swal;
       Swal.fire({
         title: t('Thất bại!', 'Failed!'),
         text: error.response?.data?.message || t('Không thể lưu dữ liệu tài khoản.', 'Could not save account data.'),
@@ -633,11 +757,11 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto custom-scrollbar">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-6xl rounded-[3.5rem] shadow-[0_40px_160px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden animate-in zoom-in-95 duration-700 flex flex-col">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-500 overflow-y-auto custom-scrollbar">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-6xl rounded-3xl sm:rounded-[3.5rem] shadow-[0_40px_160px_rgba(0,0,0,0.4)] border border-white/20 overflow-hidden animate-in zoom-in-95 duration-700 flex flex-col my-4 sm:my-8">
         
         {/* Master Header */}
-        <div className="px-12 py-10 relative overflow-hidden shrink-0 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-b border-slate-100 dark:border-slate-800">
+        <div className="px-6 py-6 sm:px-12 sm:py-10 relative overflow-hidden shrink-0 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 border-b border-slate-100 dark:border-slate-800">
           <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] -mr-48 -mt-48" />
           <div className="relative z-10 flex items-center justify-between">
             <div className="flex items-center gap-6">
@@ -645,18 +769,18 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                 {isEdit ? <Edit size={32} /> : <Plus size={32} />}
               </div>
               <div>
-                <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
                   {isEdit ? t('Cập nhật', 'Update') : t('Khởi tạo', 'Create')} {t('Tài khoản', 'Account')}
                 </h2>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{t('Hệ thống quản trị tài nguyên chuyên sâu', 'Advanced Resource Management System')}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider sm:tracking-[0.3em]">{t('Hệ thống quản trị tài nguyên chuyên sâu', 'Advanced Resource Management System')}</p>
                 </div>
               </div>
             </div>
             <button 
               onClick={onClose} 
-              className="w-14 h-14 flex items-center justify-center rounded-[1.25rem] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-sm transition-all active:scale-90"
+              className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-[1.25rem] bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 shadow-sm transition-all active:scale-90"
             >
               <X size={28} />
             </button>
@@ -664,14 +788,14 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
         </div>
 
         {/* Master Form Content */}
-        <form id={formId} onSubmit={handleSubmit} className="relative" autoComplete="off">
+        <form id={formId} onSubmit={handleSubmit} className="relative" autoComplete="off" noValidate>
           <input type="hidden" name="_token" value={csrfToken} />
           {isEdit && <input type="hidden" name="_method" value="PUT" />}
           {isEdit && <input type="hidden" name="version" value={user.version || 0} />}
 
           <div className="flex flex-col lg:flex-row">
             {/* LEFT PANE: IDENTITY */}
-            <div className="flex-1 p-12 space-y-10">
+            <div className="flex-1 p-6 sm:p-12 space-y-8 sm:space-y-10">
               <div className="flex items-center gap-4 mb-2">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600">
                   <User size={20} />
@@ -694,7 +818,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                       defaultValue={isEdit ? user?.full_name : ''} 
                       required 
                       autoComplete="off"
-                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-[1.5rem] font-bold text-base outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
+                      className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
                       placeholder="VD: Nguyễn Văn A..."
                     />
                   </div>
@@ -712,7 +836,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                       defaultValue={isEdit ? user?.email : ''} 
                       required 
                       autoComplete="off"
-                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-[1.5rem] font-bold text-base outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
+                      className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
                       placeholder="email@example.com"
                     />
                   </div>
@@ -728,7 +852,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                       name="phone_number" 
                       defaultValue={isEdit ? user?.phone_number : ''} 
                       autoComplete="off"
-                      className="w-full pl-14 pr-6 py-5 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-[1.5rem] font-bold text-base outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
+                      className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all shadow-sm group-hover:bg-slate-100/50"
                       placeholder="09xx..."
                     />
                   </div>
@@ -740,7 +864,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
             <div className="hidden lg:block w-px bg-slate-100 dark:bg-slate-800 self-stretch my-12" />
 
             {/* RIGHT PANE: ACCESS & SECURITY */}
-            <div className="flex-1 p-12 space-y-10">
+            <div className="flex-1 p-6 sm:p-12 space-y-8 sm:space-y-10">
               <div className="flex items-center gap-4 mb-2">
                 <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600">
                   <ShieldCheck size={20} />
@@ -752,7 +876,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
               </div>
 
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2.5">
                     <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Mật khẩu', 'Password')}</label>
                     <div className="relative">
@@ -760,6 +884,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                         name="password" 
                         type={showPass ? "text" : "password"} 
                         required={!isEdit}
+                        minLength={8}
                         autoComplete="new-password"
                         className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all pr-12 shadow-sm"
                         placeholder="••••••••"
@@ -775,6 +900,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                       name="password_confirmation" 
                       type={showPass ? "text" : "password"} 
                       required={!isEdit}
+                      minLength={8}
                       autoComplete="new-password"
                       className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-transparent focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 rounded-2xl font-bold text-sm outline-none transition-all shadow-sm"
                       placeholder="••••••••"
@@ -782,7 +908,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2.5">
                     <label className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.1em] ml-1">{t('Vai trò hệ thống', 'System Role')}</label>
                     <input type="hidden" name="role_id" value={roleId} />
@@ -795,6 +921,8 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                       onChange={setRoleId}
                       placeholder={t('Chọn vai trò', 'Select role')}
                       icon={<Shield size={16} />}
+                      className="w-full"
+                      buttonClassName="h-14"
                     />
                   </div>
                   <div className="space-y-2.5">
@@ -809,8 +937,11 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                       ]}
                       value={memberTier}
                       onChange={setMemberTier}
-                      placeholder={t('Chọn hạng', 'Select tier')}
+                      placeholder={roleId && roleId !== '3' ? t('Không áp dụng', 'Not Applicable') : t('Chọn hạng', 'Select tier')}
                       icon={<Trophy size={16} />}
+                      className="w-full"
+                      buttonClassName="h-14"
+                      disabled={!!(roleId && roleId !== '3')}
                     />
                   </div>
                 </div>
@@ -827,6 +958,8 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                     onChange={setStatus}
                     placeholder={t('Chọn trạng thái', 'Select status')}
                     icon={<Clock size={16} />}
+                    className="w-full"
+                    buttonClassName="h-14"
                   />
                 </div>
 
@@ -880,11 +1013,11 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
         </form>
 
         {/* Master Footer */}
-        <div className="px-12 py-10 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex justify-end gap-6 shrink-0">
+        <div className="px-6 py-6 sm:px-12 sm:py-10 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-md border-t border-slate-100 dark:border-slate-800 flex flex-col-reverse sm:flex-row justify-end gap-4 sm:gap-6 shrink-0">
           <Button 
             type="button" 
             variant="outline" 
-            className="px-12 h-16 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm" 
+            className="w-full sm:w-auto px-12 h-16 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all shadow-sm" 
             onClick={onClose}
           >
             {t('Hủy yêu cầu', 'Cancel')}
@@ -893,7 +1026,7 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
             type="submit" 
             form={formId}
             disabled={loading}
-            className="px-16 h-16 rounded-[1.5rem] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-600/30 transition-all active:scale-95 disabled:opacity-50"
+            className="w-full sm:w-auto px-16 h-16 rounded-[1.5rem] bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-600/30 transition-all active:scale-95 disabled:opacity-50"
           >
             {loading ? <Loader2 className="animate-spin" /> : (isEdit ? t('Xác nhận Cập nhật', 'Confirm Update') : t('Khởi tạo Tài khoản', 'Create Account'))}
           </Button>

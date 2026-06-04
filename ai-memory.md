@@ -708,3 +708,32 @@
   - Tất cả nhân sự (role:1,2,4): Dashboard, KPI, Đơn hàng, Phiếu sửa chữa, Sản phẩm, v.v.
 - **Phân quyền Sidebar:** Cập nhật `resources/views/admin/partials/sidebar.blade.php` - thêm key `roles` vào mỗi menu item và lọc theo `$userRoleId` hiện tại. Truyền thêm `role_id` vào props React sidebar.
 - **Header Frontend:** Đã kiểm tra link "Admin Dashboard" trên header.blade.php tại dòng 438 - đã sẵn guard `in_array(Auth::user()->role_id, [1, 2, 4])`.
+- **Tối ưu hóa giao diện Thêm tài khoản (UserModal & CustomSelect):**
+  - Cập nhật `UserManagement.tsx` để hỗ trợ linh hoạt các thuộc tính `className` và `buttonClassName` cho component `CustomSelect`.
+  - Thiết lập cho các hộp chọn (CustomSelect) trong `UserModal` (Vai trò hệ thống, Hạng thành viên, Trạng thái vận hành) có kích thước rộng tối đa (`w-full`) và chiều cao `h-14` (56px) thay vì co hẹp `min-w-[160px]` như trước.
+  - Đồng bộ hóa chiều cao và bo góc của các trường nhập dữ liệu cá nhân ở cột trái (Họ tên, Email, Số điện thoại) từ `py-5` và `rounded-[1.5rem]` thành `py-4`, `rounded-2xl` và kích thước font chữ `text-sm font-bold`.
+  - Sự thay đổi này giúp toàn bộ giao diện form tạo tài khoản mới/cập nhật tài khoản cân đối tuyệt đối, liền mạch, đồng nhất về kích thước chiều cao và độ bo góc giữa tất cả các trường nhập liệu và hộp chọn.
+- **Sửa lỗi hiển thị Mật khẩu & Điều chỉnh Ràng buộc Tạo tài khoản:**
+  - **Khắc phục lỗi hiển thị 2 con mắt:** Thêm CSS rule `input[type="password"]::-ms-reveal` và `::-ms-clear` ẩn nút hiển thị mật khẩu mặc định của Edge/Chrome trong file `app.css` để tránh đè lên nút hiện/ẩn mật khẩu tùy chỉnh của React.
+  - **Nâng cấp bảo mật mật khẩu:** Thay đổi độ dài mật khẩu tối thiểu bắt buộc từ 6 lên 8 ký tự ở cả frontend (`minLength={8}` trên inputs trong `UserManagement.tsx`) và backend validator (file `UserController.php`).
+  - **Bỏ bắt buộc Hạng thành viên với tài khoản Nhân sự:** Điều chỉnh logic frontend và backend để trường "Hạng thành viên" (Member Tier) chỉ bắt buộc khi chọn vai trò Khách hàng (role_id = 3). Với các vai trò nhân sự (Admin, Quản lý, Nhân viên), Hạng thành viên sẽ chuyển sang trạng thái disabled (Không áp dụng) và tự động gán giá trị mặc định là `'Dong'` dưới DB.
+- **Tương thích Mobile & Đồng bộ hóa thông báo lỗi:**
+  - **Đồng bộ hóa thông báo lỗi (SweetAlert):** Kích hoạt thuộc tính `noValidate` trên thẻ form và triển khai bộ kiểm tra (custom validations) bằng JS trong `handleSubmit` trước khi gửi request Axios. Thay vì hiển thị bong bóng thông báo HTML5 mặc định của trình duyệt, toàn bộ thông báo lỗi (nhập thiếu thông tin, sai định dạng email, mật khẩu dưới 8 ký tự, mật khẩu không khớp, chưa chọn vai trò hoặc hạng thành viên) giờ đây được đồng bộ hóa và hiển thị dưới dạng **SweetAlert Modal** cao cấp cực kỳ đẹp mắt và đồng bộ.
+  - **Tối ưu hóa Responsive cho Mobile:**
+    - Thay thế kích thước padding và bo góc cố định của modal (`rounded-[3.5rem]`, `p-6/p-12`) bằng các lớp thích ứng (`rounded-3xl sm:rounded-[3.5rem]`, `p-4 sm:p-6`, `p-6 sm:p-12`) để modal hiển thị khít và gọn đẹp trên màn hình điện thoại.
+    - Sửa đổi cấu trúc lưới bên phải từ `grid-cols-2` thành `grid-cols-1 sm:grid-cols-2` giúp các ô nhập mật khẩu và vai trò xếp chồng dọc tự nhiên trên di động thay vì bị bóp nghẹt chiều rộng.
+    - Điều chỉnh tiêu đề và dòng chữ mô tả phụ ngắn gọn hơn trên di động (`text-2xl sm:text-3xl`, `tracking-wider sm:tracking-[0.3em]`) để tránh bị tràn và xuống dòng lỗi.
+    - Footer modal sử dụng `flex-col-reverse sm:flex-row` và `w-full sm:w-auto` cho các nút bấm, giúp nút "Hủy" và "Khởi tạo" xếp chồng rộng toàn màn hình trên di động để dễ chạm nhấn.
+- **Tích hợp ràng buộc kiểm tra Số điện thoại:**
+  - **Kiểm tra định dạng Số điện thoại Việt Nam:** Cấu hình regex kiểm tra số điện thoại di động Việt Nam `^(0|\+84|84)[3|5|7|8|9][0-9]{8}$` (phải gồm 10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09) ở cả frontend (`UserManagement.tsx`) và backend validator (`UserController.php`).
+  - **Hiển thị thông báo SweetAlert:** Nếu số điện thoại do người dùng nhập vào không hợp lệ, hệ thống sẽ chặn submit và đưa ra thông báo cảnh báo SweetAlert định dạng sai vô cùng rõ ràng và đồng bộ.
+- **Tối ưu hóa toàn diện giao diện Dashboard và Bộ lọc trên Mobile:**
+  - **Khắc phục lỗi tràn ngang màn hình (Horizontal Overflow Fix):**
+    - Sửa đổi container nút bấm ở header trang từ `flex items-center gap-3` thành `flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto`. Các nút "Xuất dữ liệu" và "Thêm tài khoản" sẽ kéo rộng 100% và xếp chồng dọc trên di động để vừa khít màn hình.
+    - Điều chỉnh tiêu đề chính xuống `text-3xl sm:text-4xl` và mô tả phụ `tracking-wider sm:tracking-widest` để không bị đẩy dài vượt khung màn hình.
+    - Cập nhật bộ lọc (Filters Bar) sử dụng `p-4 sm:p-6 rounded-2xl sm:rounded-[2rem]`, thay thế `min-w-[280px]` bằng `min-w-0 w-full` cho thanh tìm kiếm và cho phép các dropdown co giãn linh hoạt (`flex-1 sm:flex-initial`).
+    - Bọc danh sách tab `VercelTabs` trong container `overflow-x-auto no-scrollbar` để thanh tab có thể cuộn ngang mượt mà trên di động thay vì ép dẹt các tab hoặc gây tràn layout trang chính.
+
+
+
+
