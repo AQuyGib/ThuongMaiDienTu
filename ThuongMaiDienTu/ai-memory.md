@@ -1018,3 +1018,22 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Bo tròn góc popup `rounded-2xl` và nút `rounded-xl` cho giao diện premium.
 - **Merge:** Đã merge nhánh `AnhQuy/ToiUu` vào `master` và push lên remote thành công.
 - **File thay đổi:** `resources/views/admin/rewards/index.blade.php`
+
+### 61. Chuẩn bị tài liệu kiểm thử hệ thống (Test Resources)
+- **Tạo thư mục tài liệu kiểm thử (`tai_lieu_kiem_thu`):**
+  - Tạo các thư mục con phân loại: `images/`, `videos/`, `documents/`, `spreadsheets/`.
+  - Tạo tệp `huongdan_test.txt` mô tả chức năng kiểm thử của từng loại file.
+  - Tạo tệp mẫu `products_import_template.csv` chứa dữ liệu sản phẩm mẫu khớp 100% với các cột import của Laravel.
+  - Tạo tệp tài liệu PDF mẫu `hoadon_test.pdf` để kiểm thử đính kèm trong chat/phiếu sửa chữa.
+- **Tích hợp Script tạo tài liệu kiểm thử tự động:**
+  - Viết file `ThuongMaiDienTu/generate_test_resources.php` sử dụng base64 decode và hex2bin để sinh các file nhị phân hợp lệ tránh bị lỗi mã hóa UTF-8 (bao gồm ảnh `.png`, `.jpg`, `.webp`, `.gif`, video `.mp4`, `.mkv`, và văn bản `.docx`).
+  - Sử dụng package `Maatwebsite/Excel` trong Laravel để tự động xuất dữ liệu thật từ database thành tệp Excel `products_import_excel.xlsx` chất lượng cao làm tệp kiểm thử nhập xuất dữ liệu thật.
+- **Hỗ trợ chạy nhanh trên Windows:**
+  - Tạo file script `sinh_file_test.bat` tại thư mục gốc giúp người dùng chỉ cần kích đúp chuột (double-click) là tự động chạy script PHP. Script được nâng cấp để tự động quét tìm đường dẫn PHP của XAMPP và Laragon trên cả ổ đĩa C và D nếu biến môi trường PATH chưa được cấu hình.
+  - Thêm script `"sinh-file": "php generate_test_resources.php"` vào `package.json` của thư mục `ThuongMaiDienTu` để hỗ trợ chạy qua NPM.
+- **Cơ chế tự động sinh tệp qua Web Request:**
+  - Tích hợp logic sinh tệp tự động trực tiếp vào đầu file `ThuongMaiDienTu/public/index.php`. Khi bất kỳ ai truy cập website cục bộ, PHP sẽ tự động kiểm tra và sinh đầy đủ thư mục `tai_lieu_kiem_thu` với ảnh, video, tài liệu chuẩn nhị phân ngay lập tức mà không cần thao tác terminal.
+- **Tạo trực tiếp các tệp SVG:**
+  - Tạo sẵn `avatar_test.svg` và `theme_test.svg` trong `tai_lieu_kiem_thu/images/` để người dùng có thể sử dụng test upload ảnh vector ngay lập tức.
+- **Bổ sung các định dạng tệp tin kiểm thử nâng cao:**
+  - Hỗ trợ thêm các thư mục và định dạng mới trong tệp test: âm thanh (`audio/` gồm `.mp3`, `.wav`, `.ogg`), file nén (`archives/` gồm `.zip`, `.rar`, `.7z`), tài liệu thuyết trình (`.pptx`) và dữ liệu web (`web_data/` gồm `.json`, `.xml`, `.html`).

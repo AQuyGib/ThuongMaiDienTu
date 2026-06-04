@@ -1,0 +1,11 @@
+=== THƯ MỤC TÀI LIỆU KIỂM THỬ (TEST RESOURCES) ===
+
+Thư mục này chứa đầy đủ các loại tệp tin để bạn trình chiếu và kiểm thử các tính năng của trang web trước hội đồng kiểm tra:
+
+1. Thư mục images/: Chứa ảnh PNG, JPG, WebP, GIF, SVG thực tế dùng để test upload hình ảnh.
+2. Thư mục videos/: Chứa tệp MP4, MKV để test video review.
+3. Thư mục audio/: Chứa tệp MP3, WAV, OGG để test phát nhạc, âm thanh.
+4. Thư mục documents/: Chứa tệp PDF, DOCX, PPTX để test đính kèm tài liệu văn bản.
+5. Thư mục spreadsheets/: Chứa tệp CSV và XLSX để test Import sản phẩm.
+6. Thư mục archives/: Chứa tệp ZIP, RAR, 7Z để test nén dữ liệu.
+7. Thư mục web_data/: Chứa tệp JSON, XML, HTML để test cấu trúc dữ liệu web.
