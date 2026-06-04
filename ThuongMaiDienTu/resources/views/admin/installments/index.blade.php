@@ -191,7 +191,7 @@
                                     <a href="{{ route('admin.installments.invoice', $inst->id) }}" target="_blank" class="btn btn-sm btn-outline-info px-2.5 rounded-xl text-xs font-bold" title="Xuất hóa đơn / Phiếu thu" style="color: #0ea5e9; border-color: #0ea5e9;">
                                         <i class="fa-solid fa-print"></i>
                                     </a>
-                                    <form action="{{ route('admin.installments.destroy', $inst->id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa hợp đồng trả góp này và khôi phục kho hàng không?')" style="display:inline;">
+                                    <form action="{{ route('admin.installments.destroy', $inst->id) }}" method="POST" class="delete-installment-form" style="display:inline;">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-outline-danger px-2.5 rounded-xl text-xs font-bold" title="Xóa hợp đồng">
@@ -221,4 +221,31 @@
         @endif
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteForms = document.querySelectorAll('.delete-installment-form');
+    deleteForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Xác nhận xóa',
+                text: 'Bạn có chắc chắn muốn xóa hợp đồng trả góp này và khôi phục kho hàng không?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Đồng ý xóa',
+                cancelButtonText: 'Hủy bỏ'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>
+@endpush
 @endsection

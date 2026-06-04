@@ -1227,6 +1227,11 @@ if (instModal) {
     });
 }
 
+const tradeInEl = document.getElementById('tradeInCheck');
+if (tradeInEl) {
+    tradeInEl.addEventListener('change', updateInstallmentTable);
+}
+
 function selectCompany(el, company) {
     document.querySelectorAll('.inst-company').forEach(c => c.classList.remove('active'));
     el.classList.add('active');
@@ -1248,13 +1253,28 @@ function selectMonth(el, month) {
 function updateInstallmentTable() {
     const format = (num) => Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
     
-    document.getElementById('instProductPrice').innerText = format(instCurrentBasePrice);
-    document.getElementById('instBasePrice').innerText = format(instCurrentBasePrice);
+    // ==========================================
+    // CHỨC NĂNG: TÍNH TOÁN TRỢ GIÁ "THU CŨ ĐỔI MỚI" (TRADE-IN)
+    // [Ý nghĩa cho người dùng]: Hỗ trợ giảm trừ giá trị sản phẩm khi tham gia đổi máy cũ lấy máy mới.
+    // - Trợ giá bằng 10% đơn giá hiện tại.
+    // - Mức giảm tối đa là 2.000.000đ.
+    // - Tránh lỗi đưa giá phụ kiện giá rẻ về 0đ hoặc âm tiền.
+    // ==========================================
+    
+    // Xác định xem khách hàng có chọn tham gia chương trình Thu cũ đổi mới hay không (trả về true/false)
+    const isTradeIn = tradeInEl ? tradeInEl.checked : false;
+    // Tính mức trợ giá: bằng 10% đơn giá hiện tại nếu được tích chọn (tối đa 2.000.000 VNĐ), ngược lại bằng 0
+    const discount = isTradeIn ? Math.min(Math.round(instCurrentBasePrice * 0.1), 2000000) : 0;
+    // Tính đơn giá cuối cùng sau khi trừ trợ giá và đảm bảo đơn giá không bao giờ nhỏ hơn 0đ
+    const finalProductPrice = Math.max(0, instCurrentBasePrice - discount);
+
+    document.getElementById('instProductPrice').innerText = format(finalProductPrice);
+    document.getElementById('instBasePrice').innerText = format(finalProductPrice);
     document.getElementById('instCompanyName').innerText = instSelectedCompany;
     
     // Tính toán giả lập giá trị các gói tài chính
-    const prepay = Math.round(instCurrentBasePrice * 0.3); // Trả trước 30% mặc định
-    const loan = instCurrentBasePrice - prepay; // Khoản tiền cần vay
+    const prepay = Math.round(finalProductPrice * 0.3); // Trả trước 30% mặc định
+    const loan = finalProductPrice - prepay; // Khoản tiền cần vay
     
     let interestRate = 0; // Tỷ lệ lãi suất hàng tháng
     let flatFee = 0;      // Phí bảo hiểm hoặc phí thu hộ hàng tháng
@@ -1273,7 +1293,7 @@ function updateInstallmentTable() {
     const monthlyPayment = Math.round(monthlyNoInterest + monthlyInterest + flatFee);
     
     const totalPayment = prepay + (monthlyPayment * instSelectedMonth);
-    const diff = totalPayment - instCurrentBasePrice; // Tiền chênh lệch phải trả thêm
+    const diff = totalPayment - finalProductPrice; // Tiền chênh lệch phải trả thêm
     
     document.getElementById('instPrepay').innerText = format(prepay);
     document.getElementById('instMonthly').innerText = format(monthlyPayment);

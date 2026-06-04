@@ -125,8 +125,33 @@ class InstallmentController extends Controller
             ]);
         }
 
-        // Tính giá sản phẩm thực tế (Lấy từ giá variant nếu có, hoặc giá cơ bản sản phẩm)
         $productPrice = (int) ($variant ? $variant->total_price : $product->base_price);
+
+        // ==========================================
+        // CHỨC NĂNG: TÍNH TOÁN TRỢ GIÁ "THU CŨ ĐỔI MỚI" (TRADE-IN)
+        // ------------------------------------------
+        // [DÀNH CHO NGƯỜI KHÔNG BIẾT CODE - Ý NGHĨA CHỨC NĂNG]:
+        // Khi khách hàng đổi điện thoại/thiết bị cũ để nâng cấp lên sản phẩm mới, cửa hàng sẽ tặng 
+        // một khoản tiền giảm giá đặc biệt (trợ giá) để trừ thẳng vào giá bán khi làm hồ sơ trả góp.
+        //
+        // CÁCH HOẠT ĐỘNG:
+        // - Khách hàng sẽ được giảm giá 10% của giá bán sản phẩm.
+        // - Số tiền giảm này bị giới hạn tối đa là 2.000.000đ (dù máy có đắt đến mấy thì trợ giá tối đa là 2 triệu).
+        // - Đối với phụ kiện giá rẻ (ví dụ cáp sạc 2 triệu), hệ thống tự giảm 10% tức là 200.000đ,
+        //   giúp giá bán sau giảm vẫn hợp lý (còn lại 1,8 triệu) chứ không bị đưa về 0đ (miễn phí) hoặc bị âm tiền.
+        // ==========================================
+        
+        // Kiểm tra xem khách hàng có tham gia chương trình Thu cũ đổi mới hay không (biến $tradeIn nhận giá trị boolean từ request)
+        if ($tradeIn) {
+            // Tính số tiền trợ giá thu cũ đổi mới bằng 10% đơn giá hiện tại của sản phẩm
+            $tenPercentOfPrice = (int)round($productPrice * 0.1);
+            // Giới hạn mức trợ giá thu cũ đổi mới tối đa là 2.000.000 VNĐ
+            $tradeInDiscount = min($tenPercentOfPrice, 2000000);
+            // Khấu trừ số tiền trợ giá vừa tính được trực tiếp vào đơn giá sản phẩm ban đầu
+            $discountedPrice = $productPrice - $tradeInDiscount;
+            // Đảm bảo đơn giá sản phẩm sau khi trừ trợ giá không bao giờ bị âm hoặc nhỏ hơn 0đ
+            $productPrice = max(0, $discountedPrice);
+        }
 
         // Tính toán các chi phí phía server để đảm bảo tính an toàn (Server-side calculation)
         $prepayAmount = 0;
