@@ -5,6 +5,23 @@
   - Thực hiện merge thành công phiên bản mới nhất của nhánh `master` (remote `origin/master`) vào nhánh hiện tại `AnhQuy/ToiUu` vào ngày 03/06/2026, giải quyết tự động hoàn toàn mà không phát sinh bất kỳ xung đột nào.
   - Đồng bộ toàn bộ các tính năng mới nhất từ `master` bao gồm Live Theme Customizer, logic giỏ hàng, thanh toán và các cập nhật kịch bản chạy tự động trong `start.bat`.
   - Đồng bộ toàn bộ các tính năng AI mới (kiểm duyệt UGC, chẩn đoán Vision AI cho phiếu sửa chữa, bán chéo Gemini AI, kiểm duyệt đơn hàng AI) và các sửa đổi hệ thống test API Auth và database migrations trước đó.
+- **Nâng cấp Hệ thống Thông báo Toàn diện (System-Wide Notification System):**
+  - Thiết kế và tích hợp luồng thông báo tự động qua `NotificationService` vào các dịch vụ & controller nghiệp vụ cốt lõi:
+    - **Rewards & Lucky Wheel (`RewardsService`):** Tự động gửi thông báo `rewards.redeemed` khi đổi điểm thưởng thành công (kèm mã voucher & hạn dùng 30 ngày) và `lucky_wheel.won` khi quay trúng thưởng (kèm mã trúng giải & hạn nhận quà 7 ngày).
+    - **Repair Ticket Management (`RepairTicketInvoiceController`):** Tự động gửi thông báo tiếp nhận thiết bị `repair_ticket.created` và cập nhật tiến trình `repair_ticket.status_updated` bằng tiếng Việt thân thiện dựa trên IMEI & trạng thái phiếu sửa chữa cho khách hàng liên kết.
+    - **Service Invoice Processing (`ServiceInvoiceController` & `RepairTicketInvoiceController`):** Tự động gửi thông báo `service_invoice.created` khi xuất hóa đơn dịch vụ mới và `service_invoice.paid` khi hóa đơn được chuyển sang trạng thái đã thanh toán (`paid`).
+    - **Installment Transactions (`Admin\InstallmentController`):** Tự động gửi thông báo `installment.payment_success` xác nhận đóng tiền trả góp hàng tháng định kỳ cho từng kỳ thanh toán (term number) cụ thể.
+  - **Cơ chế xử lý thông báo thông minh khi dùng số điện thoại khác / không khớp tài khoản:**
+    - Hệ thống ưu tiên truy vấn theo `user_id` liên kết trực tiếp (nếu có) để gửi thông báo hệ thống vào tài khoản khách hàng, tránh việc nhập số điện thoại liên hệ khác làm gián đoạn thông báo.
+    - Khi không tìm thấy theo số điện thoại, hệ thống tự động đối chiếu thông tin qua Email (`customer_email`) của khách hàng để tìm tài khoản khớp.
+    - Trong trường hợp khách hàng hoàn toàn không có tài khoản (hoặc thông tin hoàn toàn mới), hệ thống sẽ tự động kích hoạt gửi **Email thông báo trực tiếp qua SMTP (Laravel Mail)** tới email khách hàng đã đăng ký trên form sửa chữa/hóa đơn, đảm bảo khách hàng vãng lai vẫn cập nhật được tiến độ.
+  - **Cơ chế điều hướng và tra cứu thông minh khi nhấp vào thông báo:**
+    - Đối với thông báo liên quan đến đổi thưởng/quay số (`rewards.redeemed`, `lucky_wheel.won`), `action_url` được gán đến trang lịch sử phần thưởng `/rewards/history`.
+    - Đối với thông báo liên quan đến đơn hàng (`order.created`, `order.status_updated`), `action_url` tự động đính kèm tham số mã đơn hàng dưới dạng `/orders?code=[order_code]`.
+    - Trang tra cứu hành trình đơn hàng (`ordertracking.blade.php`) được tích hợp script lắng nghe sự kiện `DOMContentLoaded` tự động lấy mã `code` từ URL, điền vào ô tìm kiếm và kích hoạt submit form tra cứu tự động bằng AJAX để hiển thị ngay tiến trình đơn hàng.
+  - **Tối ưu hóa UI/UX hòm thư thông báo (`notifications.index.blade.php`):**
+    - Bổ sung toàn bộ các phân loại thông báo mới vào bộ lọc tìm kiếm và mảng cấu hình giao diện.
+    - Thiết kế hệ thống icon động (`fa-clover`, `fa-gift`, `fa-wrench`, `fa-file-invoice`, etc.) và phối màu CSS phong phú, hài hòa (Rich Aesthetics) mang lại trải nghiệm Premium trực quan cho người dùng.
 - **Tích hợp nhánh AI & Hoàn tất Merge (Merge Branch AnhQuy/TichHopAI into master):**
   - Thực hiện merge thành công nhánh `AnhQuy/TichHopAI` vào nhánh `master` và giải quyết xung đột thủ công trong file `ThuongMaiDienTu/ai-memory.md` bằng cách hợp nhất lịch sử phát triển của cả hai nhánh một cách khoa học.
   - Đồng bộ và cài đặt toàn bộ dependencies mới của dự án bằng lệnh `composer install --ignore-platform-reqs`, giúp tải đầy đủ các thư viện hỗ trợ AI và API Sanctum.
@@ -34,6 +51,7 @@
   - Added `min_rank` constraint to each lucky wheel configuration (None, Bronze, Silver, Gold, Diamond), allowing rank restrictions for custom wheels.
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
+  - Merged `master` into branch `AnhQuy/ThongBao` successfully.
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
   - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
