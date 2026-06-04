@@ -155,10 +155,13 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // ========== Target Audience Toggle ==========
+    // ==========================================
+    // 1. CHUYỂN ĐỔI ĐỐI TƯỢNG NHẬN TIN (TARGET AUDIENCE TOGGLE)
+    // ==========================================
     window.handleTargetChange = function() {
         const target = document.getElementById('targetSelect').value;
         const section = document.getElementById('specificUsersSection');
+        // Nếu chọn "Gửi cho tài khoản cụ thể", hiển thị phần tìm kiếm tài khoản nhận
         if (target === 'specific') {
             section.classList.remove('hidden');
         } else {
@@ -166,72 +169,113 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ========== Users Multi-select ==========
-    const selectedUsers = {};
+    // ==========================================
+    // 2. CHỌN NHIỀU TÀI KHOẢN NHẬN (USERS MULTI-SELECT & AJAX AUTOCOMPLETE)
+    // ==========================================
+    const selectedUsers = {}; // Danh sách lưu trữ tài khoản đã chọn dưới dạng { [id]: { name, email } }
     let userDebounce;
 
+    // Hiển thị dropdown khi focus vào ô input tìm kiếm user
     document.getElementById('userQueryInput')?.addEventListener('focus', () => {
         document.getElementById('userSearchResults').classList.remove('hidden');
     });
 
+    // Lắng nghe sự kiện gõ phím để tìm kiếm user động qua API (sử dụng kỹ thuật Debounce 300ms)
     document.getElementById('userQueryInput')?.addEventListener('input', function() {
         const q = this.value.trim();
         const container = document.getElementById('userSearchResults');
-        if (!q) { container.innerHTML = '<div class="p-2 text-center text-xs text-slate-400">Nhập từ khóa để tìm...</div>'; return; }
+        
+        if (!q) { 
+            container.innerHTML = '<div class="p-2 text-center text-xs text-slate-400">Nhập từ khóa để tìm...</div>'; 
+            return; 
+        }
+        
         clearTimeout(userDebounce);
         userDebounce = setTimeout(() => {
             container.innerHTML = '<div class="p-2 text-center text-xs text-slate-400"><i class="fa-solid fa-spinner animate-spin mr-1"></i> Đang tìm...</div>';
+            
+            // Gọi AJAX lấy danh sách user phù hợp từ server
             fetch(`{{ route('admin.notifications.search-users') }}?q=${encodeURIComponent(q)}`)
                 .then(r => r.json())
                 .then(data => {
-                    if (!data.length) { container.innerHTML = '<div class="p-2 text-center text-xs text-slate-400">Không tìm thấy</div>'; return; }
+                    if (!data.length) { 
+                        container.innerHTML = '<div class="p-2 text-center text-xs text-slate-400">Không tìm thấy</div>'; 
+                        return; 
+                    }
+                    
                     let html = '';
                     data.forEach(u => {
+                        // Nếu user đã được chọn thì không hiển thị lại trong dropdown kết quả
                         if (selectedUsers[u.user_id]) return;
+                        
                         html += `<div class="p-2 hover:bg-slate-50 rounded-xl cursor-pointer transition flex items-center justify-between" onmousedown="addUserTag(${u.user_id}, '${u.full_name.replace(/'/g,"\\'")}', '${u.email.replace(/'/g,"\\'")}')">
-                            <div><div class="text-xs font-bold text-slate-800">${u.full_name}</div><div class="text-[10px] text-slate-400">${u.email}</div></div>
-                            <div class="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded">Chọn</div></div>`;
+                            <div>
+                                <div class="text-xs font-bold text-slate-800">${u.full_name}</div>
+                                <div class="text-[10px] text-slate-400">${u.email}</div>
+                            </div>
+                            <div class="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded">Chọn</div>
+                        </div>`;
                     });
                     container.innerHTML = html || '<div class="p-2 text-center text-xs text-slate-400">Đã chọn hết</div>';
-                }).catch(() => { container.innerHTML = '<div class="p-2 text-center text-xs text-rose-500">Lỗi tìm kiếm</div>'; });
+                }).catch(() => { 
+                    container.innerHTML = '<div class="p-2 text-center text-xs text-rose-500">Lỗi tìm kiếm</div>'; 
+                });
         }, 300);
     });
 
+    // Hàm thêm tag tài khoản đã chọn và cập nhật UI
     window.addUserTag = function(id, name, email) {
         if (selectedUsers[id]) return;
         selectedUsers[id] = { name, email };
         updateUserTags();
         document.getElementById('userQueryInput').value = '';
     };
-    window.removeUserTag = function(id) { delete selectedUsers[id]; updateUserTags(); };
 
+    // Hàm xóa tag tài khoản
+    window.removeUserTag = function(id) { 
+        delete selectedUsers[id]; 
+        updateUserTags(); 
+    };
+
+    // Render danh sách các badge tài khoản đã chọn dưới dạng input ẩn (hidden input) để submit cùng form
     function updateUserTags() {
         const c = document.getElementById('selectedUsersContainer');
         const keys = Object.keys(selectedUsers);
-        if (!keys.length) { c.innerHTML = '<span class="text-xs text-slate-400">Chưa có tài khoản nào được chọn.</span>'; return; }
+        if (!keys.length) { 
+            c.innerHTML = '<span class="text-xs text-slate-400">Chưa có tài khoản nào được chọn.</span>'; 
+            return; 
+        }
         c.innerHTML = keys.map(id => {
             const u = selectedUsers[id];
             return `<span class="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
                 ${u.name}<input type="hidden" name="user_ids[]" value="${id}">
-                <button type="button" onclick="removeUserTag(${id})" class="w-4 h-4 rounded-full bg-indigo-200/50 hover:bg-indigo-200 text-indigo-800 text-[10px] flex items-center justify-center">&times;</button></span>`;
+                <button type="button" onclick="removeUserTag(${id})" class="w-4 h-4 rounded-full bg-indigo-200/50 hover:bg-indigo-200 text-indigo-800 text-[10px] flex items-center justify-center transition">&times;</button></span>`;
         }).join('');
     }
 
-    // ========== Products Multi-select ==========
+    // ==========================================
+    // 3. CHỌN NHIỀU SẢN PHẨM LIÊN QUAN (PRODUCTS MULTI-SELECT)
+    // ==========================================
     const selectedProducts = {};
     const defaultProductsHTML = document.getElementById('productSearchResults')?.innerHTML || '';
 
+    // Khi focus hiển thị dropdown sản phẩm
     document.getElementById('productQueryInput')?.addEventListener('focus', () => {
         const r = document.getElementById('productSearchResults');
         r.classList.remove('hidden');
         filterItems('productSearchResults', selectedProducts, defaultProductsHTML);
     });
 
+    // Lọc nhanh sản phẩm client-side từ danh sách có sẵn
     document.getElementById('productQueryInput')?.addEventListener('input', function() {
         const q = this.value.trim();
         const r = document.getElementById('productSearchResults');
-        if (!q) { r.innerHTML = defaultProductsHTML; filterItems('productSearchResults', selectedProducts, defaultProductsHTML); return; }
-        // Lọc client-side từ danh sách mặc định
+        if (!q) { 
+            r.innerHTML = defaultProductsHTML; 
+            filterItems('productSearchResults', selectedProducts, defaultProductsHTML); 
+            return; 
+        }
+        
         r.innerHTML = defaultProductsHTML;
         const items = r.querySelectorAll('[data-id]');
         items.forEach(item => {
@@ -241,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
         filterItems('productSearchResults', selectedProducts, null);
     });
 
+    // Thêm tag sản phẩm
     window.addProductTag = function(id, name) {
         if (selectedProducts[id]) return;
         selectedProducts[id] = { name };
@@ -249,38 +294,52 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('productSearchResults').innerHTML = defaultProductsHTML;
         filterItems('productSearchResults', selectedProducts, defaultProductsHTML);
     };
+
+    // Xóa tag sản phẩm
     window.removeProductTag = function(id) {
         delete selectedProducts[id];
         updateProductTags();
         filterItems('productSearchResults', selectedProducts, defaultProductsHTML);
     };
 
+    // Render danh sách badge sản phẩm đã chọn
     function updateProductTags() {
         const c = document.getElementById('selectedProductsContainer');
         const keys = Object.keys(selectedProducts);
-        if (!keys.length) { c.innerHTML = '<span class="text-xs text-slate-400">Chưa có sản phẩm nào được chọn.</span>'; return; }
+        if (!keys.length) { 
+            c.innerHTML = '<span class="text-xs text-slate-400">Chưa có sản phẩm nào được chọn.</span>'; 
+            return; 
+        }
         c.innerHTML = keys.map(id => {
             const p = selectedProducts[id];
             return `<span class="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
                 <span class="max-w-[140px] truncate">${p.name}</span><input type="hidden" name="product_ids[]" value="${id}">
-                <button type="button" onclick="removeProductTag(${id})" class="w-4 h-4 rounded-full bg-emerald-200/50 hover:bg-emerald-200 text-emerald-800 text-[10px] flex items-center justify-center">&times;</button></span>`;
+                <button type="button" onclick="removeProductTag(${id})" class="w-4 h-4 rounded-full bg-emerald-200/50 hover:bg-emerald-200 text-emerald-800 text-[10px] flex items-center justify-center transition">&times;</button></span>`;
         }).join('');
     }
 
-    // ========== Promos Multi-select ==========
+    // ==========================================
+    // 4. CHỌN NHIỀU MÃ KHUYẾN MÃI LIÊN QUAN (PROMOS MULTI-SELECT)
+    // ==========================================
     const selectedPromos = {};
     const defaultPromosHTML = document.getElementById('promoSearchResults')?.innerHTML || '';
 
+    // Khi focus hiển thị dropdown khuyến mãi
     document.getElementById('promoQueryInput')?.addEventListener('focus', () => {
         const r = document.getElementById('promoSearchResults');
         r.classList.remove('hidden');
         filterItems('promoSearchResults', selectedPromos, defaultPromosHTML);
     });
 
+    // Lọc nhanh khuyến mãi client-side
     document.getElementById('promoQueryInput')?.addEventListener('input', function() {
         const q = this.value.trim();
         const r = document.getElementById('promoSearchResults');
-        if (!q) { r.innerHTML = defaultPromosHTML; filterItems('promoSearchResults', selectedPromos, defaultPromosHTML); return; }
+        if (!q) { 
+            r.innerHTML = defaultPromosHTML; 
+            filterItems('promoSearchResults', selectedPromos, defaultPromosHTML); 
+            return; 
+        }
         r.innerHTML = defaultPromosHTML;
         const items = r.querySelectorAll('[data-id]');
         items.forEach(item => {
@@ -290,6 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
         filterItems('promoSearchResults', selectedPromos, null);
     });
 
+    // Thêm tag khuyến mãi
     window.addPromoTag = function(id, type, code) {
         if (selectedPromos[id]) return;
         selectedPromos[id] = { type, code };
@@ -298,45 +358,64 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('promoSearchResults').innerHTML = defaultPromosHTML;
         filterItems('promoSearchResults', selectedPromos, defaultPromosHTML);
     };
+
+    // Xóa tag khuyến mãi
     window.removePromoTag = function(id) {
         delete selectedPromos[id];
         updatePromoTags();
         filterItems('promoSearchResults', selectedPromos, defaultPromosHTML);
     };
 
+    // Render danh sách badge khuyến mãi đã chọn
     function updatePromoTags() {
         const c = document.getElementById('selectedPromosContainer');
         const keys = Object.keys(selectedPromos);
-        if (!keys.length) { c.innerHTML = '<span class="text-xs text-slate-400">Chưa có khuyến mãi nào được chọn.</span>'; return; }
+        if (!keys.length) { 
+            c.innerHTML = '<span class="text-xs text-slate-400">Chưa có khuyến mãi nào được chọn.</span>'; 
+            return; 
+        }
         c.innerHTML = keys.map(id => {
             const pr = selectedPromos[id];
             const codeDisplay = pr.code ? ` (${pr.code})` : '';
             return `<span class="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
                 <span class="max-w-[150px] truncate">${pr.type}${codeDisplay}</span><input type="hidden" name="promo_ids[]" value="${id}">
-                <button type="button" onclick="removePromoTag(${id})" class="w-4 h-4 rounded-full bg-amber-200/50 hover:bg-amber-200 text-amber-800 text-[10px] flex items-center justify-center">&times;</button></span>`;
+                <button type="button" onclick="removePromoTag(${id})" class="w-4 h-4 rounded-full bg-amber-200/50 hover:bg-amber-200 text-amber-800 text-[10px] flex items-center justify-center transition">&times;</button></span>`;
         }).join('');
     }
 
-    // ========== Shared: Filter selected items from dropdown ==========
+    // ==========================================
+    // 5. HÀM DÙNG CHUNG: ẨN CÁC MỤC ĐÃ ĐƯỢC CHỌN KHỎI DROPDOWN
+    // ==========================================
     function filterItems(containerId, selectedMap, defaultHTML) {
         const c = document.getElementById(containerId);
         if (!c) return;
-        if (defaultHTML && c.querySelectorAll('[data-id]').length === 0) c.innerHTML = defaultHTML;
+        if (defaultHTML && c.querySelectorAll('[data-id]').length === 0) {
+            c.innerHTML = defaultHTML;
+        }
         const items = c.querySelectorAll('[data-id]');
         let visible = 0;
         items.forEach(item => {
             const id = item.getAttribute('data-id');
-            if (selectedMap[id]) { item.style.display = 'none'; } else { if (item.style.display !== 'none') visible++; }
+            // Nếu nằm trong map đã chọn thì ẩn đi
+            if (selectedMap[id]) { 
+                item.style.display = 'none'; 
+            } else { 
+                if (item.style.display !== 'none') visible++; 
+            }
         });
     }
 
-    // ========== Close dropdowns on click outside ==========
+    // ==========================================
+    // 6. ĐÓNG CÁC DROPDOWN KHI CLICK RA NGOÀI VÙNG CHỌN
+    // ==========================================
     document.addEventListener('click', function(e) {
         ['productSearchWrapper', 'promoSearchWrapper', 'userSearchWrapper'].forEach(id => {
             const wrapper = document.getElementById(id);
             if (wrapper && !wrapper.contains(e.target)) {
                 const results = wrapper.querySelector('[id$="Results"]');
-                if (results) setTimeout(() => results.classList.add('hidden'), 150);
+                if (results) {
+                    setTimeout(() => results.classList.add('hidden'), 150);
+                }
             }
         });
     });

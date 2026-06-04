@@ -8,12 +8,15 @@ use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\InventoryMovementController;
+use App\Http\Controllers\Admin\InventoryAuditController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Admin\FlashSaleProductController;
+use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\CashbookController;
 use App\Http\Controllers\Admin\ThemeSettingController;
 use App\Http\Controllers\Admin\OrderController;
@@ -51,8 +54,11 @@ Route::delete('/videos/comments/{comment}', [VideoManagementController::class, '
 
 
 // ===== Quản lý Đơn hàng =====
+Route::get('orders/ai-logs', [OrderController::class, 'aiLogs'])->name('orders.aiLogs');
+Route::post('orders/batch-get-ids', [OrderController::class, 'batchGetIds'])->name('orders.batchGetIds');
 Route::resource('orders', OrderController::class);
 Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+Route::post('orders/{id}/reanalyze', [OrderController::class, 'reanalyze'])->name('orders.reanalyze');
 
 // CRUD Quyền hạn & Tài khoản (Permissions)
 Route::resource('permissions', UserController::class)->names([
@@ -62,9 +68,24 @@ Route::resource('permissions', UserController::class)->names([
     'destroy' => 'users.destroy',
 ])->except(['create', 'show', 'edit']);
 
+// CRUD Quản lý Nhân viên (Employee Management)
+Route::get('/employees/export/excel', [\App\Http\Controllers\Admin\EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
+Route::get('/employees/export/pdf', [\App\Http\Controllers\Admin\EmployeeController::class, 'exportPdf'])->name('employees.export.pdf');
+
+Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class)->names([
+    'index' => 'employees.index',
+    'store' => 'employees.store',
+    'update' => 'employees.update',
+    'destroy' => 'employees.destroy',
+])->except(['create', 'show', 'edit']);
+
+Route::patch('/employees/{employee}/toggle-status', [\App\Http\Controllers\Admin\EmployeeController::class, 'toggleStatus'])->name('employees.toggle-status');
+Route::post('/employees/batch-action', [\App\Http\Controllers\Admin\EmployeeController::class, 'batchAction'])->name('employees.batch-action');
+
 Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
 Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
 Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
+Route::post('permissions/{id}/unban-chatbot', [UserController::class, 'unbanChatbot'])->name('users.unban-chatbot');
 
 // Quản lý Vai trò (Roles)
 Route::resource('roles', RoleController::class)->names([
@@ -80,8 +101,10 @@ Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.qr');
 
 // ===== Quản lý Bài viết (Articles / Ecosystem) =====
+Route::post('articles/bulk-approve-ai', [ArticleController::class, 'bulkApproveAi'])->name('articles.bulk-approve-ai');
 Route::resource('articles', ArticleController::class);
 Route::post('articles/{id}/approve', [ArticleController::class, 'approve'])->name('articles.approve');
+Route::post('articles/{id}/reject', [ArticleController::class, 'reject'])->name('articles.reject');
 
 // ===== Quản lý Nhà Cung Cấp =====
 Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
@@ -112,6 +135,9 @@ Route::resource('flash-sales', FlashSaleController::class)->except(['create', 'e
 Route::post('flash-sales/{flash_sale}/products', [FlashSaleProductController::class, 'store'])->name('flash-sales.products.store');
 Route::delete('flash-sales/{flash_sale}/products/{flash_sale_product}', [FlashSaleProductController::class, 'destroy'])->name('flash-sales.products.destroy');
 
+// ===== Voucher =====
+Route::resource('vouchers', VoucherController::class)->except(['create', 'show', 'edit']);
+
 // ===== Quản lý Biến Thể & Bán Kèm =====
 Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'])->name('products.variants.store');
 Route::put('/products/{id}/variants/{variantId}', [ProductController::class, 'updateVariant'])->name('products.variants.update');
@@ -127,6 +153,7 @@ Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->n
 
 // ===== Quản lý IMEI & Cảnh báo tồn kho =====
 Route::get('/inventory/warnings', [InventoryController::class, 'warningList'])->name('inventory.warnings');
+Route::get('/inventory/movements', [InventoryMovementController::class, 'index'])->name('inventory.movements');
 Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
 Route::put('/inventory/{id}/status', [InventoryController::class, 'updateStatus'])->name('inventory.updateStatus');
 
@@ -135,6 +162,10 @@ Route::get('/api/inventory-by-warehouse', [\App\Http\Controllers\Admin\Warehouse
 Route::post('/warehouse-transfers/{id}/complete', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'complete'])->name('warehouse-transfers.complete');
 Route::post('/warehouse-transfers/{id}/cancel', [\App\Http\Controllers\Admin\WarehouseTransferController::class, 'cancel'])->name('warehouse-transfers.cancel');
 Route::resource('warehouse-transfers', \App\Http\Controllers\Admin\WarehouseTransferController::class);
+
+// ===== Kiểm kê & Cân bằng kho =====
+Route::post('/inventory-audits/{id}/reconcile', [InventoryAuditController::class, 'reconcile'])->name('inventory-audits.reconcile');
+Route::resource('inventory-audits', InventoryAuditController::class);
 
 // ===== Quản lý Sổ Quỹ (Cashbook) =====
 Route::post('cashbooks/bulk-destroy', [CashbookController::class, 'bulkDestroy'])->name('cashbooks.bulkDestroy');
@@ -166,3 +197,21 @@ Route::put('repair-tickets/{repairTicket}', [RepairTicketInvoiceController::clas
 Route::delete('repair-tickets/{repairTicket}', [RepairTicketInvoiceController::class, 'destroyTicket'])->name('repair-tickets.destroy');
 Route::get('repair-tickets/{repairTicket}/invoice/create', [RepairTicketInvoiceController::class, 'create'])->name('repair-tickets.invoice.create');
 Route::post('repair-tickets/invoice', [RepairTicketInvoiceController::class, 'store'])->name('repair-tickets.invoice.store');
+
+// ===== Chat Hub (Communication Hub) =====
+use App\Http\Controllers\Admin\ChatController;
+Route::get('/chat/init', [ChatController::class, 'init'])->name('chat.init');
+Route::post('/chat/rooms', [ChatController::class, 'createRoom'])->name('chat.rooms.create');
+Route::delete('/chat/rooms/{room_id}', [ChatController::class, 'deleteRoom'])->name('chat.rooms.delete');
+Route::post('/chat/rooms/{room_id}/members', [ChatController::class, 'addMember'])->name('chat.rooms.members.add');
+Route::delete('/chat/rooms/{room_id}/members/{user_id}', [ChatController::class, 'removeMember'])->name('chat.rooms.members.remove');
+Route::post('/chat/rooms/{room_id}/role', [ChatController::class, 'updateRole'])->name('chat.rooms.role.update');
+Route::post('/chat/messages', [ChatController::class, 'sendMessage'])->name('chat.messages.send');
+Route::post('/chat/messages/{message_id}/react', [ChatController::class, 'toggleReaction'])->name('chat.messages.react');
+
+// ===== Activity Logs (Audit System) =====
+use App\Http\Controllers\Admin\ActivityLogController;
+Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+Route::post('/activity-logs/verify', [ActivityLogController::class, 'verify'])->name('activity-logs.verify');
+
+

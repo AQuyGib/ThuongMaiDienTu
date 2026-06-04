@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasAuditLog;
 
 class Warranty extends Model
 {
+    use HasAuditLog;
+
     protected $primaryKey = 'warranty_id';
     protected $guarded = [];
 

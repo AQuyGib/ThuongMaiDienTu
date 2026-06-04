@@ -6,6 +6,8 @@ use App\Services\NotificationService;
 use Illuminate\Database\Eloquent\Model;
 
 class CouponFlashSale extends Model {
+    use \App\Traits\HasAuditLog;
+
     protected $table = 'coupons_flash_sales';
     protected $primaryKey = 'promo_id';
     public $timestamps = false;

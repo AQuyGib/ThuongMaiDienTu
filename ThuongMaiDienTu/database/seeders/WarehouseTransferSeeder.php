@@ -116,13 +116,16 @@ class WarehouseTransferSeeder extends Seeder
             $noteList = $notes[$status];
             $note = $noteList[array_rand($noteList)];
 
+            $adminUser = \App\Models\User::where('role_id', 1)->first() ?: \App\Models\User::first();
+            $createdBy = $adminUser ? $adminUser->user_id : 1;
+
             $transfer = WarehouseTransfer::create([
                 'transfer_code' => 'TF-' . str_pad($k, 5, '0', STR_PAD_LEFT),
                 'from_warehouse' => $from,
                 'to_warehouse' => $to,
                 'status' => $status,
                 'notes' => $note,
-                'created_by' => 1,
+                'created_by' => $createdBy,
                 'created_at' => now()->subDays(15 - $k)->subHours(rand(1, 12)),
             ]);
 

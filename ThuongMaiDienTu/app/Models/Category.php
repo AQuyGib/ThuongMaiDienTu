@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    use BaseTranslationTrait;
+    use BaseTranslationTrait, \App\Traits\HasAuditLog;
 
     protected $primaryKey = 'category_id';
     public $timestamps = false;

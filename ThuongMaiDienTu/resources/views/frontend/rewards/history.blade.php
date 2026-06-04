@@ -2,10 +2,19 @@
 @section('title', 'Lịch sử đổi thưởng')
 
 @push('styles')
+{{-- Nhúng Tailwind CSS phục vụ tạo dựng giao diện đẹp mắt, linh hoạt dạng utility-first --}}
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        corePlugins: {
+            preflight: false,
+        }
+    }
+</script>
 @endpush
 
 @php
+    // Ánh xạ trạng thái giao dịch với màu sắc nhãn Badge (CSS Tailwind) và nhãn văn bản Tiếng Việt tương ứng
     $statusMap = [
         'issued' => ['bg-emerald-50 text-emerald-700', 'Đã phát hành'],
         'approved' => ['bg-blue-50 text-blue-700', 'Đã duyệt'],
@@ -19,37 +28,51 @@
 @section('content')
 <div class="min-h-screen bg-slate-50 py-8">
   <div class="max-w-7xl mx-auto px-4">
+    
+    {{-- Khu vực tiêu đề trang và nút quay lại --}}
     <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-8">
       <div>
         <h1 class="text-3xl font-extrabold text-slate-900">Lịch sử đổi thưởng</h1>
         <p class="text-slate-600 mt-2">Xem lại voucher, quà tặng và lượt quay may mắn đã sử dụng.</p>
       </div>
-      <a href="{{ route('rewards.index') }}" class="inline-flex px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold">Quay lại rewards</a>
+      <a href="{{ route('rewards.index') }}" class="inline-flex px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition">Quay lại rewards</a>
     </div>
 
+    {{-- Form lọc tìm kiếm lịch sử: Chọn loại, chọn trạng thái và nhập từ khóa tìm kiếm --}}
     <form method="GET" class="bg-white rounded-2xl border border-slate-200 p-4 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3 shadow-sm">
+      {{-- Bộ lọc loại giao dịch (Đổi quà / Quay số) --}}
       <select name="type" class="rounded-xl border-slate-300">
         <option value="">Tất cả loại</option>
         <option value="redeem" @selected($type === 'redeem')>Đổi thưởng</option>
         <option value="spin" @selected($type === 'spin')>Vòng quay</option>
       </select>
+      
+      {{-- Bộ lọc trạng thái --}}
       <select name="status" class="rounded-xl border-slate-300">
         <option value="">Tất cả trạng thái</option>
         @foreach(array_keys($statusMap) as $key)
           <option value="{{ $key }}" @selected($status === $key)>{{ $statusMap[$key][1] }}</option>
         @endforeach
       </select>
+      
+      {{-- Ô nhập từ khóa tìm kiếm --}}
       <input type="text" name="search" value="{{ $search }}" placeholder="Tìm mã / tên reward" class="rounded-xl border-slate-300">
-      <button class="rounded-xl bg-indigo-600 text-white font-semibold">Lọc</button>
+      
+      {{-- Nút kích hoạt lọc dữ liệu --}}
+      <button class="rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Lọc</button>
     </form>
 
+    {{-- Thanh Tab điều hướng lọc nhanh bằng đường dẫn GET query --}}
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 mb-6 flex flex-wrap gap-2">
-      <a href="?type=" class="px-4 py-2 rounded-full text-sm font-semibold {{ $type === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700' }}">Tất cả</a>
-      <a href="?type=redeem" class="px-4 py-2 rounded-full text-sm font-semibold {{ $type === 'redeem' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700' }}">Voucher / Quà tặng</a>
-      <a href="?type=spin" class="px-4 py-2 rounded-full text-sm font-semibold {{ $type === 'spin' ? 'bg-fuchsia-600 text-white' : 'bg-slate-100 text-slate-700' }}">Vòng quay</a>
+      <a href="?type=" class="px-4 py-2 rounded-full text-sm font-semibold {{ $type === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">Tất cả</a>
+      <a href="?type=redeem" class="px-4 py-2 rounded-full text-sm font-semibold {{ $type === 'redeem' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">Voucher / Quà tặng</a>
+      <a href="?type=spin" class="px-4 py-2 rounded-full text-sm font-semibold {{ $type === 'spin' ? 'bg-fuchsia-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">Vòng quay</a>
     </div>
 
+    {{-- Bố cục Grid 2 cột: Cột trái hiển thị Lịch sử đổi quà, Cột phải hiển thị Lịch sử quay thưởng --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      
+      {{-- Khối danh sách Lịch sử đổi quà (Vouchers & Quà tặng) --}}
       <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-bold">Lịch sử đổi thưởng</h2>
@@ -58,6 +81,7 @@
         <div class="space-y-4">
           @forelse ($redemptions as $item)
             @php $badge = $statusMap[$item->status] ?? ['bg-slate-100 text-slate-600', ucfirst($item->status)]; @endphp
+            {{-- Thiết kế dạng Timeline với đường viền bên sườn trái --}}
             <div class="relative pl-6 border-l-2 border-slate-200">
               <div class="absolute -left-2 top-1.5 w-4 h-4 rounded-full bg-indigo-600"></div>
               <div class="p-4 rounded-2xl border border-slate-200 hover:border-indigo-200 transition">
@@ -74,10 +98,12 @@
                     @endif
                   </div>
                   <div class="text-right">
+                    {{-- Điểm số đã tiêu tốn cho quà này --}}
                     <p class="font-black text-violet-600">-{{ number_format($item->points_spent) }} điểm</p>
                     <p class="text-xs text-slate-500">Đã trừ ngay</p>
                   </div>
                 </div>
+                {{-- Thanh Progress Bar nhỏ biểu thị tiến độ xử lý --}}
                 <div class="mt-4 h-2 rounded-full bg-slate-100 overflow-hidden">
                   <div class="h-full bg-gradient-to-r from-indigo-500 to-violet-500" style="width: {{ $item->status === 'issued' ? 100 : ($item->status === 'pending' ? 50 : 100) }}%"></div>
                 </div>
@@ -87,9 +113,11 @@
             <p class="text-slate-500">Chưa có giao dịch đổi thưởng.</p>
           @endforelse
         </div>
+        {{-- Phân trang danh sách lịch sử đổi quà --}}
         <div class="mt-4">{{ $redemptions->links() }}</div>
       </div>
 
+      {{-- Khối danh sách Lịch sử lượt quay Vòng quay may mắn --}}
       <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-bold">Lịch sử quay may mắn</h2>
@@ -114,10 +142,12 @@
                     @endif
                   </div>
                   <div class="text-right">
+                    {{-- Điểm số đã tiêu tốn cho lượt quay này --}}
                     <p class="font-black text-violet-600">-{{ number_format($spin->points_spent) }} điểm</p>
                     <p class="text-xs text-slate-500">Đã trừ ngay</p>
                   </div>
                 </div>
+                {{-- Thanh Progress Bar nhỏ biểu thị tiến độ của lượt quay --}}
                 <div class="mt-4 h-2 rounded-full bg-slate-100 overflow-hidden">
                   <div class="h-full bg-gradient-to-r from-fuchsia-500 to-violet-500" style="width: {{ $spin->status === 'won' ? 100 : ($spin->status === 'pending' ? 50 : 100) }}%"></div>
                 </div>
@@ -127,9 +157,12 @@
             <p class="text-slate-500">Chưa có lượt quay nào.</p>
           @endforelse
         </div>
+        {{-- Phân trang danh sách lượt quay --}}
         <div class="mt-4">{{ $spins->links() }}</div>
       </div>
+      
     </div>
   </div>
 </div>
 @endsection
+

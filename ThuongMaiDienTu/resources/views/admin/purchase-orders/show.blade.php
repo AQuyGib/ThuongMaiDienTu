@@ -59,7 +59,7 @@
                 <div class="info-row"><span class="label">Mã phiếu</span><span class="value">PO-{{ str_pad($po->po_id, 5, '0', STR_PAD_LEFT) }}</span></div>
                 <div class="info-row"><span class="label">Nhà cung cấp</span><span class="value">{{ $po->supplier->name ?? '—' }}</span></div>
                 <div class="info-row"><span class="label">Tổng tiền nhập</span><span class="value text-success">{{ number_format($po->total_cost, 0, ',', '.') }}₫</span></div>
-                <div class="info-row"><span class="label">Số lượng IMEI</span><span class="value">{{ $po->inventoryItems->count() }}</span></div>
+                <div class="info-row"><span class="label">Số lượng IMEI</span><span class="value">{{ $po->inventory_items_count }}</span></div>
                 <div class="info-row"><span class="label">Ngày tạo</span><span class="value">{{ $po->created_at ? $po->created_at->format('d/m/Y H:i') : '—' }}</span></div>
             </div>
         </div>
@@ -82,9 +82,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($po->inventoryItems as $index => $item)
+                            @forelse($inventoryItems as $index => $item)
                                 <tr>
-                                    <td><span class="id-badge">{{ $index + 1 }}</span></td>
+                                    <td><span class="id-badge">{{ $loop->iteration + ($inventoryItems->currentPage() - 1) * $inventoryItems->perPage() }}</span></td>
                                     <td><span class="imei-code">{{ $item->imei_serial }}</span></td>
                                     <td>{{ $item->variant->product->name ?? '—' }}</td>
                                     <td>{{ $item->variant ? ($item->variant->color ?? '') . ($item->variant->rom_capacity ? ' - '.$item->variant->rom_capacity : '') : '—' }}</td>
@@ -104,6 +104,11 @@
                         </tbody>
                     </table>
                 </div>
+                @if($inventoryItems->hasPages())
+                    <div class="px-4 py-3 border-top bg-light">
+                        {{ $inventoryItems->links() }}
+                    </div>
+                @endif
             </div>
         </div>
     </div>

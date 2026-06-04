@@ -9,6 +9,7 @@ use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\PurchaseOrder;
+use App\Models\CouponFlashSale;
 use Illuminate\Support\Str;
 use App\Services\PointsService;
 use App\Services\FlashSaleService;
@@ -118,22 +119,47 @@ class CartController extends Controller
         if ($parentProductId) {
             $parentProduct = Product::find($parentProductId);
             if ($parentProduct) {
-                // Truy vấn bảng trung gian product_combos để lấy thông tin cấu hình giảm giá
-                $comboRelation = $parentProduct->comboProducts()->where('product_combos.combo_product_id', $productId)->first();
-                if ($comboRelation) {
-                    $pivot = $comboRelation->pivot;
-                    $basePriceToDiscount = $salePrice ?? (int) $product->base_price;
-                    
-                    // Áp dụng giảm giá theo phần trăm (%) hoặc số tiền cố định (đ)
-                    if ($pivot->discount_type === 'percentage') {
-                        $salePrice = (int) ($basePriceToDiscount * (1 - $pivot->discount_value / 100));
-                    } else {
-                        $salePrice = (int) ($basePriceToDiscount - $pivot->discount_value);
+                $basePriceToDiscount = $salePrice ?? (int) $product->base_price;
+                $appliedDiscount = false;
+
+                // 1. Kiểm tra từ Cache Combo AI đã đề xuất
+                $user = auth()->user();
+                $userKey = $user ? $user->user_id : (session()->getId() ?? 'guest');
+                $cacheKey = "ai_combo_recs_{$userKey}_{$parentProductId}";
+                $cachedCombos = cache()->get($cacheKey);
+
+                if (is_array($cachedCombos)) {
+                    foreach ($cachedCombos as $combo) {
+                        if ((int) $combo['product_id'] === $productId) {
+                            $discountType = $combo['discount_type'];
+                            $discountValue = (float) $combo['discount_value'];
+
+                            if ($discountType === 'percentage') {
+                                $salePrice = (int) ($basePriceToDiscount * (1 - $discountValue / 100));
+                            } else {
+                                $salePrice = (int) ($basePriceToDiscount - $discountValue);
+                            }
+                            $appliedDiscount = true;
+                            break;
+                        }
                     }
-                    
-                    if ($salePrice < 0) {
-                        $salePrice = 0;
+                }
+
+                // 2. Fallback về cơ sở dữ liệu nếu không tìm thấy trong Cache AI
+                if (!$appliedDiscount) {
+                    $comboRelation = $parentProduct->comboProducts()->where('product_combos.combo_product_id', $productId)->first();
+                    if ($comboRelation) {
+                        $pivot = $comboRelation->pivot;
+                        if ($pivot->discount_type === 'percentage') {
+                            $salePrice = (int) ($basePriceToDiscount * (1 - $pivot->discount_value / 100));
+                        } else {
+                            $salePrice = (int) ($basePriceToDiscount - $pivot->discount_value);
+                        }
                     }
+                }
+
+                if ($salePrice !== null && $salePrice < 0) {
+                    $salePrice = 0;
                 }
             }
         }
@@ -181,7 +207,9 @@ class CartController extends Controller
             ];
         })->filter()->values();
 
-        return view('frontend.cart.ShippingCosts', compact('cartItems'));
+        $addresses = auth()->check() ? auth()->user()->addresses()->orderByDesc('is_default')->get() : collect();
+
+        return view('frontend.cart.ShippingCosts', compact('cartItems', 'addresses'));
     }
 
     public function checkout()
@@ -387,6 +415,31 @@ class CartController extends Controller
         ]);
     }
 
+    public function validateVoucher(Request $request)
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:50'],
+            'subtotal' => ['required', 'integer', 'min:1'],
+        ]);
+
+        [$discount, $message] = $this->resolveVoucherDiscount((string) $data['code'], (int) $data['subtotal']);
+        if ($discount <= 0) {
+            session(['checkout_discount' => 0]);
+            return response()->json([
+                'success' => false,
+                'message' => $message ?: 'Mã không hợp lệ.',
+            ], 422);
+        }
+
+        session(['checkout_discount' => $discount]);
+
+        return response()->json([
+            'success' => true,
+            'discount' => $discount,
+            'message' => $message ?: 'Áp dụng mã giảm giá thành công.',
+        ]);
+    }
+
     public function placeOrder(Request $request, PointsService $pointsService)
     {
         $data = $request->validate([
@@ -475,6 +528,41 @@ class CartController extends Controller
         return view('frontend.cart.confirmation', compact('order'));
     }
 
+    private function calculateServerShippingFee(string $province, int $totalAmount): int
+    {
+        // Ngưỡng miễn phí vận chuyển đồng nhất: 10.000.000đ
+        $threshold = 10000000;
+
+        // Nhóm 1: Nội thành (< 30 km) — 20.000đ
+        $group1 = ['hcm', 'hn'];
+
+        // Nhóm 2: Vùng lân cận (30–150 km) — 35.000đ
+        $group2 = ['bd', 'dnai', 'la', 'tg', 'vt', 'bn', 'hy', 'hnam', 'vp'];
+
+        // Nhóm 3: Vùng trung bình (150–400 km) — 50.000đ
+        $group3 = ['hp', 'ct', 'hb', 'nb', 'ag', 'kg', 'dt', 'tv', 'bte'];
+
+        // Nhóm 4: Vùng xa (400–700 km) — 70.000đ
+        $group4 = ['dn', 'qng', 'bdinh', 'nth', 'th', 'qbi', 'hue'];
+
+        // Nhóm 5: Vùng rất xa (> 700 km) — 100.000đ
+        $group5 = ['gl', 'dkl', 'lc', 'dbi', 'ss', 'cb', 'ls', 'cm', 'other'];
+
+        if (in_array($province, $group1)) {
+            $fee = 20000;
+        } elseif (in_array($province, $group2)) {
+            $fee = 35000;
+        } elseif (in_array($province, $group3)) {
+            $fee = 50000;
+        } elseif (in_array($province, $group4)) {
+            $fee = 70000;
+        } else {
+            $fee = 100000; // group5 + fallback
+        }
+
+        return $totalAmount >= $threshold ? 0 : $fee;
+    }
+
     public function confirmOrder(Request $request)
     {
         $cart = session()->get('cart', []);
@@ -485,27 +573,73 @@ class CartController extends Controller
         }
 
         $totalAmount = collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
-        
-        $discount = 0;
-        if ($request->input('discount_code') === 'PRO10') {
-            $discount = (int) round($totalAmount * 0.1);
+
+        $couponCode = strtoupper((string) (session('applied_coupon_code') ?: $request->input('discount_code', '')));
+        [$discount] = $this->resolveVoucherDiscount($couponCode, (int) $totalAmount);
+
+        if ($discount <= 0 && $couponCode !== '') {
+            $redemption = \App\Models\RewardRedemption::with('reward')
+                ->where('redemption_code', $couponCode)
+                ->where('user_id', auth()->id())
+                ->first();
+
+            if ($redemption && in_array($redemption->status, ['issued', 'approved', 'won'], true) && (!$redemption->expires_at || !$redemption->expires_at->isPast())) {
+                $reward = $redemption->reward;
+                if ($reward) {
+                    if ($reward->reward_type === 'shipping') {
+                        $discount = (int) $reward->shipping_discount_amount;
+                    } elseif ($reward->reward_type === 'wheel_prize') {
+                        $discount = $reward->discount_amount > 0
+                            ? (int) $reward->discount_amount
+                            : (int) $reward->shipping_discount_amount;
+                    } else {
+                        $discount = (int) $reward->discount_amount;
+                    }
+
+                    $discount = min($discount, $totalAmount);
+
+                    // Đánh dấu mã đổi thưởng đã dùng sau khi đặt đơn thành công.
+                    $redemption->status = 'used';
+                    $redemption->used_at = now();
+                    $redemption->save();
+                }
+            }
         }
-        $finalAmount = $totalAmount - $discount;
+
+        $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
+            'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
+            'province' => ['nullable', 'string', 'in:hcm,hn,bd,dnai,la,tg,vt,bn,hy,hnam,vp,hp,ct,hb,nb,ag,kg,dt,tv,bte,dn,qng,bdinh,nth,th,qbi,hue,gl,dkl,lc,dbi,ss,cb,ls,cm,other'],
+            'address' => ['required', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
+            'note' => ['nullable', 'string', 'max:250'],
+        ]);
 
         $name = $request->input('name');
         $phone = $request->input('phone');
+        $province = $request->input('province', 'other');
         $address = $request->input('address');
         $note = $request->input('note');
         $paymentMethod = $request->input('payment_method') === 'qr' ? 'VNPAY' : 'COD';
+
+        // Tính phí vận chuyển ở backend
+        $shippingFee = $this->calculateServerShippingFee($province, (int) ($totalAmount - $discount));
+        $finalAmount = $totalAmount - $discount + $shippingFee;
 
         $order = Order::create([
             'user_id' => auth()->id(),
             'order_type' => 'Online',
             'total_amount' => $totalAmount,
-            'shipping_fee' => 0,
+            'shipping_fee' => $shippingFee,
+            'discount_amount' => $discount,
+            'wallet_points_used' => 0,
             'final_amount' => $finalAmount > 0 ? $finalAmount : 0,
             'payment_method' => $paymentMethod,
             'status' => 'Pending',
+            'customer_name' => $name,
+            'customer_phone' => $phone,
+            'shipping_address' => $address,
+            'note' => $note,
+            'order_code' => 'ORD' . now()->format('YmdHis') . random_int(100, 999),
         ]);
 
         foreach ($selectedCart as $productId => $item) {
@@ -553,8 +687,12 @@ class CartController extends Controller
         $this->flashSaleService->confirmCartFlashSale($selectedCart);
 
         $remainingCart = collect($cart)->filter(fn($item) => !($item['selected'] ?? true))->toArray();
-        session()->put('cart', $remainingCart);
-        session()->forget('cart_locked');
+        if (empty($remainingCart)) {
+            session()->forget('cart');
+        } else {
+            session()->put('cart', $remainingCart);
+        }
+        session()->forget(['cart_locked', 'checkout_discount', 'applied_coupon_code']);
 
         return response()->json([
             'status' => 'success',
@@ -631,5 +769,518 @@ class CartController extends Controller
             $total += (int)($item['quantity'] ?? 0);
         }
         return $total;
+    }
+
+    public function applyCoupon(Request $request)
+    {
+        $code = strtoupper($request->input('code'));
+        if (!$code) {
+            session()->forget(['checkout_discount', 'applied_coupon_code']);
+            return response()->json(['success' => true, 'discount' => 0, 'message' => 'Đã xóa mã giảm giá.']);
+        }
+
+        $cart = session()->get('cart', []);
+        $selectedCart = collect($cart)->filter(fn($item) => $item['selected'] ?? true)->toArray();
+        if (empty($selectedCart)) {
+            return response()->json(['success' => false, 'message' => 'Giỏ hàng trống hoặc chưa chọn sản phẩm.']);
+        }
+
+        $totalAmount = collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
+
+        // 1. Kiểm tra voucher hệ thống/coupon flash sale
+        [$discount, $message] = $this->resolveVoucherDiscount($code, (int) $totalAmount);
+        if ($discount > 0) {
+            session()->put('checkout_discount', $discount);
+            session()->put('applied_coupon_code', $code);
+            return response()->json([
+                'success' => true,
+                'discount' => $discount,
+                'message' => $message ?: 'Áp dụng mã giảm giá thành công!'
+            ]);
+        }
+
+        // 2. Kiểm tra mã đổi thưởng trong DB
+        $redemption = \App\Models\RewardRedemption::with('reward')
+            ->where('redemption_code', $code)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if (!$redemption) {
+            return response()->json(['success' => false, 'message' => 'Mã giảm giá không tồn tại hoặc không hợp lệ.']);
+        }
+
+        if (!in_array($redemption->status, ['issued', 'approved', 'won'])) {
+            return response()->json(['success' => false, 'message' => 'Mã giảm giá này đã được sử dụng hoặc không khả dụng.']);
+        }
+
+        if ($redemption->expires_at && $redemption->expires_at->isPast()) {
+            return response()->json(['success' => false, 'message' => 'Mã giảm giá này đã hết hạn sử dụng.']);
+        }
+
+        $reward = $redemption->reward;
+        if (!$reward) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy thông tin phần thưởng tương ứng.']);
+        }
+
+        // Tính toán giảm giá từ phần thưởng
+        $discount = 0;
+        if ($reward->reward_type === 'voucher') {
+            $discount = (int) $reward->discount_amount;
+        } elseif ($reward->reward_type === 'shipping') {
+            $discount = (int) $reward->shipping_discount_amount;
+        } elseif ($reward->reward_type === 'wheel_prize') {
+            $discount = $reward->discount_amount > 0 
+                ? (int) $reward->discount_amount 
+                : (int) $reward->shipping_discount_amount;
+        }
+
+        if ($discount <= 0) {
+            return response()->json(['success' => false, 'message' => 'Mã này không có giá trị giảm giá cho đơn hàng.']);
+        }
+
+        // Khống chế không giảm quá giá trị đơn hàng
+        if ($discount > $totalAmount) {
+            $discount = $totalAmount;
+        }
+
+        session()->put('checkout_discount', $discount);
+        session()->put('applied_coupon_code', $code);
+
+        return response()->json([
+            'success' => true,
+            'discount' => $discount,
+            'message' => 'Áp dụng mã đổi thưởng "' . $reward->name . '" thành công! Giảm ' . number_format($discount) . 'đ.'
+        ]);
+    }
+
+    public function discountCodeView()
+    {
+        $myVouchers = [];
+        if (auth()->check()) {
+            $myVouchers = \App\Models\RewardRedemption::with('reward')
+                ->where('user_id', auth()->id())
+                ->whereIn('status', ['issued', 'approved', 'won'])
+                ->where(function($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                })
+                ->get();
+        }
+        
+        $balance = [];
+        if (auth()->check()) {
+            $balance = \App\Models\UserPoint::where('user_id', auth()->id())->first();
+        }
+
+        return view('frontend.cart.Applydiscountcode', compact('myVouchers', 'balance'));
+    }
+
+    private function resolveVoucherDiscount(string $rawCode, int $subtotal): array
+    {
+        $code = strtoupper(trim($rawCode));
+        if ($code === '' || $subtotal <= 0) {
+            return [0, 'Mã giảm giá không hợp lệ.'];
+        }
+
+        if ($code === 'PRO10') {
+            return [(int) round($subtotal * 0.1), 'Áp dụng mã giảm giá 10% thành công!'];
+        }
+
+        $voucher = CouponFlashSale::query()
+            ->where('promo_type', 'Coupon')
+            ->where('code', $code)
+            ->first();
+
+        if (!$voucher) {
+            return [0, 'Mã không tồn tại.'];
+        }
+
+        $now = now();
+        if ($voucher->start_time && $now->lt(\Carbon\Carbon::parse($voucher->start_time))) {
+            return [0, 'Mã chưa đến thời gian sử dụng.'];
+        }
+        if ($voucher->end_time && $now->gt(\Carbon\Carbon::parse($voucher->end_time))) {
+            return [0, 'Mã đã hết hạn.'];
+        }
+
+        $discountType = $voucher->discount_type ?? 'fixed';
+        $discountVal = (float) $voucher->discount_val;
+        $discount = $discountType === 'percent'
+            ? (int) round($subtotal * ($discountVal / 100))
+            : (int) round($discountVal);
+
+        $discount = max(0, min($discount, $subtotal));
+        if ($discount <= 0) {
+            return [0, 'Mã không tạo ra giảm giá hợp lệ.'];
+        }
+
+        return [$discount, 'Áp dụng mã thành công.'];
+    }
+
+    public function searchOrder(Request $request)
+    {
+        $code = $request->query('code');
+        $phone = $request->query('phone');
+
+        if (!$code && !$phone) {
+            return response()->json(['success' => false, 'message' => 'Vui lòng nhập mã đơn hàng hoặc số điện thoại.'], 400);
+        }
+
+        // Nếu tìm kiếm theo số điện thoại
+        if ($phone) {
+            $phoneClean = preg_replace('/[^0-9]/', '', $phone);
+            
+            $orders = Order::with(['details.inventoryItem.variant.product'])
+                ->where('customer_phone', $phoneClean)
+                ->orWhereHas('user', function($q) use ($phoneClean) {
+                    $q->where('phone_number', $phoneClean);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            if ($orders->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn hàng nào liên kết với số điện thoại này.'], 404);
+            }
+
+            $statusMap = [
+                'Pending'   => ['label' => 'CHỜ XỬ LÝ', 'color' => 'bg-yellow-100 text-yellow-700'],
+                'BaoCK'     => ['label' => 'BÁO CK CHỜ DUYỆT', 'color' => 'bg-blue-100 text-blue-700'],
+                'Shipping'  => ['label' => 'ĐANG GIAO HÀNG', 'color' => 'bg-emerald-100 text-emerald-700'],
+                'Delivered' => ['label' => 'HOÀN THÀNH', 'color' => 'bg-green-100 text-green-700'],
+                'Cancelled' => ['label' => 'ĐÃ HỦY', 'color' => 'bg-red-100 text-red-700'],
+            ];
+
+            $mappedOrders = $orders->map(function ($order) use ($statusMap) {
+                $st = $statusMap[$order->status] ?? ['label' => strtoupper($order->status), 'color' => 'bg-slate-100 text-slate-600'];
+                $isOwner = auth()->check() && $order->user_id && (auth()->id() === $order->user_id);
+                
+                $items = $order->details->map(function ($detail) use ($isOwner, $order) {
+                    $variant = $detail->inventoryItem->variant ?? null;
+                    $product = $variant->product ?? null;
+
+                    $image = null;
+                    if ($product) {
+                        $thumb = $product->thumbnail;
+                        if ($thumb && \Illuminate\Support\Str::startsWith($thumb, 'http')) {
+                            $image = $thumb;
+                        } else {
+                            $rawImages = $product->images;
+                            if ($rawImages) {
+                                $arr = is_string($rawImages) ? json_decode($rawImages, true) : $rawImages;
+                                $first = is_array($arr) && count($arr) > 0 ? $arr[0] : null;
+                                if ($first && \Illuminate\Support\Str::startsWith($first, 'http')) {
+                                    $image = $first;
+                                } elseif ($first) {
+                                    $image = asset('storage/' . ltrim($first, '/'));
+                                }
+                            }
+                            if (!$image) {
+                                $image = $thumb ? asset('uploads/products/' . $thumb) : null;
+                            }
+                        }
+                    }
+
+                    $productName = $detail->product_name ?? ($product->name ?? 'Sản phẩm không xác định');
+                    if ($variant && $variant->label) {
+                        $productName .= ' - ' . $variant->label;
+                    }
+
+                    $item = $detail->inventoryItem;
+                    $canClaimWarranty = false;
+                    $canClaimReturn = false;
+                    $warrantyStatus = 'none';
+
+                    if ($isOwner && $order->status === 'Delivered' && $item && $item->status === 'Sold') {
+                        $warranty = \App\Models\Warranty::where('item_id', $item->item_id)
+                            ->orderBy('end_date', 'desc')
+                            ->first();
+                        if ($warranty) {
+                            $now = \Carbon\Carbon::now();
+                            $isExpired = $now->greaterThan($warranty->end_date);
+                            $daysSinceStart = (int) abs($now->diffInDays($warranty->start_date));
+                            
+                            $warrantyStatus = $isExpired ? 'expired' : $warranty->warranty_status;
+                            $canClaimWarranty = ($warrantyStatus === 'active' && !$isExpired);
+
+                            $returnDays = 30;
+                            if ($variant && $product) {
+                                $category = $product->category;
+                                $rootCategoryId = $category ? $category->getRootCategoryId() : null;
+                                $rootCategory = $rootCategoryId ? \App\Models\Category::find($rootCategoryId) : null;
+                                $rootCategoryName = $rootCategory ? $rootCategory->name : '';
+
+                                if ($rootCategoryName === 'Phụ kiện') {
+                                    if (stripos($product->name, 'Airpod') !== false) {
+                                        $returnDays = 30;
+                                    } else {
+                                        $price = $variant->total_price ?? ($product->base_price ?? 0);
+                                        $returnDays = $price > 1000000 ? 15 : 0;
+                                    }
+                                } elseif (in_array($rootCategoryName, ['Âm thanh', 'Tivi, Màn hình', 'Gia dụng, Smarthome'])) {
+                                    $returnDays = 15;
+                                } else {
+                                    $returnDays = 30;
+                                }
+                            }
+
+                            if ($returnDays > 0) {
+                                $canClaimReturn = ($daysSinceStart <= $returnDays);
+                            }
+                        }
+                    }
+
+                    $claims = [];
+                    if ($item && $item->imei_serial) {
+                        $claims = \App\Models\WarrantyClaim::where('imei_serial', $item->imei_serial)
+                            ->orderBy('id', 'desc')
+                            ->get()
+                            ->map(function ($c) {
+                                return [
+                                    'id'            => $c->id,
+                                    'claim_type'    => $c->claim_type,
+                                    'status'        => $c->status,
+                                    'reason'        => $c->reason,
+                                    'created_at'    => $c->created_at ? $c->created_at->format('d/m/Y H:i') : null,
+                                    'admin_note'    => $c->admin_note,
+                                ];
+                            })->toArray();
+                    }
+
+                    return [
+                        'product_name' => $productName,
+                        'image' => $image,
+                        'quantity' => 1,
+                        'price' => (int) $detail->price,
+                        'imei_serial' => $detail->inventoryItem->imei_serial ?? null,
+                        'can_claim_warranty' => $canClaimWarranty,
+                        'can_claim_return' => $canClaimReturn,
+                        'claims' => $claims,
+                    ];
+                });
+
+                $groupedItems = $items->groupBy(function ($item) {
+                    return $item['product_name'] . '_' . $item['price'];
+                })->map(function ($group) {
+                    $first = $group->first();
+                    return [
+                        'product_name' => $first['product_name'],
+                        'image' => $first['image'],
+                        'quantity' => $group->count(),
+                        'price' => $first['price'],
+                        'subtotal' => $first['price'] * $group->count(),
+                        'units' => $group->map(function ($g) {
+                            return [
+                                'imei_serial' => $g['imei_serial'],
+                                'can_claim_warranty' => $g['can_claim_warranty'],
+                                'can_claim_return' => $g['can_claim_return'],
+                                'claims' => $g['claims'] ?? [],
+                            ];
+                        })->values()->toArray(),
+                    ];
+                })->values();
+
+                return [
+                    'order_id' => $order->order_id,
+                    'order_code' => $order->order_code,
+                    'customer_name' => $order->customer_name ?? ($order->user->full_name ?? 'N/A'),
+                    'customer_phone' => $order->customer_phone ?? ($order->user->phone_number ?? 'N/A'),
+                    'shipping_address' => $order->shipping_address ?? ($order->user->address ?? 'N/A'),
+                    'note' => $order->note,
+                    'payment_method' => $order->payment_method,
+                    'status' => $order->status,
+                    'status_label' => $st['label'],
+                    'status_color' => $st['color'],
+                    'total_amount' => (int) $order->total_amount,
+                    'shipping_fee' => (int) $order->shipping_fee,
+                    'discount_amount' => (int) ($order->discount_amount ?? 0),
+                    'final_amount' => (int) $order->final_amount,
+                    'created_at' => $order->created_at ? (\Carbon\Carbon::parse($order->created_at)->format('H:i - d/m/Y')) : now()->format('H:i - d/m/Y'),
+                    'is_owner' => $isOwner,
+                    'items' => $groupedItems,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'multiple' => true,
+                'orders' => $mappedOrders
+            ]);
+        }
+
+        // Tìm đơn hàng theo order_code hoặc order_id
+        $order = Order::with(['details.inventoryItem.variant.product'])
+            ->where('order_code', $code)
+            ->orWhere('order_id', $code)
+            ->first();
+
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Mã đơn hàng không tồn tại.'], 404);
+        }
+
+        // Áp dụng map trạng thái
+        $statusMap = [
+            'Pending'   => ['label' => 'CHỜ XỬ LÝ', 'color' => 'bg-yellow-100 text-yellow-700'],
+            'BaoCK'     => ['label' => 'BÁO CK CHỜ DUYỆT', 'color' => 'bg-blue-100 text-blue-700'],
+            'Shipping'  => ['label' => 'ĐANG GIAO HÀNG', 'color' => 'bg-emerald-100 text-emerald-700'],
+            'Delivered' => ['label' => 'HOÀN THÀNH', 'color' => 'bg-green-100 text-green-700'],
+            'Cancelled' => ['label' => 'ĐÃ HỦY', 'color' => 'bg-red-100 text-red-700'],
+        ];
+
+        $st = $statusMap[$order->status] ?? ['label' => strtoupper($order->status), 'color' => 'bg-slate-100 text-slate-600'];
+        $isOwner = auth()->check() && $order->user_id && (auth()->id() === $order->user_id);
+
+        $items = $order->details->map(function ($detail) use ($isOwner, $order) {
+            $variant = $detail->inventoryItem->variant ?? null;
+            $product = $variant->product ?? null;
+
+            // Resolve ảnh sản phẩm thành URL đầy đủ (nhất quán với product_grid)
+            $image = null;
+            if ($product) {
+                $thumb = $product->thumbnail;
+                if ($thumb && \Illuminate\Support\Str::startsWith($thumb, 'http')) {
+                    // thumbnail đã là URL đầy đủ
+                    $image = $thumb;
+                } else {
+                    // Thử lấy từ mảng images
+                    $rawImages = $product->images;
+                    if ($rawImages) {
+                        $arr = is_string($rawImages) ? json_decode($rawImages, true) : $rawImages;
+                        $first = is_array($arr) && count($arr) > 0 ? $arr[0] : null;
+                        if ($first && \Illuminate\Support\Str::startsWith($first, 'http')) {
+                            $image = $first;
+                        } elseif ($first) {
+                            $image = asset('storage/' . ltrim($first, '/'));
+                        }
+                    }
+                    // Fallback về uploads/products/ như product_grid làm
+                    if (!$image) {
+                        $image = $thumb
+                            ? asset('uploads/products/' . $thumb)
+                            : null;
+                    }
+                }
+            }
+
+            $productName = $detail->product_name
+                ?? ($product->name ?? 'Sản phẩm không xác định');
+
+            if ($variant && $variant->label) {
+                $productName .= ' - ' . $variant->label;
+            }
+
+            $item = $detail->inventoryItem;
+            $canClaimWarranty = false;
+            $canClaimReturn = false;
+            $warrantyStatus = 'none';
+
+            if ($isOwner && $order->status === 'Delivered' && $item && $item->status === 'Sold') {
+                $warranty = \App\Models\Warranty::where('item_id', $item->item_id)
+                    ->orderBy('end_date', 'desc')
+                    ->first();
+                if ($warranty) {
+                    $now = \Carbon\Carbon::now();
+                    $isExpired = $now->greaterThan($warranty->end_date);
+                    $daysSinceStart = (int) abs($now->diffInDays($warranty->start_date));
+                    
+                    $warrantyStatus = $isExpired ? 'expired' : $warranty->warranty_status;
+                    $canClaimWarranty = ($warrantyStatus === 'active' && !$isExpired);
+
+                    // Tính số ngày đổi trả
+                    $returnDays = 30;
+                    if ($variant && $product) {
+                        $category = $product->category;
+                        $rootCategoryId = $category ? $category->getRootCategoryId() : null;
+                        $rootCategory = $rootCategoryId ? \App\Models\Category::find($rootCategoryId) : null;
+                        $rootCategoryName = $rootCategory ? $rootCategory->name : '';
+
+                        if ($rootCategoryName === 'Phụ kiện') {
+                            if (stripos($product->name, 'Airpod') !== false) {
+                                    $returnDays = 30;
+                            } else {
+                                $price = $variant->total_price ?? ($product->base_price ?? 0);
+                                $returnDays = $price > 1000000 ? 15 : 0;
+                            }
+                        } elseif (in_array($rootCategoryName, ['Âm thanh', 'Tivi, Màn hình', 'Gia dụng, Smarthome'])) {
+                            $returnDays = 15;
+                        } else {
+                            $returnDays = 30;
+                        }
+                    }
+
+                    if ($returnDays > 0) {
+                        $canClaimReturn = ($daysSinceStart <= $returnDays);
+                    }
+                }
+            }
+
+            $claims = [];
+            if ($item && $item->imei_serial) {
+                $claims = \App\Models\WarrantyClaim::where('imei_serial', $item->imei_serial)
+                    ->orderBy('id', 'desc')
+                    ->get()
+                    ->map(function ($c) {
+                        return [
+                            'id'            => $c->id,
+                            'claim_type'    => $c->claim_type,
+                            'status'        => $c->status,
+                            'reason'        => $c->reason,
+                            'created_at'    => $c->created_at ? $c->created_at->format('d/m/Y H:i') : null,
+                            'admin_note'    => $c->admin_note,
+                        ];
+                    })->toArray();
+            }
+
+            return [
+                'product_name' => $productName,
+                'image' => $image,
+                'quantity' => 1,
+                'price' => (int) $detail->price,
+                'imei_serial' => $detail->inventoryItem->imei_serial ?? null,
+                'can_claim_warranty' => $canClaimWarranty,
+                'can_claim_return' => $canClaimReturn,
+                'claims' => $claims,
+            ];
+        });
+
+        // Gom nhóm sản phẩm cùng tên + giá lại thành 1 dòng cộng dồn số lượng
+        $groupedItems = $items->groupBy(function ($item) {
+            return $item['product_name'] . '_' . $item['price'];
+        })->map(function ($group) {
+            $first = $group->first();
+            return [
+                'product_name' => $first['product_name'],
+                'image' => $first['image'],
+                'quantity' => $group->count(),
+                'price' => $first['price'],
+                'subtotal' => $first['price'] * $group->count(),
+                'units' => $group->map(function ($g) {
+                    return [
+                        'imei_serial' => $g['imei_serial'],
+                        'can_claim_warranty' => $g['can_claim_warranty'],
+                        'can_claim_return' => $g['can_claim_return'],
+                        'claims' => $g['claims'] ?? [],
+                    ];
+                })->values()->toArray(),
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'order_id' => $order->order_id,
+            'order_code' => $order->order_code,
+            'customer_name' => $order->customer_name ?? ($order->user->full_name ?? 'N/A'),
+            'customer_phone' => $order->customer_phone ?? ($order->user->phone_number ?? 'N/A'),
+            'shipping_address' => $order->shipping_address ?? ($order->user->address ?? 'N/A'),
+            'note' => $order->note,
+            'payment_method' => $order->payment_method,
+            'status' => $order->status,
+            'status_label' => $st['label'],
+            'status_color' => $st['color'],
+            'total_amount' => (int) $order->total_amount,
+            'shipping_fee' => (int) $order->shipping_fee,
+            'discount_amount' => (int) ($order->discount_amount ?? 0),
+            'final_amount' => (int) $order->final_amount,
+            'is_owner' => $isOwner,
+            'items' => $groupedItems,
+        ]);
     }
 }

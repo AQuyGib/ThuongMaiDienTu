@@ -1,8 +1,8 @@
 {{-- resources/views/frontend/products/partials/reviews.blade.php --}}
 
 @push('styles')
+<!-- CSS TÙY CHỈNH HỆ THỐNG ĐÁNH GIÁ (REVIEWS & RATING SYSTEM) CỦA DIENMAYPRO -->
 <style>
-/* Reviews */
 .pd-reviews { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
 .pd-reviews h2 { font-size:18px; font-weight:800; margin-bottom:16px; display:flex; align-items:center; gap:8px; text-transform: uppercase;}
 .review-stats { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
@@ -15,6 +15,7 @@
 .user-info { display: flex; flex-direction: column; }
 .user-name { font-size: 16px; font-weight: 700; color: #333; display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
 .user-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; font-size: 18px; text-transform: uppercase; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+/* Màu sắc avatar phân biệt vai trò tài khoản */
 .avatar-admin { background: linear-gradient(135deg, #0046ab, #003380); }
 .avatar-manager { background: linear-gradient(135deg, #16a34a, #15803d); }
 .avatar-default { background: #94a3b8; }
@@ -24,7 +25,7 @@
 .review-stars { color: #f59e0b; font-size: 12px; margin-bottom: 8px; margin-left: 54px; }
 .review-content { font-size: 15px; color: #444; line-height: 1.6; margin-left: 54px; }
 
-/* Media Upload */
+/* Tải lên phương tiện đính kèm đánh giá (Media Upload Preview) */
 .review-media-upload { margin: 10px 0; }
 .media-upload-label { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: 2px dashed #d0d0d0; border-radius: 8px; cursor: pointer; font-size: 13px; color: #666; transition: 0.2s; background: #fafafa; }
 .media-upload-label:hover { border-color: #0046ab; color: #0046ab; background: #eef2ff; }
@@ -33,14 +34,14 @@
 .media-preview-item img, .media-preview-item video { width: 100%; height: 100%; object-fit: cover; }
 .media-preview-remove { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-/* Review Media Display */
+/* Hiển thị thư viện ảnh/video của đánh giá */
 .review-media-display { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .review-media-thumb { width: 90px; height: 90px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; cursor: pointer; position: relative; }
 .review-media-thumb img { width: 100%; height: 100%; object-fit: cover; transition: 0.2s; }
 .review-media-thumb:hover img { opacity: 0.85; }
 .review-media-thumb .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); color: #fff; font-size: 24px; pointer-events: none; }
 
-/* Review Replies */
+/* Phân hệ phản hồi đánh giá (Review Replies) */
 .reply-btn { background: none; border: none; color: #0046ab; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; margin-top: 10px; display: inline-flex; align-items: center; gap: 5px; }
 .reply-btn:hover { text-decoration: underline; }
 .reply-form { margin-top: 10px; display: none; background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
@@ -57,7 +58,7 @@
 .btn-show-more-replies i { transition: transform 0.3s; }
 .btn-show-more-replies:hover i { transform: translateY(2px); }
 
-/* Custom Confirm Modal */
+/* Khung hộp thoại xác nhận tùy chỉnh (Custom Confirmation Modal) */
 .confirm-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
 .confirm-modal-overlay.active { display: flex; }
 .confirm-modal { background: #fff; width: 90%; max-width: 400px; border-radius: 20px; padding: 25px; text-align: center; animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
@@ -72,7 +73,7 @@
 .btn-confirm-delete { background: #e21033; color: #fff; }
 .btn-confirm-delete:hover { background: #b50d29; }
 
-/* Toast Notification */
+/* Hệ thống hiển thị thông báo Toast đẩy */
 #toast-container { position: fixed; top: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
 .toast { min-width: 280px; background: #fff; padding: 15px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); border-left: 5px solid #0046ab; }
 .toast.active { transform: translateX(0); }
@@ -87,13 +88,13 @@
 .toast-title { font-weight: 700; font-size: 14px; margin-bottom: 2px; display: block; }
 .toast-msg { font-size: 13px; color: #666; }
 
-/* Centered Toast */
+/* Toast trung tâm (Centered Toast) dành riêng cho kiểm duyệt bình luận */
 #toast-center-container { position: fixed; top: 30%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; pointer-events: none; }
 .toast-center { background: rgba(0, 70, 171, 0.95); color: #fff; padding: 15px 35px; border-radius: 50px; font-weight: 600; font-size: 15px; box-shadow: 0 10px 30px rgba(0,70,171,0.3); opacity: 0; transform: translateY(20px); transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; gap: 12px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.2); }
 .toast-center.active { opacity: 1; transform: translateY(0); }
 .toast-center i { color: #fff; font-size: 20px; }
 
-/* Media Lightbox */
+/* Lightbox phóng to ảnh / video khi xem chi tiết */
 #mediaLightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 99999; align-items: center; justify-content: center; cursor: pointer; }
 #mediaLightbox.active { display: flex; }
 #mediaLightbox img, #mediaLightbox video { max-width: 90%; max-height: 90%; border-radius: 12px; object-fit: contain; cursor: default; }
@@ -101,7 +102,7 @@
 .lightbox-close:hover { background: rgba(255,255,255,0.2); }
 .review-media-display { margin-left: 54px; }
 
-/* Spinner */
+/* Vòng xoay Spinner tải dữ liệu */
 .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
@@ -109,15 +110,19 @@
 
 <div id="reviews-section" class="pd-reviews">
     @php
+        // Đặt giá trị mặc định cho điểm số trung bình và số lượng đánh giá nếu controller không truyền sang
         $avgRating = $avgRating ?? 5;
         $reviewCount = $reviewCount ?? 0;
         $reviews = $reviews ?? collect();
     @endphp
     <h2><i class="fa-solid fa-comments" style="color:#0046ab"></i> Đánh giá & Nhận xét</h2>
+    
+    <!-- 1. KHỐI THỐNG KÊ ĐIỂM SỐ TRUNG BÌNH (RATING STATS OVERVIEW) -->
     <div class="review-stats">
         <div class="review-average">
             <h3 id="avgReviewScore">{{ round($avgRating, 1) }}/5</h3>
             <div class="stars" id="avgReviewStars">
+                <!-- Render động các ngôi sao đã tô và chưa tô màu -->
                 @for($i=1; $i<=5; $i++)
                     @if($i <= round($avgRating))
                         <i class="fa-solid fa-star" style="color:#f59e0b"></i>
@@ -139,9 +144,11 @@
         </div>
     </div>
     
+    <!-- 2. FORM ĐĂNG ĐÁNH GIÁ (Chỉ hiển thị cho thành viên đã đăng nhập hệ thống) -->
     @if(auth()->check())
     <div class="review-form" style="margin-bottom: 25px; background: #f9f9f9; padding: 20px; border-radius: 10px;">
         <h4 style="margin-bottom: 15px; font-size: 15px;">Viết đánh giá của bạn</h4>
+        <!-- Khu vực chọn số sao đánh giá nhanh bằng tương tác Click -->
         <div style="margin-bottom: 10px; display: flex; gap: 10px; color: #ccc; font-size: 20px; cursor: pointer;" id="starRatingContainer">
             <i class="fa-solid fa-star star-rating" data-val="1"></i>
             <i class="fa-solid fa-star star-rating" data-val="2"></i>
@@ -151,7 +158,7 @@
         </div>
         <textarea id="reviewText" placeholder="Nhập đánh giá của bạn về sản phẩm này..." style="width: 100%; height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; resize: none;"></textarea>
 
-        {{-- Upload ảnh/video --}}
+        <!-- Trình tải lên hình ảnh hoặc video thực tế đi kèm review -->
         <div class="review-media-upload">
             <label class="media-upload-label" for="reviewMediaInput">
                 <i class="fa-solid fa-photo-film"></i>
@@ -159,11 +166,13 @@
             </label>
             <input type="file" id="reviewMediaInput" multiple accept="image/*,video/*" style="display:none;" onchange="previewMediaFiles(this)">
         </div>
+        <!-- Vùng lưới hiển thị xem trước (preview) các tệp vừa chọn trước khi submit -->
         <div class="media-preview-grid" id="mediaPreviewGrid"></div>
 
         <button type="button" onclick="submitReview()" class="btn-submit-review" style="background: #0046ab; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px;">Gửi đánh giá</button>
     </div>
     @else
+    <!-- Hộp gợi ý yêu cầu Đăng nhập để sử dụng tính năng đánh giá -->
     <div class="review-login-prompt" style="margin-bottom: 25px; background: #f8fafc; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
         <i class="fa-solid fa-lock" style="font-size: 24px; color: #64748b; margin-bottom: 12px; display: block;"></i>
         <p style="font-size: 15px; color: #334155; margin-bottom: 16px; font-weight: 500;">Vui lòng đăng nhập để viết đánh giá cho sản phẩm này.</p>
@@ -171,18 +180,22 @@
     </div>
     @endif
     
+    <!-- 3. DANH SÁCH CÁC ĐÁNH GIÁ ĐÃ CÓ (REVIEWS LIST) -->
     <div class="review-list">
         @if($reviewCount > 0)
             @foreach($reviews as $r)
+                <!-- Từng dòng đánh giá riêng lẻ -->
                 <div class="review-item" id="review-{{ $r->id }}">
                     <div class="review-user">
                         @php
+                            // Kiểm tra vai trò của người viết đánh giá (Admin, Manager, Khách hàng)
                             $isReviewAdmin = $r->user && $r->user->role_id == 1;
                             $isReviewManager = $r->user && $r->user->role_id == 2;
                             $displayName = $r->author_name ?? ($r->user ? $r->user->full_name : 'Khách hàng');
                             $firstLetter = mb_substr($displayName, 0, 1, 'UTF-8');
                         @endphp
                         
+                        <!-- Avatar tròn nổi bật của người đánh giá -->
                         <div class="user-avatar {{ $isReviewAdmin ? 'avatar-admin' : ($isReviewManager ? 'avatar-manager' : 'avatar-default') }}">
                             @if($isReviewAdmin || $isReviewManager)
                                 <i class="fa-solid fa-bolt-lightning"></i>
@@ -191,6 +204,7 @@
                             @endif
                         </div>
 
+                        <!-- Thông tin tên, nhãn quyền hạn (badge) và ngày giờ viết đánh giá -->
                         <div class="user-info">
                             <div class="user-name">
                                 {{ $displayName }}
@@ -201,6 +215,7 @@
                                 @endif
                                 <span style="color:#94a3b8; font-size:12px; font-weight:400; margin-left:8px;">{{ $r->created_at->format('d/m/Y H:i') }}</span>
                                 
+                                <!-- Hỗ trợ tính năng Xóa trực tiếp dành cho Admin / Manager -->
                                 @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
                                 <button onclick="deleteReview({{ $r->id }})" title="Xóa đánh giá" class="btn-delete-review" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px; margin-left:10px;">
                                     <i class="fa-solid fa-trash-can"></i>
@@ -209,13 +224,16 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Số sao đánh giá -->
                     <div class="review-stars">
                         @for($i=1; $i<=5; $i++)
                             <i class="{{ $i <= $r->rating ? 'fa-solid' : 'fa-regular' }} fa-star"></i>
                         @endfor
                     </div>
+                    <!-- Nội dung bình luận chính -->
                     <div class="review-content">{{ $r->content }}</div>
                     
+                    <!-- Danh sách hình ảnh / video đính kèm nếu có -->
                     @if(!empty($r->media))
                     <div class="review-media-display">
                         @foreach($r->media as $mediaUrl)
@@ -232,6 +250,7 @@
                     </div>
                     @endif
 
+                    <!-- Nút thao tác phụ trợ: Phản hồi hoặc Báo cáo vi phạm -->
                     @if(auth()->check())
                     <div style="display: flex; gap: 15px; margin-top: 10px; margin-left: 54px;">
                         <button class="reply-btn" style="margin-top: 0;" onclick="toggleReplyForm({{ $r->id }})"><i class="fa-solid fa-reply"></i> Trả lời</button>
@@ -240,14 +259,15 @@
                         </button>
                     </div>
 
+                    <!-- Khung nhập phản hồi (Reply Form) ẩn/hiện động bên dưới bình luận chính -->
                     <div class="reply-form" id="replyForm-{{ $r->id }}">
                         <textarea id="replyText-{{ $r->id }}" placeholder="Nhập câu trả lời..." class="reply-textarea"></textarea>
                         
-                        {{-- Preview grid for reply uploads --}}
+                        <!-- Vùng hiển thị xem trước tệp đa phương tiện tải lên cho câu trả lời -->
                         <div class="media-preview-grid" id="replyMediaPreviewGrid-{{ $r->id }}" style="margin-bottom: 10px;"></div>
                         
                         <div class="reply-actions" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;">
-                            {{-- Upload button --}}
+                            <!-- Nút upload tệp đi kèm cho reply -->
                             <div>
                                 <label class="media-upload-label" for="replyMediaInput-{{ $r->id }}" style="margin: 0; padding: 6px 12px; font-size: 12px;">
                                     <i class="fa-solid fa-photo-film"></i> Thêm ảnh/video
@@ -263,8 +283,10 @@
                     </div>
                     @endif
 
+                    <!-- DANH SÁCH CÁC CÂU PHẢN HỒI CON (REPLIES LIST) -->
                     <div class="replies-list" id="replies-{{ $r->id }}">
                         @foreach($r->replies as $index => $reply)
+                            <!-- Ẩn các phản hồi từ vị trí số 2 trở đi để tối ưu diện tích trang, hiển thị qua nút xem thêm -->
                             <div class="reply-item {{ $index >= 1 ? 'reply-hidden' : '' }}" id="review-{{ $reply->id }}">
                                 <div class="review-user">
                                     @php
@@ -302,6 +324,7 @@
                                 </div>
                                 <div class="review-content-replied" style="margin-left:44px; font-size:14px;">{{ $reply->content }}</div>
                                 
+                                <!-- Tệp đa phương tiện đính kèm câu phản hồi con -->
                                 @if(!empty($reply->media))
                                 <div class="review-media-display" style="margin-left: 44px; margin-top: 8px;">
                                     @foreach($reply->media as $mediaUrl)
@@ -320,7 +343,7 @@
                                 
                                 @if(auth()->check())
                                 <div style="display: flex; gap: 15px; margin-top: 5px; margin-left: 44px;">
-                                    <button class="reply-btn-nested" style="margin-left:0;" onclick="replyToUser({{ $r->id }}, '{{ addslashes($replyName) }}', {{ $reply->id }})"><i class="fa-solid fa-reply"></i> Trả lời</button>
+                                    <button class="reply-btn-nested" style="margin-left:0; background:none; border:none; color:#0046ab; font-size:12px; font-weight:600; cursor:pointer;" onclick="replyToUser({{ $r->id }}, '{{ addslashes($replyName) }}', {{ $reply->id }})"><i class="fa-solid fa-reply"></i> Trả lời</button>
                                     <button type="button" class="report-btn" style="background: none; border: none; color: #dc2626; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; display: inline-flex; align-items: center; gap: 5px;" onclick="reportReview({{ $reply->id }})" title="Báo cáo bình luận vi phạm">
                                         <i class="fa-solid fa-flag"></i> Báo cáo
                                     </button>
@@ -329,6 +352,7 @@
                             </div>
                         @endforeach
                     </div>
+                    <!-- Nút bấm hiển thị toàn bộ phản hồi con bị ẩn -->
                     @if($r->replies->count() > 1)
                         <button class="btn-show-more-replies" onclick="showAllReplies({{ $r->id }}, this)">
                             <i class="fa-solid fa-chevron-down"></i> Xem thêm {{ $r->replies->count() - 1 }} phản hồi
@@ -337,12 +361,14 @@
                 </div>
             @endforeach
         @else
-            <p id="noReviewMsg" class="no-reviews">Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đánh giá!</p>
+            <p id="noReviewMsg" class="no-reviews" style="text-align: center; color: #94a3b8; padding: 30px; font-style: italic;">Chưa có đánh giá nào cho sản phẩm này. Hãy là người đầu tiên đánh giá!</p>
         @endif
     </div>
 </div>
 
-{{-- Modal cảnh báo/thông báo --}}
+{{-- 4. CÁC HỘP THOẠI MODALS HỆ THỐNG (SYSTEM MODALS) --}}
+
+{{-- Hộp thoại Cảnh báo / Thông báo (Alert Modal) --}}
 <div class="confirm-modal-overlay" id="alertModal">
     <div class="confirm-modal">
         <div class="confirm-icon" id="alertIcon" style="background: #fef3c7; color: #f59e0b;">
@@ -356,7 +382,7 @@
     </div>
 </div>
 
-{{-- Modal xác nhận xóa --}}
+{{-- Hộp thoại Xác nhận hành động xóa / báo cáo (Confirm Modal) --}}
 <div class="confirm-modal-overlay" id="confirmModal">
     <div class="confirm-modal">
         <div class="confirm-icon">
@@ -371,11 +397,11 @@
     </div>
 </div>
 
-{{-- Toast container --}}
+{{-- Container phục vụ đẩy Toast thông báo --}}
 <div id="toast-container"></div>
 <div id="toast-center-container"></div>
 
-{{-- Media Lightbox --}}
+{{-- Lightbox trình chiếu ảnh/video full màn hình --}}
 <div id="mediaLightbox" onclick="closeMediaLightbox()">
     <i class="fa-solid fa-xmark lightbox-close" onclick="closeMediaLightbox()"></i>
     <img id="lightboxImg" src="" alt="" style="display:none;" onclick="event.stopPropagation()">
@@ -384,12 +410,13 @@
 
 @push('scripts')
 <script>
+// Biến toàn cục lưu trữ thông số Rating và File danh sách đăng tải
 let currentRating = 5;
 let selectedMediaFiles = [];
-let replyMediaFiles = {};
+let replyMediaFiles = {}; // Phục vụ lưu trữ tệp đính kèm theo từng comment cha riêng biệt
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Kiểm tra thông báo từ sessionStorage sau khi reload trang
+    // 1. Kiểm tra và hiển thị các Toast thông báo lưu trữ tạm trong sessionStorage sau khi reload trang
     const reviewToast = sessionStorage.getItem('review_toast');
     if (reviewToast) {
         const data = JSON.parse(reviewToast);
@@ -402,7 +429,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         sessionStorage.removeItem('review_toast');
         
-        // Cuộn mượt xuống phần đánh giá để tránh nhảy lên đầu trang
+        // Cuộn mượt màn hình trực tiếp đến khung Reviews tránh nhảy trang
         const reviewsSec = document.getElementById('reviews-section');
         if (reviewsSec) {
             if ('scrollRestoration' in history) {
@@ -414,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Luôn kiểm tra cờ cuộn chuyên biệt
+    // Luôn kiểm tra cờ scroll lưu trữ tạm
     if (sessionStorage.getItem('scroll_to_reviews') === 'true') {
         sessionStorage.removeItem('scroll_to_reviews');
         if ('scrollRestoration' in history) {
@@ -428,6 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 150);
     }
 
+    // 2. Thiết lập tương tác và sự kiện cho hệ thống Chọn sao đánh giá
     const stars = document.querySelectorAll('.star-rating');
     stars.forEach(star => {
         star.addEventListener('click', function() {
@@ -437,11 +465,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 else s.style.color = '#ccc';
             });
         });
-        // Init color
+        // Thiết lập màu sắc sao mặc định khi tải trang
         if(star.getAttribute('data-val') <= currentRating) star.style.color = '#f59e0b';
     });
 });
 
+/**
+ * Hàm: previewMediaFiles
+ * Công dụng: Kiểm tra hợp lệ các file ảnh/video vừa tải lên và hiển thị vùng preview.
+ * Ràng buộc: Tối đa 5 ảnh, 1 video; dung lượng ảnh < 5MB, video < 100MB.
+ */
 function previewMediaFiles(input) {
     const grid = document.getElementById('mediaPreviewGrid');
     const files = Array.from(input.files);
@@ -455,7 +488,7 @@ function previewMediaFiles(input) {
             return;
         }
 
-        // Kiểm tra dung lượng (tối đa 5MB cho ảnh, 100MB cho video)
+        // Kiểm tra dung lượng tệp
         const limitSize = isVideo ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
         if (file.size > limitSize) {
             const limitLabel = isVideo ? '100MB' : '5MB';
@@ -463,7 +496,7 @@ function previewMediaFiles(input) {
             return;
         }
 
-        // Giới hạn video: chỉ 1 video
+        // Giới hạn số lượng video: Chỉ được phép đính kèm 1 video
         if (isVideo) {
             const hasVideo = selectedMediaFiles.some(f => f && f.type.startsWith('video/'));
             if (hasVideo) {
@@ -472,7 +505,7 @@ function previewMediaFiles(input) {
             }
         }
 
-        // Giới hạn ảnh: tối đa 5 ảnh
+        // Giới hạn số lượng hình ảnh: Tối đa 5 ảnh
         if (isImage) {
             const imageCount = selectedMediaFiles.filter(f => f && f.type.startsWith('image/')).length;
             if (imageCount >= 5) {
@@ -484,6 +517,7 @@ function previewMediaFiles(input) {
         const fileIndex = selectedMediaFiles.length;
         selectedMediaFiles.push(file);
         
+        // Sử dụng FileReader để trích xuất DataURL render ảnh preview ngay lập tức
         const reader = new FileReader();
         reader.onload = function(e) {
             const div = document.createElement('div');
@@ -498,15 +532,23 @@ function previewMediaFiles(input) {
         }
         reader.readAsDataURL(file);
     });
-    input.value = ''; 
+    input.value = ''; // Reset input để cho phép chọn lại cùng 1 file
 }
 
+/**
+ * Hàm: removeMediaFile
+ * Công dụng: Loại bỏ tệp khỏi danh sách tải lên và xóa thẻ giao diện preview tương ứng.
+ */
 function removeMediaFile(index) {
     const item = document.getElementById('preview-item-' + index);
     if (item) item.remove();
     selectedMediaFiles[index] = null;
 }
 
+/**
+ * Hàm: previewReplyMediaFiles
+ * Công dụng: Xử lý preview tệp tải lên riêng biệt cho khung nhập câu phản hồi (reply).
+ */
 function previewReplyMediaFiles(parentId, input) {
     const grid = document.getElementById('replyMediaPreviewGrid-' + parentId);
     const files = Array.from(input.files);
@@ -524,7 +566,6 @@ function previewReplyMediaFiles(parentId, input) {
             return;
         }
 
-        // Kiểm tra dung lượng (tối đa 5MB cho ảnh, 100MB cho video)
         const limitSize = isVideo ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
         if (file.size > limitSize) {
             const limitLabel = isVideo ? '100MB' : '5MB';
@@ -532,7 +573,6 @@ function previewReplyMediaFiles(parentId, input) {
             return;
         }
 
-        // Giới hạn video: chỉ 1 video
         if (isVideo) {
             const hasVideo = replyMediaFiles[parentId].some(f => f && f.type.startsWith('video/'));
             if (hasVideo) {
@@ -541,7 +581,6 @@ function previewReplyMediaFiles(parentId, input) {
             }
         }
 
-        // Giới hạn tổng số lượng file
         const nonNullCount = replyMediaFiles[parentId].filter(Boolean).length;
         if (nonNullCount >= 5) {
             showAlert('Giới hạn tải lên', 'Bạn chỉ được tải lên tối đa 5 hình ảnh hoặc video.');
@@ -602,7 +641,7 @@ function submitReview() {
     formData.append('content', content);
     if(authorName) formData.append('author_name', authorName);
     
-    // Đưa các tệp đa phương tiện đã chọn vào FormData
+    // Đóng gói danh sách file đính kèm thực tế vào FormData
     selectedMediaFiles.filter(Boolean).forEach(file => {
         formData.append('media[]', file);
     });
@@ -633,12 +672,11 @@ function submitReview() {
     })
     .then(data => {
         if(data.success) {
-            // Lưu thông báo thành công vào sessionStorage để hiển thị dạng toast sau khi reload
+            // Lưu trạng thái để hiển thị thông báo trung tâm đẹp mắt sau khi trang tải lại
             sessionStorage.setItem('review_toast', JSON.stringify({
                 msg: data.message || 'DienMayPro cảm ơn quý khách đã gửi bình luận!',
                 isCenter: true
             }));
-            // Lưu cờ scroll_to_reviews để tự động cuộn màn hình đến phần đánh giá sau khi tải lại
             sessionStorage.setItem('scroll_to_reviews', 'true');
             location.reload(); 
         } else {
@@ -655,20 +693,24 @@ function submitReview() {
             btn.innerHTML = 'Gửi đánh giá'; 
         }
         console.error('Submit review error:', error);
-        // Hiển thị thông báo thích hợp dựa trên mã HTTP status (403: Bị cấm/Vi phạm)
+        // Hiển thị thông báo thích hợp dựa trên mã HTTP status (403: Bị cấm do từ khóa nhạy cảm / spam)
         const title = error.status === 403 ? 'Vi phạm' : 'Không thể gửi';
         const msg = error.status === 403 ? error.message : ('Đã có lỗi xảy ra: ' + error.message);
         showAlert(title, msg);
     });
 }
 
+/**
+ * Hàm: toggleReplyForm
+ * Công dụng: Ẩn hoặc hiển thị khung soạn phản hồi của từng đánh giá.
+ */
 function toggleReplyForm(id) {
     const form = document.getElementById('replyForm-' + id);
     const repliesList = document.getElementById('replies-' + id);
     const isHidden = form.style.display === 'none' || form.style.display === '';
 
     if (isHidden) {
-        // Trả về vị trí mặc định (trước danh sách câu trả lời)
+        // Di chuyển khung form đặt trước danh sách các câu trả lời
         repliesList.parentNode.insertBefore(form, repliesList);
         form.style.display = 'block';
         const textarea = document.getElementById('replyText-' + id);
@@ -679,11 +721,15 @@ function toggleReplyForm(id) {
     }
 }
 
+/**
+ * Hàm: replyToUser
+ * Công dụng: Tự động điền tag tên tài khoản và di chuyển khung nhập phản hồi trực tiếp xuống dưới câu trả lời con.
+ */
 function replyToUser(parentReviewId, userName, specificReplyId) {
     const form = document.getElementById('replyForm-' + parentReviewId);
     const specificReply = document.getElementById('review-' + specificReplyId);
     
-    // Di chuyển khung reply xuống dưới comment cụ thể
+    // Di chuyển khung reply xuống dưới vị trí comment con tương ứng
     specificReply.parentNode.insertBefore(form, specificReply.nextSibling);
     
     form.style.display = 'block';
@@ -692,6 +738,10 @@ function replyToUser(parentReviewId, userName, specificReplyId) {
     textarea.focus();
 }
 
+/**
+ * Hàm: showAllReplies
+ * Công dụng: Hiển thị các câu trả lời phản hồi con đang bị ẩn kèm hiệu ứng chuyển động mượt mà.
+ */
 function showAllReplies(reviewId, btn) {
     const list = document.getElementById('replies-' + reviewId);
     const hiddenItems = list.querySelectorAll('.reply-hidden');
@@ -704,7 +754,7 @@ function showAllReplies(reviewId, btn) {
             item.style.opacity = '1';
         }, 10);
     });
-    btn.remove();
+    btn.remove(); // Xóa nút xem thêm sau khi hiển thị hết
 }
 
 /**
@@ -727,7 +777,7 @@ function submitReply(parentId) {
     formData.append('product_id', '{{ $product->product_id }}');
     formData.append('parent_id', parentId);
     formData.append('content', text);
-    formData.append('rating', 5); // Tự động chấm 5 sao cho câu trả lời
+    formData.append('rating', 5); // Phản hồi mặc định 5 sao
     if(authorName) formData.append('author_name', authorName);
 
     // Lấy các file đính kèm riêng cho khung phản hồi hiện tại (parentId)
@@ -754,7 +804,6 @@ function submitReply(parentId) {
     .then(async response => {
         const data = await response.json();
         if (!response.ok) {
-            // Ném lỗi kèm status code
             const errObj = new Error(data.message || `Lỗi hệ thống (${response.status})`);
             errObj.status = response.status;
             throw errObj;
@@ -782,14 +831,14 @@ function submitReply(parentId) {
             btn.disabled = false; 
             btn.innerHTML = 'Gửi trả lời'; 
         }
-        // Xử lý thông báo khi lỗi (phân biệt lỗi 403: cấm bình luận, và các lỗi kết nối thông thường)
+        // Hiển thị thông báo lỗi cụ thể (ví dụ 403: nội dung vi phạm chính sách kiểm duyệt)
         const title = err.status === 403 ? 'Vi phạm' : 'Lỗi kết nối';
         const msg = err.status === 403 ? err.message : ('Đã xảy ra lỗi: ' + err.message);
         showToastReview(title, msg, 'error');
     });
 }
 
-// Cho phép nhấn Enter để gửi (Shift+Enter để xuống dòng)
+// Gắn phím Enter để đăng nhanh bài viết (Shift+Enter để tạo dòng mới bình thường)
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         const target = e.target;
@@ -804,6 +853,10 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
+/**
+ * Hàm: deleteReview
+ * Công dụng: Gửi yêu cầu DELETE AJAX để xóa đánh giá và thực hiện hiệu ứng ẩn mượt mà trước khi xóa thẻ khỏi DOM.
+ */
 function deleteReview(id) {
     showConfirm('Xác nhận xóa', 'Bạn có chắc chắn muốn xóa đánh giá này không?', function() {
         const btn = document.getElementById('btnDoConfirm');
@@ -838,7 +891,7 @@ function deleteReview(id) {
     });
 }
 
-/* ===== Toast Notification System ===== */
+/* ===== HỆ THỐNG TOAST THÔNG BÁO THÔNG THƯỜNG (TOAST REVIEW) ===== */
 function showToastReview(title, message, type = 'success') {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
@@ -869,7 +922,7 @@ function showToastReview(title, message, type = 'success') {
     }, 4000);
 }
 
-/* ===== Custom Confirmation System ===== */
+/* ===== HỆ THỐNG HỘP THOẠI XÁC NHẬN CUSTOM (CONFIRMATION SYSTEM) ===== */
 let confirmCallback = null;
 function showConfirm(title, message, callback, btnText = 'Xác nhận xóa', theme = 'danger') {
     document.getElementById('confirmTitle').innerText = title;
@@ -878,6 +931,7 @@ function showConfirm(title, message, callback, btnText = 'Xác nhận xóa', the
     const iconContainer = document.querySelector('#confirmModal .confirm-icon');
     const btn = document.getElementById('btnDoConfirm');
     
+    // Đổi giao diện confirm dựa trên theme truyền vào (Đỏ cho Xóa, Vàng cho Báo cáo)
     if (theme === 'warning') {
         if (iconContainer) {
             iconContainer.style.background = '#fef3c7';
@@ -918,7 +972,7 @@ document.getElementById('btnDoConfirm').addEventListener('click', function() {
     if (confirmCallback) confirmCallback();
 });
 
-/* ===== Alert System ===== */
+/* ===== HỘP THOẠI THÔNG BÁO CUSTOM (ALERT SYSTEM) ===== */
 function showAlert(title, message, type = 'warning') {
     const icon = document.getElementById('alertIcon');
     const btn = document.getElementById('alertBtn');
@@ -942,12 +996,13 @@ function showAlert(title, message, type = 'warning') {
     document.getElementById('alertModal').classList.add('active');
 }
 
-/* ===== Center Toast ===== */
+/* ===== TOAST THÔNG BÁO TRUNG TÂM (CENTER TOAST) ===== */
 function showCenterToast(message) {
     const container = document.getElementById('toast-center-container');
     const toast = document.createElement('div');
     toast.className = 'toast-center';
     
+    // Nếu nội dung thông báo chứa các từ khóa nhạy cảm / chờ duyệt, đổi sang màu vàng cảnh báo
     const isWarning = message.includes('chờ') || message.includes('nhạy cảm') || message.includes('kiểm duyệt');
     if (isWarning) {
         toast.style.background = 'rgba(245, 158, 11, 0.95)';
@@ -969,6 +1024,7 @@ function closeAlertModal() {
     document.getElementById('alertModal').classList.remove('active');
 }
 
+/* ===== LIGHTBOX HIỂN THỊ PHƯƠNG TIỆN (MEDIA LIGHTBOX SYSTEM) ===== */
 function openMediaLightbox(url, isVideo) {
     const lb = document.getElementById('mediaLightbox');
     const img = document.getElementById('lightboxImg');
@@ -991,6 +1047,10 @@ function closeMediaLightbox() {
     document.getElementById('lightboxVideo').pause();
 }
 
+/**
+ * Hàm: reportReview
+ * Công dụng: Gửi yêu cầu POST báo cáo đánh giá vi phạm (spam/chửi bới/sai nội dung) bằng AJAX.
+ */
 function reportReview(id) {
     showConfirm(
         'Xác nhận báo cáo',

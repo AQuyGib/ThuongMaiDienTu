@@ -17,7 +17,7 @@
         ],
         [
             'label' => $isEn ? 'Orders' : 'Đơn hàng',
-            'route' => Route::has('admin.orders.index') ? route('admin.orders.index') : '#',
+            'route' => \Route::has('admin.orders.index') ? route('admin.orders.index') : '#',
             'icon' => 'fa-solid fa-shopping-bag',
             'active' => request()->is('admin/orders*'),
             'section' => $isEn ? 'Business' : 'Kinh doanh'
@@ -44,10 +44,24 @@
             'section' => $isEn ? 'Business' : 'Kinh doanh'
         ],
         [
+            'label' => $isEn ? 'Installments' : 'Hợp đồng trả góp',
+            'route' => route('admin.installments.index'),
+            'icon' => 'fa-solid fa-credit-card',
+            'active' => request()->is('admin/installments*'),
+            'section' => $isEn ? 'Business' : 'Kinh doanh'
+        ],
+        [
             'label' => $isEn ? 'Repair Tickets' : 'Phiếu sửa chữa',
             'route' => route('admin.repair-tickets.index'),
             'icon' => 'fa-solid fa-wrench',
             'active' => request()->is('admin/repair-tickets*'),
+            'section' => $isEn ? 'Business' : 'Kinh doanh'
+        ],
+        [
+            'label' => $isEn ? 'Warranty Claims' : 'Bảo hành & Đổi trả',
+            'route' => route('admin.warranty-claims.index'),
+            'icon' => 'fa-solid fa-shield-halved',
+            'active' => request()->is('admin/warranty-claims*'),
             'section' => $isEn ? 'Business' : 'Kinh doanh'
         ],
         [
@@ -121,6 +135,13 @@
             'section' => $isEn ? 'Settings' : 'Thiết lập'
         ],
         [
+            'label' => $isEn ? 'Vouchers' : 'Voucher',
+            'route' => route('admin.vouchers.index'),
+            'icon' => 'fa-solid fa-ticket',
+            'active' => request()->routeIs('admin.vouchers.*'),
+            'section' => $isEn ? 'Settings' : 'Thiết lập'
+        ],
+        [
             'label' => $isEn ? 'Theme Customization' : 'Tùy biến Giao diện',
             'route' => route('admin.settings.theme'),
             'icon' => 'fa-solid fa-paint-brush',
@@ -143,7 +164,7 @@
         ]
     ];
 
-    if(Auth::check() && Auth::user()->role_id == 1) {
+    if(\Auth::check() && \Auth::user()->role_id == 1) {
         $menu[] = [
             'label' => $isEn ? 'Accounts' : 'Tài khoản',
             'route' => route('admin.users.index'),
@@ -152,15 +173,22 @@
             'section' => $isEn ? 'Settings' : 'Thiết lập'
         ];
         $menu[] = [
+            'label' => $isEn ? 'Employees' : 'Nhân viên',
+            'route' => route('admin.employees.index'),
+            'icon' => 'fa-solid fa-user-tie',
+            'active' => request()->is('admin/employees*'),
+            'section' => $isEn ? 'Settings' : 'Thiết lập'
+        ];
+        $menu[] = [
             'label' => $isEn ? 'System Settings' : 'Cài đặt hệ thống',
-            'route' => Route::has('admin.settings.index') ? route('admin.settings.index') : '#',
+            'route' => \Route::has('admin.settings.index') ? route('admin.settings.index') : '#',
             'icon' => 'fa-solid fa-cog',
             'active' => request()->routeIs('admin.settings.index'),
             'section' => $isEn ? 'Settings' : 'Thiết lập'
         ];
         $menu[] = [
             'label' => $isEn ? 'Activity Logs' : 'Nhật ký hoạt động',
-            'route' => Route::has('admin.activity-logs.index') ? route('admin.activity-logs.index') : '#',
+            'route' => \Route::has('admin.activity-logs.index') ? route('admin.activity-logs.index') : '#',
             'icon' => 'fa-solid fa-clock-rotate-left',
             'active' => request()->is('admin/activity-logs*'),
             'section' => $isEn ? 'Settings' : 'Thiết lập'
@@ -169,9 +197,9 @@
 
     $props = [
         'user' => [
-            'full_name' => Auth::user()->full_name ?? 'Admin',
-            'role_name' => optional(Auth::user()->role)->name ?? 'Administrator',
-            'email' => Auth::user()->email ?? ''
+            'full_name' => \Auth::user()->full_name ?? 'Admin',
+            'role_name' => optional(\Auth::user()->role)->name ?? 'Administrator',
+            'email' => \Auth::user()->email ?? ''
         ],
         'menu' => $menu,
         'homeRoute' => route('admin.dashboard'),

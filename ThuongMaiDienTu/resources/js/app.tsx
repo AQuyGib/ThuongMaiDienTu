@@ -13,6 +13,7 @@ const KPIDashboard = React.lazy(() => import('./components/KPIDashboard'));
 const ThemeSettings = React.lazy(() => import('./components/ThemeSettings'));
 const SecuritySettings = React.lazy(() => import('./components/SecuritySettings'));
 const VerifyOtp = React.lazy(() => import('./components/VerifyOtp'));
+const EmployeeManager = React.lazy(() => import('./components/EmployeeManager'));
 
 const mountedRoots = new Map<string, any>();
 
@@ -69,6 +70,7 @@ const init = () => {
     renderComponent('admin-theme-settings', ThemeSettings);
     renderComponent('security-settings-app', SecuritySettings);
     renderComponent('verify-otp-app', VerifyOtp);
+    renderComponent('admin-employee-management', EmployeeManager);
 
     // Legacy / Demo
     const demoContainer = document.getElementById('joly-demo');
@@ -201,16 +203,19 @@ document.addEventListener('click', (e) => {
         // Skip logout, export, pdf or download routes
         if (anchor.href.includes('logout') || anchor.href.includes('export') || anchor.href.includes('/pdf') || anchor.hasAttribute('download')) return;
 
+<<<<<<< HEAD
         // These sections use page-specific layouts/styles or heavy tables; force full reload to avoid broken UI state
         // Note: '/admin/comments' is forced to reload so that page-specific blade push scripts (like SweetAlert, modal listeners) execute fresh.
         if (
             anchor.href.includes('/admin/inventory') ||
             anchor.href.includes('/admin/purchase-orders') ||
             anchor.href.includes('/admin/products') ||
+            anchor.href.includes('/admin/employees') ||
             anchor.href.includes('/admin/videos') ||
             anchor.href.includes('/admin/service-invoices') ||
             anchor.href.includes('/admin/repair-tickets') ||
-            anchor.href.includes('/admin/comments')
+            anchor.href.includes('/admin/comments') ||
+            anchor.href.includes('/admin/activity-logs')
         ) {
             window.location.href = anchor.href;
             return;
@@ -221,6 +226,11 @@ document.addEventListener('click', (e) => {
 
         e.preventDefault();
         softNavigate(anchor.href);
+=======
+        // Force full page reload for all admin routes to ensure blade styles, push scripts, and widgets run cleanly
+        window.location.href = anchor.href;
+        return;
+>>>>>>> origin/master
     }
 });
 window.addEventListener('popstate', () => {

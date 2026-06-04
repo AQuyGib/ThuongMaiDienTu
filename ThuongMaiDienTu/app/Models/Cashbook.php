@@ -3,6 +3,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class Cashbook extends Model {
+    use \App\Traits\HasAuditLog;
+
     protected $primaryKey = 'cashbook_id';
     const UPDATED_AT = null;
     protected $guarded = [];

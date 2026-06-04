@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class RepairTicket extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\HasAuditLog;
 
     protected $primaryKey = 'ticket_id';
     public $timestamps = false;
@@ -29,11 +29,28 @@ class RepairTicket extends Model
         'service_fee',
         'invoice_no',
         'invoiced_at',
+        'device_image',
+        'ai_diagnosed',
+        'ai_fault_type',
+        'ai_probable_causes',
+        'ai_risk_warnings',
+        'ai_replacement_parts',
+        'ai_estimated_cost_min',
+        'ai_estimated_cost_max',
+        'ai_complexity_level',
+        'ai_recommended_skills',
+        'ai_dispatch_reason',
+        'ai_diagnosed_at',
     ];
 
     protected $casts = [
         'service_fee' => 'integer',
         'invoiced_at' => 'datetime',
+        'ai_diagnosed' => 'boolean',
+        'ai_probable_causes' => 'json',
+        'ai_risk_warnings' => 'json',
+        'ai_recommended_skills' => 'json',
+        'ai_diagnosed_at' => 'datetime',
     ];
 
     public function user()

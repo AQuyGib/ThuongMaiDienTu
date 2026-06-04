@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ServiceInvoice extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\HasAuditLog;
 
     protected $fillable = [
         'invoice_no',

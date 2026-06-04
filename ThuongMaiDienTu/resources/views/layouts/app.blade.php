@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Hệ thống bán lẻ điện thoại di động, máy tính')</title>
+    <!-- Favicon (Logo Sét của Web) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512' fill='%230046ab'><path d='M0 256L0 288c0 17.7 14.3 32 32 32l104.7 0L88.9 455c-6.8 17.1 5.8 36 24.2 36c11.3 0 21.6-6 26.8-15.6l176-320c9-16.3-.2-36.4-18.9-36.4l-123.8 0L222.1 57c6.8-17.1-5.8-36-24.2-36c-11.3 0-21.6 6-26.8 15.6L1.1 228.3C-.2 230.9 0 233.9 0 236.9v19.1z'/></svg>">
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Hệ thống bán lẻ điện thoại, laptop, phụ kiện chính hãng, giá tốt nhất thị trường. Mua trả góp 0%, giao hàng nhanh toàn quốc.">
-    <meta name="keywords" content="điện thoại, laptop, tablet, phụ kiện công nghệ, apple, samsung">
+    <meta name="description" content="@yield('meta_description', 'Hệ thống bán lẻ điện thoại, laptop, phụ kiện chính hãng, giá tốt nhất thị trường. Mua trả góp 0%, giao hàng nhanh toàn quốc.')">
+    <meta name="keywords" content="@yield('meta_keywords', 'điện thoại, laptop, tablet, phụ kiện công nghệ, apple, samsung')">
     <meta name="robots" content="index, follow">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Font Awesome -->
@@ -18,6 +20,111 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    @if(isset($globalSettings))
+    <style>
+        :root {
+            @if(!empty($globalSettings['header_bg_color']))
+                --header-bg-color: {{ $globalSettings['header_bg_color'] }};
+            @else
+                --header-bg-color: #0046ab;
+            @endif
+
+            @if(!empty($globalSettings['header_text_color']))
+                --header-text-color: {{ $globalSettings['header_text_color'] }};
+            @else
+                --header-text-color: #ffffff;
+            @endif
+
+            @if(!empty($globalSettings['footer_bg_color']))
+                --footer-bg-color: {{ $globalSettings['footer_bg_color'] }};
+            @else
+                --footer-bg-color: #ffffff;
+            @endif
+
+            @if(!empty($globalSettings['footer_text_color']))
+                --footer-text-color: {{ $globalSettings['footer_text_color'] }};
+            @else
+                --footer-text-color: #555555;
+            @endif
+
+            @if(!empty($globalSettings['footer_heading_color']))
+                --footer-heading-color: {{ $globalSettings['footer_heading_color'] }};
+            @else
+                --footer-heading-color: #1e293b;
+            @endif
+
+            @if(!empty($globalSettings['announcement_bg_color']))
+                --announcement-bg-color: {{ $globalSettings['announcement_bg_color'] }};
+            @else
+                --announcement-bg-color: linear-gradient(90deg, #0046ab 0%, #6b21a8 50%, #d70018 100%);
+            @endif
+
+            @if(!empty($globalSettings['announcement_text_color']))
+                --announcement-text-color: {{ $globalSettings['announcement_text_color'] }};
+            @else
+                --announcement-text-color: #ffffff;
+            @endif
+        }
+
+        .header-main {
+            background-color: var(--header-bg-color) !important;
+        }
+        .header-content .logo, 
+        .header-content .header-category-btn, 
+        .header-content .header-province-btn, 
+        .header-content .action-item {
+            color: var(--header-text-color) !important;
+        }
+        .header-content .header-category-btn, 
+        .header-content .header-province-btn {
+            border-color: rgba(255,255,255,0.3) !important;
+            background: rgba(255,255,255,0.15) !important;
+        }
+        .header-content .header-category-btn:hover, 
+        .header-content .header-province-btn:hover {
+            background: rgba(255,255,255,0.25) !important;
+        }
+        .top-bar {
+            background: var(--announcement-bg-color) !important;
+            color: var(--announcement-text-color) !important;
+        }
+        .top-bar-left > span, .top-bar-right > span, .top-bar-right > a > span {
+            color: var(--announcement-text-color) !important;
+            border-right-color: rgba(255,255,255,0.3) !important;
+        }
+        .lang-switcher-btn {
+            color: var(--announcement-text-color) !important;
+        }
+        
+        .footer {
+            background-color: var(--footer-bg-color) !important;
+            color: var(--footer-text-color) !important;
+        }
+        .footer-col h4 {
+            color: var(--footer-heading-color) !important;
+        }
+        .footer-col ul li, .footer-col p, .footer-col-subscribe p {
+            color: var(--footer-text-color) !important;
+        }
+        .footer-col ul li a {
+            color: var(--footer-text-color) !important;
+            opacity: 0.85;
+            transition: all 0.2s;
+        }
+        .footer-col ul li a:hover {
+            color: var(--secondary-color) !important;
+            opacity: 1;
+        }
+        .footer-quick-links, .footer-quick-links a {
+            color: var(--footer-text-color) !important;
+            opacity: 0.7;
+        }
+        .footer-quick-links a:hover {
+            color: var(--secondary-color) !important;
+            opacity: 1;
+        }
+    </style>
+    @endif
     <style>
         :root {
             --primary-color: #0046ab; /* Trả lại màu xanh dương chủ đạo */
@@ -60,9 +167,9 @@
 
         /* Container */
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 15px;
+            max-width: 1200px !important;
+            margin: 0 auto !important;
+            padding: 0 15px !important;
         }
 
         /* ============================
@@ -704,7 +811,7 @@
 
         .footer-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 30px;
         }
 
@@ -874,7 +981,7 @@
            RESPONSIVE STYLES
            ============================ */
         @media (max-width: 1200px) {
-            .container { max-width: 100%; }
+            .container { max-width: 100% !important; }
         }
 
         @media (max-width: 1024px) {

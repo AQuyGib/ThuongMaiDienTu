@@ -5,15 +5,19 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng Nhập / Đăng Ký</title>
+    <title>{{ __('ui.login_register_title') }}</title>
+    <!-- Favicon (Logo Sét của Web) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 512' fill='%230046ab'><path d='M0 256L0 288c0 17.7 14.3 32 32 32l104.7 0L88.9 455c-6.8 17.1 5.8 36 24.2 36c11.3 0 21.6-6 26.8-15.6l176-320c9-16.3-.2-36.4-18.9-36.4l-123.8 0L222.1 57c6.8-17.1-5.8-36-24.2-36c-11.3 0-21.6 6-26.8 15.6L1.1 228.3C-.2 230.9 0 233.9 0 236.9v19.1z'/></svg>">
     <!-- Font system: Outfit (UI) + Space Grotesk (Headlines) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- KHÁI QUÁT CẤU HÌNH MÀU (CSS VARIABLES) - CHỦ ĐỀ CÔNG NGHỆ ĐỎ XANH --- */
         :root {
@@ -304,43 +308,426 @@
         .btn-submit::after { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.15); opacity: 0; transition: opacity 0.3s; }
         .btn-submit:active::after { opacity: 1; }
 
-        /* Canvas particle layer */
-        #particle-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+        /* --- FORM TOP ACTIONS BAR (TỐI GIẢN & CAO CẤP) --- */
+        .form-top-actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            border-bottom: 1px dashed rgba(226, 232, 240, 0.8);
+            padding-bottom: 20px;
+        }
 
-        /* Nút quay lại trang chủ */
-        .back-to-home {
-            position: absolute;
-            top: 25px;
-            right: 30px;
+        .form-back-home-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            padding: 9px 18px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 14px;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.03);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .form-back-home-link i {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.3s;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .form-back-home-link:hover {
+            color: var(--tech-blue);
+            background: rgba(59, 130, 246, 0.05);
+            border-color: rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-back-home-link:hover i {
+            transform: translateX(-4px);
+            color: var(--tech-blue);
+        }
+
+        .form-lang-switcher {
+            position: relative;
+        }
+
+        .form-lang-btn {
             display: flex;
             align-items: center;
             gap: 8px;
             text-decoration: none;
-            color: var(--text-muted);
-            font-size: 12px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 10px 18px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            padding: 9px 18px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
             border-radius: 14px;
-            z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.03);
         }
-        .back-to-home svg {
+
+        .form-lang-btn .lang-flag-current {
+            font-size: 14px;
+            line-height: 1;
+            display: inline-block;
             transition: transform 0.3s ease;
         }
-        .back-to-home:hover {
-            color: var(--tech-blue);
-            background: #ffffff;
-            border-color: var(--tech-blue);
-            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.1);
-            transform: translateY(-2px);
+
+        .form-lang-btn i:last-child {
+            font-size: 8px;
+            color: #94a3b8;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .back-to-home:hover svg {
-            transform: translateX(-4px);
+
+        .form-lang-btn:hover {
+            color: var(--tech-blue);
+            background: rgba(59, 130, 246, 0.05);
+            border-color: rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-lang-btn:hover .lang-flag-current {
+            transform: scale(1.15) rotate(5deg);
+        }
+        
+        .form-lang-btn:hover i:last-child {
+            transform: translateY(2px);
+            color: var(--tech-blue);
+        }
+
+        .form-lang-dropdown {
+            display: block;
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+            overflow: hidden;
+            z-index: 1100;
+            min-width: 170px;
+            transform: translateY(12px) scale(0.95);
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            padding: 6px;
+        }
+
+        .form-lang-dropdown.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .form-lang-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #475569;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.25s ease;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .form-lang-option .lang-flag {
+            font-size: 16px;
+            transition: transform 0.2s ease;
+        }
+
+        .form-lang-option:hover {
+            background: rgba(59, 130, 246, 0.05);
+            color: var(--tech-blue);
+            transform: translateX(4px);
+        }
+
+        .form-lang-option:hover .lang-flag {
+            transform: scale(1.2);
+        }
+
+        .form-lang-option.active {
+            background: rgba(59, 130, 246, 0.08);
+            color: var(--tech-blue);
+            font-weight: 700;
+        }
+
+        .form-lang-option .active-indicator {
+            margin-left: auto;
+            color: var(--tech-blue);
+            font-weight: bold;
+            font-size: 12px;
+            background: rgba(59, 130, 246, 0.1);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+
+
+        /* ================= RESPONSIVE SYSTEM (MOBILE, TABLET, DESKTOP) ================= */
+        
+        /* 1. Màn hình máy tính bảng (Tablets - Dưới 1024px) */
+        @media (max-width: 1024px) {
+            .main-wrapper {
+                max-width: 92%;
+                height: 660px;
+            }
+            .visual-panel {
+                width: 40%;
+            }
+            .form-panel {
+                width: 60%;
+                padding: 40px 45px;
+            }
+            .vp-title {
+                font-size: 32px;
+            }
+            .brand-title {
+                font-size: 34px;
+            }
+        }
+
+        /* 2. Màn hình di động & Máy tính bảng dọc (Mobile & Small Tablets - Dưới 768px) */
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+                height: auto;
+                min-height: 100vh;
+                padding: 24px 12px;
+                display: flex;
+                align-items: center; /* Căn giữa form theo chiều dọc khi màn hình đủ dài */
+            }
+            
+            .main-wrapper {
+                max-width: 100%;
+                height: auto;
+                min-height: unset;
+                flex-direction: column;
+                border-radius: 20px;
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            }
+            
+            /* Ẩn hoàn toàn bảng chào mừng cồng kềnh trên điện thoại */
+            .visual-panel {
+                display: none;
+            }
+            
+            .form-panel {
+                width: 100%;
+                padding: 30px 24px 35px; /* Giảm padding top vì actions bar đã nằm inline */
+                min-height: 520px;
+                justify-content: flex-start;
+            }
+            
+            .form-header {
+                margin-top: 10px;
+                margin-bottom: 24px;
+            }
+            
+            /* Định vị lại thanh top actions trên di động */
+            .form-top-actions-bar {
+                margin-bottom: 20px;
+                padding-bottom: 12px;
+            }
+
+            .form-back-home-link, .form-lang-btn {
+                padding: 7px 14px;
+                font-size: 12px;
+                border-radius: 10px;
+            }
+            
+            /* Form Đăng ký: Chuyển 2 trường password & confirm password từ hàng ngang thành hàng dọc */
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .form-row .form-group {
+                width: 100%;
+            }
+        }
+        
+        /* 3. Màn hình điện thoại siêu nhỏ (Dưới 480px) */
+        @media (max-width: 480px) {
+            body {
+                padding: 16px 8px;
+            }
+            .form-panel {
+                padding: 24px 16px 30px; /* Giảm padding top cho mobile siêu nhỏ */
+            }
+            .brand-title {
+                font-size: 30px;
+            }
+            .brand-slogan {
+                font-size: 12px;
+            }
+            .tab {
+                font-size: 16px;
+                padding-bottom: 4px;
+            }
+            .form-control {
+                padding: 12px 14px;
+                font-size: 14px;
+                border-radius: 10px;
+            }
+            .btn-submit {
+                padding: 13px;
+                font-size: 15px;
+                border-radius: 10px;
+            }
+            .btn-google {
+                padding: 11px 16px;
+                font-size: 14px;
+                border-radius: 10px;
+            }
+            .alert {
+                font-size: 13px;
+                padding: 8px;
+            }
+        }
+
+        /* --- PREMIUM TOAST NOTIFICATION SYSTEM --- */
+        .toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .toast-card {
+            pointer-events: auto;
+            width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toast-card.show {
+            transform: translateX(0);
+        }
+
+        .toast-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 18px;
+        }
+
+        .toast-error .toast-icon {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .toast-success .toast-icon {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+
+        .toast-content {
+            flex-grow: 1;
+        }
+
+        .toast-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--tech-dark);
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 4px;
+            transition: color 0.2s;
+            margin-left: auto;
+        }
+
+        .toast-close:hover {
+            color: var(--tech-dark);
+        }
+
+        /* Thanh progress bar chạy ngầm */
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background: #e2e8f0;
+        }
+
+        .toast-progress-bar {
+            height: 100%;
+            width: 100%;
+            transition: width 3.5s linear;
+        }
+
+        .toast-error .toast-progress-bar {
+            background: #ef4444;
+        }
+
+        .toast-success .toast-progress-bar {
+            background: #22c55e;
         }
 
     </style>
@@ -368,12 +755,11 @@
                 <div class="vp-main">
                     <div class="vp-tag">
                         <span class="vp-tag-dot"></span>
-                        Đang hoạt động
+                        {{ __('ui.active_badge') }}
                     </div>
-                    <h2 class="vp-title">Mua sắm điện máy<br><span>thông minh hơn</span></h2>
+                    <h2 class="vp-title">{{ __('ui.smart_shopping_title') }}<br><span>{{ __('ui.smart_shopping_highlight') }}</span></h2>
                     <p class="vp-desc">
-                        Hàng nghìn sản phẩm chính hãng với giá tốt nhất.<br>
-                        Giao hàng nhanh · Bảo hành chính hãng · Hoàn tiền 30 ngày.
+                        {!! __('ui.banner_features_desc') !!}
                     </p>
                 </div>
 
@@ -381,15 +767,15 @@
                 <div class="vp-stats">
                     <div class="vp-stat">
                         <div class="vp-stat-num">10K<span>+</span></div>
-                        <div class="vp-stat-label">Sản phẩm</div>
+                        <div class="vp-stat-label">{{ __('ui.stat_products') }}</div>
                     </div>
                     <div class="vp-stat">
                         <div class="vp-stat-num">98<span>%</span></div>
-                        <div class="vp-stat-label">Hài lòng</div>
+                        <div class="vp-stat-label">{{ __('ui.stat_satisfaction') }}</div>
                     </div>
                     <div class="vp-stat">
                         <div class="vp-stat-num">2H<span>+</span></div>
-                        <div class="vp-stat-label">Giao hàng</div>
+                        <div class="vp-stat-label">{{ __('ui.stat_delivery') }}</div>
                     </div>
                 </div>
             </div>
@@ -397,20 +783,45 @@
 
         <!-- FORM PANEL (Phải) -->
         <div class="form-panel" style="position: relative;">
-            
-            <!-- Nút Quay lại Trang chủ -->
-            <a href="{{ route('home') }}" class="back-to-home">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"></line>
-                    <polyline points="12 19 5 12 12 5"></polyline>
-                </svg>
-                <span>Trang chủ</span>
-            </a>
+
+            <!-- Form Top Actions Bar (Căn chỉnh ngay ngắn trên đầu Form Panel) -->
+            <div class="form-top-actions-bar">
+                <!-- Nút Quay lại Trang chủ -->
+                <a href="{{ route('home') }}" class="form-back-home-link">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>{{ __('ui.home_btn') }}</span>
+                </a>
+
+                <!-- Trình chọn ngôn ngữ -->
+                <div class="form-lang-switcher" id="loginLangSwitcher">
+                    <button class="form-lang-btn" id="loginLangToggleBtn">
+                        <span class="lang-flag-current">{{ app()->getLocale() === 'en' ? '🇺🇸' : '🇻🇳' }}</span>
+                        <span>{{ app()->getLocale() === 'en' ? 'EN' : 'VI' }}</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 8px; margin-left: 2px;"></i>
+                    </button>
+                    <div class="form-lang-dropdown" id="loginLangDropdown">
+                        <a href="{{ route('locale.switch', 'vi') }}" class="form-lang-option {{ app()->getLocale() === 'vi' ? 'active' : '' }}">
+                            <span class="lang-flag">🇻🇳</span>
+                            <span>Tiếng Việt</span>
+                            @if(app()->getLocale() === 'vi')
+                                <span class="active-indicator">✓</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('locale.switch', 'en') }}" class="form-lang-option {{ app()->getLocale() === 'en' ? 'active' : '' }}">
+                            <span class="lang-flag">🇺🇸</span>
+                            <span>English</span>
+                            @if(app()->getLocale() === 'en')
+                                <span class="active-indicator">✓</span>
+                            @endif
+                        </a>
+                    </div>
+                </div>
+            </div>
 
             <!-- Đưa tên thương hiệu lên trên -->
             <div class="form-header">
                 <h2 class="brand-title">DienMay<span class="highlight">Pro</span></h2>
-                <p class="brand-slogan">Chào mừng bạn quay trở lại</p>
+                <p class="brand-slogan">{{ __('ui.welcome_back_slogan') }}</p>
             </div>
 
             <!-- HIỂN THỊ LỖI HỆ THỐNG -->
@@ -437,8 +848,8 @@
                 }
             </style>
             <div class="tabs">
-                <div class="tab" id="tabLogin">Đăng nhập</div>
-                <div class="tab" id="tabRegister">Đăng ký</div>
+                <div class="tab" id="tabLogin">{{ __('ui.login_tab') }}</div>
+                <div class="tab" id="tabRegister">{{ __('ui.register_tab') }}</div>
             </div>
 
             @if($error_message)
@@ -450,65 +861,78 @@
 
             <!-- Form Đăng nhập -->
             <div id="formLoginView" class="form-view">
-                <form method="POST" action="{{ route('login.post') }}">
+                <form method="POST" action="{{ route('login.post') }}" novalidate>
                     @csrf
                     <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" value="{{ old('email') }}" required placeholder="Nhập địa chỉ email">
+                        <label for="email">{{ __('ui.email_label') }}</label>
+                        <input type="email" id="email" name="email" class="form-control" value="{{ old('email') }}" required placeholder="{{ __('ui.placeholder_email') }}">
                     </div>
 
                     <div class="form-group">
-                        <label for="password">Mật khẩu</label>
+                        <label for="password">{{ __('ui.password_label') }}</label>
                         <div class="input-wrapper">
-                            <input type="password" id="password" name="password" class="form-control" required minlength="8" placeholder="••••••••">
+                            <input type="password" id="password" name="password" class="form-control" required minlength="8" placeholder="{{ __('ui.placeholder_password') }}">
                             <button type="button" class="eye-toggle" onclick="togglePassword('password', this)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             </button>
                         </div>
-                        <div style="text-align: right; margin-top: 8px;">
-                            <a href="{{ route('password.request') }}" class="forgot-link">Quên mật khẩu?</a>
+                        <div class="login-options" style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; margin-bottom: 8px;">
+                            <label class="remember-me" style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); font-weight: 600; cursor: pointer; text-transform: none; letter-spacing: 0;">
+                                <input type="checkbox" name="remember" id="remember" style="width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--border-input); cursor: pointer; accent-color: var(--tech-blue);">
+                                <span>{{ __('ui.remember_me') }}</span>
+                            </label>
+                            <a href="{{ route('password.request') }}" class="forgot-link">{{ __('ui.forgot_password_link') }}</a>
                         </div>
                     </div>
 
-                    <button type="submit" name="login_submit" class="btn-submit">Đăng Nhập Ngay</button>
+                    <button type="submit" name="login_submit" class="btn-submit">{{ __('ui.login_btn') }}</button>
                 </form>
 
-                <div class="divider">hoặc</div>
+                <div class="divider">{{ __('ui.or_divider') }}</div>
 
                 <a href="{{ route('social.login', 'google') }}" class="btn-google">
                     <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                    <span>Sign in with Google</span>
+                    <span>{{ __('ui.login_google') }}</span>
                 </a>
             </div>
             
             <!-- Form Đăng ký -->
             <div id="formRegisterView" class="hidden form-view">
-                <form method="POST" action="{{ route('register.post') }}">
+                <form method="POST" action="{{ route('register.post') }}" novalidate>
                     @csrf
                     <div class="form-group">
-                        <label for="full_name">Họ và tên</label>
-                        <input type="text" id="full_name" name="full_name" class="form-control" value="{{ old('full_name') }}" required placeholder="Nhập họ và tên">
+                        <label for="full_name">{{ __('ui.full_name_label') }}</label>
+                        <input type="text" id="full_name" name="full_name" class="form-control" value="{{ old('full_name') }}" required placeholder="{{ __('ui.placeholder_fullname') }}">
                     </div>
 
                     <div class="form-group">
-                        <label for="reg_email">Email</label>
-                        <input type="email" id="reg_email" name="email" class="form-control" value="{{ old('email') }}" required placeholder="Nhập địa chỉ email">
+                        <label for="reg_email">{{ __('ui.email_label') }}</label>
+                        <input type="email" id="reg_email" name="email" class="form-control" value="{{ old('email') }}" required placeholder="{{ __('ui.placeholder_email') }}">
                     </div>
 
-                    <div style="display: flex; gap: 15px;">
+                    <div class="form-row">
                         <div class="form-group" style="flex: 1;">
-                            <label for="reg_password">Mật khẩu</label>
+                            <label for="reg_password">{{ __('ui.password_label') }}</label>
                             <div class="input-wrapper">
-                                <input type="password" id="reg_password" name="password" class="form-control" required minlength="8" placeholder="••••••••">
+                                <input type="password" id="reg_password" name="password" class="form-control" required minlength="8" placeholder="{{ __('ui.placeholder_password') }}">
                                 <button type="button" class="eye-toggle" onclick="togglePassword('reg_password', this)">
                                     <svg id="eye-reg" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
                             </div>
+                            <!-- Password Strength Meter -->
+                            <div class="password-strength-container" style="margin-top: 6px;">
+                                <div class="strength-bar-wrapper" style="height: 4px; width: 100%; background: #e2e8f0; border-radius: 2px; overflow: hidden; position: relative;">
+                                    <div id="strength-bar" style="height: 100%; width: 0%; transition: width 0.3s, background-color 0.3s; border-radius: 2px;"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                    <span id="strength-text" style="font-size: 11px; font-weight: 600; color: #94a3b8;"></span>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group" style="flex: 1;">
-                            <label for="password_confirmation">Xác nhận</label>
+                            <label for="password_confirmation">{{ __('ui.confirm_password_label') }}</label>
                             <div class="input-wrapper">
-                                <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required minlength="8" placeholder="••••••••">
+                                <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required minlength="8" placeholder="{{ __('ui.placeholder_password') }}">
                                 <button type="button" class="eye-toggle" onclick="togglePassword('password_confirmation', this)">
                                     <svg id="eye-confirm" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                 </button>
@@ -516,7 +940,17 @@
                         </div>
                     </div>
 
-                    <button type="submit" name="register_submit" class="btn-submit btn-submit-red">Đăng Ký Ngay</button>
+                    <!-- Checkbox Đồng ý Điều khoản & Chính sách -->
+                    <div class="form-group" style="margin-top: 15px; margin-bottom: 15px;">
+                        <label class="terms-label" style="display: inline-flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-muted); font-weight: 500; cursor: pointer; text-transform: none; letter-spacing: 0;">
+                            <input type="checkbox" id="accept_terms" required style="width: 16px; height: 16px; margin-top: 2px; border-radius: 4px; accent-color: var(--tech-red); cursor: pointer;">
+                            <span style="line-height: 1.4;">
+                                {!! __('ui.accept_terms_text', ['terms' => '<a href="#" style="color: var(--tech-red); text-decoration: none; font-weight: 600;">'.__('ui.terms_link').'</a>', 'privacy' => '<a href="#" style="color: var(--tech-red); text-decoration: none; font-weight: 600;">'.__('ui.privacy_link').'</a>']) !!}
+                            </span>
+                        </label>
+                    </div>
+
+                    <button type="submit" name="register_submit" class="btn-submit btn-submit-red">{{ __('ui.reg_btn') }}</button>
                 </form>
             </div>
 
@@ -652,6 +1086,224 @@
             showRegister();
         } else {
             showLogin();
+        }
+
+        /* ===== LANGUAGE SWITCHER DROPDOWN ===== */
+        const loginLangBtn = document.getElementById('loginLangToggleBtn');
+        const loginLangDropdown = document.getElementById('loginLangDropdown');
+        if (loginLangBtn && loginLangDropdown) {
+            loginLangBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                loginLangDropdown.classList.toggle('show');
+            });
+            document.addEventListener('click', function(e) {
+                if (!loginLangBtn.contains(e.target) && !loginLangDropdown.contains(e.target)) {
+                    loginLangDropdown.classList.remove('show');
+                }
+            });
+        }
+
+        /* ===== HIGH-END TOAST NOTIFICATION SYSTEM ===== */
+        // Tạo container chứa Toast nếu chưa có
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container';
+            document.body.appendChild(toastContainer);
+        }
+
+        function showToast(title, message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast-card toast-${type}`;
+            
+            const iconHtml = type === 'success' 
+                ? '<i class="fa-solid fa-circle-check"></i>' 
+                : '<i class="fa-solid fa-circle-exclamation"></i>';
+                
+            toast.innerHTML = `
+                <div class="toast-icon">${iconHtml}</div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close">&times;</button>
+                <div class="toast-progress">
+                    <div class="toast-progress-bar"></div>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Trigger animation slide in
+            setTimeout(() => {
+                toast.classList.add('show');
+                const bar = toast.querySelector('.toast-progress-bar');
+                if (bar) bar.style.width = '0%';
+            }, 10);
+            
+            // Tự động đóng sau 3.5 giây
+            const timer = setTimeout(() => {
+                closeToast(toast);
+            }, 3500);
+            
+            // Bấm nút đóng
+            toast.querySelector('.toast-close').addEventListener('click', () => {
+                clearTimeout(timer);
+                closeToast(toast);
+            });
+        }
+
+        function closeToast(toast) {
+            toast.classList.remove('show');
+            toast.addEventListener('transitionend', () => {
+                toast.remove();
+            });
+        }
+
+        /* ===== CLIENT-SIDE VALIDATION & SPAM PREVENTION ===== */
+        const formLogin = document.querySelector('#formLoginView form');
+        const formRegister = document.querySelector('#formRegisterView form');
+        
+        if (formLogin) {
+            formLogin.addEventListener('submit', function(e) {
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('password');
+                const submitBtn = formLogin.querySelector('button[type="submit"]');
+                
+                // Chặn nhấn liên tiếp khi đang xử lý
+                if (submitBtn.disabled) {
+                    e.preventDefault();
+                    return;
+                }
+                
+                // Kiểm định độ dài mật khẩu phía Client
+                if (passwordInput.value.length < 8) {
+                    e.preventDefault();
+                    showToast(
+                        "{{ app()->getLocale() === 'en' ? 'Validation Error' : 'Lỗi kiểm định' }}",
+                        "{{ app()->getLocale() === 'en' ? 'Password must be at least 8 characters.' : 'Mật khẩu phải từ 8 ký tự trở lên.' }}",
+                        'error'
+                    );
+                    passwordInput.focus();
+                    return;
+                }
+                
+                // Kích hoạt trạng thái đang tải & vô hiệu hóa nút bấm
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.7';
+                submitBtn.style.cursor = 'not-allowed';
+                submitBtn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-spinner fa-spin"></i> {{ app()->getLocale() === 'en' ? 'Processing...' : 'Đang xử lý...' }}</span>`;
+            });
+        }
+        
+        if (formRegister) {
+            formRegister.addEventListener('submit', function(e) {
+                const nameInput = document.getElementById('full_name');
+                const emailInput = document.getElementById('reg_email');
+                const passwordInput = document.getElementById('reg_password');
+                const confirmInput = document.getElementById('password_confirmation');
+                const acceptTerms = document.getElementById('accept_terms');
+                const submitBtn = formRegister.querySelector('button[type="submit"]');
+                
+                // Chặn nhấn liên tiếp khi đang xử lý
+                if (submitBtn.disabled) {
+                    e.preventDefault();
+                    return;
+                }
+                
+                // Kiểm tra chấp nhận điều khoản dịch vụ
+                if (acceptTerms && !acceptTerms.checked) {
+                    e.preventDefault();
+                    showToast(
+                        "{{ app()->getLocale() === 'en' ? 'Terms Required' : 'Yêu cầu điều khoản' }}",
+                        "{{ app()->getLocale() === 'en' ? 'You must agree to the Terms of Service and Privacy Policy.' : 'Bạn phải đồng ý với Điều khoản dịch vụ và Chính sách bảo mật.' }}",
+                        'error'
+                    );
+                    acceptTerms.focus();
+                    return;
+                }
+                
+                // Kiểm tra trùng khớp mật khẩu ngay trên Client
+                if (passwordInput.value !== confirmInput.value) {
+                    e.preventDefault();
+                    showToast(
+                        "{{ app()->getLocale() === 'en' ? 'Password Mismatch' : 'Mật khẩu không khớp' }}",
+                        "{{ app()->getLocale() === 'en' ? 'The password confirmation does not match.' : 'Mật khẩu xác nhận không khớp.' }}",
+                        'error'
+                    );
+                    confirmInput.focus();
+                    return;
+                }
+                
+                if (passwordInput.value.length < 8) {
+                    e.preventDefault();
+                    showToast(
+                        "{{ app()->getLocale() === 'en' ? 'Validation Error' : 'Lỗi kiểm định' }}",
+                        "{{ app()->getLocale() === 'en' ? 'Password must be at least 8 characters.' : 'Mật khẩu phải từ 8 ký tự trở lên.' }}",
+                        'error'
+                    );
+                    passwordInput.focus();
+                    return;
+                }
+                
+                // Kích hoạt trạng thái đang tải & vô hiệu hóa nút bấm
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.7';
+                submitBtn.style.cursor = 'not-allowed';
+                submitBtn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;"><i class="fa-solid fa-spinner fa-spin"></i> {{ app()->getLocale() === 'en' ? 'Processing...' : 'Đang xử lý...' }}</span>`;
+            });
+        }
+
+        /* ===== PASSWORD STRENGTH METER REAL-TIME ===== */
+        const regPasswordInput = document.getElementById('reg_password');
+        const strengthBar = document.getElementById('strength-bar');
+        const strengthText = document.getElementById('strength-text');
+        
+        if (regPasswordInput && strengthBar && strengthText) {
+            regPasswordInput.addEventListener('input', function() {
+                const val = regPasswordInput.value;
+                let score = 0;
+                
+                if (!val) {
+                    strengthBar.style.width = '0%';
+                    strengthText.innerText = '';
+                    return;
+                }
+                
+                // Các tiêu chí đánh giá
+                if (val.length >= 8) score++;
+                if (/[A-Z]/.test(val)) score++;
+                if (/[a-z]/.test(val)) score++;
+                if (/[0-9]/.test(val)) score++;
+                if (/[^A-Za-z0-9]/.test(val)) score++;
+                
+                let width = '20%';
+                let color = '#ef4444'; // Đỏ (Yếu)
+                let text = "{{ app()->getLocale() === 'en' ? 'Weak' : 'Mật khẩu yếu' }}";
+                
+                if (val.length < 8) {
+                    width = '20%';
+                    color = '#ef4444';
+                    text = "{{ app()->getLocale() === 'en' ? 'Too short (min 8 chars)' : 'Mật khẩu quá ngắn (tối thiểu 8 ký tự)' }}";
+                } else if (score <= 2) {
+                    width = '40%';
+                    color = '#f97316'; // Cam (Trung bình)
+                    text = "{{ app()->getLocale() === 'en' ? 'Medium strength' : 'Mật khẩu trung bình' }}";
+                } else if (score === 3 || score === 4) {
+                    width = '75%';
+                    color = '#22c55e'; // Xanh lá (Mạnh)
+                    text = "{{ app()->getLocale() === 'en' ? 'Strong' : 'Mật khẩu mạnh' }}";
+                } else if (score >= 5) {
+                    width = '100%';
+                    color = '#3b82f6'; // Xanh dương (Rất mạnh)
+                    text = "{{ app()->getLocale() === 'en' ? 'Very strong' : 'Mật khẩu cực kỳ an toàn' }}";
+                }
+                
+                strengthBar.style.width = width;
+                strengthBar.style.backgroundColor = color;
+                strengthText.innerText = text;
+                strengthText.style.color = color;
+            });
         }
     </script>
 </body>

@@ -23,7 +23,23 @@ class DatabaseSeeder extends Seeder
             RewardHistorySeeder::class,
             VideoSeeder::class,
             ProductComboSeeder::class,
+            HomeSectionSeeder::class,
+            OrderSeeder::class,
+            WarrantySeeder::class,
+            WarrantyClaimSeeder::class,
+            InventoryMovementSeeder::class,
+            InventoryAuditSeeder::class,
             CommentSeeder::class,
+            ServiceInvoiceSeeder::class,
+            RepairTicketSeeder::class,
+            ArticleSeeder::class,
+            AITestArticleSeeder::class,
+            FlashSaleSeeder::class,
+            LargeProductSeeder::class,
+            WishlistRecentlyViewedSeeder::class,
+            InstallmentSeeder::class,
+            CashbookSeeder::class,
+            ActivityLogSeeder::class,
         ]);
     }
 }
