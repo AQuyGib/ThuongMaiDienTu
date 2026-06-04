@@ -97,6 +97,28 @@ class Order extends Model
                 if (self::isCompletedStatus($order->status)) {
                     app(PointsService::class)->applyOrderCompletedPoints($order);
                     self::syncMemberTierByPoints($order);
+
+                    // Tự động kích hoạt/đồng bộ bảo hành cho các thiết bị trong đơn hàng
+                    $deliveredAt = $order->delivered_at ?: now();
+                    foreach ($order->details as $detail) {
+                        $item = $detail->inventoryItem;
+                        if ($item) {
+                            $warrantyMonths = $item->getWarrantyMonthsFromProduct() ?: 12;
+                            $wStart = \Carbon\Carbon::parse($deliveredAt);
+                            $wEnd = (clone $wStart)->addMonths($warrantyMonths);
+
+                            \App\Models\Warranty::updateOrCreate(
+                                ['item_id' => $item->item_id],
+                                [
+                                    'start_date' => $wStart->toDateTimeString(),
+                                    'end_date' => $wEnd->toDateTimeString(),
+                                    'warranty_status' => $wEnd->isPast() ? 'expired' : 'active',
+                                    'warranty_type' => 'manufacturer',
+                                    'note' => 'Kích hoạt bảo hành tự động khi giao hàng thành công.',
+                                ]
+                            );
+                        }
+                    }
                 } elseif (strtolower((string) $order->status) === 'cancelled') {
                     app(PointsService::class)->cancelOrderPoints($order);
                     self::syncMemberTierByPoints($order);

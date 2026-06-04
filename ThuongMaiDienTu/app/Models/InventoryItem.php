@@ -127,21 +127,18 @@ class InventoryItem extends Model {
         return 12;
     }
 
-    /**
-     * Tìm ngày đặt hàng từ order truyền vào hoặc từ order_details.
-     */
     private function resolveOrderDate($order = null)
     {
-        if ($order && $order->created_at) {
-            return $order->created_at;
+        if ($order) {
+            return $order->delivered_at ?: $order->created_at;
         }
 
         // Fallback: Tìm từ order_details → order
         $detail = \App\Models\OrderDetail::where('item_id', $this->item_id)->first();
         if ($detail) {
             $linkedOrder = $detail->order ?? null;
-            if ($linkedOrder && $linkedOrder->created_at) {
-                return $linkedOrder->created_at;
+            if ($linkedOrder) {
+                return $linkedOrder->delivered_at ?: $linkedOrder->created_at;
             }
         }
 

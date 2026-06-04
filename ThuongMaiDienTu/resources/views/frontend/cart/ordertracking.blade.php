@@ -310,62 +310,75 @@
 </div>
 
 <!-- Claim Request Modal -->
-<div id="claimModal" class="fixed inset-0 z-[9999] hidden" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center;">
-    <div id="claimModalContent" style="background: #fff; border-radius: 16px; width: 92%; max-width: 500px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); transform: scale(0.95); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease;">
+<div id="claimModal" class="fixed inset-0 z-[9999] hidden" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 12px;">
+    <div id="claimModalContent" style="background: #fff; border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); transform: scale(0.95); opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease; display: flex; flex-direction: column;">
         <!-- Modal Header -->
-        <div style="padding: 16px 24px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Gửi yêu cầu dịch vụ</h3>
-            <button type="button" onclick="closeClaimModal()" style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;">
+        <div id="claimModalHeader" style="padding: 12px 18px; background: #f59e0b; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <h3 id="claimModalTitle" style="font-size: 16px; font-weight: 700; color: #ffffff; margin: 0;">Gửi yêu cầu đổi trả sản phẩm</h3>
+            <button type="button" onclick="closeClaimModal()" style="background: none; border: none; font-size: 18px; color: #ffffff; cursor: pointer; display: flex; align-items: center;">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <!-- Modal Body -->
-        <form id="claimForm" style="padding: 24px;" onsubmit="submitClaim(event)" enctype="multipart/form-data">
+        <!-- Modal Body (Có thể cuộn nếu màn hình nhỏ) -->
+        <form id="claimForm" style="padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;" onsubmit="submitClaim(event)" enctype="multipart/form-data">
             @csrf
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Sản phẩm</label>
-                <input type="text" id="modalProductName" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #64748b;" readonly>
+            
+            <!-- Hộp thông tin sản phẩm và IMEI tinh gọn -->
+            <div style="background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 13px;">
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="font-weight: 700; color: #475569;">Sản phẩm:</span>
+                    <span style="color: #1e293b;" id="modalProductNameDisplay"></span>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #e2e8f0;">
+                    <span style="font-weight: 700; color: #475569;">IMEI:</span>
+                    <span style="color: #0f172a; font-family: monospace; font-weight: 600;" id="modalImeiDisplay"></span>
+                </div>
             </div>
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Mã IMEI/Serial</label>
-                <input type="text" id="modalImei" name="imei_serial" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; color: #64748b; font-family: monospace;" readonly>
-            </div>
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Loại yêu cầu</label>
-                <select id="modalClaimType" name="claim_type" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-weight: 500; outline: none; background: #fff;" required>
+
+            <!-- Các input ẩn chứa giá trị để gửi form -->
+            <input type="hidden" id="modalProductName">
+            <input type="hidden" id="modalImei" name="imei_serial">
+
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Loại yêu cầu</label>
+                <select id="modalClaimType" name="claim_type" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-weight: 500; outline: none; background: #fff;" required>
                     <option value="warranty">Bảo hành sửa chữa</option>
                     <option value="return">Đổi trả hàng hoàn tiền</option>
                     <option value="exchange">Đổi máy mới/khách</option>
                 </select>
             </div>
-            <div style="margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
-                    <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Họ tên</label>
-                    <input type="text" id="modalCustomerName" name="customer_name" value="{{ auth()->user() ? auth()->user()->full_name : '' }}" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;" required>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Họ tên</label>
+                    <input type="text" id="modalCustomerName" name="customer_name" value="{{ auth()->user() ? auth()->user()->full_name : '' }}" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;" required>
                 </div>
                 <div>
-                    <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Số điện thoại</label>
-                    <input type="text" id="modalCustomerPhone" name="customer_phone" value="{{ auth()->user() ? auth()->user()->phone_number : '' }}" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;" required>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Số điện thoại</label>
+                    <input type="text" id="modalCustomerPhone" name="customer_phone" value="{{ auth()->user() ? auth()->user()->phone_number : '' }}" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;" required>
                 </div>
             </div>
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Email liên hệ</label>
-                <input type="email" id="modalCustomerEmail" name="customer_email" value="{{ auth()->user() ? auth()->user()->email : '' }}" style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+            
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Email liên hệ</label>
+                <input type="email" id="modalCustomerEmail" name="customer_email" value="{{ auth()->user() ? auth()->user()->email : '' }}" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px;">
             </div>
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Lý do yêu cầu</label>
-                <textarea id="modalReason" name="reason" rows="3" placeholder="Mô tả cụ thể lỗi thiết bị hoặc lý do muốn đổi trả..." style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; resize: none;" required></textarea>
+            
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">Lý do yêu cầu</label>
+                <textarea id="modalReason" name="reason" rows="2" placeholder="Mô tả cụ thể lỗi thiết bị hoặc lý do..." style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; resize: none;" required></textarea>
             </div>
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 6px;">
-                    Hình ảnh hoặc Video minh họa <span style="font-weight: normal; color: #94a3b8;">(Tối đa 20MB, không bắt buộc)</span>
+            
+            <div>
+                <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px;">
+                    Hình ảnh hoặc Video minh họa <span style="font-weight: normal; color: #94a3b8;">(Tối đa 20MB)</span>
                 </label>
-                <input type="file" id="modalMediaFile" name="media_file" accept="image/*,video/*" style="width: 100%; padding: 8px 12px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 13px; background: #fafafa; cursor: pointer;">
-                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Hỗ trợ định dạng ảnh (png, jpg, webp...) hoặc video (mp4, mov, webm...)</div>
+                <input type="file" id="modalMediaFile" name="media_file" accept="image/*,video/*" style="width: 100%; padding: 6px 10px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 12px; background: #fafafa; cursor: pointer;">
             </div>
-            <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                <button type="button" class="btn-lookup" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 10px 20px;" onclick="closeClaimModal()">Hủy</button>
-                <button type="submit" class="btn-lookup" id="btnSubmitClaim" style="padding: 10px 20px; background: #0046ab; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Gửi yêu cầu</button>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; padding-top: 12px; border-top: 1px solid #f1f5f9; flex-shrink: 0;">
+                <button type="button" class="btn-lookup" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 8px 16px; font-size: 13px;" onclick="closeClaimModal()">Hủy</button>
+                <button type="submit" class="btn-lookup" id="btnSubmitClaim" style="padding: 8px 16px; background: #f59e0b; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;">Gửi yêu cầu</button>
             </div>
         </form>
     </div>
@@ -601,14 +614,44 @@
                                         </button>
                                     `;
                                 }
-                                return `
-                                    <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                                        <span style="font-family: monospace; font-size: 11px; color: #334155; font-weight: bold;">
-                                            ${unit.imei_serial}
-                                        </span>
-                                        <div style="display: flex; gap: 4px;">
-                                            ${buttonsHTML}
+
+                                let claimsHTML = '';
+                                if (unit.claims && unit.claims.length > 0) {
+                                    claimsHTML = `
+                                        <div style="margin-top: 6px; padding: 6px 10px; background: #eff6ff; border-radius: 6px; border-left: 3px solid #0046ab; font-size: 11px; width: 100%; text-align: left;">
+                                            <div style="font-weight: bold; color: #1e40af; margin-bottom: 4px;"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử yêu cầu hỗ trợ:</div>
+                                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                                ${unit.claims.map(c => {
+                                                    let typeStr = c.claim_type === 'warranty' ? 'Bảo hành' : (c.claim_type === 'return' ? 'Đổi trả' : 'Đổi máy');
+                                                    let statusStr = c.status === 'pending' ? 'Chờ duyệt' : (c.status === 'approved' ? 'Đã duyệt' : 'Từ chối');
+                                                    let statusColor = c.status === 'pending' ? '#b45309' : (c.status === 'approved' ? '#15803d' : '#b91c1c');
+                                                    let replyHTML = c.admin_note ? `<div style="color: #64748b; padding-left: 8px; font-style: italic; margin-top: 2px;">↳ Phản hồi: ${c.admin_note}</div>` : '';
+                                                    return `
+                                                        <div>
+                                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                                <span style="color: #475569;">• Yêu cầu ${typeStr} (${c.created_at})</span>
+                                                                <span style="font-weight: bold; color: ${statusColor};">${statusStr}</span>
+                                                            </div>
+                                                            ${replyHTML}
+                                                        </div>
+                                                    `;
+                                                }).join('')}
+                                            </div>
                                         </div>
+                                    `;
+                                }
+
+                                return `
+                                    <div style="display: flex; flex-direction: column; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0; gap: 4px;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                            <span style="font-family: monospace; font-size: 11px; color: #334155; font-weight: bold;">
+                                                ${unit.imei_serial}
+                                            </span>
+                                            <div style="display: flex; gap: 4px;">
+                                                ${buttonsHTML}
+                                            </div>
+                                        </div>
+                                        ${claimsHTML}
                                     </div>
                                 `;
                             }).join('')}
@@ -737,7 +780,35 @@
         
         document.getElementById('modalImei').value = imei;
         document.getElementById('modalProductName').value = productName;
-        document.getElementById('modalClaimType').value = defaultType;
+        
+        // Cập nhật thông tin hiển thị tinh gọn
+        document.getElementById('modalProductNameDisplay').textContent = productName;
+        document.getElementById('modalImeiDisplay').textContent = imei;
+        
+        // Cấu hình động các tùy chọn loại yêu cầu và giao diện
+        const claimTypeSelect = document.getElementById('modalClaimType');
+        const header = document.getElementById('claimModalHeader');
+        const title = document.getElementById('claimModalTitle');
+        const submitBtn = document.getElementById('btnSubmitClaim');
+        
+        if (defaultType === 'warranty') {
+            claimTypeSelect.innerHTML = '<option value="warranty">Bảo hành sửa chữa (Miễn phí)</option>';
+            header.style.background = '#0046ab';
+            title.textContent = 'Gửi yêu cầu bảo hành chính hãng';
+            submitBtn.style.background = '#0046ab';
+            submitBtn.textContent = 'Gửi yêu cầu bảo hành';
+        } else {
+            claimTypeSelect.innerHTML = `
+                <option value="return">Đổi trả hàng hoàn tiền</option>
+                <option value="exchange">Đổi máy mới/khách</option>
+            `;
+            header.style.background = '#f59e0b';
+            title.textContent = 'Gửi yêu cầu đổi trả sản phẩm';
+            submitBtn.style.background = '#f59e0b';
+            submitBtn.textContent = 'Gửi yêu cầu đổi trả';
+        }
+        claimTypeSelect.value = defaultType;
+        
         document.getElementById('modalCustomerName').value = currentOrderCustomerName;
         document.getElementById('modalCustomerPhone').value = currentOrderCustomerPhone;
         document.getElementById('modalReason').value = '';

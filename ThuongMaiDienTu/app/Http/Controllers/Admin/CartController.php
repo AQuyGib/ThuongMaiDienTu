@@ -949,8 +949,9 @@ class CartController extends Controller
 
             $mappedOrders = $orders->map(function ($order) use ($statusMap) {
                 $st = $statusMap[$order->status] ?? ['label' => strtoupper($order->status), 'color' => 'bg-slate-100 text-slate-600'];
+                $isOwner = auth()->check() && $order->user_id && (auth()->id() === $order->user_id);
                 
-                $items = $order->details->map(function ($detail) {
+                $items = $order->details->map(function ($detail) use ($isOwner) {
                     $variant = $detail->inventoryItem->variant ?? null;
                     $product = $variant->product ?? null;
 
@@ -986,7 +987,7 @@ class CartController extends Controller
                     $canClaimReturn = false;
                     $warrantyStatus = 'none';
 
-                    if ($item && $item->status === 'Sold') {
+                    if ($isOwner && $item && $item->status === 'Sold') {
                         $warranty = \App\Models\Warranty::where('item_id', $item->item_id)
                             ->orderBy('end_date', 'desc')
                             ->first();
@@ -1025,6 +1026,23 @@ class CartController extends Controller
                         }
                     }
 
+                    $claims = [];
+                    if ($item && $item->imei_serial) {
+                        $claims = \App\Models\WarrantyClaim::where('imei_serial', $item->imei_serial)
+                            ->orderBy('id', 'desc')
+                            ->get()
+                            ->map(function ($c) {
+                                return [
+                                    'id'            => $c->id,
+                                    'claim_type'    => $c->claim_type,
+                                    'status'        => $c->status,
+                                    'reason'        => $c->reason,
+                                    'created_at'    => $c->created_at ? $c->created_at->format('d/m/Y H:i') : null,
+                                    'admin_note'    => $c->admin_note,
+                                ];
+                            })->toArray();
+                    }
+
                     return [
                         'product_name' => $productName,
                         'image' => $image,
@@ -1033,6 +1051,7 @@ class CartController extends Controller
                         'imei_serial' => $detail->inventoryItem->imei_serial ?? null,
                         'can_claim_warranty' => $canClaimWarranty,
                         'can_claim_return' => $canClaimReturn,
+                        'claims' => $claims,
                     ];
                 });
 
@@ -1051,6 +1070,7 @@ class CartController extends Controller
                                 'imei_serial' => $g['imei_serial'],
                                 'can_claim_warranty' => $g['can_claim_warranty'],
                                 'can_claim_return' => $g['can_claim_return'],
+                                'claims' => $g['claims'] ?? [],
                             ];
                         })->values()->toArray(),
                     ];
@@ -1103,8 +1123,9 @@ class CartController extends Controller
         ];
 
         $st = $statusMap[$order->status] ?? ['label' => strtoupper($order->status), 'color' => 'bg-slate-100 text-slate-600'];
+        $isOwner = auth()->check() && $order->user_id && (auth()->id() === $order->user_id);
 
-        $items = $order->details->map(function ($detail) {
+        $items = $order->details->map(function ($detail) use ($isOwner) {
             $variant = $detail->inventoryItem->variant ?? null;
             $product = $variant->product ?? null;
 
@@ -1148,7 +1169,7 @@ class CartController extends Controller
             $canClaimReturn = false;
             $warrantyStatus = 'none';
 
-            if ($item && $item->status === 'Sold') {
+            if ($isOwner && $item && $item->status === 'Sold') {
                 $warranty = \App\Models\Warranty::where('item_id', $item->item_id)
                     ->orderBy('end_date', 'desc')
                     ->first();
@@ -1188,6 +1209,23 @@ class CartController extends Controller
                 }
             }
 
+            $claims = [];
+            if ($item && $item->imei_serial) {
+                $claims = \App\Models\WarrantyClaim::where('imei_serial', $item->imei_serial)
+                    ->orderBy('id', 'desc')
+                    ->get()
+                    ->map(function ($c) {
+                        return [
+                            'id'            => $c->id,
+                            'claim_type'    => $c->claim_type,
+                            'status'        => $c->status,
+                            'reason'        => $c->reason,
+                            'created_at'    => $c->created_at ? $c->created_at->format('d/m/Y H:i') : null,
+                            'admin_note'    => $c->admin_note,
+                        ];
+                    })->toArray();
+            }
+
             return [
                 'product_name' => $productName,
                 'image' => $image,
@@ -1196,6 +1234,7 @@ class CartController extends Controller
                 'imei_serial' => $detail->inventoryItem->imei_serial ?? null,
                 'can_claim_warranty' => $canClaimWarranty,
                 'can_claim_return' => $canClaimReturn,
+                'claims' => $claims,
             ];
         });
 
@@ -1215,6 +1254,7 @@ class CartController extends Controller
                         'imei_serial' => $g['imei_serial'],
                         'can_claim_warranty' => $g['can_claim_warranty'],
                         'can_claim_return' => $g['can_claim_return'],
+                        'claims' => $g['claims'] ?? [],
                     ];
                 })->values()->toArray(),
             ];

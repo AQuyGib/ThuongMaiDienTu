@@ -218,6 +218,11 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
 
     // Warranty Claim Management
     Route::get('warranty-claims', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'index'])->name('admin.warranty-claims.index');
+    Route::get('warranty-claims/create', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'create'])->name('admin.warranty-claims.create');
+    Route::post('warranty-claims', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'store'])->name('admin.warranty-claims.store');
+    Route::get('warranty-claims/{id}/edit', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'edit'])->name('admin.warranty-claims.edit');
+    Route::put('warranty-claims/{id}', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'update'])->name('admin.warranty-claims.update');
+    Route::delete('warranty-claims/{id}', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'destroy'])->name('admin.warranty-claims.destroy');
     Route::post('warranty-claims/{id}/approve', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'approve'])->name('admin.warranty-claims.approve');
     Route::post('warranty-claims/{id}/reject', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'reject'])->name('admin.warranty-claims.reject');
 });

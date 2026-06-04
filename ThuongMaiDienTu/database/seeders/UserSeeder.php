@@ -22,6 +22,7 @@ class UserSeeder extends Seeder
                 'password_hash' => Hash::make('admin123'),
                 'member_tier'   => 'Vang',
                 'status'        => 'Active',
+                'phone_number'  => '0905123456',
             ]
         );
 

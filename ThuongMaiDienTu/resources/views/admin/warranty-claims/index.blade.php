@@ -10,6 +10,13 @@
             <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Yêu cầu bảo hành & đổi trả</h1>
             <p class="text-slate-500 text-sm mt-0.5">Duyệt và xử lý các yêu cầu bảo hành, đổi trả, hoặc đổi mới sản phẩm từ khách hàng</p>
         </div>
+        <x-ui.button
+            variant="primary"
+            :href="route('admin.warranty-claims.create')"
+            title="Tạo yêu cầu tại quầy"
+        >
+            <i class="fa-solid fa-plus mr-1"></i> Tạo yêu cầu tại quầy
+        </x-ui.button>
     </div>
 
     {{-- Filters & Search --}}
@@ -148,24 +155,46 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 text-center">
-                            @if($claim->status === 'pending')
-                                <div class="flex items-center justify-center gap-1.5">
-                                    <button type="button" onclick="handleClaimAction({{ $claim->id }}, 'approve')" class="px-2.5 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1">
-                                        <i class="fa-solid fa-check"></i> Duyệt
-                                    </button>
-                                    <button type="button" onclick="handleClaimAction({{ $claim->id }}, 'reject')" class="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold transition-all flex items-center gap-1">
-                                        <i class="fa-solid fa-ban"></i> Từ chối
+                            <div class="flex flex-col gap-1.5 items-center justify-center">
+                                @if($claim->status === 'pending')
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="handleClaimAction({{ $claim->id }}, 'approve')" class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-[10px] font-bold transition-all flex items-center gap-1" title="Phê duyệt nhanh">
+                                            <i class="fa-solid fa-check"></i> Duyệt
+                                        </button>
+                                        <button type="button" onclick="handleClaimAction({{ $claim->id }}, 'reject')" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold transition-all flex items-center gap-1" title="Từ chối nhanh">
+                                            <i class="fa-solid fa-ban"></i> Từ chối
+                                        </button>
+                                    </div>
+                                @else
+                                    <div class="text-[10px] text-slate-400 text-center max-w-[150px] italic mb-1" title="{{ $claim->admin_note }}">
+                                        @if($claim->admin_note)
+                                            Note: {{ Str::limit($claim->admin_note, 30) }}
+                                        @else
+                                            Không có ghi chú
+                                        @endif
+                                    </div>
+                                @endif
+
+                                <div class="flex items-center gap-1">
+                                    <x-ui.button 
+                                        variant="warning" 
+                                        class="!px-2 !py-1 !text-[10px] font-bold" 
+                                        :href="route('admin.warranty-claims.edit', $claim->id)" 
+                                        title="Sửa yêu cầu"
+                                    >
+                                        <i class="fa-solid fa-pen text-[9px]"></i> Sửa
+                                    </x-ui.button>
+                                    
+                                    <button 
+                                        type="button"
+                                        class="inline-flex items-center gap-1 rounded bg-rose-600 px-2 py-1 text-[10px] font-bold text-white shadow-xs hover:bg-rose-700 transition"
+                                        title="Xóa yêu cầu"
+                                        onclick="openDeleteModal('{{ route('admin.warranty-claims.destroy', $claim->id) }}', '#CLAIM-{{ $claim->id }}')"
+                                    >
+                                        <i class="fa-solid fa-trash text-[9px]"></i> Xóa
                                     </button>
                                 </div>
-                            @else
-                                <div class="text-[10px] text-slate-400 text-center max-w-[150px] mx-auto italic" title="{{ $claim->admin_note }}">
-                                    @if($claim->admin_note)
-                                        Note: {{ Str::limit($claim->admin_note, 30) }}
-                                    @else
-                                        Không có ghi chú
-                                    @endif
-                                </div>
-                            @endif
+                            </div>
                         </td>
                     </tr>
                     @empty
@@ -189,6 +218,33 @@
     </div>
 </div>
 
+{{-- Delete confirmation modal --}}
+<div id="deleteModal" class="fixed inset-0 z-50 hidden items-center justify-center">
+    <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+    <div class="relative mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div class="flex flex-col items-center text-center">
+            <div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-2xl text-red-600"></i>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900">Xác nhận xóa</h3>
+            <p class="mt-2 text-sm text-gray-500">
+                Bạn có chắc chắn muốn xóa yêu cầu <span id="deleteClaimCode" class="font-semibold text-gray-700"></span>?
+                <br>Hành động này không thể hoàn tác.
+            </p>
+        </div>
+        <form id="deleteForm" method="POST" class="mt-6 flex gap-3">
+            @csrf
+            @method('DELETE')
+            <button type="button" onclick="closeDeleteModal()" class="flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+                Hủy bỏ
+            </button>
+            <button type="submit" class="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition">
+                <i class="fa-solid fa-trash mr-1"></i> Xóa yêu cầu
+            </button>
+        </form>
+    </div>
+</div>
+
 {{-- Action Forms --}}
 <form id="actionFormApprove" method="POST" style="display: none;">
     @csrf
@@ -201,6 +257,19 @@
 
 @push('scripts')
 <script>
+function openDeleteModal(actionUrl, claimCode) {
+    document.getElementById('deleteForm').action = actionUrl;
+    document.getElementById('deleteClaimCode').textContent = claimCode;
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
 function handleClaimAction(id, action) {
     const isApprove = action === 'approve';
     const title = isApprove ? 'Duyệt yêu cầu?' : 'Từ chối yêu cầu?';

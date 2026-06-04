@@ -136,6 +136,89 @@ class OrderSeeder extends Seeder
             }
         }
 
+        // Đảm bảo Quản trị viên (email: admin@dienmaypro.com.vn) có ít nhất 2 đơn hàng trong lịch sử để test
+        $adminUser = User::where('role_id', 1)->first();
+        if ($adminUser && $itemIndex + 4 <= $totalItems) {
+            $adminOrderScenarios = [
+                [
+                    'status' => 'Delivered',
+                    'payment_status' => 'paid',
+                    'note' => 'Đơn hàng hoàn thành của Quản trị viên.',
+                    'days_ago' => 5
+                ],
+                [
+                    'status' => 'Pending',
+                    'payment_status' => 'pending',
+                    'note' => 'Đơn hàng mới đang xử lý của Quản trị viên.',
+                    'days_ago' => 0
+                ]
+            ];
+
+            foreach ($adminOrderScenarios as $scenario) {
+                // Lấy 1 hoặc 2 sản phẩm cho đơn
+                $numProducts = rand(1, 2);
+                $totalAmount = 0;
+                $orderItems = [];
+                for ($j = 0; $j < $numProducts; $j++) {
+                    if ($itemIndex >= $totalItems) break;
+                    $item = $availableItems[$itemIndex];
+                    $itemIndex++;
+
+                    $variant = $item->variant;
+                    $product = $variant ? $variant->product : null;
+                    $price = ($variant && $variant->price > 0)
+                        ? $variant->price
+                        : ($product ? $product->base_price : rand(1, 5) * 1000000);
+
+                    $totalAmount += $price;
+                    $orderItems[] = [
+                        'item_id' => $item->item_id,
+                        'price' => $price,
+                        'product_name' => $product->name ?? 'Sản phẩm',
+                    ];
+                }
+
+                if (empty($orderItems)) continue;
+
+                $shippingFee = 30000;
+                $finalAmount = $totalAmount + $shippingFee;
+                $createdAt = Carbon::now()->subDays($scenario['days_ago'])->subHours(2);
+                $orderCode = str_pad(rand(10000000, 99999999), 8, '0', STR_PAD_LEFT);
+
+                // Tạo đơn hàng (Đồng bộ kích hoạt bảo hành tự động)
+                $order = Order::create([
+                    'order_code' => $orderCode,
+                    'user_id' => $adminUser->user_id,
+                    'customer_name' => $adminUser->full_name,
+                    'customer_phone' => $adminUser->phone_number ?: '0905123456',
+                    'shipping_address' => '123 Đường Admin, TP. Hồ Chí Minh',
+                    'note' => $scenario['note'],
+                    'order_type' => 'Online',
+                    'total_amount' => $totalAmount,
+                    'shipping_fee' => $shippingFee,
+                    'discount_amount' => 0,
+                    'final_amount' => $finalAmount,
+                    'payment_method' => 'COD',
+                    'payment_status' => $scenario['payment_status'],
+                    'status' => $scenario['status'],
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
+                ]);
+
+                foreach ($orderItems as $oi) {
+                    OrderDetail::create([
+                        'order_id' => $order->order_id,
+                        'item_id' => $oi['item_id'],
+                        'price' => $oi['price'],
+                        'product_name' => $oi['product_name'],
+                    ]);
+
+                    // Cập nhật trạng thái inventory item thành Sold
+                    InventoryItem::where('item_id', $oi['item_id'])->update(['status' => 'Sold']);
+                }
+            }
+        }
+
         $this->command->info("OrderSeeder created {$orderCount} sample orders.");
     }
 }
