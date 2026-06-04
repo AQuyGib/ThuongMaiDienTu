@@ -202,6 +202,19 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::post('comments/reviews/{id}/clear-reports', [CommentManagementController::class, 'clearReviewReports'])->name('admin.comments.reviews.clear-reports');
     Route::post('comments/video-comments/{id}/clear-reports', [CommentManagementController::class, 'clearVideoCommentReports'])->name('admin.comments.video-comments.clear-reports');
     Route::post('comments/users/{id}/unban', [CommentManagementController::class, 'unbanUser'])->name('admin.comments.users.unban');
+
+    // Installment Management
+    Route::get('installments', [\App\Http\Controllers\Admin\InstallmentController::class, 'index'])->name('admin.installments.index');
+    Route::get('installments/create', [\App\Http\Controllers\Admin\InstallmentController::class, 'create'])->name('admin.installments.create');
+    Route::post('installments', [\App\Http\Controllers\Admin\InstallmentController::class, 'store'])->name('admin.installments.store');
+    Route::get('installments/{id}', [\App\Http\Controllers\Admin\InstallmentController::class, 'show'])->name('admin.installments.show');
+    Route::get('installments/{id}/edit', [\App\Http\Controllers\Admin\InstallmentController::class, 'edit'])->name('admin.installments.edit');
+    Route::put('installments/{id}', [\App\Http\Controllers\Admin\InstallmentController::class, 'update'])->name('admin.installments.update');
+    Route::delete('installments/{id}', [\App\Http\Controllers\Admin\InstallmentController::class, 'destroy'])->name('admin.installments.destroy');
+    Route::post('installments/{id}/approve', [\App\Http\Controllers\Admin\InstallmentController::class, 'approve'])->name('admin.installments.approve');
+    Route::post('installments/{id}/reject', [\App\Http\Controllers\Admin\InstallmentController::class, 'reject'])->name('admin.installments.reject');
+    Route::get('installments/{id}/invoice', [\App\Http\Controllers\Admin\InstallmentController::class, 'printInvoice'])->name('admin.installments.invoice');
+    Route::post('installments/payments/{id}/pay', [\App\Http\Controllers\Admin\InstallmentController::class, 'payMonth'])->name('admin.installments.pay-month');
 });
 
 Route::middleware('auth')->group(function () {
@@ -246,4 +259,8 @@ Route::get('/api/products/search-compare', [CompareController::class, 'searchCom
 
 // AI Chatbot
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\InstallmentController;
+
 Route::post('/chatbot', [ChatbotController::class, 'chat'])->name('chatbot.chat');
+Route::post('/chatbot/create-ticket', [ChatbotController::class, 'createTicketFromChat'])->name('chatbot.create-ticket');
+Route::post('/installments/register', [InstallmentController::class, 'register'])->name('installments.register')->middleware('auth');

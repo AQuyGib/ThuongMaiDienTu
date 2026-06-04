@@ -379,11 +379,88 @@ class ArticleFrontendController extends Controller
      */
     public function aiAssist(Request $request, ArticleAIService $aiService)
     {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+        }
+
+        $user = Auth::user();
+        if ($user->chatbot_banned_until && $user->chatbot_banned_until > now()) {
+            $formattedTime = \Carbon\Carbon::parse($user->chatbot_banned_until)->format('d/m/Y H:i');
+            return response()->json([
+                'success' => false,
+                'message' => "Tài khoản của bạn đã bị cấm sử dụng các tính năng hỗ trợ AI đến {$formattedTime} do phát hiện hành vi spam.",
+                'is_banned' => true
+            ], 403);
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'summary' => 'nullable|string|max:500',
             'content' => 'required|string',
         ]);
+
+        // PHÒNG CHỐNG SPAM TỰ ĐỘNG (SPAM DETECTION SYSTEM)
+        $prompt = trim($request->input('title', '') . ' ' . $request->input('content', ''));
+        $isSpamming = false;
+        $spamReason = '';
+
+        // 1. Kiểm tra lặp lại tin nhắn liên tục
+        $lastPrompt = session()->get('ai_assist_last_prompt', '');
+        $repeatCount = session()->get('ai_assist_repeat_count', 0);
+        if ($prompt === $lastPrompt) {
+            $repeatCount++;
+        } else {
+            $repeatCount = 1;
+        }
+        session()->put('ai_assist_last_prompt', $prompt);
+        session()->put('ai_assist_repeat_count', $repeatCount);
+
+        // 2. Kiểm tra tần suất gửi tin nhắn quá nhanh (Rate limiting)
+        $timestamps = session()->get('ai_assist_timestamps', []);
+        $nowTime = time();
+        $timestamps = array_filter($timestamps, function($t) use ($nowTime) {
+            return ($nowTime - $t) < 20;
+        });
+        $timestamps[] = $nowTime;
+        session()->put('ai_assist_timestamps', $timestamps);
+
+        // 3. Kiểm tra spam bàn phím (Keyboard smash)
+        $hasSmashWord = false;
+        $words = explode(' ', $prompt);
+        foreach ($words as $word) {
+            if (strlen($word) > 30) {
+                $hasSmashWord = true;
+                break;
+            }
+        }
+
+        if ($repeatCount >= 4) {
+            $isSpamming = true;
+            $spamReason = 'Gửi liên tiếp một nội dung nhiều lần.';
+        } elseif (count($timestamps) > 6) {
+            $isSpamming = true;
+            $spamReason = 'Gửi quá nhiều yêu cầu liên tục trong thời gian ngắn.';
+        } elseif ($hasSmashWord) {
+            $isSpamming = true;
+            $spamReason = 'Nội dung chứa từ khóa dài bất thường (nghi vấn spam bàn phím).';
+        }
+
+        if ($isSpamming) {
+            $banDuration = now()->addDays(30);
+            $user->update(['chatbot_banned_until' => $banDuration]);
+            
+            // Xóa session liên quan để dọn dẹp
+            session()->forget(['ai_assist_last_prompt', 'ai_assist_repeat_count', 'ai_assist_timestamps']);
+            
+            \Illuminate\Support\Facades\Log::warning("User ID {$user->user_id} bị cấm sử dụng AI tự động do hành vi spam chấm điểm bài viết: {$spamReason}");
+            
+            $formattedTime = $banDuration->format('d/m/Y H:i');
+            return response()->json([
+                'success' => false,
+                'message' => "Hành vi spam bị phát hiện: {$spamReason} Tài khoản của bạn đã bị cấm sử dụng các tính năng hỗ trợ AI đến {$formattedTime}.",
+                'is_banned' => true
+            ], 403);
+        }
 
         $analysis = $aiService->analyzeArticle(
             $request->input('title'),

@@ -819,5 +819,13 @@ Khởi chạy tiến trình quét hàng loạt...
             });
         }, 1500);
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const openOrderId = urlParams.get('open_order_id');
+        if (openOrderId) {
+            openOrderDetail(openOrderId);
+        }
+    });
 </script>
 @endpush

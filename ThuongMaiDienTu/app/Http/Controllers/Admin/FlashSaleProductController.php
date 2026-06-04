@@ -39,6 +39,9 @@ class FlashSaleProductController extends Controller
 
         // RÀNG BUỘC: Giá bán khuyến mại Flash Sale bắt buộc phải nhỏ hơn giá gốc của sản phẩm
         if ((float) $validated['sale_price'] >= (float) $product->base_price) {
+            if ($request->ajax()) {
+                return response()->json(['message' => 'Giá sale phải nhỏ hơn giá gốc của sản phẩm.'], 422);
+            }
             return back()->with('error', 'Giá sale phải nhỏ hơn giá gốc của sản phẩm.');
         }
 
@@ -91,7 +94,7 @@ class FlashSaleProductController extends Controller
                     'sale_price' => number_format($flashSaleProduct->sale_price, 0, ',', '.') . 'đ',
                     'stock_limit' => $flashSaleProduct->stock_limit,
                     'sold_quantity' => $flashSaleProduct->sold_quantity,
-                    'delete_url' => route('admin.flash-sales.products.destroy', [$flash_sale->flash_sale_id, $flashSaleProduct->id])
+                    'delete_url' => route('admin.flash-sales.products.destroy', [$flash_sale->flash_sale_id, $flashSaleProduct->flash_sale_product_id])
                 ]
             ]);
         }

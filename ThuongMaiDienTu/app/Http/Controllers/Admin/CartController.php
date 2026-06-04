@@ -119,22 +119,47 @@ class CartController extends Controller
         if ($parentProductId) {
             $parentProduct = Product::find($parentProductId);
             if ($parentProduct) {
-                // Truy vấn bảng trung gian product_combos để lấy thông tin cấu hình giảm giá
-                $comboRelation = $parentProduct->comboProducts()->where('product_combos.combo_product_id', $productId)->first();
-                if ($comboRelation) {
-                    $pivot = $comboRelation->pivot;
-                    $basePriceToDiscount = $salePrice ?? (int) $product->base_price;
-                    
-                    // Áp dụng giảm giá theo phần trăm (%) hoặc số tiền cố định (đ)
-                    if ($pivot->discount_type === 'percentage') {
-                        $salePrice = (int) ($basePriceToDiscount * (1 - $pivot->discount_value / 100));
-                    } else {
-                        $salePrice = (int) ($basePriceToDiscount - $pivot->discount_value);
+                $basePriceToDiscount = $salePrice ?? (int) $product->base_price;
+                $appliedDiscount = false;
+
+                // 1. Kiểm tra từ Cache Combo AI đã đề xuất
+                $user = auth()->user();
+                $userKey = $user ? $user->user_id : (session()->getId() ?? 'guest');
+                $cacheKey = "ai_combo_recs_{$userKey}_{$parentProductId}";
+                $cachedCombos = cache()->get($cacheKey);
+
+                if (is_array($cachedCombos)) {
+                    foreach ($cachedCombos as $combo) {
+                        if ((int) $combo['product_id'] === $productId) {
+                            $discountType = $combo['discount_type'];
+                            $discountValue = (float) $combo['discount_value'];
+
+                            if ($discountType === 'percentage') {
+                                $salePrice = (int) ($basePriceToDiscount * (1 - $discountValue / 100));
+                            } else {
+                                $salePrice = (int) ($basePriceToDiscount - $discountValue);
+                            }
+                            $appliedDiscount = true;
+                            break;
+                        }
                     }
-                    
-                    if ($salePrice < 0) {
-                        $salePrice = 0;
+                }
+
+                // 2. Fallback về cơ sở dữ liệu nếu không tìm thấy trong Cache AI
+                if (!$appliedDiscount) {
+                    $comboRelation = $parentProduct->comboProducts()->where('product_combos.combo_product_id', $productId)->first();
+                    if ($comboRelation) {
+                        $pivot = $comboRelation->pivot;
+                        if ($pivot->discount_type === 'percentage') {
+                            $salePrice = (int) ($basePriceToDiscount * (1 - $pivot->discount_value / 100));
+                        } else {
+                            $salePrice = (int) ($basePriceToDiscount - $pivot->discount_value);
+                        }
                     }
+                }
+
+                if ($salePrice !== null && $salePrice < 0) {
+                    $salePrice = 0;
                 }
             }
         }
@@ -182,7 +207,9 @@ class CartController extends Controller
             ];
         })->filter()->values();
 
-        return view('frontend.cart.ShippingCosts', compact('cartItems'));
+        $addresses = auth()->check() ? auth()->user()->addresses()->orderByDesc('is_default')->get() : collect();
+
+        return view('frontend.cart.ShippingCosts', compact('cartItems', 'addresses'));
     }
 
     public function checkout()
@@ -582,14 +609,14 @@ class CartController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
             'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
-            'province' => ['required', 'string', 'in:hcm,hn,bd,dnai,la,tg,vt,bn,hy,hnam,vp,hp,ct,hb,nb,ag,kg,dt,tv,bte,dn,qng,bdinh,nth,th,qbi,hue,gl,dkl,lc,dbi,ss,cb,ls,cm,other'],
+            'province' => ['nullable', 'string', 'in:hcm,hn,bd,dnai,la,tg,vt,bn,hy,hnam,vp,hp,ct,hb,nb,ag,kg,dt,tv,bte,dn,qng,bdinh,nth,th,qbi,hue,gl,dkl,lc,dbi,ss,cb,ls,cm,other'],
             'address' => ['required', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
             'note' => ['nullable', 'string', 'max:250'],
         ]);
 
         $name = $request->input('name');
         $phone = $request->input('phone');
-        $province = $request->input('province');
+        $province = $request->input('province', 'other');
         $address = $request->input('address');
         $note = $request->input('note');
         $paymentMethod = $request->input('payment_method') === 'qr' ? 'VNPAY' : 'COD';
@@ -698,9 +725,80 @@ class CartController extends Controller
         return view('frontend.cart.maQR', compact('order'));
     }
 
-    public function tracking()
+    public function tracking(Request $request)
     {
-        return view('frontend.cart.ordertracking');
+        $orders = collect();
+
+        if (Auth::check()) {
+            $statusFilter = $request->query('status');
+            $query = Order::with(['details.inventoryItem.variant.product'])
+                ->where('user_id', Auth::id())
+                ->orderBy('created_at', 'desc');
+
+            if ($statusFilter && $statusFilter !== 'all') {
+                $query->where('status', $statusFilter);
+            }
+
+            $orders = $query->get()->map(function ($order) {
+                // Gom nhóm sản phẩm từ details
+                $items = $order->details->map(function ($detail) {
+                    $variant = $detail->inventoryItem->variant ?? null;
+                    $product = $variant?->product ?? null;
+
+                    $image = null;
+                    if ($product) {
+                        $thumb = $product->thumbnail;
+                        if ($thumb && \Illuminate\Support\Str::startsWith($thumb, 'http')) {
+                            $image = $thumb;
+                        } else {
+                            $rawImages = $product->images;
+                            if ($rawImages) {
+                                $arr = is_string($rawImages) ? json_decode($rawImages, true) : $rawImages;
+                                $first = is_array($arr) && count($arr) > 0 ? $arr[0] : null;
+                                if ($first && \Illuminate\Support\Str::startsWith($first, 'http')) {
+                                    $image = $first;
+                                } elseif ($first) {
+                                    $image = asset('storage/' . ltrim($first, '/'));
+                                }
+                            }
+                            if (!$image && $thumb) {
+                                $image = asset('uploads/products/' . $thumb);
+                            }
+                        }
+                    }
+
+                    return [
+                        'product_name' => $detail->product_name ?? ($product?->name ?? 'Sản phẩm không xác định'),
+                        'image'        => $image,
+                        'price'        => (int) $detail->price,
+                    ];
+                });
+
+                // Gom nhóm theo tên + giá
+                $groupedItems = $items->groupBy(fn($i) => $i['product_name'] . '_' . $i['price'])
+                    ->map(fn($g) => [
+                        'product_name' => $g->first()['product_name'],
+                        'image'        => $g->first()['image'],
+                        'quantity'     => $g->count(),
+                        'price'        => $g->first()['price'],
+                    ])->values();
+
+                return [
+                    'order_id'        => $order->order_id,
+                    'order_code'      => $order->order_code,
+                    'status'          => $order->status,
+                    'payment_method'  => $order->payment_method,
+                    'customer_name'   => $order->customer_name,
+                    'customer_phone'  => $order->customer_phone,
+                    'shipping_address'=> $order->shipping_address,
+                    'final_amount'    => (int) $order->final_amount,
+                    'created_at'      => $order->created_at,
+                    'items'           => $groupedItems,
+                ];
+            });
+        }
+
+        return view('frontend.cart.ordertracking', compact('orders'));
     }
 
     public function print()

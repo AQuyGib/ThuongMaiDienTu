@@ -103,6 +103,7 @@ interface User {
   created_at: string;
   phone_number?: string;
   version?: number;
+  chatbot_banned_until?: string;
 }
 
 interface Role {
@@ -336,6 +337,52 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
     }
   };
 
+  const handleUnbanChatbot = async (user: User) => {
+    const Swal = (window as any).Swal;
+
+    const result = await Swal.fire({
+      title: t('Mở khóa Chatbot?', 'Unban Chatbot?'),
+      text: t('Bạn có muốn mở khóa tính năng Chatbot cho tài khoản', 'Do you want to restore Chatbot access for the account') + ` "${user.full_name}"?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#059669', // emerald-600
+      cancelButtonColor: '#64748b', // slate-500
+      confirmButtonText: t('Đồng ý', 'Yes, unban'),
+      cancelButtonText: t('Hủy bỏ', 'Cancel'),
+      customClass: {
+        popup: 'rounded-[2rem]',
+        confirmButton: 'rounded-xl font-bold uppercase text-xs tracking-widest px-6 py-3',
+        cancelButton: 'rounded-xl font-bold uppercase text-xs tracking-widest px-6 py-3'
+      }
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await axios.post(`/admin/permissions/${user.user_id}/unban-chatbot`, {
+          _token: (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content
+        }, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+
+        onRefresh();
+
+        Swal.fire({
+          title: t('Thành công!', 'Success!'),
+          text: response.data.message || t('Đã mở khóa Chatbot thành công.', 'Successfully unbanned Chatbot.'),
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false,
+          customClass: { popup: 'rounded-[2rem]' }
+        });
+      } catch (error) {
+        Swal.fire({
+          title: t('Lỗi!', 'Error!'),
+          text: t('Không thể mở khóa Chatbot lúc này.', 'Could not unban Chatbot at this moment.'),
+          icon: 'error',
+          customClass: { popup: 'rounded-[2rem]' }
+        });
+      }
+    }
+  };
+
   const roleOptions = [
     { value: '', label: t('Tất cả vai trò', 'All Roles') },
     ...roles.map((r: any) => ({ value: r.role_id.toString(), label: r.name, icon: <Shield size={14} /> }))
@@ -427,13 +474,31 @@ function UserDashboard({ users, stats, roles, loading, filters, onFilterChange, 
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                    <StatusBadge status={user.status} />
+                    <div className="flex flex-col gap-2">
+                      <StatusBadge status={user.status} />
+                      {user.chatbot_banned_until && new Date(user.chatbot_banned_until) > new Date() && (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-wider w-fit border border-rose-500/20 shadow-inner" title={t(`Bị cấm chatbot đến: ${new Date(user.chatbot_banned_until).toLocaleString('vi-VN')}`, `Banned from chatbot until: ${new Date(user.chatbot_banned_until).toLocaleString()}`)}>
+                          <ShieldAlert size={12} className="text-rose-500 animate-pulse" /> {t('Cấm Chatbot', 'Chatbot Banned')}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5 mt-2 text-[10px] font-bold text-slate-400">
                       <Calendar size={12} /> {new Date(user.created_at).toLocaleDateString(t('vi-VN', 'en-US'))}
                     </div>
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      {user.chatbot_banned_until && new Date(user.chatbot_banned_until) > new Date() && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title={t('Mở khóa Chatbot', 'Unban Chatbot')}
+                          className="h-10 w-10 rounded-xl text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-600 hover:text-white transition-all shadow-sm" 
+                          onClick={() => handleUnbanChatbot(user)}
+                        >
+                          <ShieldCheck size={16} />
+                        </Button>
+                      )}
                       <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-blue-600 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-600 hover:text-white transition-all shadow-sm" onClick={() => onEdit(user)}><Edit size={16} /></Button>
                       <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-amber-600 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-600 hover:text-white transition-all shadow-sm" onClick={() => window.location.href = `/admin/permissions/${user.user_id}/sessions`}><Clock size={16} /></Button>
                       <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-rose-600 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-600 hover:text-white transition-all shadow-sm" onClick={() => handleDelete(user)}><Trash2 size={16} /></Button>
@@ -764,6 +829,51 @@ function UserModal({ user, roles, onClose, onSuccess }: any) {
                     icon={<Clock size={16} />}
                   />
                 </div>
+
+                {isEdit && user?.chatbot_banned_until && new Date(user.chatbot_banned_until) > new Date() && (
+                  <div className="p-5 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-between gap-4 mt-4">
+                    <div className="flex items-center gap-3">
+                      <ShieldAlert className="text-rose-500 animate-pulse shrink-0" size={24} />
+                      <div>
+                        <div className="text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">{t('Đang bị cấm Chatbot', 'Chatbot Access Banned')}</div>
+                        <div className="text-[10px] font-bold text-slate-500 mt-0.5">
+                          {t('Hạn khóa đến:', 'Banned until:')} {new Date(user.chatbot_banned_until).toLocaleString('vi-VN')}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={async () => {
+                        const Swal = (window as any).Swal;
+                        try {
+                          await axios.post(`/admin/permissions/${user.user_id}/unban-chatbot`, {
+                            _token: csrfToken
+                          });
+                          Swal.fire({
+                            title: t('Thành công!', 'Success!'),
+                            text: t('Đã mở khóa Chatbot.', 'Chatbot unbanned.'),
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            customClass: { popup: 'rounded-[2rem]' }
+                          });
+                          onSuccess();
+                        } catch (err) {
+                          Swal.fire({
+                            title: t('Lỗi!', 'Error!'),
+                            text: t('Không thể mở khóa.', 'Could not unban.'),
+                            icon: 'error',
+                            customClass: { popup: 'rounded-[2rem]' }
+                          });
+                        }
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase px-4 py-2 rounded-xl transition-all"
+                    >
+                      {t('Mở khóa', 'Unban')}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
