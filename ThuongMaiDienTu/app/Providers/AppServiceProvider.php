@@ -62,13 +62,15 @@ class AppServiceProvider extends ServiceProvider
 
         // Auto-seed default roles if table is empty
         try {
-            if (Schema::hasTable('roles') && \Illuminate\Support\Facades\DB::table('roles')->count() === 0) {
-                \Illuminate\Support\Facades\DB::table('roles')->insert([
+            if (Schema::hasTable('roles')) {
+                foreach ([
                     ['role_id' => 1, 'name' => 'Admin',      'description' => 'Quản trị viên hệ thống - toàn quyền'],
                     ['role_id' => 2, 'name' => 'Quản lý',    'description' => 'Quản lý cửa hàng - xử lý đơn hàng, sản phẩm'],
                     ['role_id' => 3, 'name' => 'Khách hàng', 'description' => 'Người dùng mua hàng trên website'],
                     ['role_id' => 4, 'name' => 'Nhân viên',  'description' => 'Nhân viên bán hàng'],
-                ]);
+                ] as $role) {
+                    \Illuminate\Support\Facades\DB::table('roles')->updateOrInsert(['role_id' => $role['role_id']], $role);
+                }
             }
         } catch (\Exception $e) {
             // Ignore database connection issues on initial install

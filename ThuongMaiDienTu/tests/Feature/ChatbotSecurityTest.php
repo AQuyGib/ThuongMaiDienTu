@@ -20,11 +20,11 @@ class ChatbotSecurityTest extends TestCase
 
         session()->flush();
 
-        // Tạo vai trò Customer mẫu
-        $this->role = Role::create([
-            'name' => 'Customer',
-            'description' => 'Standard Customer',
-        ]);
+        // Lấy hoặc tạo vai trò Customer mẫu
+        $this->role = Role::firstOrCreate(
+            ['name' => 'Customer'],
+            ['description' => 'Standard Customer']
+        );
 
         // Tạo user mẫu
         $this->user = User::create([
@@ -117,12 +117,11 @@ class ChatbotSecurityTest extends TestCase
      */
     public function test_admin_can_unban_chatbot_user()
     {
-        // Tạo vai trò Admin với ID 1
-        $adminRole = Role::create([
-            'role_id' => 1,
-            'name' => 'Admin',
-            'description' => 'Administrator',
-        ]);
+        // Lấy hoặc cập nhật vai trò Admin với ID 1
+        $adminRole = Role::updateOrCreate(
+            ['role_id' => 1],
+            ['name' => 'Admin', 'description' => 'Administrator']
+        );
 
         $adminUser = User::create([
             'role_id' => $adminRole->role_id,
