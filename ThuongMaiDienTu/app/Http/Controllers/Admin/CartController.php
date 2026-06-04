@@ -465,6 +465,8 @@ class CartController extends Controller
         $user = Auth::user();
 
         try {
+            $appliedCode = strtoupper(trim((string) session('applied_coupon_code', '')));
+
             $order = DB::transaction(function () use ($data, $cartItems, $subtotal, $shippingFee, $discount, $walletPointsUsed, $finalAmount, $user, $pointsService, $cart) {
                 $order = Order::create([
                     'user_id' => $user?->user_id,
@@ -504,10 +506,18 @@ class CartController extends Controller
                     $pointsService->deductWalletPoints($user, $walletPointsUsed, $order, 'Dùng điểm tiêu dùng khi đặt hàng');
                 }
 
-                session()->forget(['cart', 'checkout_wallet_points', 'checkout_discount', 'cart_locked']);
+                session()->forget(['cart', 'checkout_wallet_points', 'checkout_discount', 'cart_locked', 'applied_coupon_code']);
 
                 return $order;
             });
+
+            // Tăng times_used cho voucher đã dùng (sau khi transaction commit thành công)
+            if ($appliedCode !== '') {
+                CouponFlashSale::where('promo_type', 'Coupon')
+                    ->where('code', $appliedCode)
+                    ->whereNotNull('usage_limit')
+                    ->increment('times_used');
+            }
 
             return response()->json([
                 'success' => true,
@@ -565,141 +575,162 @@ class CartController extends Controller
 
     public function confirmOrder(Request $request)
     {
-        $cart = session()->get('cart', []);
-        $selectedCart = collect($cart)->filter(fn($item) => $item['selected'] ?? true)->toArray();
+        try {
+            $cart = session()->get('cart', []);
+            $selectedCart = collect($cart)->filter(fn($item) => $item['selected'] ?? true)->toArray();
 
-        if (empty($selectedCart)) {
-            return response()->json(['status' => 'error', 'message' => 'Giỏ hàng trống hoặc chưa chọn sản phẩm.'], 400);
-        }
+            if (empty($selectedCart)) {
+                return response()->json(['status' => 'error', 'message' => 'Giỏ hàng trống hoặc chưa chọn sản phẩm.'], 400);
+            }
 
-        $totalAmount = collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
+            $totalAmount = collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
 
-        $couponCode = strtoupper((string) (session('applied_coupon_code') ?: $request->input('discount_code', '')));
-        [$discount] = $this->resolveVoucherDiscount($couponCode, (int) $totalAmount);
+            $couponCode = strtoupper((string) (session('applied_coupon_code') ?: $request->input('discount_code', '')));
+            [$discount] = $this->resolveVoucherDiscount($couponCode, (int) $totalAmount);
 
-        if ($discount <= 0 && $couponCode !== '') {
-            $redemption = \App\Models\RewardRedemption::with('reward')
-                ->where('redemption_code', $couponCode)
-                ->where('user_id', auth()->id())
-                ->first();
+            if ($discount <= 0 && $couponCode !== '') {
+                $redemption = \App\Models\RewardRedemption::with('reward')
+                    ->where('redemption_code', $couponCode)
+                    ->where('user_id', auth()->id())
+                    ->first();
 
-            if ($redemption && in_array($redemption->status, ['issued', 'approved', 'won'], true) && (!$redemption->expires_at || !$redemption->expires_at->isPast())) {
-                $reward = $redemption->reward;
-                if ($reward) {
-                    if ($reward->reward_type === 'shipping') {
-                        $discount = (int) $reward->shipping_discount_amount;
-                    } elseif ($reward->reward_type === 'wheel_prize') {
-                        $discount = $reward->discount_amount > 0
-                            ? (int) $reward->discount_amount
-                            : (int) $reward->shipping_discount_amount;
-                    } else {
-                        $discount = (int) $reward->discount_amount;
+                if ($redemption && in_array($redemption->status, ['issued', 'approved', 'won'], true) && (!$redemption->expires_at || !$redemption->expires_at->isPast())) {
+                    $reward = $redemption->reward;
+                    if ($reward) {
+                        if ($reward->reward_type === 'shipping') {
+                            $discount = (int) $reward->shipping_discount_amount;
+                        } elseif ($reward->reward_type === 'wheel_prize') {
+                            $discount = $reward->discount_amount > 0
+                                ? (int) $reward->discount_amount
+                                : (int) $reward->shipping_discount_amount;
+                        } else {
+                            $discount = (int) $reward->discount_amount;
+                        }
+
+                        $discount = min($discount, $totalAmount);
+
+                        $redemption->status = 'used';
+                        $redemption->used_at = now();
+                        $redemption->save();
                     }
-
-                    $discount = min($discount, $totalAmount);
-
-                    // Đánh dấu mã đổi thưởng đã dùng sau khi đặt đơn thành công.
-                    $redemption->status = 'used';
-                    $redemption->used_at = now();
-                    $redemption->save();
                 }
             }
-        }
 
-        $request->validate([
-            'name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?\/~`]+$/u'],
-            'phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
-            'province' => ['nullable', 'string', 'in:hcm,hn,bd,dnai,la,tg,vt,bn,hy,hnam,vp,hp,ct,hb,nb,ag,kg,dt,tv,bte,dn,qng,bdinh,nth,th,qbi,hue,gl,dkl,lc,dbi,ss,cb,ls,cm,other'],
-            'address' => ['required', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\:;"\'<>?~`]+$/u'],
-            'note' => ['nullable', 'string', 'max:250'],
-        ]);
+            $request->validate([
+                'name'     => ['required', 'string', 'min:2', 'max:50', 'regex:/^[^0-9!@#$%^&*()_+=\[\]{}|\\\\:;"\'<>,.?\/~`]+$/u'],
+                'phone'    => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
+                'province' => ['nullable', 'string', 'in:hcm,hn,bd,dnai,la,tg,vt,bn,hy,hnam,vp,hp,ct,hb,nb,ag,kg,dt,tv,bte,dn,qng,bdinh,nth,th,qbi,hue,gl,dkl,lc,dbi,ss,cb,ls,cm,other'],
+                'address'  => ['required', 'string', 'min:10', 'max:150', 'regex:/^[^!@#$%^&*()_+=\[\]{}|\\\\:;"\'<>?~`]+$/u'],
+                'note'     => ['nullable', 'string', 'max:250'],
+            ]);
 
-        $name = $request->input('name');
-        $phone = $request->input('phone');
-        $province = $request->input('province', 'other');
-        $address = $request->input('address');
-        $note = $request->input('note');
-        $paymentMethod = $request->input('payment_method') === 'qr' ? 'VNPAY' : 'COD';
+            $name          = $request->input('name');
+            $phone         = $request->input('phone');
+            $province      = $request->input('province') ?? 'other';
+            $address       = $request->input('address');
+            $note          = $request->input('note');
+            $paymentMethod = $request->input('payment_method') === 'qr' ? 'VNPAY' : 'COD';
 
-        // Tính phí vận chuyển ở backend
-        $shippingFee = $this->calculateServerShippingFee($province, (int) ($totalAmount - $discount));
-        $finalAmount = $totalAmount - $discount + $shippingFee;
+            $shippingFee = $this->calculateServerShippingFee($province, (int) ($totalAmount - $discount));
+            $finalAmount = $totalAmount - $discount + $shippingFee;
 
-        $order = Order::create([
-            'user_id' => auth()->id(),
-            'order_type' => 'Online',
-            'total_amount' => $totalAmount,
-            'shipping_fee' => $shippingFee,
-            'discount_amount' => $discount,
-            'wallet_points_used' => 0,
-            'final_amount' => $finalAmount > 0 ? $finalAmount : 0,
-            'payment_method' => $paymentMethod,
-            'status' => 'Pending',
-            'customer_name' => $name,
-            'customer_phone' => $phone,
-            'shipping_address' => $address,
-            'note' => $note,
-            'order_code' => 'ORD' . now()->format('YmdHis') . random_int(100, 999),
-        ]);
+            $order = Order::create([
+                'user_id'          => auth()->id(),
+                'order_type'       => 'Online',
+                'total_amount'     => $totalAmount,
+                'shipping_fee'     => $shippingFee,
+                'discount_amount'  => $discount,
+                'wallet_points_used' => 0,
+                'final_amount'     => $finalAmount > 0 ? $finalAmount : 0,
+                'payment_method'   => $paymentMethod,
+                'status'           => 'Pending',
+                'customer_name'    => $name,
+                'customer_phone'   => $phone,
+                'shipping_address' => $address,
+                'note'             => $note,
+                'order_code'       => 'ORD' . now()->format('YmdHis') . random_int(100, 999),
+            ]);
 
-        foreach ($selectedCart as $productId => $item) {
-            $qty = $item['quantity'];
-            $price = $item['price'];
+            foreach ($selectedCart as $productId => $item) {
+                $qty   = $item['quantity'];
+                $price = $item['price'];
 
-            $variant = ProductVariant::where('product_id', $productId)->first();
-            if (!$variant) {
-                $variant = ProductVariant::create([
-                    'product_id' => $productId,
-                    'color' => 'Mặc định',
-                    'stock' => 99,
-                ]);
+                $variant = ProductVariant::where('product_id', $productId)->first();
+                if (!$variant) {
+                    $variant = ProductVariant::create([
+                        'product_id' => $productId,
+                        'color'      => 'Mặc định',
+                        'stock'      => 99,
+                    ]);
+                }
+
+                $inventoryItems = InventoryItem::where('variant_id', $variant->variant_id)
+                    ->where('status', 'In_Stock')
+                    ->take($qty)
+                    ->get();
+
+                $needed = $qty - $inventoryItems->count();
+                for ($i = 0; $i < $needed; $i++) {
+                    $newItem = InventoryItem::create([
+                        'variant_id'   => $variant->variant_id,
+                        'po_id'        => PurchaseOrder::first()?->po_id ?? 1,
+                        'imei_serial'  => 'ONLINE-' . strtoupper(Str::random(12)),
+                        'warehouse_loc'=> 'Kho Online',
+                        'status'       => 'In_Stock',
+                    ]);
+                    $inventoryItems->push($newItem);
+                }
+
+                foreach ($inventoryItems as $invItem) {
+                    OrderDetail::create([
+                        'order_id' => $order->order_id,
+                        'item_id'  => $invItem->item_id,
+                        'price'    => $price,
+                    ]);
+                    $invItem->status = 'Sold';
+                    $invItem->save();
+                }
             }
 
-            $inventoryItems = InventoryItem::where('variant_id', $variant->variant_id)
-                ->where('status', 'In_Stock')
-                ->take($qty)
-                ->get();
+            $this->flashSaleService->confirmCartFlashSale($selectedCart);
 
-            $needed = $qty - $inventoryItems->count();
-            for ($i = 0; $i < $needed; $i++) {
-                $newItem = InventoryItem::create([
-                    'variant_id' => $variant->variant_id,
-                    'po_id' => PurchaseOrder::first()?->po_id ?? 1,
-                    'imei_serial' => 'ONLINE-' . strtoupper(Str::random(12)),
-                    'warehouse_loc' => 'Kho Online',
-                    'status' => 'In_Stock',
-                ]);
-                $inventoryItems->push($newItem);
+            // Tăng times_used cho voucher đã dùng
+            $appliedCode = strtoupper(trim((string) session('applied_coupon_code', '')));
+            if ($appliedCode !== '') {
+                CouponFlashSale::where('promo_type', 'Coupon')
+                    ->where('code', $appliedCode)
+                    ->whereNotNull('usage_limit')
+                    ->increment('times_used');
             }
 
-            foreach ($inventoryItems as $invItem) {
-                OrderDetail::create([
-                    'order_id' => $order->order_id,
-                    'item_id' => $invItem->item_id,
-                    'price' => $price,
-                ]);
-                
-                $invItem->status = 'Sold';
-                $invItem->save();
+            $remainingCart = collect($cart)->filter(fn($item) => !($item['selected'] ?? true))->toArray();
+            if (empty($remainingCart)) {
+                session()->forget('cart');
+            } else {
+                session()->put('cart', $remainingCart);
             }
+            session()->forget(['cart_locked', 'checkout_discount', 'applied_coupon_code']);
+
+            return response()->json([
+                'status'       => 'success',
+                'order_id'     => $order->order_id,
+                'total_amount' => $finalAmount,
+                'message'      => 'Đặt hàng thành công!'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => collect($e->errors())->flatten()->first(),
+                'errors'  => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            \Log::error('confirmOrder error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Lỗi hệ thống: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $this->flashSaleService->confirmCartFlashSale($selectedCart);
-
-        $remainingCart = collect($cart)->filter(fn($item) => !($item['selected'] ?? true))->toArray();
-        if (empty($remainingCart)) {
-            session()->forget('cart');
-        } else {
-            session()->put('cart', $remainingCart);
-        }
-        session()->forget(['cart_locked', 'checkout_discount', 'applied_coupon_code']);
-
-        return response()->json([
-            'status' => 'success',
-            'order_id' => $order->order_id,
-            'total_amount' => $finalAmount,
-            'message' => 'Đặt hàng thành công!'
-        ]);
     }
 
     public function cancelOrder(Request $request)
@@ -725,9 +756,80 @@ class CartController extends Controller
         return view('frontend.cart.maQR', compact('order'));
     }
 
-    public function tracking()
+    public function tracking(Request $request)
     {
-        return view('frontend.cart.ordertracking');
+        $orders = collect();
+
+        if (Auth::check()) {
+            $statusFilter = $request->query('status');
+            $query = Order::with(['details.inventoryItem.variant.product'])
+                ->where('user_id', Auth::id())
+                ->orderBy('created_at', 'desc');
+
+            if ($statusFilter && $statusFilter !== 'all') {
+                $query->where('status', $statusFilter);
+            }
+
+            $orders = $query->get()->map(function ($order) {
+                // Gom nhóm sản phẩm từ details
+                $items = $order->details->map(function ($detail) {
+                    $variant = $detail->inventoryItem->variant ?? null;
+                    $product = $variant?->product ?? null;
+
+                    $image = null;
+                    if ($product) {
+                        $thumb = $product->thumbnail;
+                        if ($thumb && \Illuminate\Support\Str::startsWith($thumb, 'http')) {
+                            $image = $thumb;
+                        } else {
+                            $rawImages = $product->images;
+                            if ($rawImages) {
+                                $arr = is_string($rawImages) ? json_decode($rawImages, true) : $rawImages;
+                                $first = is_array($arr) && count($arr) > 0 ? $arr[0] : null;
+                                if ($first && \Illuminate\Support\Str::startsWith($first, 'http')) {
+                                    $image = $first;
+                                } elseif ($first) {
+                                    $image = asset('storage/' . ltrim($first, '/'));
+                                }
+                            }
+                            if (!$image && $thumb) {
+                                $image = asset('uploads/products/' . $thumb);
+                            }
+                        }
+                    }
+
+                    return [
+                        'product_name' => $detail->product_name ?? ($product?->name ?? 'Sản phẩm không xác định'),
+                        'image'        => $image,
+                        'price'        => (int) $detail->price,
+                    ];
+                });
+
+                // Gom nhóm theo tên + giá
+                $groupedItems = $items->groupBy(fn($i) => $i['product_name'] . '_' . $i['price'])
+                    ->map(fn($g) => [
+                        'product_name' => $g->first()['product_name'],
+                        'image'        => $g->first()['image'],
+                        'quantity'     => $g->count(),
+                        'price'        => $g->first()['price'],
+                    ])->values();
+
+                return [
+                    'order_id'        => $order->order_id,
+                    'order_code'      => $order->order_code,
+                    'status'          => $order->status,
+                    'payment_method'  => $order->payment_method,
+                    'customer_name'   => $order->customer_name,
+                    'customer_phone'  => $order->customer_phone,
+                    'shipping_address'=> $order->shipping_address,
+                    'final_amount'    => (int) $order->final_amount,
+                    'created_at'      => $order->created_at,
+                    'items'           => $groupedItems,
+                ];
+            });
+        }
+
+        return view('frontend.cart.ordertracking', compact('orders'));
     }
 
     public function print()
@@ -773,22 +875,29 @@ class CartController extends Controller
 
     public function applyCoupon(Request $request)
     {
-        $code = strtoupper($request->input('code'));
+        $code = strtoupper(trim((string) $request->input('code', '')));
         if (!$code) {
             session()->forget(['checkout_discount', 'applied_coupon_code']);
             return response()->json(['success' => true, 'discount' => 0, 'message' => 'Đã xóa mã giảm giá.']);
         }
 
+        // Tính subtotal từ cart session (hoặc lấy từ request nếu truyền lên)
         $cart = session()->get('cart', []);
         $selectedCart = collect($cart)->filter(fn($item) => $item['selected'] ?? true)->toArray();
-        if (empty($selectedCart)) {
-            return response()->json(['success' => false, 'message' => 'Giỏ hàng trống hoặc chưa chọn sản phẩm.']);
+
+        if (!empty($selectedCart)) {
+            $totalAmount = (int) collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
+        } else {
+            // Fallback: lấy subtotal từ request (pay page gửi lên)
+            $totalAmount = (int) $request->input('subtotal', 0);
         }
 
-        $totalAmount = collect($selectedCart)->reduce(fn($sum, $item) => $sum + ($item['price'] * $item['quantity']), 0);
+        if ($totalAmount <= 0) {
+            return response()->json(['success' => false, 'message' => 'Không tính được giá trị đơn hàng. Vui lòng thử lại.']);
+        }
 
         // 1. Kiểm tra voucher hệ thống/coupon flash sale
-        [$discount, $message] = $this->resolveVoucherDiscount($code, (int) $totalAmount);
+        [$discount, $message] = $this->resolveVoucherDiscount($code, $totalAmount);
         if ($discount > 0) {
             session()->put('checkout_discount', $discount);
             session()->put('applied_coupon_code', $code);
@@ -797,6 +906,12 @@ class CartController extends Controller
                 'discount' => $discount,
                 'message' => $message ?: 'Áp dụng mã giảm giá thành công!'
             ]);
+        }
+
+        // Nếu voucher tồn tại nhưng không hợp lệ (hết hạn, chưa đến ngày...), trả về đúng lỗi
+        $voucherExists = CouponFlashSale::where('promo_type', 'Coupon')->where('code', $code)->exists();
+        if ($voucherExists) {
+            return response()->json(['success' => false, 'message' => $message ?: 'Mã không hợp lệ.'], 422);
         }
 
         // 2. Kiểm tra mã đổi thưởng trong DB
@@ -829,8 +944,8 @@ class CartController extends Controller
         } elseif ($reward->reward_type === 'shipping') {
             $discount = (int) $reward->shipping_discount_amount;
         } elseif ($reward->reward_type === 'wheel_prize') {
-            $discount = $reward->discount_amount > 0 
-                ? (int) $reward->discount_amount 
+            $discount = $reward->discount_amount > 0
+                ? (int) $reward->discount_amount
                 : (int) $reward->shipping_discount_amount;
         }
 
@@ -838,7 +953,6 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Mã này không có giá trị giảm giá cho đơn hàng.']);
         }
 
-        // Khống chế không giảm quá giá trị đơn hàng
         if ($discount > $totalAmount) {
             $discount = $totalAmount;
         }
@@ -900,6 +1014,11 @@ class CartController extends Controller
         }
         if ($voucher->end_time && $now->gt(\Carbon\Carbon::parse($voucher->end_time))) {
             return [0, 'Mã đã hết hạn.'];
+        }
+
+        // Kiểm tra giới hạn lượt sử dụng
+        if ($voucher->usage_limit !== null && $voucher->times_used >= $voucher->usage_limit) {
+            return [0, 'Mã voucher đã hết lượt sử dụng.'];
         }
 
         $discountType = $voucher->discount_type ?? 'fixed';

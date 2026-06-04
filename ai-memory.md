@@ -11,7 +11,6 @@
   - Chuyển đổi các câu lệnh xóa trực tiếp bằng Query Builder sang Eloquent instance deletes để kích hoạt sự kiện Eloquent `deleted` đầy đủ.
   - Bổ sung seeder **`ActivityLogSeeder`** giúp sinh dữ liệu nhật ký hoạt động mẫu cực kỳ đa dạng, thực tế và tự động tính toán liên kết chuỗi mã băm bảo mật giúp trang xác minh toàn vẹn hoạt động thành công 100%.
   - Giải phóng thành công 702 job kẹt cũ, đưa toàn bộ lịch sử hoạt động hiển thị đầy đủ trên trang quản trị.
->>>>>>> xuanhoa/Nhat_ky_hoat_dong
 - **Tích hợp dữ liệu thật cho Kênh nhắn tin (Communication Hub):**
   - **Kết nối API & Database:** Thay thế toàn bộ dữ liệu mock trong component React `CommunicationHub.tsx` bằng các request `axios` live gọi đến hệ thống REST backend.
   - **Artisan Migrate Tự Động:** Tích hợp gọi Artisan migrate tự động ngay trong hàm `init()` của `ChatController.php` để tự động tạo các bảng cơ sở dữ liệu `chat_rooms`, `chat_room_members`, `chat_messages` nếu chưa được migrate, hạn chế việc phải chạy thủ công từ terminal.
@@ -29,7 +28,22 @@
   - Làm phẳng cấu trúc dữ liệu phân trang trả về trong `EmployeeController.php` để đưa các trường `current_page`, `last_page`, `per_page`, `total`, `from`, `to`, `links` ra ngoài cùng cấp với `data`.
   - Khắc phục triệt để lỗi React component (`EmployeeManager.tsx` & `EmployeeTable.tsx`) không đọc được các trường metadata bị lồng trong cấu trúc `meta` mặc định của Laravel API Resource.
   - Đảm bảo các chỉ số số trang, thanh trượt hiển thị chính xác range `Hiển thị X - Y trong tổng số Z` hoạt động vô cùng trơn tru và trực quan.
-=======
+- **Merge master → Vinhem/MaGiamGia (Ngày 04/06/2026):**
+  - Merge thành công từ `master` vào branch `Vinhem/MaGiamGia` bằng strategy `ort` (84 file thay đổi, 10392 insertions).
+  - Đã đồng bộ toàn bộ tính năng mới nhất: Installment module, Chatbot security, Cashbook sync, Order tracking redesign, Notification system, Flash Sale fixes, và các cải tiến khác.
+- **Nâng cấp Quản lý Voucher `/admin/vouchers` (Ngày 04/06/2026):**
+  - Thêm cột `usage_limit` (nullable int) và `times_used` (int default 0) vào bảng `coupons_flash_sales` qua migration.
+  - **Ràng buộc mã voucher:** Cho phép nhập cả chữ hoa và chữ thường, độ dài từ 6 đến 20 ký tự. Nếu nhập quá ký tự hoặc có ký tự đặc biệt sẽ hiện lỗi chữ đỏ và khóa nút tạo.
+  - **Ràng buộc giảm theo tiền:** 6–8 chữ số (100.000đ – 99.999.999đ). Nếu nhập chữ hoặc ký tự đặc biệt sẽ báo lỗi chữ đỏ và khóa nút tạo.
+  - **Ràng buộc giảm theo phần trăm:** Từ 10% đến 100%. Nếu nhập chữ hoặc ký tự đặc biệt sẽ báo lỗi chữ đỏ và khóa nút tạo.
+  - **Giới hạn lượt dùng:** Chỉ từ 1 đến 100 lần. Nếu nhập chữ, ký tự đặc biệt hoặc ngoài khoảng 1-100 sẽ báo lỗi chữ đỏ và khóa nút tạo.
+  - Backend validation đồng bộ hoàn toàn với client-side.
+- **Tích hợp luồng thanh toán QR & Tra cứu Đơn hàng (Ngày 04/06/2026):**
+  - **Cải tiến:**
+    - Cập nhật file `maQR.blade.php`: Sau khi hoàn tất hiệu ứng xử lý đối soát và phê duyệt đơn hàng thành công (4.5s), tự động redirect người dùng sang `/orders?new_order={order_id}` sau 1.5s để xem ngay thông tin đơn hàng vừa đặt.
+    - Cấu trúc lại `ordertracking.blade.php`: Di chuyển ô tìm kiếm bằng mã đơn hàng (search-wrap) và khu vực kết quả (search-result) ra ngoài điều kiện `Auth::check()` để cả khách vãng lai và thành viên đều dùng chung được ô tìm kiếm.
+    - Gán `id="order-card-{{ $order['order_id'] }}"` cho mỗi thẻ đơn hàng trong danh sách.
+    - Bổ sung logic JavaScript tự động kiểm tra query parameter `new_order` và `code` trên URL. Nếu tìm thấy thẻ đơn hàng tương ứng trong danh sách (đối với thành viên đã đăng nhập), hệ thống sẽ highlight viền xanh lá nhấp nháy (`new-order-highlight`) và cuộn mượt mà đưa đơn hàng đó vào giữa màn hình. Nếu không có trong DOM (đối với khách chưa đăng nhập hoặc đang lọc ở tab khác), hệ thống tự động điền mã vào ô tìm kiếm và gọi hàm `doSearchCode()` bằng AJAX để hiển thị chi tiết đơn hàng đó lên đầu trang.
 - **Tối ưu giao diện Flash Sale & Nút mua ngay / Thêm giỏ hàng ở Trang chủ (Ngày 04/06/2026):**
   - **Khắc phục:**
     - Cải thiện độ tương phản và căn giữa văn bản tiến trình Flash Sale (`.fs-progress-text`) và biểu tượng lửa (`.fs-fire-icon`) trên thanh tiến trình bằng cách thay đổi màu nền wrapper sang `#fca5a5`, thêm flex alignment, thiết lập `position: absolute; top: 50%; transform: translateY(-50%);` và đặt màu sắc rực rỡ `#ffeb3b` cho biểu tượng lửa.
@@ -64,7 +78,6 @@
   - **Tối ưu hóa UI/UX hòm thư thông báo (`notifications.index.blade.php`):**
     - Bổ sung toàn bộ các phân loại thông báo mới vào bộ lọc tìm kiếm và mảng cấu hình giao diện.
     - Thiết kế hệ thống icon động (`fa-clover`, `fa-gift`, `fa-wrench`, `fa-file-invoice`, etc.) và phối màu CSS phong phú, hài hòa (Rich Aesthetics) mang lại trải nghiệm Premium trực quan cho người dùng.
->>>>>>> origin/master
 - **Tích hợp nhánh AI & Hoàn tất Merge (Merge Branch AnhQuy/TichHopAI into master):**
   - Thực hiện merge thành công nhánh `AnhQuy/TichHopAI` vào nhánh `master` và giải quyết xung đột thủ công trong file `ThuongMaiDienTu/ai-memory.md` bằng cách hợp nhất lịch sử phát triển của cả hai nhánh một cách khoa học.
   - Đồng bộ và cài đặt toàn bộ dependencies mới của dự án bằng lệnh `composer install --ignore-platform-reqs`, giúp tải đầy đủ các thư viện hỗ trợ AI và API Sanctum.
@@ -95,9 +108,7 @@
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
   - Merged `master` into branch `Vinhem/Tinhphivanchuyen` successfully to sync the latest project developments.
-=======
   - Merged `master` into branch `AnhQuy/ThongBao` successfully.
->>>>>>> origin/master
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
   - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
@@ -111,12 +122,6 @@
   - Bổ sung bình luận tiếng Việt chi tiết cho toàn bộ mã nguồn JavaScript lọc sản phẩm (`product-filter.js`) giúp lập trình viên và quản trị viên dễ dàng nắm bắt logic.
   - Bổ sung bình luận tiếng Việt siêu chi tiết, dễ hiểu cho các lập trình viên khác tại `ProductController.php`, `ProductFilterController.php`, và `ProductFilterService.php` giải thích cặn kẽ các logic lọc AJAX, gợi ý bán chéo FBT, Combo sản phẩm, và cơ chế bảo mật server-side.
   - Hoàn tất tài liệu hóa chi tiết bằng comment tiếng Việt trong `PointsService.php` (Tích điểm & phân hạng), `CrossSellService.php` (Gợi ý bán chéo phân tầng), `ArticleController.php` (Admin CRUD bài viết), `ArticleFrontendController.php` (Khách hàng đăng bài & duyệt bài cộng điểm), `Article.php` (Model bài viết) và toàn bộ các file views liên quan đến Articles ở cả Frontend và Admin Dashboard.
-- **Tối ưu hóa UI Tỉnh/Thành phố & Đồng bộ Phí Giao Hàng (`Vinhem/Tinhphivanchuyen`):**
-  - **Sửa lỗi load danh sách Tỉnh/Thành phố:** Thay thế API `esgoo.net` (đang bị lỗi phản hồi cực chậm, gây treo dropdown) trong file `profile.blade.php` bằng kho dữ liệu tĩnh từ `raw.githubusercontent.com/kenzouno1/DiaGioiHanhChinhVN`. Tốc độ load cải thiện từ >20s xuống <200ms, mang lại trải nghiệm tức thì khi thêm địa chỉ mới.
-  - **Đồng bộ tính năng "Chọn địa chỉ đã lưu" sang trang Ước tính phí giao hàng:** Bổ sung logic hiển thị modal "Chọn địa chỉ đã lưu" vào file `ShippingCosts.blade.php` (tương tự như trang `pay.blade.php`), tự động map Tỉnh/Thành phố từ địa chỉ của người dùng để gán cho chức năng tính phí vận chuyển dựa vào hàm `findProvinceCodeFromCity` (ví dụ 'hcm', 'hn').
-  - **Truyền dữ liệu xuống View:** Cập nhật `CartController::shipping()` trong Admin controller để truy vấn `$addresses` của user đăng nhập và truyền xuống cho view `ShippingCosts.blade.php`.
-  - **Ẩn Tỉnh/Thành phố ở trang thanh toán:** Ẩn menu thả xuống chọn Tỉnh/Thành phố ở form trang `/pay` (`pay.blade.php`) theo yêu cầu. Bỏ qua validate trường `province` phía frontend, thiết lập thành `nullable` trong `CartController` (mặc định 'other' nếu khách hàng không chọn từ địa chỉ đã lưu).
-
 ## Files Changed
 - **Testing & Bug Fixes:**
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/ServiceInvoiceController.php`
