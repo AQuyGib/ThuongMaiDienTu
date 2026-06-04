@@ -1,16 +1,16 @@
 # Project Memory
 
 ## Current State & Focus
-- **Xuất và hoàn thiện Báo cáo tổng hợp (.md và .docx) (Ngày 04/06/2026):**
-  - **Mục lục đầy đủ:** Cập nhật mục lục của `BaoCao_ChiTiet_DuAn.md` và `baocaotong.md` bao quát toàn bộ 51 chức năng (từ 7.1 đến 7.51) và đồng bộ hóa các con số thống kê chính xác: nâng từ "8 phân hệ (45 chức năng)" lên thành **9 phân hệ (51 chức năng)** và từ "20 bảng cơ sở dữ liệu" lên thành **61 bảng cơ sở dữ liệu**.
-  - **Nhúng hình ảnh giao diện Mockup Premium & 153 Sơ đồ UML & Ảnh chụp giao diện thực tế (Use-case, Activity & Real Screenshots):**
-    - Sử dụng AI để sinh 6 hình ảnh thiết kế giao diện UI chất lượng cao: `login_2fa_ui.png`, `cart_payment_ui.png`, `repair_portal_ui.png`, `lucky_wheel_ui.png`, `ai_chatbot_ui.png`, `admin_dashboard_ui.png`.
-    - Viết các script tự động hóa tối ưu (`render_all_usecases.py`, `render_all_activities.py` và `capture_real_screenshots.py`) sử dụng Playwright chạy song song một tiến trình kết hợp dịch cú pháp tự động để kết xuất hình ảnh **nền trắng chữ đen, viền đen mảnh** chuẩn học thuật.
-    - Thực hiện chạy script `capture_real_screenshots.py` đăng nhập tự động vào hệ thống thực tế (bằng tài khoản Admin và Customer), điều hướng đến đúng các URL tương ứng của 51 chức năng, áp dụng CSS filter `grayscale(100%)` để chụp lại **51 ảnh giao diện thực tế** chuẩn phong cách báo cáo học thuật.
-    - Sinh thành công **51 ảnh sơ đồ Use-case**, **51 ảnh sơ đồ Hoạt động (Activity)**, và **51 ảnh chụp màn hình giao diện thực tế (UI Layout)**, tổng cộng 153 hình ảnh UML/UI chất lượng cao lưu vào thư mục `images/` ở cả 2 thư mục dự án `ThuongMaiDienTu` và `pywword`.
-    - Tự động nhúng tất cả 153 hình ảnh này dưới các khối tương ứng trong phụ lục `BaoCao_DacTa_ChiTiet_ChucNang.md` và tệp báo cáo tổng `baocaotong.md`.
-  - **Xuất tài liệu MS Word (.docx):**
-    - Sử dụng `Pandoc` để chuyển đổi `baocaotong.md` thành `baocaotong.docx` thành công ở cả 2 thư mục dự án (kích thước tệp Word nâng lên thành **12.2MB** chứa đầy đủ toàn bộ 153 ảnh sơ đồ UML/UI và 6 ảnh UI mockup sắc nét).
+- **Hoàn thành và tối ưu Báo cáo tổng hợp (.md và .docx) (Ngày 04/06/2026):**
+  - **Bổ sung và Tái kết xuất đầy đủ 51 giao diện Wireframe:**
+    - Phát hiện thiếu sót chức năng **7.18 (Danh sách yêu thích - Wishlist)** trong kịch bản sinh tự động. Đã bổ sung định nghĩa giao diện chi tiết cho chức năng này vào `generate_all_wireframes.py`.
+    - Chạy lại kịch bản để tạo và xuất đầy đủ 51 giao diện Wireframe chất lượng cao dạng học thuật phân ô sang thư mục `images/` ở cả 2 thư mục dự án `ThuongMaiDienTu` và `pywword`.
+  - **Tái kết xuất sơ đồ UML (Use-case & Activity) chống mờ:**
+    - Chạy kịch bản `render_all_usecases.py` và `render_all_activities.py` để kết xuất toàn bộ 102 sơ đồ (51 Use-case, 51 Activity) dưới dạng High-DPI (tỷ lệ scale factor 3) để đảm bảo độ sắc nét cao nhất, chống mờ răng cưa khi chèn vào Word.
+  - **Đồng bộ hóa & Biên dịch Word thành công bằng Pandoc:**
+    - Chạy kịch bản `merge_reports.php` để gộp lại báo cáo chính và phụ lục đặc tả thành `baocaotong.md` chứa đầy đủ 51 chức năng cập nhật mới nhất.
+    - Đồng bộ hóa file `baocaotong.md` và toàn bộ 153 ảnh giao diện/sơ đồ giữa hai không gian làm việc `ThuongMaiDienTu` và `pywword`.
+    - Biên dịch thành công tệp `baocaotong.docx` dung lượng 15.2MB chứa trọn bộ tài liệu báo cáo và hình ảnh sắc nét bằng lệnh `pandoc -s baocaotong.md -o baocaotong.docx` trên cả 2 workspace.
 - **Đối soát và bổ sung 6 chức năng thiếu của Nguyễn Anh Quý (Ngày 04/06/2026):**
   - Cross-check 15 chức năng trong `cn.md` so với 45 CN chính thức. Phát hiện **6 chức năng THIẾU HOÀN TOÀN**: Chatbot AI, Flash Sale, CRM KH, CRUD Bài viết, Theme Customizer, Setup Wizard.
   - Bổ sung phân hệ IX (CN 46-51) vào Chương 2 của `BaoCao_ChiTiet_DuAn.md`. Tổng số CN nâng từ 45 → **51 chức năng** (9 phân hệ).

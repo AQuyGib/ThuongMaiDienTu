@@ -104,7 +104,8 @@ async def main():
     
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        page = await browser.new_page()
+        context = await browser.new_context(device_scale_factor=3)
+        page = await context.new_page()
         
         # Load the base HTML page once
         await page.set_content(html_template)

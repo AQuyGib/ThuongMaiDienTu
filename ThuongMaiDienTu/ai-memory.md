@@ -5,6 +5,13 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 
 ## Các file đã tạo / chỉnh sửa & Công việc hoàn thành
 
+### Tạo hình ảnh giao diện Wireframe dạng phân ô học thuật (High-DPI Academic Wireframes) cho 16 chức năng:
+- **Tạo kịch bản:** Viết `generate_wireframes.py` tạo cấu trúc HTML dạng phân ô (grid/cell), viền nét đơn/nét đôi đen, nền trắng, chữ đen chuẩn học thuật giống như mẫu trong file `baocaotong - Copy (2).docx`.
+- **Áp dụng cho 16 chức năng:** 7.12 (Bộ so sánh), 7.13 (Wishlist), 7.14 (Giỏ hàng combo bán chéo), 7.22 (Đặt lịch sửa chữa AI chẩn đoán), 7.36 (Thẻ VIP Loyalty), 7.37 (Rewards store đổi voucher), 7.38 (Vòng quay may mắn), 7.39 (Admin tạo chiến dịch thông báo), 7.40 (Admin duyệt UGC bài viết bằng AI), 7.41 (Admin chi tiết đơn hàng kiểm duyệt gian lận AI), 7.46 (AI Chatbot panel), 7.47 (Phân khu Flash sale trang chủ), 7.48 (Admin CRM & Banning popup), 7.49 (Admin CRUD Articles & Bulk Approve), 7.50 (Theme Customizer & Live Iframe Preview), 7.51 (Smart Setup Wizard CLI console).
+- **Chụp ảnh độ nét cao:** Dùng Playwright Chromium chụp chính xác phần tử `.container` với `device_scale_factor=2` để ảnh đạt chất lượng Retina siêu nét (`2880x1800`px), hoàn hảo khi in ấn.
+- **Đồng bộ ảnh:** Ghi đè thành công các tệp `ui_layout_*.png` trong thư mục `images/` ở cả hai workspace, tự động cập nhật hiển thị trong `baocaotong.md` và `BaoCao_DacTa_ChiTiet_ChucNang.md` mà không thay đổi cấu trúc định dạng của văn bản.
+
+
 ### 23. Tính năng Tra cứu hành trình Đơn hàng (Order Tracking System)
 - **Hạ tầng & API:**
   - Bổ sung phương thức `searchOrder` vào `CartController.php` để truy xuất dữ liệu đơn hàng thực tế từ database theo `order_code` hoặc `order_id`.

@@ -149,7 +149,8 @@ async def main():
     
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        page = await browser.new_page()
+        context = await browser.new_context(device_scale_factor=3)
+        page = await context.new_page()
         
         # Load the base HTML page once
         await page.set_content(html_template)
@@ -175,8 +176,12 @@ async def main():
             element = await page.query_selector("#container")
             if element:
                 image_filename = f"use_case_{idx}.png"
-                image_path = f"d:/repogist/ThuongMaiDienTu/images/{image_filename}"
-                await element.screenshot(path=image_path)
+                image_path1 = f"d:/repogist/ThuongMaiDienTu/images/{image_filename}"
+                image_path2 = f"d:/HOC/Hoc4/pywword/images/{image_filename}"
+                os.makedirs("d:/repogist/ThuongMaiDienTu/images", exist_ok=True)
+                os.makedirs("d:/HOC/Hoc4/pywword/images", exist_ok=True)
+                await element.screenshot(path=image_path1)
+                await element.screenshot(path=image_path2)
                 print(f"Rendered [{idx}/51] -> {image_filename}")
                 
                 # Replace the original block with the original block + image link
