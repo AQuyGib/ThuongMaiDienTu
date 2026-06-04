@@ -59,6 +59,7 @@ class WarrantyClaimSeeder extends Seeder
                 'status'        => 'approved',
                 'admin_note'    => 'Đã xác nhận lỗi giao hàng. Đã duyệt hoàn tiền 100% cho khách.',
                 'refund_method' => 'bank_transfer',
+                'refund_amount' => 15000000,
                 'bank_name'     => 'Vietcombank',
                 'bank_account_number' => '0011004123456',
                 'bank_account_name'   => 'TRAN THI BINH',
@@ -96,6 +97,7 @@ class WarrantyClaimSeeder extends Seeder
                 'status'        => 'pending',
                 'admin_note'    => null,
                 'refund_method' => 'cash',
+                'refund_amount' => 12500000,
             ],
             // 6. Bảo hành – đã duyệt với ghi chú kỹ thuật
             [
@@ -141,6 +143,7 @@ class WarrantyClaimSeeder extends Seeder
                 'status'        => 'approved',
                 'admin_note' => 'Lỗi firmware xuất xưởng. Đã đổi máy mới cùng model và màu sắc cho khách.',
                 'refund_method' => 'bank_transfer',
+                'refund_amount' => 24500000,
                 'bank_name'     => 'Techcombank',
                 'bank_account_number' => '1903456789012',
                 'bank_account_name'   => 'TRINH QUOC MINH',
@@ -167,6 +170,7 @@ class WarrantyClaimSeeder extends Seeder
                 'reason'        => 'Không tương thích với thiết bị ngoại vi của tôi dù đã được nhân viên tư vấn là có.',
                 'status'        => 'pending',
                 'refund_method' => 'bank_transfer',
+                'refund_amount' => 8700000,
                 'bank_name'     => 'VietinBank',
                 'bank_account_number' => '101004567890',
                 'bank_account_name'   => 'PHAN THANH HAI',
@@ -204,6 +208,7 @@ class WarrantyClaimSeeder extends Seeder
                 'status'        => 'rejected',
                 'admin_note'    => 'Từ chối do lý do trả hàng xuất phát từ nhu cầu cá nhân chủ quan, không phải lỗi kỹ thuật.',
                 'refund_method' => 'bank_transfer',
+                'refund_amount' => 19000000,
                 'bank_name'     => 'MB Bank',
                 'bank_account_number' => '970422123456789',
                 'bank_account_name'   => 'CAO VIET BACH',
@@ -229,6 +234,7 @@ class WarrantyClaimSeeder extends Seeder
                 'status'        => 'approved',
                 'admin_note'    => 'Kỹ thuật viên xác nhận lỗi chạm nguồn trên bo mạch chính. Hoàn tiền mặt tại chi nhánh.',
                 'refund_method' => 'cash',
+                'refund_amount' => 13500000,
             ],
             // 17. Đổi máy – đã từ chối
             [
@@ -262,6 +268,7 @@ class WarrantyClaimSeeder extends Seeder
                 'reason'        => 'Màn hình bị ám vàng rất nặng so với các thiết bị cùng dòng trưng bày tại shop.',
                 'status'        => 'pending',
                 'refund_method' => 'cash',
+                'refund_amount' => 11000000,
             ],
             // 20. Đổi máy – đang chờ xử lý
             [
@@ -342,6 +349,7 @@ class WarrantyClaimSeeder extends Seeder
                 'reason'         => $sample['reason'],
                 'status'         => $sample['status'],
                 'admin_note'     => $sample['admin_note'] ?? null,
+                'refund_amount'  => $sample['refund_amount'] ?? null,
                 'refund_method'  => $sample['refund_method'] ?? null,
                 'bank_name'      => $sample['bank_name'] ?? null,
                 'bank_account_number' => $sample['bank_account_number'] ?? null,
