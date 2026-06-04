@@ -52,8 +52,38 @@ class ActivityLog extends Model
         $event = strtolower($this->event ?? '');
         $subjectName = $this->subject_type ? class_basename($this->subject_type) : '';
         
+        $userType = 'khách hàng';
+        if ($subjectName === 'User') {
+            $roleId = null;
+            if (is_array($this->old_values) && isset($this->old_values['role_id'])) {
+                $roleId = $this->old_values['role_id'];
+            } elseif (is_array($this->new_values) && isset($this->new_values['role_id'])) {
+                $roleId = $this->new_values['role_id'];
+            } else {
+                try {
+                    $user = User::withTrashed()->find($this->subject_id);
+                    if ($user) {
+                        $roleId = $user->role_id;
+                    }
+                } catch (\Exception $e) {
+                }
+            }
+
+            if ($roleId !== null) {
+                if (in_array((int)$roleId, [1, 2, 4])) {
+                    $userType = 'nhân viên';
+                }
+            } elseif ($event === 'export') {
+                if (is_array($this->new_values) && isset($this->new_values['export_type'])) {
+                    if ($this->new_values['export_type'] === 'employee') {
+                        $userType = 'nhân sự';
+                    }
+                }
+            }
+        }
+
         $translate = [
-            'User' => 'tài khoản/khách hàng',
+            'User' => $userType,
             'Product' => 'sản phẩm',
             'Order' => 'đơn hàng',
             'Article' => 'bài viết',
@@ -86,15 +116,15 @@ class ActivityLog extends Model
 
         switch ($event) {
             case 'created':
-                return "Thêm mới " . ($subjectName === 'User' ? 'khách hàng' : $displayName) . " (ID: #{$this->subject_id})";
+                return "Thêm mới " . ($subjectName === 'User' ? $userType : $displayName) . " (ID: #{$this->subject_id})";
             case 'updated':
-                return "Cập nhật " . ($subjectName === 'User' ? 'khách hàng' : $displayName) . " (ID: #{$this->subject_id})";
+                return "Cập nhật " . ($subjectName === 'User' ? $userType : $displayName) . " (ID: #{$this->subject_id})";
             case 'deleted':
-                return "Xóa " . ($subjectName === 'User' ? 'khách hàng' : $displayName) . " (ID: #{$this->subject_id})";
+                return "Xóa " . ($subjectName === 'User' ? $userType : $displayName) . " (ID: #{$this->subject_id})";
             case 'restored':
-                return "Khôi phục " . ($subjectName === 'User' ? 'khách hàng' : $displayName) . " (ID: #{$this->subject_id})";
+                return "Khôi phục " . ($subjectName === 'User' ? $userType : $displayName) . " (ID: #{$this->subject_id})";
             case 'export':
-                return "Xuất file báo cáo " . ($subjectName === 'User' ? 'nhân sự/khách hàng' : $displayName);
+                return "Xuất file báo cáo " . ($subjectName === 'User' ? (($userType === 'nhân viên' || $userType === 'nhân sự') ? 'nhân sự' : 'khách hàng') : $displayName);
             case 'login':
                 return "Đăng nhập hệ thống thành công";
             default:

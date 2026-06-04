@@ -10,9 +10,9 @@
             <h1 class="text-xl font-extrabold text-slate-900 tracking-tight">Nhật ký hoạt động hệ thống</h1>
             <p class="text-slate-500 text-xs mt-0.5">Giám sát các thao tác nghiệp vụ, bảo mật liên kết chuỗi mật mã chống giả mạo.</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
             {{-- Toggle Live Feed --}}
-            <button id="btn-toggle-live" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border border-slate-200 shadow-sm">
+            <button id="btn-toggle-live" class="w-full sm:w-auto px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 border border-slate-200 shadow-sm">
                 <span class="relative flex h-2 w-2">
                     <span id="live-indicator-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span id="live-indicator-dot" class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -20,7 +20,7 @@
                 <span id="live-text">Hoạt động liên tục: Bật</span>
             </button>
 
-            <button id="btn-verify-integrity" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-2 shadow-sm">
+            <button id="btn-verify-integrity" class="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm">
                 <i class="fa-solid fa-shield-halved"></i>
                 Kiểm tra toàn vẹn chuỗi log
             </button>
@@ -29,7 +29,7 @@
 
     {{-- ═══ 2. BỘ LỌC TÌM KIẾM NÂNG CAO ═══ --}}
     <div class="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-        <form method="GET" action="{{ route('admin.activity-logs.index') }}" class="grid grid-cols-1 md:grid-cols-6 gap-3">
+        <form method="GET" action="{{ route('admin.activity-logs.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
             <div>
                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Sự kiện</label>
                 <select name="event" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
@@ -55,12 +55,12 @@
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Từ ngày</label>
-                <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
             </div>
             <div>
                 <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Đến ngày</label>
                 <div class="flex gap-2">
-                    <input type="date" name="end_date" value="{{ request('end_date') }}" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                    <input type="date" name="end_date" value="{{ request('end_date') }}" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-2 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
                     <button type="submit" class="px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-colors">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
@@ -84,9 +84,9 @@
                         <th class="px-6 py-3">Sự kiện</th>
                         <th class="px-6 py-3">Người thao tác</th>
                         <th class="px-6 py-3">Hành động / Thực thể</th>
-                        <th class="px-6 py-3">Địa chỉ IP & Client</th>
+                        <th class="px-6 py-3 hidden md:table-cell">Địa chỉ IP & Client</th>
                         <th class="px-6 py-3">Thời gian</th>
-                        <th class="px-6 py-3 text-center">Chữ ký Hash</th>
+                        <th class="px-6 py-3 text-center hidden lg:table-cell">Chữ ký Hash</th>
                         <th class="px-6 py-3 text-right">Chi tiết</th>
                     </tr>
                 </thead>
@@ -120,14 +120,14 @@
                                 <div class="text-[10px] text-slate-400 mt-0.5">{{ class_basename($log->subject_type) }} #{{ $log->subject_id }}</div>
                             @endif
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 hidden md:table-cell">
                             <div class="font-semibold text-slate-700">{{ $log->ip_address ?? 'localhost' }}</div>
                             <div class="text-[10px] text-slate-400 truncate max-w-xs" title="{{ $log->user_agent }}">{{ $log->user_agent }}</div>
                         </td>
                         <td class="px-6 py-4 font-medium text-slate-500">
                             {{ $log->created_at->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i:s') }}
                         </td>
-                        <td class="px-6 py-4 text-center">
+                        <td class="px-6 py-4 text-center hidden lg:table-cell">
                             <span class="font-mono text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded select-all cursor-help" title="{{ $log->hash_chain }}">
                                 {{ substr($log->hash_chain, 0, 8) }}...{{ substr($log->hash_chain, -8) }}
                             </span>
@@ -184,8 +184,8 @@
             <div id="diff-empty-state" class="text-center text-slate-400 text-xs py-8 hidden">
                 Không phát hiện thay đổi thuộc tính nào (Dữ liệu không đổi).
             </div>
-            <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm" id="diff-table-container">
-                <table class="w-full text-left text-xs border-collapse">
+            <div class="border border-slate-200 rounded-xl overflow-x-auto shadow-sm" id="diff-table-container">
+                <table class="w-full min-w-[600px] text-left text-xs border-collapse">
                     <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
                         <tr>
                             <th class="px-4 py-2 w-1/3">Thuộc tính</th>
@@ -335,7 +335,12 @@ function initActivityLogs() {
             if (!oldVal || typeof oldVal !== 'object') oldVal = {};
             if (!newVal || typeof newVal !== 'object') newVal = {};
 
-            subtitle.innerHTML = `<strong>Người thực hiện:</strong> ${causer} <span class="mx-2 text-slate-300">|</span> <strong>Hành động:</strong> ${action} <span class="mx-2 text-slate-300">|</span> <strong>Thực thể:</strong> ${subject}`;
+            subtitle.innerHTML = `
+<div class="flex flex-wrap items-center gap-2 mt-1 text-[10px] font-semibold">
+    <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded"><strong>Người thực hiện:</strong> ${causer}</span>
+    <span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded"><strong>Hành động:</strong> ${action}</span>
+    <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded"><strong>Thực thể:</strong> ${subject}</span>
+</div>`;
             
             // Vẽ bảng Diff
             diffTbody.innerHTML = '';
@@ -564,8 +569,8 @@ function initActivityLogs() {
                     const sttCell = row.querySelector('td:first-child');
                     if (sttCell) sttCell.textContent = index + 1;
 
-                    // Nếu vượt quá 15 dòng (số bản ghi 1 trang), ta xóa dòng ở dưới cùng
-                    if (index >= 15) {
+                    // Nếu vượt quá 20 dòng (số bản ghi 1 trang), ta xóa dòng ở dưới cùng
+                    if (index >= 20) {
                         row.remove();
                     }
                 });

@@ -45,7 +45,7 @@ class ActivityLogController extends Controller
             $query->where('created_at', '<=', $request->input('end_date') . ' 23:59:59');
         }
 
-        $logs = $query->orderBy('log_id', 'desc')->paginate(15)->withQueryString();
+        $logs = $query->orderBy('log_id', 'desc')->paginate(20)->withQueryString();
 
         return view('admin.activity-logs.index', compact('logs'));
     }

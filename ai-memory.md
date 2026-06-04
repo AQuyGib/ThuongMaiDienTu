@@ -511,5 +511,17 @@
     - Tự động giới hạn số dòng tối đa là 15 bản ghi trên trang và cập nhật lại số thứ tự (STT) trực quan.
     - Chuyển đổi phương thức lắng nghe sự kiện click mở Diff Modal sang mô hình **Event Delegation** trên `document` giúp hỗ trợ gán sự kiện hoàn hảo cho cả các dòng log mới được chèn động vào DOM.
 
-
+## Update: June 04, 2026
+- **Sửa lỗi nhãn nhật ký hoạt động cho Nhân viên:**
+  - Khắc phục lỗi hiển thị nhãn "khách hàng" trong nhật ký hoạt động khi thực hiện các hành động Thêm mới / Cập nhật / Xóa / Khôi phục nhân viên (do cả hai đối tượng này đều chia sẻ chung model `User`).
+  - Cập nhật hàm `getActionAttribute()` trong [ActivityLog.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/ActivityLog.php) để tự động phát hiện `role_id` (trích xuất từ `old_values`, `new_values` hoặc truy vấn trực tiếp từ CSDL qua `withTrashed()`) và hiển thị chính xác là "nhân viên" cho các tài khoản có vai trò thuộc nhóm quản trị/nhân sự (role_id: 1, 2, 4).
+  - Tích hợp thêm trường `export_type` vào sự kiện `logManualEvent` khi xuất báo cáo trong [EmployeeController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/EmployeeController.php) và [CustomerController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/CustomerController.php) để phân biệt và ghi nhận chính xác loại báo cáo "nhân sự" và "khách hàng" trong logs.
+  - **Tối ưu hóa hiển thị Responsive:** Thiết kế giao diện trang nhật ký hoạt động và bảng so sánh thay đổi (Diff Modal) tương thích 100% với mọi loại thiết bị (Mobile, Tablet, Desktop). Sử dụng kỹ thuật ẩn cột thứ yếu (`hidden md:table-cell`, `hidden lg:table-cell`), cấu trúc lưới lọc linh hoạt (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-6`), thanh cuộn mượt ngang cho bảng diff (`min-w-[600px] overflow-x-auto`), và các thẻ thông tin (badges) bo tròn tự động xuống dòng giúp tối ưu hóa không gian hiển thị trên màn hình nhỏ.
+  - **Đại trùng tu Hệ thống Menu & Thanh tiêu đề Admin (Sidebar & Topbar Responsive):**
+    - Cập nhật [AdminSidebar.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/AdminSidebar.tsx) hỗ trợ cơ chế trượt (sliding drawer overlay) hoàn toàn mới trên thiết bị di động (dưới `1024px`) với trạng thái `mobileOpen`. Khi mở, sidebar trượt ra đè lên màn hình; khi bấm ra ngoài (backdrop overlay), sidebar tự động trượt ẩn đi.
+    - Cập nhật [AdminTopbar.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/AdminTopbar.tsx) giảm chiều cao trên mobile (`h-20` thay vì `h-28`), giảm padding (`px-4` thay vì `px-12`), tự động ẩn các chức năng phụ như nút Toàn màn hình và nút Tạo mới nhanh (plus button) trên mobile để tăng diện tích hiển thị. Thêm thuộc tính `truncate` và `min-w-0` giúp tiêu đề trang tự co giãn không đè lên các nút điều khiển.
+    - Tích hợp hàm `toggleSidebar` vào tệp [master.blade.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/layouts/master.blade.php) để kết nối trơn tru sự kiện click của backdrop overlay với sự kiện React giúp đóng menu hoàn hảo.
+  - **Phân trang Nhật ký hoạt động:**
+    - Cập nhật [ActivityLogController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/ActivityLogController.php) thay đổi số bản ghi phân trang từ 15 thành **20 bản ghi/trang** (`paginate(20)`).
+    - Cập nhật cấu hình JavaScript tự động cập nhật Live Feed Polling trong [index.blade.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/activity-logs/index.blade.php) để kiểm soát cắt bớt các dòng dư thừa ở cuối khi vượt quá 20 dòng thay vì 15 dòng như cũ.
 

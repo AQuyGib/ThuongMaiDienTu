@@ -327,6 +327,7 @@ class CustomerController extends Controller
             \App\Traits\HasAuditLog::logManualEvent('export', User::class, null, null, [
                 'format' => 'CSV',
                 'record_count' => $customers->count(),
+                'export_type' => 'customer',
             ]);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Failed to log customer export: " . $e->getMessage());

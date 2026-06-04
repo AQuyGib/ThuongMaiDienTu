@@ -146,6 +146,7 @@ class EmployeeController extends Controller
             \App\Traits\HasAuditLog::logManualEvent('export', User::class, null, null, [
                 'format' => 'Excel',
                 'record_count' => $employees->count(),
+                'export_type' => 'employee',
             ]);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Failed to log employee exportExcel: " . $e->getMessage());
@@ -169,6 +170,7 @@ class EmployeeController extends Controller
             \App\Traits\HasAuditLog::logManualEvent('export', User::class, null, null, [
                 'format' => 'PDF',
                 'record_count' => $employees->count(),
+                'export_type' => 'employee',
             ]);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Failed to log employee exportPdf: " . $e->getMessage());
