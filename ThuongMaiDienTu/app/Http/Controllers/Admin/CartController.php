@@ -951,7 +951,7 @@ class CartController extends Controller
                 $st = $statusMap[$order->status] ?? ['label' => strtoupper($order->status), 'color' => 'bg-slate-100 text-slate-600'];
                 $isOwner = auth()->check() && $order->user_id && (auth()->id() === $order->user_id);
                 
-                $items = $order->details->map(function ($detail) use ($isOwner) {
+                $items = $order->details->map(function ($detail) use ($isOwner, $order) {
                     $variant = $detail->inventoryItem->variant ?? null;
                     $product = $variant->product ?? null;
 
@@ -987,7 +987,7 @@ class CartController extends Controller
                     $canClaimReturn = false;
                     $warrantyStatus = 'none';
 
-                    if ($isOwner && $item && $item->status === 'Sold') {
+                    if ($isOwner && $order->status === 'Delivered' && $item && $item->status === 'Sold') {
                         $warranty = \App\Models\Warranty::where('item_id', $item->item_id)
                             ->orderBy('end_date', 'desc')
                             ->first();
@@ -1092,6 +1092,7 @@ class CartController extends Controller
                     'discount_amount' => (int) ($order->discount_amount ?? 0),
                     'final_amount' => (int) $order->final_amount,
                     'created_at' => $order->created_at ? (\Carbon\Carbon::parse($order->created_at)->format('H:i - d/m/Y')) : now()->format('H:i - d/m/Y'),
+                    'is_owner' => $isOwner,
                     'items' => $groupedItems,
                 ];
             });
@@ -1125,7 +1126,7 @@ class CartController extends Controller
         $st = $statusMap[$order->status] ?? ['label' => strtoupper($order->status), 'color' => 'bg-slate-100 text-slate-600'];
         $isOwner = auth()->check() && $order->user_id && (auth()->id() === $order->user_id);
 
-        $items = $order->details->map(function ($detail) use ($isOwner) {
+        $items = $order->details->map(function ($detail) use ($isOwner, $order) {
             $variant = $detail->inventoryItem->variant ?? null;
             $product = $variant->product ?? null;
 
@@ -1169,7 +1170,7 @@ class CartController extends Controller
             $canClaimReturn = false;
             $warrantyStatus = 'none';
 
-            if ($isOwner && $item && $item->status === 'Sold') {
+            if ($isOwner && $order->status === 'Delivered' && $item && $item->status === 'Sold') {
                 $warranty = \App\Models\Warranty::where('item_id', $item->item_id)
                     ->orderBy('end_date', 'desc')
                     ->first();
@@ -1276,6 +1277,7 @@ class CartController extends Controller
             'shipping_fee' => (int) $order->shipping_fee,
             'discount_amount' => (int) ($order->discount_amount ?? 0),
             'final_amount' => (int) $order->final_amount,
+            'is_owner' => $isOwner,
             'items' => $groupedItems,
         ]);
     }

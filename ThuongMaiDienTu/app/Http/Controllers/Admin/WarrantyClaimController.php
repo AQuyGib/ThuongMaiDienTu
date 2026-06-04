@@ -6,8 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\WarrantyClaim;
 use App\Models\ActivityLog;
 use App\Models\User;
+use App\Models\Cashbook;
+use App\Models\InventoryItem;
+use App\Models\Warranty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class WarrantyClaimController extends Controller
 {
@@ -38,7 +43,7 @@ class WarrantyClaimController extends Controller
             });
         }
 
-        $claims = $query->orderByDesc('created_at')->paginate(15)->withQueryString();
+        $claims = $query->orderBy('id')->paginate(15)->withQueryString();
 
         return view('admin.warranty-claims.index', compact('claims'));
     }
@@ -65,6 +70,9 @@ class WarrantyClaimController extends Controller
             'reason' => 'required|string',
             'status' => 'required|in:pending,approved,rejected',
             'admin_note' => 'nullable|string',
+            'bank_name' => 'nullable|string|max:100',
+            'bank_account_number' => 'nullable|string|max:50',
+            'bank_account_name' => 'nullable|string|max:100',
         ], [
             'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
             'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
@@ -85,6 +93,9 @@ class WarrantyClaimController extends Controller
             'reason' => $request->reason,
             'status' => $request->status,
             'admin_note' => $request->admin_note,
+            'bank_name' => $request->claim_type === 'return' ? $request->bank_name : null,
+            'bank_account_number' => $request->claim_type === 'return' ? $request->bank_account_number : null,
+            'bank_account_name' => $request->claim_type === 'return' ? $request->bank_account_name : null,
         ]);
 
         ActivityLog::create([
@@ -121,6 +132,9 @@ class WarrantyClaimController extends Controller
             'reason' => 'required|string',
             'status' => 'required|in:pending,approved,rejected',
             'admin_note' => 'nullable|string',
+            'bank_name' => 'nullable|string|max:100',
+            'bank_account_number' => 'nullable|string|max:50',
+            'bank_account_name' => 'nullable|string|max:100',
         ], [
             'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
             'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
@@ -141,6 +155,9 @@ class WarrantyClaimController extends Controller
             'reason' => $request->reason,
             'status' => $request->status,
             'admin_note' => $request->admin_note,
+            'bank_name' => $request->claim_type === 'return' ? $request->bank_name : null,
+            'bank_account_number' => $request->claim_type === 'return' ? $request->bank_account_number : null,
+            'bank_account_name' => $request->claim_type === 'return' ? $request->bank_account_name : null,
         ]);
 
         ActivityLog::create([
@@ -177,19 +194,67 @@ class WarrantyClaimController extends Controller
     public function approve(Request $request, $id)
     {
         $claim = WarrantyClaim::findOrFail($id);
-        
-        $claim->update([
-            'status' => 'approved',
-            'admin_note' => $request->input('admin_note'),
+
+        // Chỉ duyệt được khi đang ở trạng thái pending
+        if ($claim->status !== 'pending') {
+            return redirect()->back()->with('error', 'Yêu cầu này đã được xử lý trước đó.');
+        }
+
+        $request->validate([
+            'admin_note'    => 'nullable|string|max:500',
+            'refund_amount' => 'nullable|integer|min:0',
+            'refund_method' => 'nullable|in:cash,bank_transfer',
         ]);
 
+        DB::transaction(function () use ($claim, $request) {
+            $isReturn   = $claim->claim_type === 'return';
+            $isExchange = $claim->claim_type === 'exchange';
+            $isRefund   = $isReturn; // Chỉ return mới hoàn tiền
+            $refundAmount = $isRefund ? (int) $request->input('refund_amount', 0) : 0;
+            $refundMethod = $isRefund ? $request->input('refund_method', 'cash') : null;
+
+            // ① Cập nhật trạng thái yêu cầu
+            $claim->update([
+                'status'        => 'approved',
+                'admin_note'    => $request->input('admin_note'),
+                'refund_amount' => $refundAmount ?: null,
+                'refund_method' => $refundMethod,
+                'refunded_at'   => $isRefund && $refundAmount > 0 ? Carbon::now() : null,
+            ]);
+
+            // ② Ghi sổ thu chi: chỉ khi đổi trả hoàn tiền
+            if ($isRefund && $refundAmount > 0) {
+                $methodLabel = $refundMethod === 'bank_transfer' ? 'chuyển khoản' : 'tiền mặt';
+                Cashbook::create([
+                    'type'           => 'Expense',
+                    'amount'         => $refundAmount,
+                    'reference_id'   => $claim->id,
+                    'reference_type' => 'warranty_claim',
+                    'description'    => "Hoàn tiền đổi trả IMEI {$claim->imei_serial} – KH: {$claim->customer_name} ({$methodLabel})",
+                ]);
+            }
+
+            // ③ Cập nhật kho + tạm dừng BH: cho cả return và exchange
+            if ($isReturn || $isExchange) {
+                $item = InventoryItem::where('imei_serial', $claim->imei_serial)->first();
+                if ($item) {
+                    $item->update(['status' => 'In_Stock']); // Hàng về kho
+
+                    // ④ Tạm dừng bảo hành thiết bị
+                    Warranty::where('item_id', $item->item_id)
+                        ->where('warranty_status', 'active')
+                        ->update(['warranty_status' => 'paused']);
+                }
+            }
+        });
+
         ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "Phê duyệt yêu cầu bảo hành/đổi trả ID: " . $claim->id . " (IMEI: " . $claim->imei_serial . ")",
+            'user_id'    => Auth::id(),
+            'action'     => "Phê duyệt yêu cầu #{$claim->id} (IMEI: {$claim->imei_serial}, loại: {$claim->claim_type})",
             'ip_address' => $request->ip(),
         ]);
 
-        return redirect()->back()->with('success', 'Đã duyệt yêu cầu thành công!');
+        return redirect()->back()->with('success', 'Đã duyệt thành công!');
     }
 
     /**

@@ -171,12 +171,15 @@ class WarrantyClaimTest extends TestCase
         $this->makeWarranty($item, 'active', 10);
 
         $response = $this->postJson(route('warranty.claim.store'), [
-            'imei_serial'    => 'IMEI-RETURN-002',
-            'customer_name'  => 'Trần Thị Test',
-            'customer_phone' => '0987654321',
-            'customer_email' => null,
-            'claim_type'     => 'return',
-            'reason'         => 'Giao sai màu so với đơn hàng đã đặt.',
+            'imei_serial'         => 'IMEI-RETURN-002',
+            'customer_name'       => 'Trần Thị Test',
+            'customer_phone'      => '0987654321',
+            'customer_email'      => null,
+            'claim_type'          => 'return',
+            'reason'              => 'Giao sai màu so với đơn hàng đã đặt.',
+            'bank_name'           => 'Vietcombank',
+            'bank_account_number' => '1234567890',
+            'bank_account_name'   => 'Trần Thị Test',
         ]);
 
         $response->assertStatus(200)
@@ -186,6 +189,34 @@ class WarrantyClaimTest extends TestCase
             'imei_serial' => 'IMEI-RETURN-002',
             'claim_type'  => 'return',
             'status'      => 'pending',
+        ]);
+    }
+
+    /** Test: Gửi yêu cầu đổi trả (return) hoàn tiền mặt thành công */
+    public function test_customer_can_submit_return_claim_with_cash_refund_method_successfully(): void
+    {
+        $item = $this->makeInventoryItem('IMEI-RETURN-CASH-002');
+        $this->makeWarranty($item, 'active', 10);
+
+        $response = $this->postJson(route('warranty.claim.store'), [
+            'imei_serial'         => 'IMEI-RETURN-CASH-002',
+            'customer_name'       => 'Trần Thị Test Cash',
+            'customer_phone'      => '0987654321',
+            'customer_email'      => null,
+            'claim_type'          => 'return',
+            'reason'              => 'Giao sai màu so với đơn hàng đã đặt.',
+            'refund_method'       => 'cash',
+        ]);
+
+        $response->assertStatus(200)
+                 ->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('warranty_claims', [
+            'imei_serial'   => 'IMEI-RETURN-CASH-002',
+            'claim_type'    => 'return',
+            'status'        => 'pending',
+            'refund_method' => 'cash',
+            'bank_name'     => null,
         ]);
     }
 
@@ -230,6 +261,117 @@ class WarrantyClaimTest extends TestCase
             'imei_serial' => 'IMEI-AUTH-004',
             'user_id'     => $customer->user_id,
         ]);
+    }
+
+    /** Test: Chặn gửi yêu cầu trùng lặp khi đang chờ duyệt */
+    public function test_duplicate_pending_claim_fails(): void
+    {
+        $item = $this->makeInventoryItem('IMEI-DUPLICATE-001');
+        $this->makeWarranty($item, 'active', 10);
+
+        // Tạo sẵn 1 claim ở trạng thái pending
+        WarrantyClaim::create([
+            'imei_serial'    => 'IMEI-DUPLICATE-001',
+            'customer_name'  => 'Test Name',
+            'customer_phone' => '0900000001',
+            'claim_type'     => 'warranty',
+            'reason'         => 'Pending claim reason',
+            'status'         => 'pending',
+        ]);
+
+        $response = $this->postJson(route('warranty.claim.store'), [
+            'imei_serial'    => 'IMEI-DUPLICATE-001',
+            'customer_name'  => 'Test Name 2',
+            'customer_phone' => '0900000001',
+            'claim_type'     => 'warranty',
+            'reason'         => 'Duplicate claim reason',
+        ]);
+
+        $response->assertStatus(422)
+                 ->assertJsonFragment([
+                     'success' => false,
+                     'message' => 'Thiết bị với mã IMEI này đang có một yêu cầu hỗ trợ chờ xử lý. Vui lòng đợi phản hồi từ ban quản trị.',
+                 ]);
+    }
+
+    /** Test: Khách hàng đăng nhập không thể gửi yêu cầu cho thiết bị của người khác */
+    public function test_claim_fails_for_other_users_device(): void
+    {
+        $customer1 = $this->makeCustomer('c1@test.com');
+        $customer2 = $this->makeCustomer('c2@test.com');
+
+        $item = $this->makeInventoryItem('IMEI-OWNER-001');
+        $this->makeWarranty($item, 'active', 10);
+
+        // Tạo đơn hàng thuộc sở hữu của customer1
+        $order = \App\Models\Order::create([
+            'user_id'        => $customer1->user_id,
+            'customer_name'  => $customer1->full_name,
+            'customer_phone' => '0911111111',
+            'status'         => 'Delivered',
+            'total_amount'   => 10000000,
+            'final_amount'   => 10000000,
+        ]);
+        \App\Models\OrderDetail::create([
+            'order_id' => $order->order_id,
+            'item_id'  => $item->item_id,
+            'quantity' => 1,
+            'price'    => 10000000,
+        ]);
+
+        // Đăng nhập bằng customer2 và gửi yêu cầu cho sản phẩm của customer1
+        $response = $this->actingAs($customer2, 'web')
+             ->postJson(route('warranty.claim.store'), [
+                 'imei_serial'    => 'IMEI-OWNER-001',
+                 'customer_name'  => $customer2->full_name,
+                 'customer_phone' => '0922222222',
+                 'claim_type'     => 'warranty',
+                 'reason'         => 'Bị sọc màn hình.',
+             ]);
+
+        $response->assertStatus(403)
+                 ->assertJsonFragment([
+                     'success' => false,
+                     'message' => 'Bạn không sở hữu sản phẩm này. Không thể gửi yêu cầu hỗ trợ.',
+                 ]);
+    }
+
+    /** Test: Khách vãng lai không thể gửi yêu cầu nếu số điện thoại không khớp đơn hàng */
+    public function test_guest_claim_fails_for_non_matching_phone(): void
+    {
+        $item = $this->makeInventoryItem('IMEI-GUEST-001');
+        $this->makeWarranty($item, 'active', 10);
+
+        // Tạo đơn hàng có số điện thoại khách mua là 0912345678
+        $order = \App\Models\Order::create([
+            'user_id'        => null,
+            'customer_name'  => 'Guest Buyer',
+            'customer_phone' => '0912345678',
+            'status'         => 'Delivered',
+            'total_amount'   => 10000000,
+            'final_amount'   => 10000000,
+        ]);
+        \App\Models\OrderDetail::create([
+            'order_id' => $order->order_id,
+            'item_id'  => $item->item_id,
+            'quantity' => 1,
+            'price'    => 10000000,
+        ]);
+
+        // Gửi yêu cầu với số điện thoại khác (ví dụ: 0988888888)
+        $response = $this->postJson(route('warranty.claim.store'), [
+            'imei_serial'    => 'IMEI-GUEST-001',
+            'customer_name'  => 'Imposter User',
+            'customer_phone' => '0988888888',
+            'claim_type'     => 'warranty',
+            'reason'         => 'Hỏng loa.',
+        ]);
+
+        $response->assertStatus(403)
+                 ->assertJsonFragment([
+                     'success' => false,
+                     'message' => 'Số điện thoại liên hệ không trùng khớp với thông tin mua hàng của thiết bị này.',
+                 ]);
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -786,11 +928,14 @@ class WarrantyClaimTest extends TestCase
         $this->makeWarranty($item, 'active', 5, 12); // Kích hoạt 5 ngày trước
 
         $response = $this->postJson(route('warranty.claim.store'), [
-            'imei_serial'    => 'IMEI-CHEAP-ACC',
-            'customer_name'  => 'Khách Test',
-            'customer_phone' => '0912345678',
-            'claim_type'     => 'return',
-            'reason'         => 'Muốn hoàn tiền.',
+            'imei_serial'         => 'IMEI-CHEAP-ACC',
+            'customer_name'       => 'Khách Test',
+            'customer_phone'      => '0912345678',
+            'claim_type'          => 'return',
+            'reason'              => 'Muốn hoàn tiền.',
+            'bank_name'           => 'Vietcombank',
+            'bank_account_number' => '1234567890',
+            'bank_account_name'   => 'Khách Test',
         ]);
 
         $response->assertStatus(422)
@@ -804,11 +949,14 @@ class WarrantyClaimTest extends TestCase
         $this->makeWarranty($item, 'active', 20, 12); // Kích hoạt 20 ngày trước (quá hạn 15 ngày)
 
         $response = $this->postJson(route('warranty.claim.store'), [
-            'imei_serial'    => 'IMEI-EXP-ACC',
-            'customer_name'  => 'Khách Test',
-            'customer_phone' => '0912345678',
-            'claim_type'     => 'return',
-            'reason'         => 'Muốn hoàn tiền.',
+            'imei_serial'         => 'IMEI-EXP-ACC',
+            'customer_name'       => 'Khách Test',
+            'customer_phone'      => '0912345678',
+            'claim_type'          => 'return',
+            'reason'              => 'Muốn hoàn tiền.',
+            'bank_name'           => 'Vietcombank',
+            'bank_account_number' => '1234567890',
+            'bank_account_name'   => 'Khách Test',
         ]);
 
         $response->assertStatus(422)
@@ -822,11 +970,14 @@ class WarrantyClaimTest extends TestCase
         $this->makeWarranty($item, 'active', 10, 12); // Kích hoạt 10 ngày trước (< 15 ngày)
 
         $response = $this->postJson(route('warranty.claim.store'), [
-            'imei_serial'    => 'IMEI-AUDIO-OK',
-            'customer_name'  => 'Khách Test',
-            'customer_phone' => '0912345678',
-            'claim_type'     => 'return',
-            'reason'         => 'Muốn đổi trả.',
+            'imei_serial'         => 'IMEI-AUDIO-OK',
+            'customer_name'       => 'Khách Test',
+            'customer_phone'      => '0912345678',
+            'claim_type'          => 'return',
+            'reason'              => 'Muốn đổi trả.',
+            'bank_name'           => 'Vietcombank',
+            'bank_account_number' => '1234567890',
+            'bank_account_name'   => 'Khách Test',
         ]);
 
         $response->assertStatus(200)
@@ -1012,15 +1163,17 @@ class WarrantyClaimTest extends TestCase
     /** Test: CartController searchOrder returns unit details with claim eligibility flags */
     public function test_order_tracking_search_returns_warranty_and_return_eligibility_for_each_unit(): void
     {
+        $customer = $this->makeCustomer('tracker@test.com');
         $item = $this->makeInventoryItem('IMEI-TRACK-SEARCH-123', 'Sold');
         $this->makeWarranty($item, 'active', 5, 12); // start 5 days ago, 12 months duration
 
         $order = \App\Models\Order::create([
+            'user_id' => $customer->user_id,
             'order_type' => 'Online',
             'total_amount' => 1000000,
             'final_amount' => 1000000,
             'payment_method' => 'COD',
-            'status' => 'Pending',
+            'status' => 'Delivered',
             'customer_name' => 'Khách Tracker',
             'customer_phone' => '0912345678',
             'order_code' => 'ORD-TRACK-SEARCH',
@@ -1032,7 +1185,7 @@ class WarrantyClaimTest extends TestCase
             'price' => 1000000,
         ]);
 
-        $response = $this->getJson('/orders/search?code=ORD-TRACK-SEARCH');
+        $response = $this->actingAs($customer, 'web')->getJson('/orders/search?code=ORD-TRACK-SEARCH');
         
         $response->assertStatus(200)
                  ->assertJsonFragment(['success' => true])

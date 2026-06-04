@@ -361,7 +361,25 @@
             }
 
             // Trạng thái
-            document.getElementById('modalStatusSelect').value = data.status || 'Pending';
+            const statusSelect = document.getElementById('modalStatusSelect');
+            statusSelect.innerHTML = '';
+            const isCash = (data.payment_method === 'COD' || data.payment_method === 'Cash_POS');
+            if (isCash) {
+                statusSelect.innerHTML += '<option value="Pending">Chờ xử lý (COD - Thanh toán tiền mặt)</option>';
+                if (data.status === 'BaoCK') {
+                    statusSelect.innerHTML += '<option value="BaoCK">Báo đã CK QR - Đang chờ kiểm tra tiền</option>';
+                }
+                statusSelect.innerHTML += '<option value="Shipping">Đã xác nhận - Đang giao hàng</option>';
+                statusSelect.innerHTML += '<option value="Delivered">Giao hàng thành công</option>';
+                statusSelect.innerHTML += '<option value="Cancelled">Khách hủy đơn / Đơn ảo</option>';
+            } else {
+                statusSelect.innerHTML += '<option value="Pending">Chờ thanh toán (Online)</option>';
+                statusSelect.innerHTML += '<option value="BaoCK">Báo đã CK QR - Đang chờ kiểm tra tiền</option>';
+                statusSelect.innerHTML += '<option value="Shipping">Đã xác nhận - Đang giao hàng</option>';
+                statusSelect.innerHTML += '<option value="Delivered">Giao hàng thành công</option>';
+                statusSelect.innerHTML += '<option value="Cancelled">Khách hủy đơn / Đơn ảo</option>';
+            }
+            statusSelect.value = data.status || 'Pending';
 
             // Danh sách sản phẩm
             const tbody = document.getElementById('modalProductList');

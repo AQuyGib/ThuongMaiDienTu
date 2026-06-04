@@ -46,8 +46,8 @@ class InventoryItem extends Model {
 
     /**
      * Kiểm tra sản phẩm còn trong thời hạn bảo hành hay không.
-     * Dựa vào field "Bảo hành" trong specifications của Product (VD: "24 tháng chính hãng").
-     * Tính từ ngày đặt hàng (order.created_at).
+     * Ưu tiên kiểm tra bản ghi trong bảng warranties trước.
+     * Dự phòng dựa vào field "Bảo hành" trong specifications của Product.
      */
     public function canClaimWarranty($order = null)
     {
@@ -55,13 +55,20 @@ class InventoryItem extends Model {
             return false;
         }
 
-        // Lấy ngày mua hàng từ order
+        // 1. Kiểm tra bản ghi bảo hành trong database trước
+        $warranty = $this->warranties()->orderBy('end_date', 'desc')->first();
+        if ($warranty) {
+            $now = \Carbon\Carbon::now();
+            $isExpired = $now->greaterThan($warranty->end_date);
+            return ($warranty->warranty_status === 'active' && !$isExpired);
+        }
+
+        // 2. Dự phòng theo ngày mua + cấu hình specifications
         $orderDate = $this->resolveOrderDate($order);
         if (!$orderDate) {
             return false;
         }
 
-        // Lấy số tháng bảo hành từ specifications sản phẩm
         $warrantyMonths = $this->getWarrantyMonthsFromProduct();
         if ($warrantyMonths <= 0) {
             return false;
@@ -75,7 +82,7 @@ class InventoryItem extends Model {
 
     /**
      * Kiểm tra sản phẩm còn trong thời hạn đổi trả hay không.
-     * Cố định 30 ngày kể từ ngày đặt hàng (order.created_at).
+     * Khoảng cách tính từ ngày bắt đầu bảo hành hoặc ngày đặt hàng (order.created_at) <= 30 ngày.
      */
     public function canClaimReturn($order = null)
     {
@@ -88,6 +95,15 @@ class InventoryItem extends Model {
             return false;
         }
 
+        // 1. Nếu có bản ghi bảo hành, tính số ngày từ ngày bắt đầu bảo hành (start_date)
+        $warranty = $this->warranties()->orderBy('end_date', 'desc')->first();
+        if ($warranty) {
+            $now = \Carbon\Carbon::now();
+            $daysSinceStart = (int) abs($now->diffInDays($warranty->start_date));
+            return ($daysSinceStart <= 30);
+        }
+
+        // 2. Dự phòng theo ngày đặt hàng/giao hàng
         $orderDate = $this->resolveOrderDate($order);
         if (!$orderDate) {
             return false;

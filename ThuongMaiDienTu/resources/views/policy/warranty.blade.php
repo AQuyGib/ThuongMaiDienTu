@@ -269,27 +269,38 @@
 @endpush
 
 @section('content')
+{{-- Vùng bao ngoài cùng của trang Tra cứu & Chính sách bảo hành --}}
 <div class="warranty-page">
     <div class="container">
-        {{-- Hero Section --}}
+        
+        {{-- =========================================================================
+             PHẦN HERO BANNER GIỚI THIỆU CHUNG (HERO SECTION)
+             ========================================================================= --}}
         <div class="warranty-hero">
+            {{-- Biểu tượng chiếc khiên bảo mật --}}
             <div class="hero-icon"><i class="fa-solid fa-shield-halved"></i></div>
             <h1>Tra cứu & Chính sách bảo hành</h1>
             <p>Nhập mã IMEI/Serial để kiểm tra bảo hành hoặc tham khảo các chính sách hậu mãi bên dưới</p>
         </div>
 
-        {{-- Search Box --}}
+        {{-- =========================================================================
+             HỘP TÌM KIẾM TRA CỨU IMEI (SEARCH BOX)
+             Khách nhập mã IMEI/Số điện thoại/Mã đơn hàng vào đây để tra cứu
+             ========================================================================= --}}
         <div class="warranty-search-box" id="warrantySearchBox">
             <form id="warrantyForm" onsubmit="return false;">
                 <div class="search-input-group">
+                    {{-- Ô nhập thông tin IMEI/Serial --}}
                     <input type="text" id="imeiInput" name="imei"
                            placeholder="Nhập mã IMEI hoặc Serial Number..."
                            maxlength="30" autocomplete="off" required>
+                    {{-- Nút bấm kích hoạt tra cứu. Khi bấm sẽ gọi JS để gọi API --}}
                     <button type="button" class="btn-lookup" id="btnLookup" onclick="lookupWarranty()">
                         <i class="fa-solid fa-spinner spinner"></i>
                         <span class="btn-text"><i class="fa-solid fa-magnifying-glass"></i> Tra cứu</span>
                     </button>
                 </div>
+                {{-- Gợi ý nhỏ bên dưới giúp khách hàng biết cách lấy IMEI --}}
                 <div class="search-hint">
                     <i class="fa-solid fa-circle-info"></i>
                     <span>Mã IMEI thường nằm trên hộp sản phẩm hoặc quay số *#06# trên điện thoại</span>
@@ -297,23 +308,31 @@
             </form>
         </div>
 
-        {{-- Result Area --}}
+        {{-- =========================================================================
+             KHU VỰC HIỂN THỊ KẾT QUẢ TRA CỨU (RESULT AREA)
+             JS sẽ chèn động HTML kết quả bảo hành, lịch sử, form vào đây khi có kết quả
+             ========================================================================= --}}
         <div class="warranty-result" id="warrantyResult"></div>
 
-        {{-- How it works --}}
+        {{-- =========================================================================
+             HƯỚNG DẪN CÁC BƯỚC THỰC HIỆN (HOW IT WORKS)
+             ========================================================================= --}}
         <div class="how-it-works">
             <h3>Cách tra cứu bảo hành</h3>
             <div class="steps-grid">
+                {{-- Bước 1 --}}
                 <div class="step-item">
                     <div class="step-icon"><i class="fa-solid fa-barcode"></i></div>
                     <h4>Bước 1</h4>
                     <p>Tìm mã IMEI/Serial trên hộp sản phẩm hoặc quay số *#06#</p>
                 </div>
+                {{-- Bước 2 --}}
                 <div class="step-item">
                     <div class="step-icon"><i class="fa-solid fa-keyboard"></i></div>
                     <h4>Bước 2</h4>
                     <p>Nhập mã IMEI vào ô tra cứu phía trên</p>
                 </div>
+                {{-- Bước 3 --}}
                 <div class="step-item">
                     <div class="step-icon"><i class="fa-solid fa-circle-check"></i></div>
                     <h4>Bước 3</h4>
@@ -322,12 +341,15 @@
             </div>
         </div>
 
-        {{-- Integrated Policy Contents --}}
+        {{-- =========================================================================
+             KHỐI NỘI DUNG CHÍNH SÁCH BẢO HÀNH & ĐỔI TRẢ (TABBED POLICIES)
+             ========================================================================= --}}
         <div class="policy-wrapper">
             <h3 style="text-align: center; font-size: 20px; font-weight: 700; margin-bottom: 24px; color: #1e293b;">
                 Chính sách bảo hành & Đổi trả
             </h3>
 
+            {{-- Các tab điều hướng chính sách --}}
             <div class="policy-nav">
                 <a href="javascript:void(0)" class="active" onclick="switchPolicyTab('doi-moi', this)"><i class="fa-solid fa-rotate"></i> Đổi mới 30 ngày</a>
                 <a href="javascript:void(0)" onclick="switchPolicyTab('bh-tieu-chuan', this)"><i class="fa-solid fa-shield-halved"></i> Bảo hành tiêu chuẩn</a>
@@ -468,54 +490,193 @@
     </div>
 </div>
 
+{{-- =========================================================================
+     CỬA SỔ POPUP NHẬP FORM YÊU CẦU DỊCH VỤ (CLAIM MODAL)
+     Được mở lên khi người dùng nhấn nút Bảo Hành hoặc Đổi Trả sau khi tra cứu thành công
+     ========================================================================= --}}
+<div id="claimModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);justify-content:center;align-items:center;padding:12px;z-index:9999;">
+    <div id="claimModalContent" style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:90vh;overflow:hidden;box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 10px 10px -5px rgba(0,0,0,.04);transform:scale(0.95);opacity:0;transition:transform .3s ease,opacity .3s ease;display:flex;flex-direction:column;">
+        {{-- Tiêu đề Modal và nút đóng màu trắng nền xanh hoặc cam --}}
+        <div id="claimModalHeader" style="padding:12px 18px;background:#0046ab;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+            <h3 id="claimModalTitle" style="font-size:16px;font-weight:700;color:#fff;margin:0;">Gửi yêu cầu bảo hành</h3>
+            <button type="button" onclick="closeClaimModal()" style="background:none;border:none;font-size:18px;color:#fff;cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        {{-- Form điền thông tin và đính kèm tệp tin gửi lên backend xử lý --}}
+        <form id="claimForm" style="padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;" onsubmit="submitClaim(event)" enctype="multipart/form-data">
+            @csrf
+            {{-- Khối thông tin thiết bị đang thao tác (chỉ đọc) --}}
+            <div style="background:#f8fafc;padding:10px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:13px;">
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-weight:700;color:#475569;">Sản phẩm:</span>
+                    <span style="color:#1e293b;" id="modalProductNameDisplay"></span>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;margin-top:6px;padding-top:6px;border-top:1px dashed #e2e8f0;">
+                    <span style="font-weight:700;color:#475569;">IMEI:</span>
+                    <span style="color:#0f172a;font-family:monospace;font-weight:600;" id="modalImeiDisplay"></span>
+                </div>
+            </div>
+            
+            {{-- Trường ẩn chứa IMEI thực sự sẽ gửi đi --}}
+            <input type="hidden" id="modalImei" name="imei_serial">
+            
+            {{-- Chọn Loại yêu cầu --}}
+            <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Loại yêu cầu</label>
+                <select id="modalClaimType" name="claim_type" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;background:#fff;" required>
+                    <option value="warranty">Bảo hành sửa chữa (Miễn phí)</option>
+                    <option value="return">Đổi trả hàng hoàn tiền</option>
+                    <option value="exchange">Đổi máy mới/khách</option>
+                </select>
+            </div>
+            
+            {{-- Nhập thông tin liên hệ của khách hàng --}}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Họ tên</label>
+                    <input type="text" id="modalCustomerName" name="customer_name" value="{{ auth()->user() ? auth()->user()->full_name : '' }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;" required>
+                </div>
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Số điện thoại</label>
+                    <input type="text" id="modalCustomerPhone" name="customer_phone" value="{{ auth()->user() ? auth()->user()->phone_number : '' }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;" required>
+                </div>
+            </div>
+            <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Email liên hệ</label>
+                <input type="email" id="modalCustomerEmail" name="customer_email" value="{{ auth()->user() ? auth()->user()->email : '' }}" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;">
+            </div>
+            
+            {{-- Lý do chi tiết yêu cầu --}}
+            <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Lý do yêu cầu</label>
+                <textarea id="modalReason" name="reason" rows="2" placeholder="Mô tả cụ thể lỗi thiết bị hoặc lý do..." style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;resize:none;" required></textarea>
+            </div>
+            
+            {{-- Đính kèm ảnh/video minh họa lỗi máy --}}
+            <div>
+                <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Hình ảnh/Video <span style="font-weight:normal;color:#94a3b8;">(Tối đa 20MB)</span></label>
+                <input type="file" id="modalMediaFile" name="media_file" accept="image/*,video/*" style="width:100%;padding:6px 10px;border:1px dashed #cbd5e1;border-radius:8px;font-size:12px;background:#fafafa;cursor:pointer;">
+            </div>
+            
+            {{-- Lựa chọn phương thức nhận lại tiền hoàn trả (Chỉ hiện khi khách chọn Đổi Trả) --}}
+            <div id="refundMethodSection" style="display: none; flex-direction: column; gap: 4px;">
+                <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Phương thức nhận tiền hoàn</label>
+                <select id="modalRefundMethod" name="refund_method" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;background:#fff;">
+                    <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+                    <option value="cash">Tiền mặt tại cửa hàng</option>
+                </select>
+            </div>
+            
+            {{-- Điền thông tin số tài khoản và ngân hàng (Chỉ hiển thị khi phương thức hoàn tiền là Chuyển khoản) --}}
+            <div id="bankDetailsSection" style="display: none; border-top: 1px dashed #e2e8f0; padding-top: 12px; margin-top: 4px; flex-direction: column; gap: 10px;">
+                <h4 style="font-size: 13px; font-weight: 700; color: #d97706; margin: 0; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-building-columns"></i> Thông tin nhận tiền hoàn
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Ngân hàng</label>
+                        <input type="text" id="modalBankName" name="bank_name" placeholder="VD: Vietcombank" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Số tài khoản</label>
+                        <input type="text" id="modalBankAccountNumber" name="bank_account_number" placeholder="VD: 1023456789" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Tên chủ tài khoản</label>
+                    <input type="text" id="modalBankAccountName" name="bank_account_name" placeholder="VD: NGUYEN VAN A" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;text-transform: uppercase;">
+                </div>
+            </div>
+            
+            {{-- Các nút gửi đi hoặc tắt bỏ --}}
+            <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:12px;border-top:1px solid #f1f5f9;flex-shrink:0;">
+                <button type="button" class="btn-lookup" style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:8px 16px;font-size:13px;border-radius:8px;" onclick="closeClaimModal()">Hủy</button>
+                <button type="submit" class="btn-lookup" id="btnSubmitClaim" style="padding:8px 20px;background:#0046ab;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;">Gửi yêu cầu</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 @endsection
 
 @push('scripts')
 <script>
-const imeiInput = document.getElementById('imeiInput');
-const btnLookup = document.getElementById('btnLookup');
-const resultArea = document.getElementById('warrantyResult');
+// =========================================================================
+// KHỞI TẠO CÁC BIẾN DOM VÀ BẮT SỰ KIỆN PHÍM ENTER (INITIALIZATION)
+// Lấy các thẻ nhập liệu, nút bấm và vùng hiển thị kết quả từ giao diện
+// =========================================================================
+const imeiInput = document.getElementById('imeiInput'); // Ô nhập mã IMEI/Serial của khách hàng.
+const btnLookup = document.getElementById('btnLookup'); // Nút bấm thực hiện hành động "Tra cứu".
+const resultArea = document.getElementById('warrantyResult'); // Vùng trống dùng để hiển thị kết quả bảo hành khi tra cứu xong.
 
-// Enter key
+// Sự kiện: Khi khách đang trỏ vào ô nhập IMEI và nhấn phím "Enter", tự động gọi hàm tìm kiếm.
 imeiInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); lookupWarranty(); }
 });
 
+// =========================================================================
+// HÀM CHÍNH 1: TRA CỨU THÔNG TIN BẢO HÀNH QUA AJAX (lookupWarranty)
+// Hàm này lấy IMEI khách nhập, gửi lên server để kiểm tra, và hiển thị thông tin trả về.
+// =========================================================================
 function lookupWarranty() {
-    const imei = imeiInput.value.trim();
+    const imei = imeiInput.value.trim(); // Lấy giá trị IMEI khách nhập và xóa khoảng trắng dư thừa ở đầu/cuối.
+    
+    // Kiểm tra nhanh dưới giao diện xem khách đã nhập IMEI hợp lệ hay chưa (tối thiểu 8 ký tự).
     if (!imei || imei.length < 8) {
         Swal.fire({ icon: 'warning', title: 'Lưu ý', text: 'Vui lòng nhập mã IMEI/Serial hợp lệ (tối thiểu 8 ký tự).', confirmButtonColor: '#0046ab' });
         return;
     }
 
+    // Hiệu ứng chờ: Thêm biểu tượng đang tải (spinner) và tạm thời vô hiệu hóa nút Tra cứu để chống bấm nhiều lần.
     btnLookup.classList.add('loading');
     btnLookup.disabled = true;
-    resultArea.classList.remove('show');
+    resultArea.classList.remove('show'); // Ẩn kết quả cũ đi.
 
+    // Gửi yêu cầu kiểm tra IMEI lên máy chủ thông qua đường dẫn AJAX (route "warranty.lookup").
     fetch('{{ route("warranty.lookup") }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, // Mã bảo mật CSRF tránh giả mạo yêu cầu.
             'Accept': 'application/json',
         },
-        body: JSON.stringify({ imei: imei })
+        body: JSON.stringify({ imei: imei }) // Truyền mã IMEI dạng chuỗi JSON lên server.
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(r => r.json().then(data => ({ status: r.status, body: data })))
+    .then(res => {
+        // Tải xong: Khôi phục lại trạng thái bình thường của nút Tra cứu.
         btnLookup.classList.remove('loading');
         btnLookup.disabled = false;
 
+        // Nếu phiên làm việc hết hạn (do lâu không thao tác), yêu cầu người dùng tải lại trang.
+        if (res.status === 419 || (res.body && res.body.message === 'CSRF token mismatch.')) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Phiên làm việc hết hạn',
+                text: 'Phiên làm việc của bạn đã hết hạn. Vui lòng tải lại trang để tiếp tục.',
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Tải lại trang'
+            }).then(() => {
+                window.location.reload();
+            });
+            return;
+        }
+
+        const data = res.body;
         if (!data.success) {
+            // Nếu không tìm thấy hoặc có lỗi nghiệp vụ từ máy chủ: hiển thị giao diện báo lỗi tương ứng.
             resultArea.innerHTML = renderError(data.message);
         } else {
+            // Nếu tìm thấy: Gọi hàm dựng HTML để hiển thị thông tin chi tiết của sản phẩm và bảo hành.
             resultArea.innerHTML = renderResult(data);
         }
+        
+        // Hiện vùng kết quả và tự động cuộn màn hình mượt mà xuống khu vực thông tin này.
         resultArea.classList.add('show');
         resultArea.scrollIntoView({ behavior: 'smooth', block: 'center' });
     })
     .catch(err => {
+        // Xử lý lỗi nếu mất mạng hoặc lỗi máy chủ không kết nối được.
         btnLookup.classList.remove('loading');
         btnLookup.disabled = false;
         resultArea.innerHTML = renderError('Đã xảy ra lỗi khi tra cứu. Vui lòng thử lại.');
@@ -523,14 +684,10 @@ function lookupWarranty() {
     });
 }
 
-function renderError(msg) {
-    return `<div class="result-error">
-        <div class="error-icon"><i class="fa-solid fa-circle-xmark"></i></div>
-        <h3>Không tìm thấy</h3>
-        <p>${msg}</p>
-    </div>`;
-}
-
+// =========================================================================
+// CÁC HÀM PHỤ TRỢ: CHUYỂN ĐỔI TRẠNG THÁI VÀ ĐỊNH DẠNG CHỮ HIỂN THỊ
+// Giúp hiển thị nội dung thân thiện cho người dùng cuối
+// =========================================================================
 function getStatusLabel(status) {
     const map = {
         active: 'Còn bảo hành', expired: 'Hết hạn bảo hành',
@@ -557,10 +714,26 @@ function getRepairStatusLabel(s) {
     return map[s] || s;
 }
 
+// =========================================================================
+// HÀM DỰNG GIAO DIỆN BÁO LỖI KHI KHÔNG TÌM THẤY SẢN PHẨM (renderError)
+// =========================================================================
+function renderError(msg) {
+    return `<div class="result-error">
+        <div class="error-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+        <h3>Không tìm thấy</h3>
+        <p>${msg}</p>
+    </div>`;
+}
+
+// =========================================================================
+// HÀM CHÍNH 3: DỰNG GIAO DIỆN KẾT QUẢ BẢO HÀNH (renderResult)
+// Xử lý và chuyển đổi dữ liệu thô từ máy chủ thành giao diện đẹp mắt cho người dùng.
+// =========================================================================
 function renderResult(d) {
     const imgSrc = d.product_image ? `/storage/${d.product_image}` : 'https://via.placeholder.com/80x80?text=N/A';
     const statusClass = d.warranty_status;
 
+    // A. Vẽ thanh tiến trình thời gian bảo hành (nếu có gói bảo hành hoạt động).
     let progressHTML = '';
     if (d.has_warranty) {
         const start = new Date(d.start_date.split('/').reverse().join('-'));
@@ -584,6 +757,7 @@ function renderResult(d) {
         </div>`;
     }
 
+    // B. Vẽ lưới thông tin ngày bắt đầu, kết thúc, loại gói bảo hành.
     let infoHTML = '';
     if (d.has_warranty) {
         const daysClass = d.days_left > 90 ? 'text-green' : d.days_left > 0 ? 'text-orange' : 'text-red';
@@ -609,6 +783,7 @@ function renderResult(d) {
 
     let noteHTML = d.note ? `<div class="warranty-note"><i class="fa-solid fa-circle-info"></i> ${d.note}</div>` : '';
 
+    // C. Vẽ danh sách lịch sử sửa chữa phần cứng của máy tại cửa hàng.
     let repairHTML = '';
     if (d.repair_history && d.repair_history.length > 0) {
         let items = d.repair_history.map(r => `
@@ -621,6 +796,7 @@ function renderResult(d) {
             <h4><i class="fa-solid fa-wrench"></i> Lịch sử sửa chữa</h4>${items}</div>`;
     }
 
+    // D. Vẽ danh sách các yêu cầu bảo hành/đổi trả trực tuyến đã gửi trước đó kèm phản hồi admin.
     let claimsHTML = '';
     if (d.claims_history && d.claims_history.length > 0) {
         let items = d.claims_history.map(c => {
@@ -670,44 +846,195 @@ function renderResult(d) {
         claimsHTML = `
             <div class="repair-history" style="margin-top: 24px;">
                 <h4 style="font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
-                    <i class="fa-solid fa-list-check" style="color: #0046ab;"></i> Lịch sử yêu cầu dịch vụ
-                </h4>
-                ${items}
-            </div>
-        `;
+                    <i class="fa-solid fa-list-che// =========================================================================
+// HÀM CHÍNH 4: MỞ CỬA SỔ POPUP NHẬP YÊU CẦU DỊCH VỤ (openClaimModal)
+// Cấu hình giao diện form nhập tùy theo khách bấm nút "Bảo hành" hay "Đổi trả".
+// =========================================================================
+function openClaimModal(imei, productName, defaultType) {
+    // 1. Lưu trữ thông tin ẩn và hiển thị thông tin sản phẩm/IMEI lên giao diện
+    document.getElementById('modalImei').value = imei; // Gán ngầm IMEI vào input hidden để gửi lên server.
+    document.getElementById('modalProductNameDisplay').textContent = productName; // Hiển thị tên sản phẩm lên form.
+    document.getElementById('modalImeiDisplay').textContent = imei; // Hiển thị mã IMEI lên form.
+
+    const sel    = document.getElementById('modalClaimType');
+    const header = document.getElementById('claimModalHeader');
+    const title  = document.getElementById('claimModalTitle');
+    const btn    = document.getElementById('btnSubmitClaim');
+
+    // 2. Tự động chuyển màu sắc chủ đạo của modal để khách hàng không bị nhầm lẫn
+    if (defaultType === 'warranty') {
+        // Giao diện màu xanh dương chuẩn cho Bảo hành sửa chữa
+        sel.innerHTML = '<option value="warranty">Bảo hành sửa chữa (Miễn phí)</option>';
+        header.style.background = '#0046ab';
+        title.textContent = 'Gửi yêu cầu bảo hành chính hãng';
+        btn.style.background = '#0046ab';
+        btn.textContent = 'Gửi yêu cầu bảo hành';
+    } else {
+        // Giao diện màu cam nổi bật cho Đổi trả hàng / Hoàn tiền
+        sel.innerHTML = '<option value="return">Đổi trả hàng hoàn tiền</option><option value="exchange">Đổi máy mới/khách</option>';
+        header.style.background = '#f59e0b';
+        title.textContent = 'Gửi yêu cầu đổi trả sản phẩm';
+        btn.style.background = '#f59e0b';
+        btn.textContent = 'Gửi yêu cầu đổi trả';
+    }
+    sel.value = defaultType;
+    
+    // 3. Khởi tạo lại trạng thái ban đầu của các trường nhập liệu
+    document.getElementById('modalReason').value = ''; // Reset trống ô lý do nhập.
+    const media = document.getElementById('modalMediaFile');
+    if (media) media.value = ''; // Reset trống tệp đính kèm đã chọn.
+    const refMethod = document.getElementById('modalRefundMethod');
+    if (refMethod) refMethod.value = 'bank_transfer'; // Mặc định phương thức nhận lại tiền là chuyển khoản.
+
+    // 4. Gọi hàm kiểm tra để ẩn/hiện các ô nhập tài khoản ngân hàng dựa trên phương thức hoàn tiền
+    toggleBankFields();
+
+    // 5. Mở popup kèm hiệu ứng zoom-in mượt mà tránh giật lag màn hình
+    const modal   = document.getElementById('claimModal');
+    const content = document.getElementById('claimModalContent');
+    modal.style.display = 'flex';
+    setTimeout(() => { 
+        content.style.transform = 'scale(1)'; 
+        content.style.opacity = '1'; 
+    }, 10);
+}
+
+// =========================================================================
+// HÀM ĐÓNG CỬA SỔ POPUP MODAL (closeClaimModal)
+// Thu nhỏ và làm mờ dần cửa sổ trước khi ẩn hoàn toàn khỏi màn hình
+// =========================================================================
+function closeClaimModal() {
+    const content = document.getElementById('claimModalContent');
+    content.style.transform = 'scale(0.95)';
+    content.style.opacity   = '0';
+    setTimeout(() => { 
+        document.getElementById('claimModal').style.display = 'none'; 
+    }, 300);
+}
+
+// Bắt sự kiện bàn phím: Cho phép nhấn phím Esc để tắt nhanh cửa sổ popup đang mở
+document.addEventListener('keydown', e => { 
+    if (e.key === 'Escape') closeClaimModal(); 
+});
+
+// =========================================================================
+// HÀM CHÍNH 5: GỬI THÔNG TIN FORM LÊN SERVER QUA AJAX (submitClaim)
+// Đóng gói toàn bộ dữ liệu, kiểm tra dung lượng tệp tin và thực hiện POST yêu cầu
+// =========================================================================
+function submitClaim(e) {
+    e.preventDefault(); // Ngăn chặn trình duyệt tải lại trang theo cơ chế submit form mặc định.
+    const btn = document.getElementById('btnSubmitClaim');
+    const oldText = btn.innerHTML;
+    
+    // Khóa nút gửi và hiển thị trạng thái xoay vòng để chống khách nhấn liên tiếp nhiều lần
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
+
+    // Kiểm tra nhanh kích thước file hình ảnh/video đính kèm dưới client (Tối đa 20MB)
+    const media = document.getElementById('modalMediaFile');
+    if (media && media.files.length > 0 && media.files[0].size > 20 * 1024 * 1024) {
+        Swal.fire({ 
+            icon: 'warning', 
+            title: 'Tệp quá lớn', 
+            text: 'Dung lượng tệp không được vượt quá 20MB.', 
+            confirmButtonColor: '#ef4444' 
+        });
+        btn.disabled = false; 
+        btn.innerHTML = oldText; 
+        return;
     }
 
-    return `<div class="result-card">
-        <div class="result-header">
-            <img src="${imgSrc}" alt="" class="result-product-img">
-            <div class="result-product-info">
-                <h3>${d.product_name}</h3>
-                ${d.variant_label ? `<div class="variant-label">${d.variant_label}</div>` : ''}
-                <div class="imei-label">IMEI: ${d.imei}</div>
-            </div>
-            <div class="warranty-status-badge ${statusClass}">
-                <i class="fa-solid ${getStatusIcon(d.warranty_status)}"></i>
-                ${getStatusLabel(d.warranty_status)}
-            </div>
-        </div>
-        <div class="result-body">
-            ${infoHTML}
-            ${progressHTML}
-            ${noteHTML}
-            ${repairHTML}
-            ${claimsHTML}
-        </div>
-    </div>`;
+    // Gửi yêu cầu qua cơ chế API Fetch POST đến backend xử lý lưu trữ database
+    fetch('/warranty/claim', {
+        method: 'POST',
+        headers: { 
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content, 
+            'Accept': 'application/json' 
+        },
+        body: new FormData(document.getElementById('claimForm')) // Đóng gói tự động toàn bộ input và file đính kèm
+    })
+    .then(r => r.json().then(data => ({ status: r.status, body: data })))
+    .then(res => {
+        btn.disabled = false; 
+        btn.innerHTML = oldText; // Khôi phục lại nút bấm ban đầu sau khi có phản hồi
+        
+        if (res.status !== 200) {
+            let msg = res.body.message || 'Đã có lỗi xảy ra.';
+            
+            // Xử lý trường hợp phiên làm việc CSRF token hết hạn
+            if (res.status === 419 || msg === 'CSRF token mismatch.') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Phiên làm việc hết hạn',
+                    text: 'Phiên làm việc của bạn đã hết hạn. Vui lòng tải lại trang để tiếp tục.',
+                    confirmButtonColor: '#ef4444',
+                    confirmButtonText: 'Tải lại trang'
+                }).then(() => {
+                    window.location.reload();
+                });
+                return;
+            }
+            
+            // Nếu backend trả về danh sách lỗi nhập liệu cụ thể
+            if (res.body.errors) msg = Object.values(res.body.errors).flat().join('<br>');
+            Swal.fire({ icon: 'error', title: 'Lỗi gửi yêu cầu', html: msg, confirmButtonColor: '#ef4444' });
+        } else {
+            // Gửi thành công: Đóng modal, hiển thị thông báo chúc mừng và tự động chạy lại tìm kiếm để cập nhật lịch sử
+            closeClaimModal();
+            Swal.fire({ icon: 'success', title: 'Thành công', text: res.body.message, confirmButtonColor: '#0046ab' })
+                .then(() => lookupWarranty());
+        }
+    })
+    .catch(() => {
+        btn.disabled = false; 
+        btn.innerHTML = oldText;
+        Swal.fire({ icon: 'error', title: 'Lỗi', text: 'Không thể kết nối đến máy chủ.', confirmButtonColor: '#ef4444' });
+    });
 }
 
-function switchPolicyTab(tabId, el) {
-    document.querySelectorAll('.policy-nav a').forEach(a => a.classList.remove('active'));
-    el.classList.add('active');
-    
-    document.querySelectorAll('.policy-section').forEach(s => s.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
+// =========================================================================
+// HÀM CHÍNH 6: ẨN/HIỆN PHẦN NHẬP TÀI KHOẢN NGÂN HÀNG (toggleBankFields)
+// Tự động kiểm tra loại yêu cầu và phương thức hoàn tiền để ẩn hiện, bắt buộc nhập
+// =========================================================================
+function toggleBankFields() {
+    const sel = document.getElementById('modalClaimType'); // Lựa chọn loại yêu cầu.
+    const refundMethodSection = document.getElementById('refundMethodSection'); // Vùng lựa chọn phương thức hoàn tiền.
+    const bankSection = document.getElementById('bankDetailsSection'); // Vùng thông tin tài khoản ngân hàng.
+    if (!sel) return;
+
+    const refundMethodSelect = document.getElementById('modalRefundMethod');
+    const isReturn = (sel.value === 'return'); // Kiểm tra có phải là Đổi trả hoàn tiền hay không.
+
+    // 1. Ẩn/Hiện phần chọn phương thức nhận lại tiền (chỉ hiện khi chọn Đổi trả hoàn tiền)
+    if (refundMethodSection) {
+        refundMethodSection.style.display = isReturn ? 'flex' : 'none';
+    }
+
+    // 2. Ẩn/Hiện và gán thuộc tính bắt buộc nhập (required) cho các trường ngân hàng
+    if (bankSection) {
+        const inputs = bankSection.querySelectorAll('input');
+        // Chỉ hiển thị ngân hàng khi chọn Đổi trả VÀ chọn phương thức nhận tiền là Chuyển khoản ngân hàng
+        const isBankTransfer = isReturn && (refundMethodSelect ? refundMethodSelect.value === 'bank_transfer' : true);
+
+        if (isBankTransfer) {
+            bankSection.style.display = 'flex'; // Hiển thị form ngân hàng lên màn hình
+            inputs.forEach(input => input.setAttribute('required', 'true')); // Bắt buộc khách phải nhập đầy đủ
+        } else {
+            bankSection.style.display = 'none'; // Ẩn form ngân hàng
+            inputs.forEach(input => {
+                input.removeAttribute('required'); // Bỏ bắt buộc nhập để không bị chặn submit
+                input.value = ''; // Xóa sạch dữ liệu cũ khách đã nhập để tránh gửi nhầm thông tin
+            });
+        }
+    }
 }
 
+// Theo dõi các sự kiện thay đổi lựa chọn (change) để tự động kích hoạt ẩn hiện giao diện tương ứng
+document.getElementById('modalClaimType').addEventListener('change', toggleBankFields);
+const refMethodEl = document.getElementById('modalRefundMethod');
+if (refMethodEl) {
+    refMethodEl.addEventListener('change', toggleBankFields);
+}
 
 </script>
 @endpush

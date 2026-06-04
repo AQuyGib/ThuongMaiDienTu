@@ -636,7 +636,9 @@ class ProfileController extends Controller
             'ai_diagnosed_at' => $aiData['ai_diagnosed_at'] ?? null,
         ]);
 
+
+
         // Bước 4: Điều hướng phản hồi về trang cá nhân của khách hàng
-        return redirect()->route('profile.index', ['tab' => 'repair-tab'])->with('repair_success', 'Đã đăng ký lịch hẹn sửa chữa trực tuyến thành công!');
+        return redirect()->route('profile.index')->with('repair_success', 'Đã đăng ký lịch hẹn sửa chữa trực tuyến thành công!');
     }
 }

@@ -31,7 +31,9 @@ class WarrantySeeder extends Seeder
                     ? Carbon::parse($order->delivered_at)
                     : Carbon::parse($order->created_at);
 
-                $endDate = (clone $startDate)->addMonths(12);
+                $item = $detail->inventoryItem;
+                $months = $item ? $item->getWarrantyMonthsFromProduct() : 12;
+                $endDate = (clone $startDate)->addMonths($months);
                 $isExpired = $endDate->isPast();
 
                 Warranty::create([
@@ -40,7 +42,7 @@ class WarrantySeeder extends Seeder
                     'end_date'        => $endDate->toDateString(),
                     'warranty_status' => $isExpired ? 'expired' : 'active',
                     'warranty_type'   => 'manufacturer',
-                    'note'            => 'Bảo hành chính hãng 12 tháng. Không áp dụng cho hư hỏng do rơi vỡ, vào nước.',
+                    'note'            => "Bảo hành chính hãng {$months} tháng. Không áp dụng cho hư hỏng do rơi vỡ, vào nước.",
                 ]);
                 $count++;
             }

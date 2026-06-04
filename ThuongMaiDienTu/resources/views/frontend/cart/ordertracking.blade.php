@@ -375,7 +375,34 @@
                 </label>
                 <input type="file" id="modalMediaFile" name="media_file" accept="image/*,video/*" style="width: 100%; padding: 6px 10px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 12px; background: #fafafa; cursor: pointer;">
             </div>
-            
+            <!-- Refund Method (Only shown for return) -->
+            <div id="refundMethodSection" style="display: none; flex-direction: column; gap: 4px;">
+                <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Phương thức nhận tiền hoàn</label>
+                <select id="modalRefundMethod" name="refund_method" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;background:#fff;">
+                    <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+                    <option value="cash">Tiền mặt tại cửa hàng</option>
+                </select>
+            </div>
+            <!-- Bank Details (Only shown for return) -->
+            <div id="bankDetailsSection" style="display: none; border-top: 1px dashed #e2e8f0; padding-top: 12px; margin-top: 4px; flex-direction: column; gap: 10px;">
+                <h4 style="font-size: 13px; font-weight: 700; color: #d97706; margin: 0; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-building-columns"></i> Thông tin nhận tiền hoàn
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Ngân hàng</label>
+                        <input type="text" id="modalBankName" name="bank_name" placeholder="VD: Vietcombank" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Số tài khoản</label>
+                        <input type="text" id="modalBankAccountNumber" name="bank_account_number" placeholder="VD: 1023456789" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;">
+                    </div>
+                </div>
+                <div>
+                    <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Tên chủ tài khoản</label>
+                    <input type="text" id="modalBankAccountName" name="bank_account_name" placeholder="VD: NGUYEN VAN A" style="width:100%;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;text-transform: uppercase;">
+                </div>
+            </div>
             <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; padding-top: 12px; border-top: 1px solid #f1f5f9; flex-shrink: 0;">
                 <button type="button" class="btn-lookup" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 8px 16px; font-size: 13px;" onclick="closeClaimModal()">Hủy</button>
                 <button type="submit" class="btn-lookup" id="btnSubmitClaim" style="padding: 8px 16px; background: #f59e0b; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px;">Gửi yêu cầu</button>
@@ -383,6 +410,8 @@
         </form>
     </div>
 </div>
+
+
 
 <style>
 /* CSS Keyframe hoạt ảnh trượt lên khi mở Modal */
@@ -567,6 +596,7 @@
     function showResult(data) {
         currentOrderCustomerName = data.customer_name || '';
         currentOrderCustomerPhone = data.customer_phone || '';
+        const isOwner = data.is_owner || false;
 
         document.getElementById('order-id-badge').textContent = '#' + (data.order_code || data.order_id);
         document.getElementById('result-name').textContent    = data.customer_name;
@@ -598,15 +628,22 @@
                             ${item.units.map(unit => {
                                 if (!unit.imei_serial) return '';
                                 let buttonsHTML = '';
-                                if (unit.can_claim_warranty) {
+                                if (unit.can_claim_warranty && data.status === 'Delivered') {
                                     buttonsHTML += `
                                         <button onclick="openClaimModal('${unit.imei_serial}', '${item.product_name.replace(/'/g, "\\'")}', 'warranty')" 
                                                 style="padding: 3px 8px; font-size: 11px; background: #0046ab; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
                                             <i class="fa-solid fa-screwdriver-wrench" style="font-size: 9px;"></i> BH
                                         </button>
                                     `;
+                                } else if (isOwner && data.status === 'Delivered') {
+                                    buttonsHTML += `
+                                        <a href="/profile?action=repair&imei=${unit.imei_serial}&product=${encodeURIComponent(item.product_name)}" 
+                                           style="padding: 3px 8px; font-size: 11px; background: #64748b; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; text-decoration: none;">
+                                            <i class="fa-solid fa-screwdriver-wrench" style="font-size: 9px;"></i> Sửa chữa
+                                        </a>
+                                    `;
                                 }
-                                if (unit.can_claim_return) {
+                                if (unit.can_claim_return && data.status === 'Delivered') {
                                     buttonsHTML += `
                                         <button onclick="openClaimModal('${unit.imei_serial}', '${item.product_name.replace(/'/g, "\\'")}', 'return')" 
                                                 style="padding: 3px 8px; font-size: 11px; background: #f59e0b; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;">
@@ -817,7 +854,13 @@
         if (mediaInput) {
             mediaInput.value = '';
         }
+
+        const refMethod = document.getElementById('modalRefundMethod');
+        if (refMethod) refMethod.value = 'bank_transfer';
         
+        // Cập nhật trạng thái hiển thị các trường ngân hàng
+        toggleBankFields();
+
         const modal = document.getElementById('claimModal');
         const content = document.getElementById('claimModalContent');
         
@@ -887,6 +930,18 @@
             
             if (res.status !== 200) {
                 let errorMsg = res.body.message || 'Đã có lỗi xảy ra.';
+                if (res.status === 419 || errorMsg === 'CSRF token mismatch.') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Phiên làm việc hết hạn',
+                        text: 'Phiên làm việc của bạn đã hết hạn. Vui lòng tải lại trang để tiếp tục.',
+                        confirmButtonColor: '#ef4444',
+                        confirmButtonText: 'Tải lại trang'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                    return;
+                }
                 if (res.body.errors) {
                     errorMsg = Object.values(res.body.errors).flat().join('<br>');
                 }
@@ -917,5 +972,42 @@
             });
         });
     }
+
+    function toggleBankFields() {
+        const sel = document.getElementById('modalClaimType');
+        const refundMethodSection = document.getElementById('refundMethodSection');
+        const bankSection = document.getElementById('bankDetailsSection');
+        if (!sel) return;
+
+        const refundMethodSelect = document.getElementById('modalRefundMethod');
+        const isReturn = (sel.value === 'return');
+
+        if (refundMethodSection) {
+            refundMethodSection.style.display = isReturn ? 'flex' : 'none';
+        }
+
+        if (bankSection) {
+            const inputs = bankSection.querySelectorAll('input');
+            const isBankTransfer = isReturn && (refundMethodSelect ? refundMethodSelect.value === 'bank_transfer' : true);
+
+            if (isBankTransfer) {
+                bankSection.style.display = 'flex';
+                inputs.forEach(input => input.setAttribute('required', 'true'));
+            } else {
+                bankSection.style.display = 'none';
+                inputs.forEach(input => {
+                    input.removeAttribute('required');
+                    input.value = '';
+                });
+            }
+        }
+    }
+    document.getElementById('modalClaimType').addEventListener('change', toggleBankFields);
+    const refMethodEl = document.getElementById('modalRefundMethod');
+    if (refMethodEl) {
+        refMethodEl.addEventListener('change', toggleBankFields);
+    }
+
+
 </script>
 @endsection

@@ -1014,13 +1014,19 @@
                                         <td style="color: #e21033; font-weight: bold;">{{ number_format($order->final_amount ?? 0, 0, ',', '.') }}đ</td>
                                         <td>
                                             @if($order->status == 'Pending')
-                                                <span class="status-badge status-pending">Đang xử lý</span>
+                                                @if(strtoupper($order->payment_method ?? '') != 'COD' && strtoupper($order->payment_method ?? '') != 'CASH_POS')
+                                                    <span class="status-badge" style="background:#fef3c7; color:#d97706;">Chờ thanh toán</span>
+                                                @else
+                                                    <span class="status-badge status-pending">Đang xử lý</span>
+                                                @endif
+                                            @elseif($order->status == 'BaoCK')
+                                                <span class="status-badge" style="background:#e0e7ff; color:#4338ca;">Chờ duyệt tiền</span>
                                             @elseif($order->status == 'Delivered')
                                                 <span class="status-badge status-completed">Thành công</span>
                                             @elseif($order->status == 'Shipping')
                                                 <span class="status-badge" style="background:#bae6fd; color:#0369a1;">Đang giao</span>
                                             @else
-                                                <span class="status-badge status-cancelled">{{ $order->status }}</span>
+                                                <span class="status-badge status-cancelled">Đã hủy</span>
                                             @endif
                                         </td>
                                         <td>
@@ -1037,45 +1043,126 @@
                                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 8px;">
                                                     <div>
                                                         <span style="font-size: 15px; font-weight: 800; color: #0f172a;">Đơn hàng #{{ $order->order_code ?? $order->order_id }}</span>
-                                                        <span style="font-size: 11px; color: #94a3b8; margin-left: 8px;">{{ $order->order_type ?? 'Online' }}</span>
+                                                        <span style="font-size: 11px; color: #94a3b8; margin-left: 8px;">
+                                                            @if(strtolower($order->order_type ?? '') == 'counter')
+                                                                Mua tại quầy
+                                                            @else
+                                                                Đặt hàng Online
+                                                            @endif
+                                                        </span>
                                                     </div>
                                                     @if($order->status == 'Delivered')
                                                         <span style="background: #dcfce7; color: #15803d; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Giao hàng thành công</span>
                                                     @elseif($order->status == 'Shipping')
                                                         <span style="background: #dbeafe; color: #1d4ed8; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;"><i class="fa-solid fa-truck"></i> Đang giao hàng</span>
                                                     @elseif($order->status == 'Pending')
-                                                        <span style="background: #fef3c7; color: #b45309; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;"><i class="fa-solid fa-clock"></i> Đang xử lý</span>
+                                                        @if(strtoupper($order->payment_method ?? '') != 'COD' && strtoupper($order->payment_method ?? '') != 'CASH_POS')
+                                                            <span style="background: #fef3c7; color: #b45309; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;"><i class="fa-solid fa-clock"></i> Chờ thanh toán</span>
+                                                        @else
+                                                            <span style="background: #fef3c7; color: #b45309; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;"><i class="fa-solid fa-clock"></i> Đang xử lý</span>
+                                                        @endif
                                                     @elseif($order->status == 'BaoCK')
-                                                        <span style="background: #e0e7ff; color: #4338ca; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;"><i class="fa-solid fa-check-double"></i> Đã xác nhận</span>
+                                                        @if(strtoupper($order->payment_method ?? '') != 'COD' && strtoupper($order->payment_method ?? '') != 'CASH_POS')
+                                                            <span style="background: #e0e7ff; color: #4338ca; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;"><i class="fa-solid fa-hourglass-half"></i> Chờ duyệt thanh toán</span>
+                                                        @else
+                                                            <span style="background: #e0e7ff; color: #4338ca; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;"><i class="fa-solid fa-check-double"></i> Đã xác nhận</span>
+                                                        @endif
                                                     @else
-                                                        <span style="background: #fee2e2; color: #dc2626; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;"><i class="fa-solid fa-ban"></i> {{ $order->status }}</span>
+                                                        <span style="background: #fee2e2; color: #dc2626; padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;"><i class="fa-solid fa-ban"></i> Đã hủy</span>
                                                     @endif
                                                 </div>
 
                                                 {{-- === TIMELINE TRẠNG THÁI === --}}
                                                 @php
+                                                    $isCash = in_array(strtoupper($order->payment_method ?? ''), ['COD', 'CASH_POS']);
+                                                    
+                                                    // Step 1: Đặt hàng
+                                                    $step1State = 'done';
+                                                    
+                                                    // Step 2: Xác nhận / Thanh toán
+                                                    if (in_array($order->status, ['Shipping', 'Delivered']) || ($order->payment_status ?? '') == 'paid') {
+                                                        $step2State = 'done';
+                                                    } elseif (!$isCash && $order->status == 'BaoCK') {
+                                                        $step2State = 'pending';
+                                                    } elseif ($isCash && $order->status == 'Pending') {
+                                                        $step2State = 'pending';
+                                                    } else {
+                                                        $step2State = 'todo';
+                                                    }
+                                                    
+                                                    // Step 3: Đang giao
+                                                    if ($order->status == 'Delivered') {
+                                                        $step3State = 'done';
+                                                    } elseif ($order->status == 'Shipping') {
+                                                        $step3State = 'pending';
+                                                    } else {
+                                                        $step3State = 'todo';
+                                                    }
+                                                    
+                                                    // Step 4: Hoàn thành
+                                                    $step4State = ($order->status == 'Delivered') ? 'done' : 'todo';
+                                                    
                                                     $steps = [
-                                                        ['label' => 'Đặt hàng', 'icon' => 'fa-cart-shopping', 'done' => true, 'date' => $order->created_at],
-                                                        ['label' => 'Xác nhận', 'icon' => 'fa-clipboard-check', 'done' => in_array($order->status, ['BaoCK','Shipping','Delivered']), 'date' => null],
-                                                        ['label' => 'Đang giao', 'icon' => 'fa-truck-fast', 'done' => in_array($order->status, ['Shipping','Delivered']), 'date' => null],
-                                                        ['label' => 'Hoàn thành', 'icon' => 'fa-circle-check', 'done' => $order->status == 'Delivered', 'date' => $order->delivered_at],
+                                                        [
+                                                            'label' => 'Đặt hàng',
+                                                            'icon' => 'fa-cart-shopping',
+                                                            'state' => $step1State,
+                                                            'date' => $order->created_at
+                                                        ],
+                                                        [
+                                                            'label' => $isCash ? 'Xác nhận' : 'Thanh toán',
+                                                            'icon' => $isCash ? 'fa-clipboard-check' : 'fa-credit-card',
+                                                            'state' => $step2State,
+                                                            'date' => null
+                                                        ],
+                                                        [
+                                                            'label' => 'Đang giao',
+                                                            'icon' => 'fa-truck-fast',
+                                                            'state' => $step3State,
+                                                            'date' => null
+                                                        ],
+                                                        [
+                                                            'label' => 'Hoàn thành',
+                                                            'icon' => 'fa-circle-check',
+                                                            'state' => $step4State,
+                                                            'date' => $order->delivered_at
+                                                        ],
                                                     ];
                                                     $isCancelled = !in_array($order->status, ['Pending','BaoCK','Shipping','Delivered']);
                                                 @endphp
                                                 @if(!$isCancelled)
                                                 <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; padding: 16px 12px; background: #fff; border-radius: 12px; border: 1px solid #e2e8f0;">
                                                     @foreach($steps as $i => $step)
+                                                        @php
+                                                            if ($step['state'] == 'done') {
+                                                                $bgColor = '#0046ab';
+                                                                $color = '#fff';
+                                                                $iconClass = $step['icon'];
+                                                            } elseif ($step['state'] == 'pending') {
+                                                                $bgColor = '#fef3c7';
+                                                                $color = '#d97706';
+                                                                $iconClass = 'fa-circle-notch fa-spin';
+                                                            } else {
+                                                                $bgColor = '#e2e8f0';
+                                                                $color = '#94a3b8';
+                                                                $iconClass = $step['icon'];
+                                                            }
+                                                        @endphp
                                                         <div style="display: flex; flex-direction: column; align-items: center; flex: 1; position: relative;">
-                                                            <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; {{ $step['done'] ? 'background: #0046ab; color: #fff;' : 'background: #e2e8f0; color: #94a3b8;' }}">
-                                                                <i class="fa-solid {{ $step['icon'] }}"></i>
+                                                            <div style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; background: {{ $bgColor }}; color: {{ $color }};">
+                                                                <i class="fa-solid {{ $iconClass }}"></i>
                                                             </div>
-                                                            <span style="font-size: 10px; font-weight: 700; margin-top: 6px; color: {{ $step['done'] ? '#0f172a' : '#94a3b8' }}; text-align: center;">{{ $step['label'] }}</span>
+                                                            <span style="font-size: 10px; font-weight: 700; margin-top: 6px; color: {{ $step['state'] != 'todo' ? '#0f172a' : '#94a3b8' }}; text-align: center;">{{ $step['label'] }}</span>
                                                             @if($step['date'])
                                                                 <span style="font-size: 9px; color: #94a3b8; margin-top: 2px;">{{ \Carbon\Carbon::parse($step['date'])->format('d/m/Y') }}</span>
                                                             @endif
                                                         </div>
                                                         @if($i < count($steps) - 1)
-                                                            <div style="flex: 1; height: 3px; margin-top: 15px; border-radius: 2px; {{ $steps[$i+1]['done'] ? 'background: #0046ab;' : 'background: #e2e8f0;' }}"></div>
+                                                            @php
+                                                                $nextStep = $steps[$i+1];
+                                                                $lineBg = ($nextStep['state'] != 'todo') ? '#0046ab' : '#e2e8f0';
+                                                            @endphp
+                                                            <div style="flex: 1; height: 3px; margin-top: 15px; border-radius: 2px; background: {{ $lineBg }};"></div>
                                                         @endif
                                                     @endforeach
                                                 </div>
@@ -1115,8 +1202,19 @@
                                                             <div><strong>Trạng thái TT:</strong>
                                                                 @if(($order->payment_status ?? '') == 'paid')
                                                                     <span style="color: #15803d; font-weight: 700;">✓ Đã thanh toán</span>
+                                                                @elseif($order->status == 'BaoCK')
+                                                                    <span style="color: #4338ca; font-weight: 700;">Đã báo chuyển khoản (Chờ duyệt)</span>
+                                                                @elseif(in_array(strtoupper($order->payment_method ?? ''), ['COD', 'CASH_POS']))
+                                                                    <span style="color: #475569; font-weight: 700;">Thanh toán khi nhận hàng (COD)</span>
                                                                 @else
                                                                     <span style="color: #b45309; font-weight: 700;">Chờ thanh toán</span>
+                                                                    @if($order->status != 'Cancelled')
+                                                                        <div style="margin-top: 6px;">
+                                                                            <a href="{{ route('cart.qr', ['order_id' => $order->order_id]) }}" style="display: inline-flex; align-items: center; gap: 6px; background: #0046ab; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: 700; transition: background 0.2s;" onmouseover="this.style.background='#003399'" onmouseout="this.style.background='#0046ab'">
+                                                                                <i class="fa-solid fa-qrcode"></i> Thanh toán ngay
+                                                                            </a>
+                                                                        </div>
+                                                                    @endif
                                                                 @endif
                                                             </div>
                                                             @if($order->shipping_partner)
@@ -2359,7 +2457,34 @@
                     </label>
                     <input type="file" id="modalMediaFile" name="media_file" accept="image/*,video/*" class="form-control" style="width: 100%; padding: 6px 10px; font-size: 12px; height: auto;">
                 </div>
-                
+                <!-- Refund Method (Only shown for return) -->
+                <div id="refundMethodSection" style="display: none; flex-direction: column; gap: 4px;">
+                    <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Phương thức nhận tiền hoàn</label>
+                    <select id="modalRefundMethod" name="refund_method" class="form-control" style="width:100%;padding:8px 12px;font-size:13px;outline:none;background:#fff;height:auto;">
+                        <option value="bank_transfer">Chuyển khoản ngân hàng</option>
+                        <option value="cash">Tiền mặt tại cửa hàng</option>
+                    </select>
+                </div>
+                <!-- Bank Details (Only shown for return) -->
+                <div id="bankDetailsSection" style="display: none; border-top: 1px dashed #e2e8f0; padding-top: 12px; margin-top: 4px; flex-direction: column; gap: 10px;">
+                    <h4 style="font-size: 13px; font-weight: 700; color: #d97706; margin: 0; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-building-columns"></i> Thông tin nhận tiền hoàn
+                    </h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Ngân hàng</label>
+                            <input type="text" id="modalBankName" name="bank_name" placeholder="VD: Vietcombank" class="form-control" style="width:100%;padding:8px 12px;font-size:13px;height:auto;">
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Số tài khoản</label>
+                            <input type="text" id="modalBankAccountNumber" name="bank_account_number" placeholder="VD: 1023456789" class="form-control" style="width:100%;padding:8px 12px;font-size:13px;height:auto;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:4px;">Tên chủ tài khoản</label>
+                        <input type="text" id="modalBankAccountName" name="bank_account_name" placeholder="VD: NGUYEN VAN A" class="form-control" style="width:100%;padding:8px 12px;font-size:13px;height:auto;text-transform: uppercase;">
+                    </div>
+                </div>
                 <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; padding-top: 12px; border-top: 1px solid #f1f5f9; flex-shrink: 0;">
                     <button type="button" class="btn-outline" style="margin-top:0; padding: 8px 16px; font-size: 13px;" onclick="closeProfileClaimModal()">Hủy</button>
                     <button type="submit" class="btn-update" id="btnSubmitClaim" style="margin-top:0; background: #f59e0b; padding: 8px 16px; font-size: 13px;">Gửi yêu cầu</button>
@@ -3549,6 +3674,15 @@
             }
         }
 
+        const action = urlParams.get('action');
+        if (action === 'repair') {
+            const imei = urlParams.get('imei');
+            const product = urlParams.get('product');
+            if (imei) {
+                triggerProfileRepairModal(imei, product || '');
+            }
+        }
+
         // Tự động mở lại modal đăng ký bảo hành/sửa chữa nếu có lỗi validation từ Server Laravel trả về
         @if($errors->has('customer_name') || $errors->has('customer_phone') || $errors->has('customer_email') || $errors->has('imei_serial') || $errors->has('issue_desc') || $errors->has('schedule_date'))
             openRepairModal();
@@ -3628,11 +3762,13 @@
         claimTypeSelect.value = type;
         
         document.getElementById('modalReason').value = '';
-        const mediaInput = document.getElementById('modalMediaFile');
-        if (mediaInput) {
-            mediaInput.value = '';
-        }
+
+        const refMethod = document.getElementById('modalRefundMethod');
+        if (refMethod) refMethod.value = 'bank_transfer';
         
+        // Cập nhật hiển thị ngân hàng
+        toggleBankFields();
+
         document.getElementById('claimModal').classList.add('active');
     }
 
@@ -3683,6 +3819,18 @@
             
             if (res.status !== 200) {
                 let errorMsg = res.body.message || 'Đã có lỗi xảy ra.';
+                if (res.status === 419 || errorMsg === 'CSRF token mismatch.') {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Phiên làm việc hết hạn',
+                        text: 'Phiên làm việc của bạn đã hết hạn. Vui lòng tải lại trang để tiếp tục.',
+                        confirmButtonColor: '#ef4444',
+                        confirmButtonText: 'Tải lại trang'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                    return;
+                }
                 if (res.body.errors) {
                     errorMsg = Object.values(res.body.errors).flat().join('<br>');
                 }
@@ -3712,6 +3860,41 @@
                 confirmButtonColor: '#ef4444'
             });
         });
+    }
+
+    function toggleBankFields() {
+        const sel = document.getElementById('modalClaimType');
+        const refundMethodSection = document.getElementById('refundMethodSection');
+        const bankSection = document.getElementById('bankDetailsSection');
+        if (!sel) return;
+
+        const refundMethodSelect = document.getElementById('modalRefundMethod');
+        const isReturn = (sel.value === 'return');
+
+        if (refundMethodSection) {
+            refundMethodSection.style.display = isReturn ? 'flex' : 'none';
+        }
+
+        if (bankSection) {
+            const inputs = bankSection.querySelectorAll('input');
+            const isBankTransfer = isReturn && (refundMethodSelect ? refundMethodSelect.value === 'bank_transfer' : true);
+
+            if (isBankTransfer) {
+                bankSection.style.display = 'flex';
+                inputs.forEach(input => input.setAttribute('required', 'true'));
+            } else {
+                bankSection.style.display = 'none';
+                inputs.forEach(input => {
+                    input.removeAttribute('required');
+                    input.value = '';
+                });
+            }
+        }
+    }
+    document.getElementById('modalClaimType').addEventListener('change', toggleBankFields);
+    const refMethodEl = document.getElementById('modalRefundMethod');
+    if (refMethodEl) {
+        refMethodEl.addEventListener('change', toggleBankFields);
     }
 </script>
 @endpush

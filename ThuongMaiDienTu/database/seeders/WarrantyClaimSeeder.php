@@ -11,17 +11,19 @@ use App\Models\User;
  * WarrantyClaimSeeder
  *
  * Tạo dữ liệu mẫu đa dạng cho bảng warranty_claims:
- *  - Bao gồm các trạng thái: pending, approved, rejected
+ *  - Gồm 20 bản ghi thử nghiệm với đầy đủ các trạng thái và nghiệp vụ
+ *  - Bao gồm các trạng thái: pending (chờ duyệt), approved (đã duyệt), rejected (từ chối)
  *  - Bao gồm các loại yêu cầu: warranty (bảo hành), return (đổi trả), exchange (đổi máy)
  *  - Mỗi claim liên kết với IMEI/Serial thực sự tồn tại trong bảng inventory_items
  *  - Một số claim có user_id (khách đăng nhập), một số để null (khách vãng lai)
+ *  - Tích hợp các trường hoàn tiền: refund_method, bank_name, bank_account_number, bank_account_name
  */
 class WarrantyClaimSeeder extends Seeder
 {
     public function run(): void
     {
-        // Lấy tối đa 10 inventory items để có đủ IMEI thực
-        $items = InventoryItem::limit(10)->get();
+        // Lấy tối đa 25 inventory items để có đủ IMEI thực cho 20 bản ghi
+        $items = InventoryItem::limit(25)->get();
 
         if ($items->isEmpty()) {
             $this->command->warn('WarrantyClaimSeeder: Không có inventory_items nào, bỏ qua seeder.');
@@ -32,7 +34,7 @@ class WarrantyClaimSeeder extends Seeder
         $user = User::first();
 
         // ─────────────────────────────────────────────
-        // Dữ liệu mẫu – mỗi phần tử là 1 warranty claim
+        // 20 DỮ LIỆU MẪU CHI TIẾT
         // ─────────────────────────────────────────────
         $samples = [
             // 1. Bảo hành – đang chờ duyệt
@@ -46,7 +48,7 @@ class WarrantyClaimSeeder extends Seeder
                 'status'        => 'pending',
                 'admin_note'    => null,
             ],
-            // 2. Đổi trả – đã được duyệt
+            // 2. Đổi trả – đã được duyệt (Hoàn tiền qua Vietcombank)
             [
                 'imei_index'    => 1,
                 'customer_name' => 'Trần Thị Bình',
@@ -56,6 +58,10 @@ class WarrantyClaimSeeder extends Seeder
                 'reason'        => 'Sản phẩm giao không đúng màu sắc như tôi đã đặt trên website (đặt đen, nhận trắng).',
                 'status'        => 'approved',
                 'admin_note'    => 'Đã xác nhận lỗi giao hàng. Đã duyệt hoàn tiền 100% cho khách.',
+                'refund_method' => 'bank_transfer',
+                'bank_name'     => 'Vietcombank',
+                'bank_account_number' => '0011004123456',
+                'bank_account_name'   => 'TRAN THI BINH',
             ],
             // 3. Đổi máy – đã từ chối
             [
@@ -79,7 +85,7 @@ class WarrantyClaimSeeder extends Seeder
                 'status'        => 'pending',
                 'admin_note'    => null,
             ],
-            // 5. Đổi trả – đang chờ duyệt
+            // 5. Đổi trả – đang chờ duyệt (Hoàn tiền mặt)
             [
                 'imei_index'    => 4,
                 'customer_name' => 'Hoàng Minh Đức',
@@ -89,6 +95,7 @@ class WarrantyClaimSeeder extends Seeder
                 'reason'        => 'Máy bị lỗi camera trước từ khi mở hộp, hình ảnh bị mờ hoàn toàn.',
                 'status'        => 'pending',
                 'admin_note'    => null,
+                'refund_method' => 'cash',
             ],
             // 6. Bảo hành – đã duyệt với ghi chú kỹ thuật
             [
@@ -123,7 +130,7 @@ class WarrantyClaimSeeder extends Seeder
                 'status'        => 'rejected',
                 'admin_note'    => 'Sản phẩm đã vượt quá thời hạn bảo hành 12 tháng. Hỗ trợ sửa chữa theo giá phụ tùng.',
             ],
-            // 9. Đổi trả – đã duyệt (đổi máy mới cùng model)
+            // 9. Đổi trả – đã duyệt (Hoàn tiền qua Techcombank)
             [
                 'imei_index'    => min(8, $items->count() - 1),
                 'customer_name' => 'Trịnh Quốc Minh',
@@ -132,7 +139,11 @@ class WarrantyClaimSeeder extends Seeder
                 'claim_type'    => 'return',
                 'reason'        => 'Máy bị treo logo khi khởi động, không vào được hệ thống. Mua được 3 ngày.',
                 'status'        => 'approved',
-                'admin_note'    => 'Lỗi firmware xuất xưởng. Đã đổi máy mới cùng model và màu sắc cho khách.',
+                'admin_note' => 'Lỗi firmware xuất xưởng. Đã đổi máy mới cùng model và màu sắc cho khách.',
+                'refund_method' => 'bank_transfer',
+                'bank_name'     => 'Techcombank',
+                'bank_account_number' => '1903456789012',
+                'bank_account_name'   => 'TRINH QUOC MINH',
             ],
             // 10. Bảo hành – chờ duyệt (khách đăng nhập hệ thống)
             [
@@ -144,7 +155,123 @@ class WarrantyClaimSeeder extends Seeder
                 'reason'        => 'Nút nguồn bị kẹt, không bật/tắt được, phải cắm sạc mới vào được máy.',
                 'status'        => 'pending',
                 'admin_note'    => null,
-                'use_user'      => true, // gán user_id nếu có user
+                'use_user'      => true,
+            ],
+            // 11. Đổi trả – đang chờ duyệt (Hoàn tiền qua VietinBank)
+            [
+                'imei_index'    => min(10, $items->count() - 1),
+                'customer_name' => 'Phan Thanh Hải',
+                'customer_phone'=> '0915667788',
+                'customer_email'=> 'hai.phan@gmail.com',
+                'claim_type'    => 'return',
+                'reason'        => 'Không tương thích với thiết bị ngoại vi của tôi dù đã được nhân viên tư vấn là có.',
+                'status'        => 'pending',
+                'refund_method' => 'bank_transfer',
+                'bank_name'     => 'VietinBank',
+                'bank_account_number' => '101004567890',
+                'bank_account_name'   => 'PHAN THANH HAI',
+            ],
+            // 12. Bảo hành – đã duyệt
+            [
+                'imei_index'    => min(11, $items->count() - 1),
+                'customer_name' => 'Đặng Hồng Hạnh',
+                'customer_phone'=> '0981223344',
+                'customer_email'=> 'hanh.dh@outlook.com',
+                'claim_type'    => 'warranty',
+                'reason'        => 'Cảm ứng bị loạn ở khu vực giữa màn hình khi máy nóng lên.',
+                'status'        => 'approved',
+                'admin_note'    => 'Đã nhận máy bảo hành, tiến hành thay thế màn hình mới chính hãng.',
+            ],
+            // 13. Đổi máy – đã duyệt
+            [
+                'imei_index'    => min(12, $items->count() - 1),
+                'customer_name' => 'Lâm Minh Triết',
+                'customer_phone'=> '0903334455',
+                'customer_email'=> null,
+                'claim_type'    => 'exchange',
+                'reason'        => 'Sản phẩm phát sinh lỗi ổ cứng liên tục, đã bảo hành 2 lần vẫn lỗi.',
+                'status'        => 'approved',
+                'admin_note'    => 'Đã chấp nhận đổi sản phẩm mới cùng loại cho khách.',
+            ],
+            // 14. Đổi trả – đã từ chối (Hoàn tiền qua MB Bank)
+            [
+                'imei_index'    => min(13, $items->count() - 1),
+                'customer_name' => 'Cao Việt Bách',
+                'customer_phone'=> '0945998877',
+                'customer_email'=> 'bach.cao@gmail.com',
+                'claim_type'    => 'return',
+                'reason'        => 'Dùng thử thấy không thích thiết kế của máy nữa nên muốn trả lại.',
+                'status'        => 'rejected',
+                'admin_note'    => 'Từ chối do lý do trả hàng xuất phát từ nhu cầu cá nhân chủ quan, không phải lỗi kỹ thuật.',
+                'refund_method' => 'bank_transfer',
+                'bank_name'     => 'MB Bank',
+                'bank_account_number' => '970422123456789',
+                'bank_account_name'   => 'CAO VIET BACH',
+            ],
+            // 15. Bảo hành – đang chờ duyệt
+            [
+                'imei_index'    => min(14, $items->count() - 1),
+                'customer_name' => 'Đỗ Thùy Trang',
+                'customer_phone'=> '0966442200',
+                'customer_email'=> 'trangdo97@gmail.com',
+                'claim_type'    => 'warranty',
+                'reason'        => 'Face ID chập chờn, lúc nhận diện được lúc báo lỗi không khả dụng.',
+                'status'        => 'pending',
+            ],
+            // 16. Đổi trả – đã duyệt (Hoàn tiền mặt)
+            [
+                'imei_index'    => min(15, $items->count() - 1),
+                'customer_name' => 'Nguyễn Hoàng Nam',
+                'customer_phone'=> '0912999000',
+                'customer_email'=> 'nam.nguyenh@gmail.com',
+                'claim_type'    => 'return',
+                'reason'        => 'Máy liên tục tự động khởi động lại khoảng 5-10 phút một lần dù chỉ lướt web.',
+                'status'        => 'approved',
+                'admin_note'    => 'Kỹ thuật viên xác nhận lỗi chạm nguồn trên bo mạch chính. Hoàn tiền mặt tại chi nhánh.',
+                'refund_method' => 'cash',
+            ],
+            // 17. Đổi máy – đã từ chối
+            [
+                'imei_index'    => min(16, $items->count() - 1),
+                'customer_name' => 'Võ Minh Quân',
+                'customer_phone'=> '0989332211',
+                'customer_email'=> null,
+                'claim_type'    => 'exchange',
+                'reason'        => 'Muốn đổi máy vì người nhà không ưng ý màu sắc này nữa.',
+                'status'        => 'rejected',
+                'admin_note'    => 'Sản phẩm đã khui hộp và kích hoạt sử dụng, không hỗ trợ đổi máy do nhu cầu thẩm mỹ cá nhân.',
+            ],
+            // 18. Bảo hành – đã duyệt
+            [
+                'imei_index'    => min(17, $items->count() - 1),
+                'customer_name' => 'Trương Khánh Quỳnh',
+                'customer_phone'=> '0901239876',
+                'customer_email'=> 'quynh.tk@yahoo.com',
+                'claim_type'    => 'warranty',
+                'reason'        => 'Cổng sạc lỏng lẻo, cắm sạc chập chờn và không nhận sạc nhanh.',
+                'status'        => 'approved',
+                'admin_note'    => 'Đã nhận máy bảo hành, kỹ thuật viên tiến hành vệ sinh và hàn lại chân sạc.',
+            ],
+            // 19. Đổi trả – đang chờ duyệt (Hoàn tiền mặt)
+            [
+                'imei_index'    => min(18, $items->count() - 1),
+                'customer_name' => 'Phùng Tiến Đạt',
+                'customer_phone'=> '0975661122',
+                'customer_email'=> 'dat.pt@gmail.com',
+                'claim_type'    => 'return',
+                'reason'        => 'Màn hình bị ám vàng rất nặng so với các thiết bị cùng dòng trưng bày tại shop.',
+                'status'        => 'pending',
+                'refund_method' => 'cash',
+            ],
+            // 20. Đổi máy – đang chờ xử lý
+            [
+                'imei_index'    => min(19, $items->count() - 1),
+                'customer_name' => 'Lý Gia Hân',
+                'customer_phone'=> '0931445566',
+                'customer_email'=> 'han.lg@gmail.com',
+                'claim_type'    => 'exchange',
+                'reason'        => 'Cảm biến xoay màn hình bị đơ hoàn toàn không xoay ngang được khi xem video.',
+                'status'        => 'pending',
             ],
         ];
 
@@ -214,7 +341,11 @@ class WarrantyClaimSeeder extends Seeder
                 'claim_type'     => $sample['claim_type'],
                 'reason'         => $sample['reason'],
                 'status'         => $sample['status'],
-                'admin_note'     => $sample['admin_note'],
+                'admin_note'     => $sample['admin_note'] ?? null,
+                'refund_method'  => $sample['refund_method'] ?? null,
+                'bank_name'      => $sample['bank_name'] ?? null,
+                'bank_account_number' => $sample['bank_account_number'] ?? null,
+                'bank_account_name'   => $sample['bank_account_name'] ?? null,
             ]);
 
             $created++;

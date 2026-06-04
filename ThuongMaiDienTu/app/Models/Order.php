@@ -31,8 +31,11 @@ class Order extends Model
     protected static function booted()
     {
         static::saving(function (Order $order) {
-            if ($order->isDirty('status') && strtolower((string)$order->status) === 'delivered' && !$order->delivered_at) {
-                $order->delivered_at = now();
+            if ($order->isDirty('status') && self::isCompletedStatus($order->status)) {
+                if (!$order->delivered_at) {
+                    $order->delivered_at = now();
+                }
+                $order->payment_status = 'paid';
             }
         });
 
@@ -93,7 +96,7 @@ class Order extends Model
         });
 
         static::saved(function ($order) {
-            if ($order->wasChanged('status')) {
+            if ($order->wasChanged('status') || $order->wasRecentlyCreated) {
                 if (self::isCompletedStatus($order->status)) {
                     app(PointsService::class)->applyOrderCompletedPoints($order);
                     self::syncMemberTierByPoints($order);

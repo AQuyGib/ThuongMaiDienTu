@@ -98,7 +98,31 @@
             @endif
         </div>
 
-        <!-- Card 3: Trạng thái & Xử lý -->
+        <!-- Card 3: Thông tin tài khoản ngân hàng (chỉ cho Đổi trả hoàn tiền) -->
+        <div id="bankDetailsCard" class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4 {{ old('claim_type', $claim->claim_type) == 'return' ? '' : 'hidden' }}">
+            <div class="border-b border-gray-100 pb-3">
+                <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
+                    <i class="fa-solid fa-building-columns text-amber-500"></i> Thông tin nhận tiền hoàn
+                </h2>
+                <p class="text-xs text-gray-500 mt-0.5">Thông tin tài khoản ngân hàng để thực hiện hoàn tiền cho khách.</p>
+            </div>
+            <div class="grid gap-4 md:grid-cols-3">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Tên ngân hàng</label>
+                    <input type="text" name="bank_name" value="{{ old('bank_name', $claim->bank_name) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="VD: Vietcombank">
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Số tài khoản</label>
+                    <input type="text" name="bank_account_number" value="{{ old('bank_account_number', $claim->bank_account_number) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="VD: 123456789">
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Tên chủ tài khoản</label>
+                    <input type="text" name="bank_account_name" value="{{ old('bank_account_name', $claim->bank_account_name) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 uppercase" placeholder="VD: NGUYEN VAN A">
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Trạng thái & Xử lý -->
         <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
             <div class="border-b border-gray-100 pb-3">
                 <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
@@ -137,8 +161,12 @@
     </form>
 </div>
 
+<!-- =========================================================================
+     PHẦN SCRIPT JAVASCRIPT HỖ TRỢ GIAO DIỆN
+     ========================================================================= -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 1. Tự động truy vấn thông tin khách hàng bằng số điện thoại (AJAX Search)
     const phoneInput = document.querySelector('input[name="customer_phone"]');
     const nameInput = document.querySelector('input[name="customer_name"]');
     const emailInput = document.querySelector('input[name="customer_email"]');
@@ -146,16 +174,33 @@ document.addEventListener('DOMContentLoaded', function() {
     if (phoneInput) {
         phoneInput.addEventListener('input', function() {
             const phone = this.value.trim();
+            // Bắt đầu tìm kiếm khách hàng khi số điện thoại có từ 9 chữ số trở lên
             if (phone.length >= 9) {
                 fetch(`{{ route('admin.api.customers.search-by-phone') }}?phone=${encodeURIComponent(phone)}`)
                     .then(response => response.json())
                     .then(data => {
+                        // Nếu khớp thông tin khách hàng cũ, tự điền Tên & Email
                         if (data) {
                             if (nameInput && data.customer_name) nameInput.value = data.customer_name;
                             if (emailInput && data.customer_email) emailInput.value = data.customer_email;
                         }
                     })
-                    .catch(err => console.error('Error fetching customer data:', err));
+                    .catch(err => console.error('Lỗi khi truy vấn thông tin khách hàng:', err));
+            }
+        });
+    }
+
+    // 2. Ẩn/hiện card nhập tài khoản ngân hàng dựa vào Loại yêu cầu thay đổi
+    const claimTypeSelect = document.querySelector('select[name="claim_type"]');
+    const bankDetailsCard = document.getElementById('bankDetailsCard');
+    
+    if (claimTypeSelect && bankDetailsCard) {
+        claimTypeSelect.addEventListener('change', function() {
+            // Hiển thị tài khoản ngân hàng chỉ khi loại yêu cầu là 'return' (Đổi trả hoàn tiền)
+            if (this.value === 'return') {
+                bankDetailsCard.classList.remove('hidden');
+            } else {
+                bankDetailsCard.classList.add('hidden');
             }
         });
     }
