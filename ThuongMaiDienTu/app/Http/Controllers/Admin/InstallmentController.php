@@ -178,7 +178,6 @@ class InstallmentController extends Controller
         // ==========================================
         // CHỨC NĂNG: TÍNH TOÁN TRỢ GIÁ "THU CŨ ĐỔI MỚI" (TRADE-IN)
         // ------------------------------------------
-        // [DÀNH CHO NGƯỜI KHÔNG BIẾT CODE - Ý NGHĨA CHỨC NĂNG]:
         // Khi khách hàng đổi điện thoại/thiết bị cũ để nâng cấp lên sản phẩm mới, cửa hàng sẽ tặng 
         // một khoản tiền giảm giá đặc biệt (trợ giá) để trừ thẳng vào giá bán khi làm hồ sơ trả góp.
         //
@@ -528,7 +527,21 @@ class InstallmentController extends Controller
     }
 
     /**
-     * Phê duyệt hồ sơ trả góp
+     * ==========================================
+     * HÀM: approve ($id)
+     * Ý NGHĨA NGHIỆP VỤ: Phê duyệt hồ sơ đăng ký trả góp của khách hàng.
+     * 
+     * 1. Khi nhân viên thẩm định hồ sơ và bấm nút "Duyệt" trên hệ thống, hệ thống sẽ kiểm tra trạng thái
+     *    hồ sơ xem có đúng là đang ở trạng thái chờ duyệt hay không. Nếu đúng, nó sẽ thực hiện các bước sau:
+     * 2. Đổi trạng thái hợp đồng trả góp sang "Approved" (Đã duyệt).
+     * 3. Tự động sinh lịch đóng tiền trả góp hàng tháng cho khách hàng. Hệ thống chia nhỏ số tiền khách
+     *    nợ ra làm các phần đều nhau tương ứng với số tháng kỳ hạn (ví dụ: 6 tháng thì tạo ra 6 dòng thanh toán
+     *    định kỳ, mỗi kỳ cách nhau 1 tháng).
+     * 4. Chuyển trạng thái đơn hàng mua sản phẩm tương ứng sang "Processing" (Đang xử lý) và đổi trạng thái
+     *    thanh toán của đơn hàng thành "paid" (đã thanh toán - vì hồ sơ trả góp đã được công ty tài chính hoặc ngân hàng bảo lãnh).
+     * 5. Ghi nhận khoản tiền trả trước (đặt cọc) của khách hàng vào Sổ Quỹ (Cashbook) của cửa hàng dưới dạng "Thu nhập" (Income).
+     * 6. Gửi thông báo chúc mừng tới tài khoản của khách hàng để họ biết hồ sơ đã được duyệt thành công.
+     * ==========================================
      */
     public function approve($id)
     {
@@ -605,7 +618,19 @@ class InstallmentController extends Controller
     }
 
     /**
-     * Từ chối hồ sơ trả góp
+     * ==========================================
+     * HÀM: reject (Request $request, $id)
+     * Ý NGHĨA NGHIỆP VỤ: Từ chối hồ sơ đăng ký trả góp của khách hàng.
+     * 
+     * 1. Nếu khách hàng không đủ điều kiện tín dụng (ví dụ điểm tín dụng xấu do AI đánh giá hoặc công ty tài chính từ chối),
+     *    nhân viên sẽ bấm nút "Từ chối" và nhập lý do.
+     * 2. Trạng thái hợp đồng trả góp trên hệ thống chuyển sang "Rejected" (Bị từ chối) và lưu lý do cụ thể.
+     * 3. Đơn hàng mua sản phẩm của khách cũng tự động chuyển sang trạng thái "Cancelled" (Đã hủy).
+     * 4. HỆ THỐNG TỰ ĐỘNG KHÔI PHỤC KHO HÀNG: Để tránh giam giữ hàng hóa của cửa hàng, hệ thống tự động tìm lại mã máy (IMEI/Serial)
+     *    đã được khóa giữ cho đơn hàng này và chuyển trạng thái của nó trở lại thành "In_Stock" (Còn hàng trong kho) để nhân viên khác
+     *    có thể bán máy này cho khách hàng khác.
+     * 5. Gửi thông báo kèm lý do bị từ chối rõ ràng tới tài khoản của khách hàng.
+     * ==========================================
      */
     public function reject(Request $request, $id)
     {
@@ -674,7 +699,15 @@ class InstallmentController extends Controller
     }
 
     /**
-     * Xóa hợp đồng trả góp
+     * ==========================================
+     * HÀM: destroy ($id)
+     * Ý NGHĨA NGHIỆP VỤ: Xóa hoàn toàn hợp đồng trả góp khỏi cơ sở dữ liệu.
+     * 
+     * 1. Khi quản trị viên cấp cao nhất muốn dọn dẹp dữ liệu thử nghiệm hoặc hủy hoàn toàn một hồ sơ bị lỗi kỹ thuật.
+     * 2. Hệ thống thực hiện khôi phục sản phẩm giữ chỗ về lại kho hàng (nếu đơn hàng chưa bị hủy từ trước).
+     * 3. Xóa chi tiết các sản phẩm trong đơn hàng, xóa đơn hàng cha, xóa lịch thanh toán định kỳ của hợp đồng trả góp.
+     * 4. Cuối cùng xóa thông tin của hợp đồng trả góp đó ra khỏi hệ thống để không hiển thị trên giao diện quản trị nữa.
+     * ==========================================
      */
     public function destroy($id)
     {
@@ -720,7 +753,15 @@ class InstallmentController extends Controller
     }
 
     /**
-     * Xuất hóa đơn trả trước (In hóa đơn / Phiếu thu)
+     * ==========================================
+     * HÀM: printInvoice ($id)
+     * Ý NGHĨA NGHIỆP VỤ: In hóa đơn/phiếu biên nhận tiền trả trước cho khách hàng.
+     * 
+     * 1. Nhân viên nhấn nút "In hóa đơn/Phiếu thu" trên giao diện quản lý.
+     * 2. Hệ thống tìm hợp đồng trả góp cùng thông tin chi tiết thiết bị, IMEI và tài khoản khách mua.
+     * 3. Trả về giao diện mẫu in (print layout) được tối ưu hóa cho khổ giấy A4/A5 để nhân viên in trực tiếp
+     *    tại quầy thu ngân và giao cho khách làm biên lai ký nhận.
+     * ==========================================
      */
     public function printInvoice($id)
     {
@@ -729,7 +770,18 @@ class InstallmentController extends Controller
     }
 
     /**
-     * Xác nhận thanh toán kỳ trả góp hàng tháng
+     * ==========================================
+     * HÀM: payMonth ($id)
+     * Ý NGHĨA NGHIỆP VỤ: Xác nhận đóng tiền trả góp hàng tháng cho một kỳ hạn cụ thể.
+     * 
+     * 1. Hàng tháng, khách hàng sẽ đến cửa hàng (hoặc chuyển khoản) đóng tiền định kỳ. Ví dụ kỳ 1, kỳ 2...
+     * 2. Nhân viên tìm kỳ thanh toán tương ứng và bấm "Xác nhận đã đóng tiền".
+     * 3. Hệ thống đổi trạng thái kỳ thanh toán đó thành "Paid" (Đã đóng) và lưu lại ngày thanh toán thực tế.
+     * 4. Ghi nhận lập tức một khoản "Thu nhập" (Income) mới tương ứng vào Sổ Quỹ (Cashbook) của cửa hàng, ghi rõ
+     *    nội dung thu tiền trả góp định kỳ của hợp đồng nào, khách hàng nào để kế toán dễ dàng đối soát dòng tiền.
+     * 5. Gửi tin nhắn/thông báo hệ thống tự động tới khách hàng để xác nhận giao dịch đã được ghi nhận thành công,
+     *    giúp khách hàng theo dõi được dư nợ còn lại của mình một cách minh bạch.
+     * ==========================================
      */
     public function payMonth($id)
     {

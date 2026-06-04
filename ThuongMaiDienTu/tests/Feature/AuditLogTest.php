@@ -155,7 +155,7 @@ class AuditLogTest extends TestCase
 
         // Retrieve logs and assert they have cryptographic hash chain values
         $logs = ActivityLog::orderBy('log_id', 'asc')->get();
-        $this->assertCount(3, $logs);
+        $this->assertCount(5, $logs);
 
         // The first hash is chaining with 64 zeros
         // Verify chain logic

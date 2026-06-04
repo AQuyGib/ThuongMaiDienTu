@@ -17,11 +17,26 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+/**
+ * ==========================================
+ * BỘ ĐIỀU HƯỚNG: InstallmentController (Trang Khách Hàng)
+ * Ý NGHĨA NGHIỆP VỤ: Quản lý quy trình đăng ký hồ sơ mua trả góp từ phía khách hàng tại trang chi tiết sản phẩm.
+ * 
+ * - Giúp khách hàng đăng ký mua sản phẩm theo hình thức trả góp trực tuyến (chọn công ty tài chính, Kredivo, hoặc thẻ tín dụng).
+ * - Tự động hóa các khâu: tính toán số tiền trả trước, số tiền vay, số tiền phải trả mỗi tháng, trợ giá "Thu cũ đổi mới" (nếu có),
+ *   tự động tạo đơn hàng, trừ sản phẩm khỏi kho, chuyển hồ sơ qua AI thẩm định, và gửi thông báo cho khách hàng cũng như Admin.
+ * ==========================================
+ */
 class InstallmentController extends Controller
 {
     protected $aiService;
     protected $notificationService;
 
+    /**
+     * Khởi tạo bộ điều hướng với các dịch vụ bổ trợ:
+     * - InstallmentAIService: Thẩm định hồ sơ bằng AI.
+     * - NotificationService: Tạo và gửi thông báo trong hệ thống.
+     */
     public function __construct(InstallmentAIService $aiService, NotificationService $notificationService)
     {
         $this->aiService = $aiService;
@@ -29,7 +44,29 @@ class InstallmentController extends Controller
     }
 
     /**
-     * Đăng ký mua trả góp từ trang chi tiết sản phẩm
+     * ==========================================
+     * HÀM: register (Request $request)
+     * Ý NGHĨA NGHIỆP VỤ: Tiếp nhận và xử lý yêu cầu đăng ký mua trả góp của khách hàng.
+     * 
+     * 1. Kiểm tra đăng nhập: Khách hàng bắt buộc phải đăng nhập tài khoản trước khi mua trả góp.
+     * 2. Kiểm tra tính hợp lệ của thông tin gửi lên (Validation):
+     *    - Phương thức trả góp (financial_company: công ty tài chính, credit_card: thẻ tín dụng, kredivo).
+     *    - Đối tác tương ứng với từng phương thức (Shinhan Finance, Home Credit, Vietcombank Credit Card, v.v.).
+     *    - Kỳ hạn vay phù hợp (3, 6, 9, 12 tháng).
+     *    - Thông tin cá nhân khách hàng (họ tên, số điện thoại, số CCCD).
+     * 3. Tính toán trợ giá "Thu cũ đổi mới" (Trade-In):
+     *    - Nếu khách hàng tham gia, hệ thống sẽ trợ giá giảm thêm 10% giá trị sản phẩm (giới hạn tối đa 2 triệu đồng) và trừ trực tiếp vào giá bán sản phẩm.
+     * 4. Tính toán tài chính:
+     *    - Tính toán số tiền khách hàng trả trước (ví dụ 30% đối với công ty tài chính, 0% đối với thẻ tín dụng).
+     *    - Tính toán số tiền vay còn lại, lãi suất tháng, phí dịch vụ.
+     *    - Tính số tiền trả mỗi tháng và tổng số tiền phải trả thực tế.
+     * 5. Lưu trữ vào cơ sở dữ liệu bằng cơ chế giao dịch an toàn (DB Transaction):
+     *    - Tạo mới một đơn hàng tạm ở trạng thái "Chờ duyệt" (Pending).
+     *    - Tìm thiết bị (IMEI) còn trong kho để giữ hàng cho khách, chuyển trạng thái thiết bị sang "Đã bán" (Sold) để tránh trùng lặp.
+     *    - Tạo hợp đồng trả góp (Installment) với mã hợp đồng chuẩn hóa: `TGO-YYMMDD-[Random Hash]` (ví dụ: TGO-260604-A1B2C3).
+     * 6. Phân tích rủi ro hồ sơ bằng AI: Gửi dữ liệu hợp đồng sang Gemini AI để tự động đánh giá mức độ tin cậy và chấm điểm tín dụng.
+     * 7. Gửi thông báo đến tài khoản khách hàng và đẩy thông tin đến giao diện quản trị của Admin.
+     * ==========================================
      */
     public function register(Request $request)
     {
@@ -130,7 +167,6 @@ class InstallmentController extends Controller
         // ==========================================
         // CHỨC NĂNG: TÍNH TOÁN TRỢ GIÁ "THU CŨ ĐỔI MỚI" (TRADE-IN)
         // ------------------------------------------
-        // [DÀNH CHO NGƯỜI KHÔNG BIẾT CODE - Ý NGHĨA CHỨC NĂNG]:
         // Khi khách hàng đổi điện thoại/thiết bị cũ để nâng cấp lên sản phẩm mới, cửa hàng sẽ tặng 
         // một khoản tiền giảm giá đặc biệt (trợ giá) để trừ thẳng vào giá bán khi làm hồ sơ trả góp.
         //
@@ -295,7 +331,15 @@ class InstallmentController extends Controller
     }
 
     /**
-     * Gửi thông báo khi đăng ký trả góp thành công
+     * ==========================================
+     * HÀM: sendNotifications (Installment $installment)
+     * Ý NGHĨA NGHIỆP VỤ: Gửi thông báo tự động cho khách hàng và Admin khi có hồ sơ đăng ký trả góp mới.
+     * 
+     * 1. Lấy thông tin tài khoản khách hàng hiện tại và đối tác tài chính (ví dụ: Home Credit, Kredivo).
+     * 2. Gửi một thông báo cá nhân đến tài khoản của khách hàng để họ biết hồ sơ đã được tiếp nhận thành công và đang chờ duyệt.
+     * 3. Tìm toàn bộ các tài khoản Admin, Quản lý, Nhân viên trong hệ thống (role_id = 1, 2, 4) và gửi thông báo chuông/ứng dụng
+     *    để họ truy cập vào trang quản trị duyệt hồ sơ này kịp thời.
+     * ==========================================
      */
     private function sendNotifications(Installment $installment)
     {

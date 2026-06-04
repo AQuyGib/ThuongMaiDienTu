@@ -21,11 +21,13 @@ class CashbookSyncTest extends TestCase
 
     protected function makeAdminUser(): User
     {
-        $role = Role::create([
-            'role_id' => 1,
-            'name' => 'Admin',
-            'description' => 'Admin role',
-        ]);
+        $role = Role::firstOrCreate(
+            ['role_id' => 1],
+            [
+                'name' => 'Admin',
+                'description' => 'Admin role',
+            ]
+        );
 
         return User::create([
             'role_id' => $role->role_id,

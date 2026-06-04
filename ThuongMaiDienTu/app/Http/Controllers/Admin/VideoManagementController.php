@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Storage;
  * =================================================================================
  * BỘ ĐIỀU KHIỂN: QUẢN LÝ VIDEO (VIDEO MANAGEMENT CONTROLLER) - DÀNH CHO ADMIN
  * ---------------------------------------------------------------------------------
- * [Ý NGHĨA DÀNH CHO NGƯỜI DÙNG / NGƯỜI KHÔNG BIẾT VỀ CODE]:
  * Đây là công cụ dành cho Quản trị viên (Admin) để quản lý Góc video của cửa hàng.
  * Admin có thể đăng video mới (từ file máy tính hoặc link YouTube), chỉnh sửa thông tin video,
  * duyệt các video do người dùng tải lên, ẩn các video vi phạm chính sách và xóa video khỏi hệ thống.

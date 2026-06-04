@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
  * =================================================================================
  * BỘ ĐIỀU KHIỂN: XEM VIDEO SẢN PHẨM & TƯƠNG TÁC (VIDEO CONTROLLER)
  * ---------------------------------------------------------------------------------
- * [Ý NGHĨA DÀNH CHO NGƯỜI DÙNG / NGƯỜI KHÔNG BIẾT VỀ CODE]:
  * Đây là nơi quản lý giao diện xem video giới thiệu/đánh giá sản phẩm. Khách hàng có thể 
  * xem video, bấm Thích (Like), để lại bình luận dưới video, hoặc báo cáo các bình luận 
  * vi phạm thuần phong mỹ tục. Ngoài ra bộ điều khiển này cũng tự động đếm lượt xem video.

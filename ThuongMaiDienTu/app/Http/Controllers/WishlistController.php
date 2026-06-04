@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Auth;
  * =================================================================================
  * BỘ ĐIỀU KHIỂN: QUẢN LÝ DANH SÁCH SẢN PHẨM YÊU THÍCH (WISHLIST CONTROLLER)
  * ---------------------------------------------------------------------------------
- * [Ý NGHĨA DÀNH CHO NGƯỜI DÙNG / NGƯỜI KHÔNG BIẾT VỀ CODE]:
  * Đây là nơi xử lý các thao tác khi người dùng tương tác với tính năng "Yêu thích sản phẩm"
  * (ví dụ như khi nhấn vào nút hình trái tim). Hệ thống sẽ tự động lưu lại các sản phẩm 
  * khách hàng thích vào tài khoản để họ có thể xem lại sau, hoặc xóa chúng khi không còn nhu cầu.

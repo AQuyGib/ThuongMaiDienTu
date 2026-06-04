@@ -130,11 +130,17 @@ class WarrantyClaimController extends Controller
             }
         }
 
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "Tạo mới yêu cầu bảo hành/đổi trả tại quầy ID: " . $claim->id . " (IMEI: " . $claim->imei_serial . ")",
-            'ip_address' => $request->ip(),
-        ]);
+        try {
+            \App\Traits\HasAuditLog::logManualEvent(
+                'created',
+                WarrantyClaim::class,
+                $claim->id,
+                null,
+                $claim->getAttributes()
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log warranty claim creation: " . $e->getMessage());
+        }
 
         return redirect()->route('admin.warranty-claims.index')->with('success', 'Đã tạo yêu cầu bảo hành/đổi trả thành công.');
     }
@@ -230,11 +236,17 @@ class WarrantyClaimController extends Controller
             }
         }
 
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "Cập nhật yêu cầu bảo hành/đổi trả ID: " . $claim->id . " (IMEI: " . $claim->imei_serial . ")",
-            'ip_address' => $request->ip(),
-        ]);
+        try {
+            \App\Traits\HasAuditLog::logManualEvent(
+                'updated',
+                WarrantyClaim::class,
+                $claim->id,
+                null,
+                $claim->getAttributes()
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log warranty claim update: " . $e->getMessage());
+        }
 
         return redirect()->route('admin.warranty-claims.index')->with('success', 'Đã cập nhật yêu cầu thành công.');
     }
@@ -249,11 +261,17 @@ class WarrantyClaimController extends Controller
 
         $claim->delete();
 
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "Xóa yêu cầu bảo hành/đổi trả ID: " . $id . " (IMEI: " . $imei . ")",
-            'ip_address' => $request->ip(),
-        ]);
+        try {
+            \App\Traits\HasAuditLog::logManualEvent(
+                'deleted',
+                WarrantyClaim::class,
+                $id,
+                $claim->getAttributes(),
+                null
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log warranty claim delete: " . $e->getMessage());
+        }
 
         return redirect()->route('admin.warranty-claims.index')->with('success', 'Đã xóa yêu cầu thành công.');
     }
@@ -318,11 +336,17 @@ class WarrantyClaimController extends Controller
             }
         });
 
-        ActivityLog::create([
-            'user_id'    => Auth::id(),
-            'action'     => "Phê duyệt yêu cầu #{$claim->id} (IMEI: {$claim->imei_serial}, loại: {$claim->claim_type})",
-            'ip_address' => $request->ip(),
-        ]);
+        try {
+            \App\Traits\HasAuditLog::logManualEvent(
+                'updated',
+                WarrantyClaim::class,
+                $claim->id,
+                null,
+                $claim->getAttributes()
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log warranty claim approve: " . $e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Đã duyệt thành công!');
     }
@@ -339,11 +363,17 @@ class WarrantyClaimController extends Controller
             'admin_note' => $request->input('admin_note'),
         ]);
 
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "Từ chối yêu cầu bảo hành/đổi trả ID: " . $claim->id . " (IMEI: " . $claim->imei_serial . ")",
-            'ip_address' => $request->ip(),
-        ]);
+        try {
+            \App\Traits\HasAuditLog::logManualEvent(
+                'updated',
+                WarrantyClaim::class,
+                $claim->id,
+                null,
+                $claim->getAttributes()
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log warranty claim reject: " . $e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Đã từ chối yêu cầu thành công.');
     }
