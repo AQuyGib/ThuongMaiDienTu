@@ -19,12 +19,13 @@ import {
   ChevronRight,
   UserCheck,
   Plus,
-  Trash2
+  Trash2,
+  ArrowLeft
 } from 'lucide-react';
 import { isEn, t } from '../helpers';
 import axios from 'axios';
 
-// --- INTERFACES ---
+// --- CÁC ĐỊNH NGHĨA KHOÁ/ĐỐI TƯỢNG (INTERFACES) ---
 interface Member {
   id: number;
   name: string;
@@ -91,28 +92,28 @@ interface CustomDialog {
 
 
 export default function CommunicationHub({ isOpen, onClose, onUnreadChange, userRoleId }: CommunicationHubProps) {
-  // Defensive check: only admins (1) and managers (2) are allowed to use/view
+  // Kiểm tra bảo vệ: chỉ cho phép quản trị viên (1) và quản lý (2) truy cập/sử dụng
   if (userRoleId !== 1 && userRoleId !== 2) {
     return null;
   }
 
-  // Dynamic current user properties based on userRoleId
+  // Xác định động các thuộc tính người dùng hiện tại dựa vào userRoleId
   const currentUserId = userRoleId === 1 ? 1 : 2;
   const cleanCurrentUserName = userRoleId === 1 ? 'Nguyễn Văn An' : 'Trần Thị Bình';
   const currentUserName = userRoleId === 1 ? 'Nguyễn Văn An (Bạn)' : 'Trần Thị Bình (Bạn)';
   const currentUserRoleName = userRoleId === 1 ? 'Admin' : 'Manager';
   const currentUserAvatarColor = userRoleId === 1 ? 'bg-indigo-600' : 'bg-purple-600';
 
-  // Helper to check if a message belongs to the current user
+  // Hàm hỗ trợ kiểm tra xem tin nhắn có phải của người dùng hiện tại hay không
   const isMessageFromMe = (msg: Message) => {
     const cleanSender = msg.sender.replace(' (Bạn)', '').replace(' (You)', '');
     return cleanSender === cleanCurrentUserName;
   };
 
-  // Helper to check if a member can be managed by the current user in the room
+  // Hàm hỗ trợ kiểm tra xem người dùng hiện tại có đủ quyền hạn quản lý thành viên này trong phòng hay không
   const canManageMember = (targetMember: Member, currentRoomMembers: Member[]) => {
     if (targetMember.id === currentUserId) return false;
-    if (userRoleId === 1) return true; // Global Admin can manage anyone
+    if (userRoleId === 1) return true; // Quản trị viên (Admin) cấp cao nhất có quyền quản lý tất cả mọi người
     
     const currentUserInRoom = currentRoomMembers.find(m => m.id === currentUserId);
     const currentUserRoomRole = currentUserInRoom?.roomRole || 'member';
@@ -124,8 +125,22 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     return false;
   };
 
-  // Custom dialog (alert/confirm) state
+  // Trạng thái hiển thị thông báo hộp thoại tự thiết kế (alert/confirm)
   const [dialog, setDialog] = useState<CustomDialog | null>(null);
+
+  // Trạng thái quản lý giao diện trên điện thoại ('rooms' hiển thị danh sách phòng, 'chat' hiển thị nội dung chat)
+  const [mobileView, setMobileView] = useState<'rooms' | 'chat'>('rooms');
+
+  // Xác định động kích thước màn hình để tránh lỗi layout css trên các thiết bị khác nhau
+  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(typeof window !== 'undefined' ? window.innerWidth >= 768 : true);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const showCustomAlert = (title: string, message: string) => {
     setDialog({
@@ -151,19 +166,19 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     });
   };
 
-  // Sound toggle state
+  // Trạng thái bật/tắt âm thanh thông báo
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  // Search channel/messages
+  // Tìm kiếm phòng chat / nội dung tin nhắn
   const [channelSearch, setChannelSearch] = useState('');
   const [messageSearch, setMessageSearch] = useState('');
   const [isMsgSearchOpen, setIsMsgSearchOpen] = useState(false);
 
-  // Layout toggles
+  // Trạng thái bật/tắt hiển thị các cột bổ trợ (danh sách thành viên, ghim tin nhắn)
   const [showMembers, setShowMembers] = useState(false);
   const [isPinnedCollapsed, setIsPinnedCollapsed] = useState(false);
 
-  // Active state
+  // Trạng thái phòng chat đang hoạt động và soạn thảo tin nhắn
   const [activeRoomId, setActiveRoomId] = useState('staff');
   const [inputText, setInputText] = useState('');
   const [quotedMessage, setQuotedMessage] = useState<Message | null>(null);
@@ -171,23 +186,23 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
   const [rawFile, setRawFile] = useState<File | null>(null);
   const [typingUser, setTypingUser] = useState<string | null>(null);
 
-  // Add room states
+  // Các trạng thái của form thêm phòng chat mới
   const [isAddRoomOpen, setIsAddRoomOpen] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomDesc, setNewRoomDesc] = useState('');
   const [newRoomType, setNewRoomType] = useState<'group' | 'private'>('group');
 
-  // Add member state
+  // Trạng thái mở form thêm thành viên vào phòng chat
   const [isAddingMember, setIsAddingMember] = useState(false);
 
-  // Active menu member ID for room role/remove dropdown
+  // ID thành viên đang mở menu lựa chọn thay đổi chức vụ hoặc xóa thành viên
   const [activeMenuMemberId, setActiveMenuMemberId] = useState<number | null>(null);
 
-  // List of all active employees available to be added
+  // Danh sách toàn bộ nhân viên có sẵn trong hệ thống để thêm vào phòng
   const [allEmployees, setAllEmployees] = useState<Member[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch real chat data on open
+  // Tự động tải dữ liệu chat thực tế từ máy chủ khi component được mở
   useEffect(() => {
     if (isOpen) {
       const loadChatData = async () => {
@@ -208,7 +223,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     }
   }, [isOpen]);
 
-  // Close member action menu when clicking outside
+  // Tự động đóng menu thao tác thành viên khi click ra ngoài
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (activeMenuMemberId !== null) {
@@ -222,11 +237,11 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [activeMenuMemberId]);
 
-  // References
+  // Các tham chiếu useRef
   const messageEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- REAL CHAT ROOMS & MESSAGES STATE ---
+  // --- TRẠNG THÁI DANH SÁCH PHÒNG CHAT & TIN NHẮN TỪ DATABASE ---
   const [rooms, setRooms] = useState<ChatRoom[]>(() => [
     {
       id: 'staff',
@@ -260,7 +275,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     executive: []
   }));
 
-  // --- AUDIO SYNTH NOTIFICATION ENGINE ---
+  // --- HỆ THỐNG PHÁT ÂM THANH THÔNG BÁO BẰNG AUDIO CONTEXT SYNTH ---
   const playChime = (type: 'send' | 'receive') => {
     if (!soundEnabled) return;
     try {
@@ -314,7 +329,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     }
   };
 
-  // --- AUTOMATIC UNREAD COUNT SYNCHRONIZATION ---
+  // --- ĐỒNG BỘ HÓA TỔNG SỐ TIN NHẮN CHƯA ĐỌC ---
   useEffect(() => {
     const totalUnread = rooms.reduce((sum, r) => sum + r.unreadCount, 0);
     if (onUnreadChange) {
@@ -322,19 +337,19 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     }
   }, [rooms, onUnreadChange]);
 
-  // Scroll to bottom when room or messages change
+  // Tự động cuộn xuống cuối cùng khi đổi phòng hoặc có tin nhắn mới
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeRoomId, typingUser]);
 
-  // Clear unread counts when entering a room
+  // Xóa bộ đếm chưa đọc khi người dùng click vào xem phòng
   useEffect(() => {
     if (isOpen) {
       setRooms(prev => prev.map(r => r.id === activeRoomId ? { ...r, unreadCount: 0 } : r));
     }
   }, [activeRoomId, isOpen]);
 
-  // --- MESSAGE SEND HANDLER ---
+  // --- XỬ LÝ GỬI TIN NHẮN ---
   const handleSendMessage = async () => {
     if (!inputText.trim() && !rawFile) return;
 
@@ -380,7 +395,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     }
   };
 
-  // --- ADD CHAT ROOM HANDLER ---
+  // --- XỬ LÝ TẠO PHÒNG CHAT MỚI ---
   const handleAddRoom = async () => {
     if (!newRoomName.trim()) {
       showCustomAlert(
@@ -416,7 +431,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     }
   };
 
-  // --- DELETE CHAT ROOM HANDLER ---
+  // --- XỬ LÝ XÓA PHÒNG CHAT ---
   const handleDeleteRoom = (roomId: string, roomName: string) => {
     showCustomConfirm(
       t("Xóa phòng chat", "Delete Chat Room"),
@@ -442,7 +457,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     );
   };
 
-  // --- ADD MEMBER TO ROOM HANDLER ---
+  // --- XỬ LÝ THÊM THÀNH VIÊN VÀO PHÒNG CHAT ---
   const handleAddMemberToRoom = async (member: Member) => {
     try {
       const response = await axios.post(`/admin/chat/rooms/${activeRoomId}/members`, {
@@ -476,7 +491,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     }
   };
 
-  // --- UPDATE MEMBER ROOM ROLE HANDLER ---
+  // --- XỬ LÝ CẬP NHẬT CHỨC VỤ THÀNH VIÊN TRONG PHÒNG CHAT ---
   const handleUpdateMemberRoomRole = async (memberId: number, newRole: 'leader' | 'co-leader' | 'member') => {
     try {
       const response = await axios.post(`/admin/chat/rooms/${activeRoomId}/role`, {
@@ -512,7 +527,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     }
   };
 
-  // --- REMOVE MEMBER FROM ROOM HANDLER ---
+  // --- XỬ LÝ XÓA THÀNH VIÊN KHỎI PHÒNG CHAT ---
   const handleRemoveMemberFromRoom = (memberId: number, memberName: string) => {
     if (memberId === currentUserId) {
       showCustomAlert(
@@ -560,7 +575,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     );
   };
 
-  // --- EMOJI REACTION HANDLER ---
+  // --- XỬ LÝ THẢ CẢM XÚC (EMOJI REACTION) ---
   const handleAddReaction = async (msgId: string, emoji: string) => {
     try {
       const response = await axios.post(`/admin/chat/messages/${msgId}/react`, {
@@ -587,7 +602,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     }
   };
 
-  // --- ATTACHMENT SELECT HANDLER ---
+  // --- XỬ LÝ CHỌN FILE ĐÍNH KÈM ---
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -603,7 +618,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
     });
   };
 
-  // --- CHANNEL FILTERING ---
+  // --- LỌC DANH SÁCH PHÒNG CHAT THEO TỪ KHÓA TÌM KIẾM ---
   const filteredRooms = rooms.filter(r => r.name.toLowerCase().includes(channelSearch.toLowerCase()));
 
   // Active room data
@@ -617,7 +632,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
 
   return (
     <>
-      {/* Background Overlay */}
+      {/* Lớp nền mờ phía sau khi mở khung chat (Overlay) */}
       {isOpen && (
         <div 
           onClick={onClose}
@@ -625,13 +640,14 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
         />
       )}
 
-      {/* Main Slide-out Panel */}
-      <div className={`fixed inset-y-0 right-0 w-[85vw] max-w-[1000px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-[9999] flex transition-all duration-300 ease-out font-sans ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      {/* Khung chứa Chat Room chính trượt ra từ bên phải */}
+      <div className={`fixed inset-y-0 right-0 w-full md:w-[85vw] max-w-[1000px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-[9999] flex transition-all duration-300 ease-out font-sans ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
-        {/* COLUMN 1: SIDEBAR (Rooms/Channels list) */}
-        <div className="w-[280px] border-r border-slate-100 dark:border-slate-800/80 flex flex-col shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
+        {/* CỘT 1: THANH BÊN (Danh sách các phòng chat và kênh liên lạc) */}
+        {isDesktop || mobileView === 'rooms' ? (
+          <div className="w-full md:w-[280px] md:min-w-[280px] md:max-w-[280px] border-r border-slate-100 dark:border-slate-800/80 flex flex-col shrink-0 bg-slate-50/50 dark:bg-slate-900/50">
           {/* Header */}
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
                 <MessageSquare size={18} />
@@ -639,7 +655,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
               <span className="font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight text-xs">Comm Hub</span>
             </div>
             <div className="flex items-center gap-2">
-              {/* Sound toggle button */}
+              {/* Nút bật tắt âm thanh */}
               <button 
                 onClick={() => setSoundEnabled(!soundEnabled)} 
                 className="w-8 h-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"
@@ -667,7 +683,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
             </div>
           </div>
 
-          {/* Channels list */}
+          {/* Danh sách các phòng chat */}
           <div className="flex-1 overflow-y-auto p-3 space-y-1">
             <div className="px-3 py-2 flex items-center justify-between">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Danh sách kênh</span>
@@ -694,6 +710,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                     setIsMsgSearchOpen(false);
                     setMessageSearch('');
                     setIsAddingMember(false);
+                    setMobileView('chat');
                   }}
                   className={`w-full text-left p-3 rounded-2xl flex items-center justify-between transition-all group ${isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/10' : 'hover:bg-slate-100 dark:hover:bg-slate-800/50'}`}
                 >
@@ -712,8 +729,8 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                   </div>
                   
                   <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                    {/* Delete room action - only show if deletable */}
-                    {isDeletable && (
+                    {/* Hành động xóa phòng - chỉ hiện với phòng có thể xóa */}
+                    {isDeletable ? (
                       <span
                         onClick={(e) => {
                           e.stopPropagation();
@@ -724,37 +741,47 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                       >
                         <Trash2 size={12} />
                       </span>
-                    )}
+                    ) : null}
 
-                    {/* Badge unread count */}
-                    {room.unreadCount > 0 && !isActive && (
+                    {/* Hiển thị số lượng tin nhắn chưa đọc */}
+                    {room.unreadCount > 0 && !isActive ? (
                       <span className="min-w-5 h-5 px-1.5 rounded-full bg-rose-600 text-white text-[9px] font-black flex items-center justify-center shadow-sm">
                         {room.unreadCount}
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 </button>
               );
             })}
           </div>
         </div>
+      ) : null}
 
-        {/* COLUMN 2: ACTIVE CONVERSATION PANE */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-950">
+        {/* CỘT 2: KHUNG TRÒ CHUYỆN ĐANG HOẠT ĐỘNG (Hiển thị nội dung chat của phòng hiện tại) */}
+        {isDesktop || mobileView === 'chat' ? (
+          <div className="w-full md:w-auto flex-grow md:flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-950">
           
-          {/* Header */}
-          <div className="h-20 px-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md z-10">
-            <div className="min-w-0">
-              <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                {currentRoom.name}
-                {currentRoom.type === 'private' && <Lock size={12} className="text-purple-500" />}
-                {currentRoom.type === 'ai' && <Sparkles size={12} className="text-blue-500" />}
-              </h3>
-              <p className="text-[10px] text-slate-400 truncate mt-0.5">{currentRoom.description}</p>
+          {/* Phần đầu khung chat (Tiêu đề, nút quay lại trên mobile, search, thành viên) */}
+          <div className="h-20 px-4 md:px-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md z-10">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <button 
+                onClick={() => setMobileView('rooms')}
+                className="md:hidden w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors shrink-0"
+              >
+                <ArrowLeft size={16} />
+              </button>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-xs md:text-sm font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  {currentRoom.name}
+                  {currentRoom.type === 'private' && <Lock size={12} className="text-purple-500" />}
+                  {currentRoom.type === 'ai' && <Sparkles size={12} className="text-blue-500" />}
+                </h3>
+                <p className="text-[9px] md:text-[10px] text-slate-400 truncate mt-0.5">{currentRoom.description}</p>
+              </div>
             </div>
             
             <div className="flex items-center gap-2">
-              {/* Search message inside channel */}
+              {/* Nút tìm kiếm tin nhắn trong phòng chat hiện tại */}
               <button 
                 onClick={() => setIsMsgSearchOpen(!isMsgSearchOpen)}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${isMsgSearchOpen ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400'}`}
@@ -762,7 +789,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                 <Search size={16} />
               </button>
               
-              {/* Show member list button */}
+              {/* Nút bật/tắt danh sách thành viên của phòng chat */}
               <button 
                 onClick={() => setShowMembers(!showMembers)}
                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${showMembers ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400'}`}
@@ -772,9 +799,9 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
             </div>
           </div>
 
-          {/* Collapsible search messages bar */}
-          {isMsgSearchOpen && (
-            <div className="px-8 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-center gap-2 animate-in slide-in-from-top-2 duration-200">
+          {/* Thanh tìm kiếm tin nhắn (hỗ trợ đóng mở co giãn) */}
+          {isMsgSearchOpen ? (
+            <div className="px-4 md:px-8 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-center gap-2 animate-in slide-in-from-top-2 duration-200">
               <Search size={14} className="text-slate-400" />
               <input
                 type="text"
@@ -789,11 +816,11 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                 </button>
               )}
             </div>
-          )}
+          ) : null}
 
-          {/* Pinned message banner */}
-          {currentRoom.pinnedMessage && (
-            <div className="bg-amber-500/5 dark:bg-amber-500/10 border-b border-amber-500/10 px-8 py-2.5 flex items-start gap-2.5">
+          {/* Banner hiển thị tin nhắn được ghim lên đầu phòng chat */}
+          {currentRoom.pinnedMessage ? (
+            <div className="bg-amber-500/5 dark:bg-amber-500/10 border-b border-amber-500/10 px-4 md:px-8 py-2.5 flex items-start gap-2.5">
               <Pin size={14} className="text-amber-500 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <span className="text-[9px] font-black text-amber-500 uppercase tracking-wider block">Ghim bởi Quản trị</span>
@@ -802,10 +829,10 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                 </span>
               </div>
             </div>
-          )}
+          ) : null}
 
-          {/* Messages list */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-6">
+          {/* Danh sách hiển thị các tin nhắn trong phòng chat */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
             {filteredMessages.map((msg) => {
               if (msg.sender === 'Hệ thống') {
                 return (
@@ -819,33 +846,33 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
               const isMe = isMessageFromMe(msg);
               return (
                 <div key={msg.id} className={`flex items-start gap-3 group relative ${isMe ? 'flex-row-reverse' : ''}`}>
-                  {/* Sender Avatar */}
+                  {/* Ảnh đại diện (Avatar) của người gửi */}
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 text-xs font-black uppercase ${msg.avatarColor}`}>
                     {msg.sender.charAt(0)}
                   </div>
 
-                  {/* Message bubble structure */}
-                  <div className="max-w-[70%] space-y-1">
-                    {/* Sender metadata */}
+                  {/* Cấu trúc bong bóng tin nhắn */}
+                  <div className="max-w-[85%] md:max-w-[70%] space-y-1">
+                    {/* Tên người gửi và chức vụ/vai trò */}
                     <div className={`flex items-center gap-2 text-[10px] ${isMe ? 'justify-end' : ''}`}>
                       <span className="font-black text-slate-700 dark:text-slate-200">{msg.sender}</span>
                       <span className="text-slate-400">({msg.senderRole})</span>
                     </div>
 
-                    {/* Quoted message reference */}
-                    {msg.replyTo && (
+                    {/* Thông tin tin nhắn gốc đang được trích dẫn (nếu có) */}
+                    {msg.replyTo ? (
                       <div className="p-2 border-l-2 border-indigo-400 bg-slate-100 dark:bg-slate-800 rounded-lg text-[9px] text-slate-500 dark:text-slate-400 mb-1 max-w-full truncate">
                         <span className="font-bold text-slate-600 dark:text-slate-300 block">{msg.replyTo.sender}</span>
                         {msg.replyTo.content}
                       </div>
-                    )}
+                    ) : null}
 
-                    {/* Bubble */}
+                    {/* Bong bóng nội dung tin nhắn */}
                     <div className={`p-3.5 rounded-2xl text-xs leading-relaxed break-words shadow-sm relative ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-slate-100 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 rounded-tl-none border border-slate-200/20'}`}>
                       {msg.content}
 
-                      {/* File attachment preview inside chat bubble */}
-                      {msg.attachment && (
+                      {/* Xem trước tệp đính kèm đi kèm tin nhắn (nếu có) */}
+                      {msg.attachment ? (
                         <div className={`mt-2 p-2 border rounded-xl flex items-center gap-2.5 ${isMe ? 'border-white/20 bg-white/10' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'}`}>
                           {msg.attachment.type === 'image' ? (
                             <div className="w-10 h-10 rounded bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
@@ -861,11 +888,11 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                             <div className="text-[8px] opacity-60 mt-0.5">{msg.attachment.size}</div>
                           </div>
                         </div>
-                      )}
+                      ) : null}
                     </div>
 
-                    {/* Reactions display */}
-                    {msg.reactions.length > 0 && (
+                    {/* Khung hiển thị các cảm xúc (Reactions) được thả dưới tin nhắn */}
+                    {msg.reactions.length > 0 ? (
                       <div className={`flex flex-wrap gap-1.5 mt-1 ${isMe ? 'justify-end' : ''}`}>
                         {msg.reactions.map((react, i) => (
                           <button
@@ -879,18 +906,18 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                           </button>
                         ))}
                       </div>
-                    )}
+                    ) : null}
 
-                    {/* Status & timestamp indicators */}
+                    {/* Thời gian gửi tin nhắn và chỉ báo trạng thái đã đọc */}
                     <div className={`flex items-center gap-1 text-[8px] text-slate-400 mt-0.5 ${isMe ? 'justify-end' : ''}`}>
                       <span>{msg.time}</span>
-                      {isMe && (
+                      {isMe ? (
                         <CheckCheck size={10} className={msg.isRead ? 'text-indigo-500' : 'text-slate-400'} />
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
-                  {/* Actions (Floating Reactions & Reply) */}
+                  {/* Thanh tác vụ nổi khi hover vào tin nhắn (thả biểu cảm, phản hồi) */}
                   <div className={`absolute top-1/2 -translate-y-1/2 hidden group-hover:flex items-center gap-1 p-1 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-md rounded-xl z-20 ${isMe ? 'left-4' : 'right-4'}`}>
                     <button 
                       onClick={() => handleAddReaction(msg.id, '👍')}
@@ -918,23 +945,23 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
               );
             })}
 
-            {/* Simulated typing status indicator */}
-            {typingUser && (
+            {/* Hiệu ứng hiển thị dấu ba chấm động khi có thành viên đang gõ tin nhắn */}
+            {typingUser ? (
               <div className="flex items-center gap-2.5 text-[10px] text-slate-400 italic pl-12 animate-pulse">
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce"></span>
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce delay-150"></span>
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce delay-300"></span>
                 <span>{typingUser} {t('đang soạn tin...', 'is typing...')}</span>
               </div>
-            )}
+            ) : null}
 
             <div ref={messageEndRef} />
           </div>
 
-          {/* Footer Area with inputs */}
-          <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shrink-0">
-            {/* Thread quote bar */}
-            {quotedMessage && (
+          {/* Phần Chân Trang (Footer) - Nơi soạn thảo tin nhắn, đính kèm file */}
+          <div className="p-4 md:p-6 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 shrink-0">
+            {/* Thanh thông báo tin nhắn đang được trích dẫn để trả lời */}
+            {quotedMessage ? (
               <div className="px-4 py-2 bg-indigo-50/50 dark:bg-indigo-950/20 border-l-2 border-indigo-500 rounded-xl flex items-center justify-between mb-3 animate-in slide-in-from-bottom-2 duration-150">
                 <div className="min-w-0">
                   <span className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 block uppercase tracking-wider">Đang trả lời {quotedMessage.sender}</span>
@@ -944,10 +971,10 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                   <X size={14} />
                 </button>
               </div>
-            )}
+            ) : null}
 
-            {/* Selected file preview */}
-            {selectedFile && (
+            {/* Khung hiển thị và xem trước tệp đính kèm đã chọn */}
+            {selectedFile ? (
               <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-between mb-3 animate-in slide-in-from-bottom-2 duration-150">
                 <div className="flex items-center gap-3 min-w-0">
                   {selectedFile.type === 'image' ? (
@@ -968,11 +995,11 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                   <X size={16} />
                 </button>
               </div>
-            )}
+            ) : null}
 
-            {/* Main Input controls row */}
+            {/* Hàng chứa các công cụ nhập liệu chính */}
             <div className="flex items-center gap-3">
-              {/* Attachment selector */}
+              {/* Thẻ chọn file ẩn phục vụ đính kèm tệp tin */}
               <input
                 type="file"
                 ref={fileInputRef}
@@ -987,7 +1014,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                 <Paperclip size={18} />
               </button>
 
-              {/* Text input */}
+              {/* Ô nhập tin nhắn văn bản */}
               <div className="flex-1 relative">
                 <input
                   type="text"
@@ -1006,7 +1033,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                 />
               </div>
 
-              {/* Send action */}
+              {/* Nút gửi tin nhắn */}
               <button 
                 onClick={handleSendMessage}
                 disabled={currentRoom.type === 'announcement' && activeRoomId !== 'announcement'}
@@ -1017,10 +1044,11 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
             </div>
           </div>
         </div>
+      ) : null}
 
-        {/* COLUMN 3: SIDE DRAWER FOR ROOM MEMBERS (Collapsible) */}
-        {showMembers && (
-          <div className="w-[240px] border-l border-slate-100 dark:border-slate-800/80 shrink-0 flex flex-col bg-slate-50/50 dark:bg-slate-900/50 animate-in slide-in-from-right duration-300">
+        {/* CỘT 3: DANH SÁCH THÀNH VIÊN TRONG PHÒNG (Co giãn được) */}
+        {showMembers ? (
+          <div className="absolute right-0 top-0 bottom-0 w-[240px] z-30 border-l border-slate-100 dark:border-slate-800/80 shrink-0 flex flex-col bg-white dark:bg-slate-900 md:bg-slate-50/50 md:dark:bg-slate-900/50 shadow-2xl md:shadow-none md:relative md:flex animate-in slide-in-from-right duration-300">
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <span className="font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight text-xs">Thành viên ({currentRoom.members.length})</span>
               <button onClick={() => setShowMembers(false)} className="text-slate-400 hover:text-slate-600">
@@ -1028,7 +1056,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
               </button>
             </div>
             
-            {/* Add member button */}
+            {/* Nút thêm thành viên mới */}
             <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
               <button
                 onClick={() => setIsAddingMember(!isAddingMember)}
@@ -1039,8 +1067,8 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
               </button>
             </div>
 
-            {/* Members not in room selection area */}
-            {isAddingMember && (
+            {/* Khu vực lựa chọn những thành viên chưa tham gia phòng */}
+            {isAddingMember ? (
               <div className="p-3 bg-slate-100/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 space-y-2 animate-in slide-in-from-top-2 duration-200 shrink-0">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block mb-1">
                   {t("Chọn thành viên để thêm:", "Select member to add:")}
@@ -1082,7 +1110,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                   );
                 })()}
               </div>
-            )}
+            ) : null}
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {currentRoom.members.map((member) => {
@@ -1100,12 +1128,12 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                 return (
                   <div key={member.id} className="flex items-center justify-between group/member relative">
                     <div className="flex items-center gap-3 min-w-0">
-                      {/* Avatar wrapper */}
+                      {/* Phần bao quanh ảnh đại diện (Avatar) */}
                       <div className="relative shrink-0">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-black uppercase ${member.avatarColor}`}>
                           {member.name.charAt(0)}
                         </div>
-                        {/* Status dot */}
+                        {/* Dấu chấm biểu thị trạng thái online/offline */}
                         <span className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${member.status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></span>
                       </div>
                       
@@ -1126,8 +1154,8 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                       </div>
                     </div>
  
-                    {/* Member actions button */}
-                    {showActions && (
+                    {/* Nút hành động trên thành viên */}
+                    {showActions ? (
                       <div className="relative shrink-0">
                         <button
                           onClick={() => setActiveMenuMemberId(isMenuOpen ? null : member.id)}
@@ -1137,13 +1165,13 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                           <i className="fa-solid fa-ellipsis-vertical text-[10px]"></i>
                         </button>
  
-                        {/* Dropdown Menu for Roles and Removal */}
-                        {isMenuOpen && (
+                        {/* Thực đơn thả xuống (Dropdown) để phân vai trò hoặc xóa thành viên */}
+                        {isMenuOpen ? (
                           <div className="absolute right-0 mt-1 w-40 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-1 z-[9999] animate-in fade-in slide-in-from-top-1 duration-150">
                             <div className="px-2.5 py-1.5 border-b border-slate-100 dark:border-slate-700">
                               <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Vai trò trong room</span>
                             </div>
-                            {(userRoleId === 1 || (currentRoom.members.find(m => m.id === currentUserId)?.roomRole === 'leader')) && (
+                            {(userRoleId === 1 || (currentRoom.members.find(m => m.id === currentUserId)?.roomRole === 'leader')) ? (
                               <button
                                 onClick={() => handleUpdateMemberRoomRole(member.id, 'leader')}
                                 className={`w-full text-left px-2.5 py-1.5 text-[10px] font-bold flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 ${member.roomRole === 'leader' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-300'}`}
@@ -1151,7 +1179,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                                 <span>👑</span>
                                 <span>{t("Trưởng nhóm", "Leader")}</span>
                               </button>
-                            )}
+                            ) : null}
                             <button
                               onClick={() => handleUpdateMemberRoomRole(member.id, 'co-leader')}
                               className={`w-full text-left px-2.5 py-1.5 text-[10px] font-bold flex items-center gap-1.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 ${member.roomRole === 'co-leader' ? 'text-amber-500' : 'text-slate-600 dark:text-slate-300'}`}
@@ -1176,18 +1204,18 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                               <span>{t("Xóa khỏi phòng", "Remove from room")}</span>
                             </button>
                           </div>
-                        )}
+                        ) : null}
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 );
               })}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Modal Thêm Phòng Chat */}
-        {isAddRoomOpen && (
+        {isAddRoomOpen ? (
           <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-6 animate-in fade-in duration-200">
             <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between">
@@ -1280,9 +1308,9 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
               </div>
             </div>
           </div>
-        )}
-        {/* Custom dialog alert/confirm modal */}
-        {dialog && dialog.isOpen && (
+        ) : null}
+        {/* Hộp thoại thông báo và xác nhận tùy chỉnh (Custom Dialog/Alert/Confirm Modal) */}
+        {dialog && dialog.isOpen ? (
           <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-md flex items-center justify-center z-[999999] p-6 animate-in fade-in duration-300">
             <div className="w-full max-w-sm bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2.5rem] border border-white/20 dark:border-slate-800/80 p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] space-y-6 animate-in zoom-in-95 duration-300">
               <div className="flex flex-col items-center text-center space-y-4">
@@ -1319,7 +1347,7 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                 >
                   {dialog.type === 'confirm' ? t("Xác nhận hành động", "Confirm Action") : t("Đồng ý", "OK")}
                 </button>
-                {dialog.type === 'confirm' && (
+                {dialog.type === 'confirm' ? (
                   <button
                     type="button"
                     onClick={dialog.onCancel}
@@ -1327,11 +1355,11 @@ export default function CommunicationHub({ isOpen, onClose, onUnreadChange, user
                   >
                     {t("Hủy bỏ", "Cancel")}
                   </button>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </>
   );
