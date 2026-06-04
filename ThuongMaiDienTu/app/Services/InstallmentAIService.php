@@ -25,7 +25,7 @@ class InstallmentAIService
      */
     public function analyzeInstallment(Installment $installment): array
     {
-        $apiKey = env('GEMINI_API_KEY') ?: config('services.gemini.api_key');
+        $apiKey = config('services.gemini.api_key');
         
         $customerName = $installment->customer_name;
         $customerPhone = $installment->customer_phone;

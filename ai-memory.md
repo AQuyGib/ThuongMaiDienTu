@@ -1,10 +1,23 @@
 # Project Memory
 
 ## Current State & Focus
-- **Đồng bộ nhánh tối ưu hóa (Merge master into AnhQuy/ToiUu):**
-  - Thực hiện merge thành công phiên bản mới nhất của nhánh `master` (remote `origin/master`) vào nhánh hiện tại `AnhQuy/ToiUu` vào ngày 03/06/2026, giải quyết tự động hoàn toàn mà không phát sinh bất kỳ xung đột nào.
-  - Đồng bộ toàn bộ các tính năng mới nhất từ `master` bao gồm Live Theme Customizer, logic giỏ hàng, thanh toán và các cập nhật kịch bản chạy tự động trong `start.bat`.
-  - Đồng bộ toàn bộ các tính năng AI mới (kiểm duyệt UGC, chẩn đoán Vision AI cho phiếu sửa chữa, bán chéo Gemini AI, kiểm duyệt đơn hàng AI) và các sửa đổi hệ thống test API Auth và database migrations trước đó.
+- **Tối ưu giao diện Flash Sale & Nút mua ngay / Thêm giỏ hàng ở Trang chủ (Ngày 04/06/2026):**
+  - **Khắc phục:**
+    - Cải thiện độ tương phản và căn giữa văn bản tiến trình Flash Sale (`.fs-progress-text`) và biểu tượng lửa (`.fs-fire-icon`) trên thanh tiến trình bằng cách thay đổi màu nền wrapper sang `#fca5a5`, thêm flex alignment, thiết lập `position: absolute; top: 50%; transform: translateY(-50%);` và đặt màu sắc rực rỡ `#ffeb3b` cho biểu tượng lửa.
+    - Đổi cấu trúc thẻ sản phẩm Flash Sale từ dạng thẻ link `<a>` bao bọc toàn bộ thành thẻ `div.product-card` chứa liên kết ảnh/thông tin ở trên và nhóm nút chức năng "Mua ngay" (nút có màu gradient đỏ rực rỡ), "Thêm vào giỏ" ở dưới cùng.
+    - Cập nhật file partial `partials/product_grid_items.blade.php` cho các sản phẩm thông thường ở trang chủ: đưa nhóm nút "Mua ngay" (màu xanh dương thương hiệu) và "Thêm vào giỏ" cố định ở phía dưới cùng thẻ sản phẩm thay vì nút lơ lửng khi hover.
+    - Bổ sung hàm `buyNow()` bằng AJAX trong Javascript block của `home.blade.php` để xử lý thêm sản phẩm và tự động chuyển hướng người dùng trực tiếp tới trang giỏ hàng (`cart.index`).
+- **Sửa lỗi thêm sản phẩm vào Flash Sale ở Trang quản trị Admin (Ngày 04/06/2026):**
+  - **Vấn đề:** Khi thêm một sản phẩm vào chiến dịch Flash Sale bằng AJAX ở Admin, hệ thống báo lỗi SweetAlert: `"Missing required parameter for [Route: admin.flash-sales.products.destroy] ... [Missing parameter: flash_sale_product]"`. Nguyên nhân do trong hàm `store` của `FlashSaleProductController.php` khi tạo link `delete_url` cho dữ liệu trả về đã gọi đến thuộc tính `$flashSaleProduct->id`. Tuy nhiên khóa chính của bảng `flash_sale_products` là `flash_sale_product_id` nên thuộc tính `id` trả về `null`, dẫn đến hàm sinh URL `route()` bị thiếu tham số bắt buộc.
+  - **Khắc phục:** Sửa đổi `$flashSaleProduct->id` thành `$flashSaleProduct->flash_sale_product_id` trong phương thức `store()` của `FlashSaleProductController.php`. Hệ thống hoạt động hoàn hảo và không còn báo lỗi khi gán sản phẩm vào Flash Sale thông qua AJAX.
+- **Đồng bộ nhánh tối ưu hóa (Merge master into AnhQuy/ToiUu) - Ngày 04/06/2026:**
+  - Thực hiện merge thành công phiên bản mới nhất của nhánh `master` (remote `origin/master`) vào nhánh hiện tại `AnhQuy/ToiUu` (fast-forward hoàn toàn sạch sẽ không phát sinh xung đột).
+  - Đồng bộ hóa toàn bộ các nâng cấp mới nhất của hệ thống thông báo đa kênh (Notification System), mô-đun trả góp tích hợp AI (Installment), quản lý thu chi (Cashbook), và các tính năng giao diện, danh mục mới.
+- **Sửa lỗi Unit Test của dịch vụ Trả góp AI (InstallmentAIService):**
+  - **Vấn đề:** Ca kiểm thử `test_low_risk_assessment` thất bại do hàm `env('GEMINI_API_KEY')` trong `InstallmentAIService` không bị xóa bởi `putenv('GEMINI_API_KEY=')` trong Laravel test environment, dẫn đến việc service vẫn gọi thật đến API Gemini thay vì chạy logic Heuristic Fallback giả lập.
+  - **Khắc phục:**
+    - Chuyển logic lấy API key trong `InstallmentAIService.php` từ `env('GEMINI_API_KEY') ?: config('services.gemini.api_key')` thành gọi duy nhất `config('services.gemini.api_key')` để tuân thủ Laravel best practice (không gọi trực tiếp `env()` ngoài file cấu hình, tránh lỗi khi cấu hình được cache).
+    - Cập nhật phương thức `setUp()` trong `InstallmentAIServiceTest.php` để thiết lập config `services.gemini.api_key` thành `null`. Nhờ đó, việc giả lập Fallback chạy chính xác và 100% test suite vượt qua thành công (`Tests: 56 passed`).
 - **Nâng cấp Hệ thống Thông báo Toàn diện (System-Wide Notification System):**
   - Thiết kế và tích hợp luồng thông báo tự động qua `NotificationService` vào các dịch vụ & controller nghiệp vụ cốt lõi:
     - **Rewards & Lucky Wheel (`RewardsService`):** Tự động gửi thông báo `rewards.redeemed` khi đổi điểm thưởng thành công (kèm mã voucher & hạn dùng 30 ngày) và `lucky_wheel.won` khi quay trúng thưởng (kèm mã trúng giải & hạn nhận quà 7 ngày).
