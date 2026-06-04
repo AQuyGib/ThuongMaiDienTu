@@ -83,6 +83,10 @@
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 
 /* Error State */
 .result-error {
@@ -846,7 +850,55 @@ function renderResult(d) {
         claimsHTML = `
             <div class="repair-history" style="margin-top: 24px;">
                 <h4 style="font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
-                    <i class="fa-solid fa-list-che// =========================================================================
+                    <i class="fa-solid fa-list-check" style="color: #0046ab;"></i> Lịch sử yêu cầu dịch vụ
+                </h4>
+                ${items}
+            </div>
+        `;
+    }
+
+    // E. Các nút bấm hành động (CTA)
+    let ctaHTML = '';
+    let warrantyBtnDisabled = !d.can_claim_warranty ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '';
+    let returnBtnDisabled = !d.can_claim_return ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : '';
+    
+    let warrantyTooltip = !d.can_claim_warranty ? ' (Không đủ điều kiện hoặc hết hạn)' : '';
+    let returnTooltip = !d.can_claim_return ? ' (Hết hạn hoặc không hỗ trợ)' : '';
+
+    ctaHTML = `
+        <div class="warranty-cta" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button type="button" class="btn-create-ticket" ${warrantyBtnDisabled} onclick="openClaimModal('${d.imei}', '${d.product_name}', 'warranty')">
+                <i class="fa-solid fa-screwdriver-wrench"></i> Yêu cầu bảo hành${warrantyTooltip}
+            </button>
+            <button type="button" class="btn-create-ticket" style="background: linear-gradient(135deg, #f59e0b, #d97706);" ${returnBtnDisabled} onclick="openClaimModal('${d.imei}', '${d.product_name}', 'return')">
+                <i class="fa-solid fa-rotate-left"></i> Yêu cầu đổi trả${returnTooltip}
+            </button>
+        </div>
+    `;
+
+    return `<div class="result-card">
+        <div class="result-header">
+            <img src="${imgSrc}" alt="" class="result-product-img">
+            <div class="result-product-info">
+                <h3>${d.product_name}</h3>
+                ${d.variant_label ? `<div class="variant-label">${d.variant_label}</div>` : ''}
+                <div class="imei-label">IMEI: ${d.imei}</div>
+            </div>
+            <div class="warranty-status-badge ${statusClass}">
+                <i class="fa-solid ${getStatusIcon(d.warranty_status)}"></i>
+                ${getStatusLabel(d.warranty_status)}
+            </div>
+        </div>
+        <div class="result-body">
+            ${infoHTML}
+            ${progressHTML}
+            ${noteHTML}
+            ${repairHTML}
+            ${ctaHTML}
+            ${claimsHTML}
+        </div>
+    </div>`;
+}
 // HÀM CHÍNH 4: MỞ CỬA SỔ POPUP NHẬP YÊU CẦU DỊCH VỤ (openClaimModal)
 // Cấu hình giao diện form nhập tùy theo khách bấm nút "Bảo hành" hay "Đổi trả".
 // =========================================================================
