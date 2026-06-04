@@ -10,14 +10,44 @@ use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::query()
-            ->withTranslation()
-            ->latest('category_id')
-            ->paginate(20);
+        $search = trim((string) $request->query('search', ''));
 
-        return view('admin.categories.index', compact('categories'));
+        $categoriesQuery = Category::query()
+            ->withTranslation()
+            ->with(['parent'])
+            ->withCount('products')
+            ->latest('category_id');
+
+        if ($search !== '') {
+            $categoriesQuery->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                    ->orWhereHas('parent', function ($parentQuery) use ($search) {
+                        $parentQuery->where('name', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+
+        $categories = $categoriesQuery->paginate(20)->withQueryString();
+
+        $totalCategories = Category::count();
+        $rootCategories = Category::whereNull('parent_id')->count();
+        $childCategories = Category::whereNotNull('parent_id')->count();
+        
+        $allCategories = Category::query()
+            ->withTranslation()
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.categories.index', compact(
+            'categories',
+            'allCategories',
+            'totalCategories',
+            'rootCategories',
+            'childCategories',
+            'search'
+        ));
     }
 
     public function create()

@@ -322,7 +322,6 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     // Ẩn / Hiện card phần thưởng tương ứng với danh mục được lọc
     document.querySelectorAll('.reward-card').forEach(card => {
       const ok = filter === 'all' || card.dataset.type === filter || card.dataset.category === filter;
-      card.style.styleDisplay = ok ? '' : 'none';
       card.style.display = ok ? '' : 'none';
     });
   });

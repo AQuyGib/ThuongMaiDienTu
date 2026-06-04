@@ -203,6 +203,7 @@ document.addEventListener('click', (e) => {
         // Skip logout, export, pdf or download routes
         if (anchor.href.includes('logout') || anchor.href.includes('export') || anchor.href.includes('/pdf') || anchor.hasAttribute('download')) return;
 
+<<<<<<< HEAD
         // These sections use page-specific layouts/styles or heavy tables; force full reload to avoid broken UI state
         // Note: '/admin/comments' is forced to reload so that page-specific blade push scripts (like SweetAlert, modal listeners) execute fresh.
         if (
@@ -224,6 +225,11 @@ document.addEventListener('click', (e) => {
 
         e.preventDefault();
         softNavigate(anchor.href);
+=======
+        // Force full page reload for all admin routes to ensure blade styles, push scripts, and widgets run cleanly
+        window.location.href = anchor.href;
+        return;
+>>>>>>> origin/master
     }
 });
 window.addEventListener('popstate', () => {

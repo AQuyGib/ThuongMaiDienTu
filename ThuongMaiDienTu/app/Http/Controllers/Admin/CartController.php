@@ -919,8 +919,191 @@ class CartController extends Controller
     public function searchOrder(Request $request)
     {
         $code = $request->query('code');
-        if (!$code) {
-            return response()->json(['success' => false, 'message' => 'Vui lòng nhập mã đơn hàng.'], 400);
+        $phone = $request->query('phone');
+
+        if (!$code && !$phone) {
+            return response()->json(['success' => false, 'message' => 'Vui lòng nhập mã đơn hàng hoặc số điện thoại.'], 400);
+        }
+
+        // Nếu tìm kiếm theo số điện thoại
+        if ($phone) {
+            $phoneClean = preg_replace('/[^0-9]/', '', $phone);
+            
+            $orders = Order::with(['details.inventoryItem.variant.product'])
+                ->where('customer_phone', $phoneClean)
+                ->orWhereHas('user', function($q) use ($phoneClean) {
+                    $q->where('phone_number', $phoneClean);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            if ($orders->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn hàng nào liên kết với số điện thoại này.'], 404);
+            }
+
+            $statusMap = [
+                'Pending'   => ['label' => 'CHỜ XỬ LÝ', 'color' => 'bg-yellow-100 text-yellow-700'],
+                'BaoCK'     => ['label' => 'BÁO CK CHỜ DUYỆT', 'color' => 'bg-blue-100 text-blue-700'],
+                'Shipping'  => ['label' => 'ĐANG GIAO HÀNG', 'color' => 'bg-emerald-100 text-emerald-700'],
+                'Delivered' => ['label' => 'HOÀN THÀNH', 'color' => 'bg-green-100 text-green-700'],
+                'Cancelled' => ['label' => 'ĐÃ HỦY', 'color' => 'bg-red-100 text-red-700'],
+            ];
+
+            $mappedOrders = $orders->map(function ($order) use ($statusMap) {
+                $st = $statusMap[$order->status] ?? ['label' => strtoupper($order->status), 'color' => 'bg-slate-100 text-slate-600'];
+                $isOwner = auth()->check() && $order->user_id && (auth()->id() === $order->user_id);
+                
+                $items = $order->details->map(function ($detail) use ($isOwner, $order) {
+                    $variant = $detail->inventoryItem->variant ?? null;
+                    $product = $variant->product ?? null;
+
+                    $image = null;
+                    if ($product) {
+                        $thumb = $product->thumbnail;
+                        if ($thumb && \Illuminate\Support\Str::startsWith($thumb, 'http')) {
+                            $image = $thumb;
+                        } else {
+                            $rawImages = $product->images;
+                            if ($rawImages) {
+                                $arr = is_string($rawImages) ? json_decode($rawImages, true) : $rawImages;
+                                $first = is_array($arr) && count($arr) > 0 ? $arr[0] : null;
+                                if ($first && \Illuminate\Support\Str::startsWith($first, 'http')) {
+                                    $image = $first;
+                                } elseif ($first) {
+                                    $image = asset('storage/' . ltrim($first, '/'));
+                                }
+                            }
+                            if (!$image) {
+                                $image = $thumb ? asset('uploads/products/' . $thumb) : null;
+                            }
+                        }
+                    }
+
+                    $productName = $detail->product_name ?? ($product->name ?? 'Sản phẩm không xác định');
+                    if ($variant && $variant->label) {
+                        $productName .= ' - ' . $variant->label;
+                    }
+
+                    $item = $detail->inventoryItem;
+                    $canClaimWarranty = false;
+                    $canClaimReturn = false;
+                    $warrantyStatus = 'none';
+
+                    if ($isOwner && $order->status === 'Delivered' && $item && $item->status === 'Sold') {
+                        $warranty = \App\Models\Warranty::where('item_id', $item->item_id)
+                            ->orderBy('end_date', 'desc')
+                            ->first();
+                        if ($warranty) {
+                            $now = \Carbon\Carbon::now();
+                            $isExpired = $now->greaterThan($warranty->end_date);
+                            $daysSinceStart = (int) abs($now->diffInDays($warranty->start_date));
+                            
+                            $warrantyStatus = $isExpired ? 'expired' : $warranty->warranty_status;
+                            $canClaimWarranty = ($warrantyStatus === 'active' && !$isExpired);
+
+                            $returnDays = 30;
+                            if ($variant && $product) {
+                                $category = $product->category;
+                                $rootCategoryId = $category ? $category->getRootCategoryId() : null;
+                                $rootCategory = $rootCategoryId ? \App\Models\Category::find($rootCategoryId) : null;
+                                $rootCategoryName = $rootCategory ? $rootCategory->name : '';
+
+                                if ($rootCategoryName === 'Phụ kiện') {
+                                    if (stripos($product->name, 'Airpod') !== false) {
+                                        $returnDays = 30;
+                                    } else {
+                                        $price = $variant->total_price ?? ($product->base_price ?? 0);
+                                        $returnDays = $price > 1000000 ? 15 : 0;
+                                    }
+                                } elseif (in_array($rootCategoryName, ['Âm thanh', 'Tivi, Màn hình', 'Gia dụng, Smarthome'])) {
+                                    $returnDays = 15;
+                                } else {
+                                    $returnDays = 30;
+                                }
+                            }
+
+                            if ($returnDays > 0) {
+                                $canClaimReturn = ($daysSinceStart <= $returnDays);
+                            }
+                        }
+                    }
+
+                    $claims = [];
+                    if ($item && $item->imei_serial) {
+                        $claims = \App\Models\WarrantyClaim::where('imei_serial', $item->imei_serial)
+                            ->orderBy('id', 'desc')
+                            ->get()
+                            ->map(function ($c) {
+                                return [
+                                    'id'            => $c->id,
+                                    'claim_type'    => $c->claim_type,
+                                    'status'        => $c->status,
+                                    'reason'        => $c->reason,
+                                    'created_at'    => $c->created_at ? $c->created_at->format('d/m/Y H:i') : null,
+                                    'admin_note'    => $c->admin_note,
+                                ];
+                            })->toArray();
+                    }
+
+                    return [
+                        'product_name' => $productName,
+                        'image' => $image,
+                        'quantity' => 1,
+                        'price' => (int) $detail->price,
+                        'imei_serial' => $detail->inventoryItem->imei_serial ?? null,
+                        'can_claim_warranty' => $canClaimWarranty,
+                        'can_claim_return' => $canClaimReturn,
+                        'claims' => $claims,
+                    ];
+                });
+
+                $groupedItems = $items->groupBy(function ($item) {
+                    return $item['product_name'] . '_' . $item['price'];
+                })->map(function ($group) {
+                    $first = $group->first();
+                    return [
+                        'product_name' => $first['product_name'],
+                        'image' => $first['image'],
+                        'quantity' => $group->count(),
+                        'price' => $first['price'],
+                        'subtotal' => $first['price'] * $group->count(),
+                        'units' => $group->map(function ($g) {
+                            return [
+                                'imei_serial' => $g['imei_serial'],
+                                'can_claim_warranty' => $g['can_claim_warranty'],
+                                'can_claim_return' => $g['can_claim_return'],
+                                'claims' => $g['claims'] ?? [],
+                            ];
+                        })->values()->toArray(),
+                    ];
+                })->values();
+
+                return [
+                    'order_id' => $order->order_id,
+                    'order_code' => $order->order_code,
+                    'customer_name' => $order->customer_name ?? ($order->user->full_name ?? 'N/A'),
+                    'customer_phone' => $order->customer_phone ?? ($order->user->phone_number ?? 'N/A'),
+                    'shipping_address' => $order->shipping_address ?? ($order->user->address ?? 'N/A'),
+                    'note' => $order->note,
+                    'payment_method' => $order->payment_method,
+                    'status' => $order->status,
+                    'status_label' => $st['label'],
+                    'status_color' => $st['color'],
+                    'total_amount' => (int) $order->total_amount,
+                    'shipping_fee' => (int) $order->shipping_fee,
+                    'discount_amount' => (int) ($order->discount_amount ?? 0),
+                    'final_amount' => (int) $order->final_amount,
+                    'created_at' => $order->created_at ? (\Carbon\Carbon::parse($order->created_at)->format('H:i - d/m/Y')) : now()->format('H:i - d/m/Y'),
+                    'is_owner' => $isOwner,
+                    'items' => $groupedItems,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'multiple' => true,
+                'orders' => $mappedOrders
+            ]);
         }
 
         // Tìm đơn hàng theo order_code hoặc order_id
@@ -943,8 +1126,9 @@ class CartController extends Controller
         ];
 
         $st = $statusMap[$order->status] ?? ['label' => strtoupper($order->status), 'color' => 'bg-slate-100 text-slate-600'];
+        $isOwner = auth()->check() && $order->user_id && (auth()->id() === $order->user_id);
 
-        $items = $order->details->map(function ($detail) {
+        $items = $order->details->map(function ($detail) use ($isOwner, $order) {
             $variant = $detail->inventoryItem->variant ?? null;
             $product = $variant->product ?? null;
 
@@ -983,11 +1167,77 @@ class CartController extends Controller
                 $productName .= ' - ' . $variant->label;
             }
 
+            $item = $detail->inventoryItem;
+            $canClaimWarranty = false;
+            $canClaimReturn = false;
+            $warrantyStatus = 'none';
+
+            if ($isOwner && $order->status === 'Delivered' && $item && $item->status === 'Sold') {
+                $warranty = \App\Models\Warranty::where('item_id', $item->item_id)
+                    ->orderBy('end_date', 'desc')
+                    ->first();
+                if ($warranty) {
+                    $now = \Carbon\Carbon::now();
+                    $isExpired = $now->greaterThan($warranty->end_date);
+                    $daysSinceStart = (int) abs($now->diffInDays($warranty->start_date));
+                    
+                    $warrantyStatus = $isExpired ? 'expired' : $warranty->warranty_status;
+                    $canClaimWarranty = ($warrantyStatus === 'active' && !$isExpired);
+
+                    // Tính số ngày đổi trả
+                    $returnDays = 30;
+                    if ($variant && $product) {
+                        $category = $product->category;
+                        $rootCategoryId = $category ? $category->getRootCategoryId() : null;
+                        $rootCategory = $rootCategoryId ? \App\Models\Category::find($rootCategoryId) : null;
+                        $rootCategoryName = $rootCategory ? $rootCategory->name : '';
+
+                        if ($rootCategoryName === 'Phụ kiện') {
+                            if (stripos($product->name, 'Airpod') !== false) {
+                                    $returnDays = 30;
+                            } else {
+                                $price = $variant->total_price ?? ($product->base_price ?? 0);
+                                $returnDays = $price > 1000000 ? 15 : 0;
+                            }
+                        } elseif (in_array($rootCategoryName, ['Âm thanh', 'Tivi, Màn hình', 'Gia dụng, Smarthome'])) {
+                            $returnDays = 15;
+                        } else {
+                            $returnDays = 30;
+                        }
+                    }
+
+                    if ($returnDays > 0) {
+                        $canClaimReturn = ($daysSinceStart <= $returnDays);
+                    }
+                }
+            }
+
+            $claims = [];
+            if ($item && $item->imei_serial) {
+                $claims = \App\Models\WarrantyClaim::where('imei_serial', $item->imei_serial)
+                    ->orderBy('id', 'desc')
+                    ->get()
+                    ->map(function ($c) {
+                        return [
+                            'id'            => $c->id,
+                            'claim_type'    => $c->claim_type,
+                            'status'        => $c->status,
+                            'reason'        => $c->reason,
+                            'created_at'    => $c->created_at ? $c->created_at->format('d/m/Y H:i') : null,
+                            'admin_note'    => $c->admin_note,
+                        ];
+                    })->toArray();
+            }
+
             return [
                 'product_name' => $productName,
                 'image' => $image,
                 'quantity' => 1,
                 'price' => (int) $detail->price,
+                'imei_serial' => $detail->inventoryItem->imei_serial ?? null,
+                'can_claim_warranty' => $canClaimWarranty,
+                'can_claim_return' => $canClaimReturn,
+                'claims' => $claims,
             ];
         });
 
@@ -1002,6 +1252,14 @@ class CartController extends Controller
                 'quantity' => $group->count(),
                 'price' => $first['price'],
                 'subtotal' => $first['price'] * $group->count(),
+                'units' => $group->map(function ($g) {
+                    return [
+                        'imei_serial' => $g['imei_serial'],
+                        'can_claim_warranty' => $g['can_claim_warranty'],
+                        'can_claim_return' => $g['can_claim_return'],
+                        'claims' => $g['claims'] ?? [],
+                    ];
+                })->values()->toArray(),
             ];
         })->values();
 
@@ -1021,6 +1279,7 @@ class CartController extends Controller
             'shipping_fee' => (int) $order->shipping_fee,
             'discount_amount' => (int) ($order->discount_amount ?? 0),
             'final_amount' => (int) $order->final_amount,
+            'is_owner' => $isOwner,
             'items' => $groupedItems,
         ]);
     }

@@ -58,6 +58,13 @@
             'section' => $isEn ? 'Business' : 'Kinh doanh'
         ],
         [
+            'label' => $isEn ? 'Warranty Claims' : 'Bảo hành & Đổi trả',
+            'route' => route('admin.warranty-claims.index'),
+            'icon' => 'fa-solid fa-shield-halved',
+            'active' => request()->is('admin/warranty-claims*'),
+            'section' => $isEn ? 'Business' : 'Kinh doanh'
+        ],
+        [
             'label' => $isEn ? 'Flash Sale' : 'Flash Sale',
             'route' => route('admin.flash-sales.index'),
             'icon' => 'fa-solid fa-bolt',

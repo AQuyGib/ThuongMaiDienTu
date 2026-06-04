@@ -152,10 +152,10 @@
                                     <button class="w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 hover:text-indigo-800 border border-indigo-100/50 flex items-center justify-center transition shadow-sm" onclick='openImageModal(@json($item))' title="{{ $locale === 'en' ? 'Change Image' : 'Đổi ảnh' }}">
                                         <i class="fa-solid fa-image text-xs"></i>
                                     </button>
-                                    <form action="{{ route('admin.rewards.destroy', $item->reward_id) }}" method="POST" class="inline" onsubmit="return confirm('{{ $locale === 'en' ? 'Delete this reward?' : 'Xóa reward này?' }}')">
+                                    <form id="delete-reward-{{ $item->reward_id }}" action="{{ route('admin.rewards.destroy', $item->reward_id) }}" method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-800 border border-rose-100/50 flex items-center justify-center transition shadow-sm" title="{{ $locale === 'en' ? 'Delete' : 'Xóa' }}">
+                                        <button type="button" class="w-8 h-8 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-800 border border-rose-100/50 flex items-center justify-center transition shadow-sm" title="{{ $locale === 'en' ? 'Delete' : 'Xóa' }}" onclick="confirmDeleteReward({{ $item->reward_id }}, '{{ addslashes($item->name) }}')">
                                             <i class="fa-solid fa-trash-can text-xs"></i>
                                         </button>
                                     </form>
@@ -498,6 +498,38 @@
 <script>
 // Lấy ngôn ngữ hiện tại từ Backend PHP
 const locale = '{{ $locale }}';
+
+/**
+ * Hàm xác nhận xóa phần thưởng bằng SweetAlert2 thay vì confirm() mặc định.
+ * Hiển thị hộp thoại cảnh báo đẹp mắt kèm tên reward và icon cảnh báo.
+ * @param {number} rewardId ID của phần thưởng cần xóa
+ * @param {string} rewardName Tên phần thưởng hiển thị trên hộp thoại
+ */
+function confirmDeleteReward(rewardId, rewardName) {
+    Swal.fire({
+        title: locale === 'en' ? 'Confirm Deletion' : 'Xác nhận xóa',
+        html: locale === 'en'
+            ? `Are you sure you want to delete <strong class="text-rose-600">${rewardName}</strong>?<br><span class="text-sm text-gray-500">This action cannot be undone.</span>`
+            : `Bạn có chắc chắn muốn xóa <strong class="text-rose-600">${rewardName}</strong>?<br><span class="text-sm text-gray-500">Hành động này không thể hoàn tác.</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: locale === 'en' ? '<i class="fa-solid fa-trash-can mr-1"></i> Delete' : '<i class="fa-solid fa-trash-can mr-1"></i> Xóa',
+        cancelButtonText: locale === 'en' ? 'Cancel' : 'Hủy bỏ',
+        confirmButtonColor: '#e11d48',
+        cancelButtonColor: '#64748b',
+        reverseButtons: true,
+        focusCancel: true,
+        customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-xl font-bold px-5 py-2.5',
+            cancelButton: 'rounded-xl font-bold px-5 py-2.5',
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('delete-reward-' + rewardId).submit();
+        }
+    });
+}
 
 // Các phần tử modal form
 const modal = document.getElementById('reward-modal');

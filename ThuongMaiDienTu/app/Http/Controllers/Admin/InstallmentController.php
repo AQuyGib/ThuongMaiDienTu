@@ -424,7 +424,8 @@ class InstallmentController extends Controller
                             'type' => 'Income',
                             'amount' => $prepayInput,
                             'description' => 'Thu tiền trả trước hợp đồng trả góp #' . $installment->installment_code . ' - Khách hàng: ' . $installment->customer_name,
-                            'reference_id' => $installment->order_id,
+                            'reference_id' => $installment->id,
+                            'reference_type' => 'installment',
                         ]);
                     }
                 }
@@ -539,7 +540,8 @@ class InstallmentController extends Controller
                         'type' => 'Income',
                         'amount' => $installment->prepay_amount,
                         'description' => 'Thu tiền trả trước hợp đồng trả góp #' . $installment->installment_code . ' - Khách hàng: ' . $installment->customer_name,
-                        'reference_id' => $installment->order_id,
+                        'reference_id' => $installment->id,
+                        'reference_type' => 'installment',
                     ]);
                 }
             });
@@ -716,9 +718,40 @@ class InstallmentController extends Controller
                     'type' => 'Income',
                     'amount' => $payment->amount,
                     'description' => 'Thu tiền trả góp định kỳ thứ ' . $payment->term_number . '/' . $payment->installment->period . ' - Hợp đồng: #' . $payment->installment->installment_code . ' - Khách hàng: ' . $payment->installment->customer_name,
-                    'reference_id' => $payment->installment->order_id,
+                    'reference_id' => $payment->installment->id,
+                    'reference_type' => 'installment',
                 ]);
             });
+
+            // Gửi thông báo cho khách hàng
+            try {
+                $installment = $payment->installment;
+                $order = $installment->order;
+                $user = null;
+                if ($order && $order->user) {
+                    $user = $order->user;
+                } elseif ($installment->customer_phone) {
+                    $user = \App\Models\User::where('phone_number', $installment->customer_phone)->first();
+                }
+
+                if ($user) {
+                    $formattedAmount = number_format($payment->amount);
+                    $this->notificationService->createForUser($user, [
+                        'type' => 'installment.payment_success',
+                        'title' => 'Thanh toán kỳ trả góp thành công',
+                        'content' => "Đã ghi nhận thanh toán thành công Kỳ thứ {$payment->term_number}/{$installment->period} với số tiền {$formattedAmount}đ cho hợp đồng trả góp #{$installment->installment_code}.",
+                        'action_url' => url('/orders'),
+                        'data' => [
+                            'installment_id' => $installment->id,
+                            'installment_code' => $installment->installment_code,
+                            'term_number' => $payment->term_number,
+                            'amount' => $payment->amount,
+                        ]
+                    ]);
+                }
+            } catch (\Throwable $ne) {
+                Log::error('Lỗi gửi thông báo thanh toán kỳ trả góp: ' . $ne->getMessage());
+            }
 
             return redirect()->back()->with('success', 'Đã ghi nhận thanh toán Kỳ thứ ' . $payment->term_number . ' và cập nhật Sổ Quỹ thành công.');
         } catch (\Throwable $e) {
