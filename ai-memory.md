@@ -351,19 +351,20 @@
 ## Files Changed
 - **QA & Security Audit Report:**
   - `C:\Users\ANH QUY\.gemini\antigravity\brain\270e51ca-65ed-4380-a631-d02340a0a674\security_qa_defect_report.md`
-- **Security Hotfixes:**
-  - `ThuongMaiDienTu/app/Http/Controllers/ChatbotController.php`
+- **Security Hotfixes & Logic Fixes:**
+  - `ThuongMaiDienTu/app/Http/Controllers/ChatbotController.php` (Sửa logic keyboard smash check tránh false positive với URLs, HTML tags, base64)
   - `ThuongMaiDienTu/resources/views/partials/chatbot.blade.php`
   - `ThuongMaiDienTu/app/Services/RewardsService.php`
   - `ThuongMaiDienTu/app/Http/Controllers/RewardsController.php`
   - `ThuongMaiDienTu/resources/views/frontend/rewards/index.blade.php`
-  - `ThuongMaiDienTu/app/Http/Controllers/ProfileController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ProfileController.php` (Sửa logic keyboard smash check trong chẩn đoán AI)
   - `ThuongMaiDienTu/resources/views/frontend/profile.blade.php`
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/FlashSaleProductController.php`
   - `ThuongMaiDienTu/app/Http/Controllers/CompareController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ArticleFrontendController.php` (Sửa logic keyboard smash check trong Trợ lý SEO & AI và giải phóng user bị khóa)
 
 ## TODOs & Follow-up Work
-- Kiểm thử tích hợp toàn diện hệ thống để đảm bảo tính ổn định sau đợt vá bảo mật.
+- Kiểm thử tích hợp toàn diện hệ thống để đảm bảo tính ổn định sau đợt vá bảo mật và sửa lỗi spam AI.
 - Theo dõi log lỗi của `RepairAIService` và chatbot để tối ưu hóa phản hồi của AI.
 
 

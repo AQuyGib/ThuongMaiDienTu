@@ -501,9 +501,12 @@ class ProfileController extends Controller
 
         // 3. Kiểm tra spam bàn phím (Keyboard smash)
         $hasSmashWord = false;
-        $words = explode(' ', $prompt);
+        $cleanPrompt = strip_tags($prompt);
+        $cleanPrompt = preg_replace('/https?:\/\/\S+/i', '', $cleanPrompt);
+        $cleanPrompt = preg_replace('/data:\S+/i', '', $cleanPrompt);
+        $words = explode(' ', $cleanPrompt);
         foreach ($words as $word) {
-            if (strlen($word) > 30) {
+            if (mb_strlen($word, 'UTF-8') > 50) {
                 $hasSmashWord = true;
                 break;
             }
