@@ -698,9 +698,13 @@
     - Cải tiến độ rộng trượt của Drawer trên di động: Điều chỉnh padding bên trái (`pl-6 sm:pl-10`) giúp mở rộng tối đa vùng hiển thị nội dung trên màn hình điện thoại mà vẫn chừa lại 24px để người dùng nhấp ra ngoài để đóng.
     - **Tái cấu trúc Layout biểu đồ (Flexbox Refactor):** Thay thế toàn bộ cơ chế căn lề tuyệt đối (`absolute inset-0 pt-16`) bằng luồng hộp mềm dẻo (`flex flex-col` cho container và `flex-1 w-full min-h-0 relative` cho canvas). Điều này giải quyết triệt để lỗi toggle buttons đè chồng chéo lên biểu đồ/trục số Y khi tiêu đề co giãn xuống dòng trên di động, giúp canvas tự động tính toán chính xác diện tích hiển thị còn lại.
 
-
-
-
-
-
->>>>>>> xuanhoa/KPI
+### Cập nhật ngày 05/06/2026 - Phân quyền truy cập (RBAC - Role-Based Access Control)
+- **Nâng cấp Middleware IsAdmin:** Sửa file `app/Http/Middleware/IsAdmin.php` để cho phép 3 vai trò truy cập trang quản trị: Admin (role_id=1), Quản lý (role_id=2), Nhân viên (role_id=4). Chặn hoàn toàn Khách hàng (role_id=3).
+- **Tạo Middleware CheckRole mới:** File `app/Http/Middleware/CheckRole.php` - kiểm tra role_id chi tiết theo từng nhóm route. Sử dụng cú pháp `middleware('role:1,2')`.
+- **Đăng ký alias 'role':** Cập nhật `bootstrap/app.php` thêm alias `'role' => CheckRole::class`.
+- **Phân quyền route trong `routes/admin.php`:**
+  - Chỉ Admin (role:1): Tài khoản, Nhân viên, Vai trò, Nhật ký hoạt động
+  - Admin + Quản lý (role:1,2): Flash Sale, Voucher
+  - Tất cả nhân sự (role:1,2,4): Dashboard, KPI, Đơn hàng, Phiếu sửa chữa, Sản phẩm, v.v.
+- **Phân quyền Sidebar:** Cập nhật `resources/views/admin/partials/sidebar.blade.php` - thêm key `roles` vào mỗi menu item và lọc theo `$userRoleId` hiện tại. Truyền thêm `role_id` vào props React sidebar.
+- **Header Frontend:** Đã kiểm tra link "Admin Dashboard" trên header.blade.php tại dòng 438 - đã sẵn guard `in_array(Auth::user()->role_id, [1, 2, 4])`.

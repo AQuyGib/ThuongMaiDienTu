@@ -61,39 +61,44 @@ Route::resource('orders', OrderController::class);
 Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 Route::post('orders/{id}/reanalyze', [OrderController::class, 'reanalyze'])->name('orders.reanalyze');
 
-// CRUD Quyền hạn & Tài khoản (Permissions)
-Route::resource('permissions', UserController::class)->names([
-    'index' => 'users.index',
-    'store' => 'users.store',
-    'update' => 'users.update',
-    'destroy' => 'users.destroy',
-])->except(['create', 'show', 'edit']);
+// ===== CHỈ ADMIN (role_id = 1) =====
+Route::middleware('role:1')->group(function () {
+    // CRUD Quyền hạn & Tài khoản (Permissions)
+    Route::resource('permissions', UserController::class)->names([
+        'index' => 'users.index',
+        'store' => 'users.store',
+        'update' => 'users.update',
+        'destroy' => 'users.destroy',
+    ])->except(['create', 'show', 'edit']);
 
-// CRUD Quản lý Nhân viên (Employee Management)
-Route::get('/employees/export/excel', [\App\Http\Controllers\Admin\EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
-Route::get('/employees/export/pdf', [\App\Http\Controllers\Admin\EmployeeController::class, 'exportPdf'])->name('employees.export.pdf');
+    Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
+    Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
+    Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
+    Route::post('permissions/{id}/unban-chatbot', [UserController::class, 'unbanChatbot'])->name('users.unban-chatbot');
 
-Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class)->names([
-    'index' => 'employees.index',
-    'store' => 'employees.store',
-    'update' => 'employees.update',
-    'destroy' => 'employees.destroy',
-])->except(['create', 'show', 'edit']);
+    // Quản lý Vai trò (Roles)
+    Route::resource('roles', RoleController::class)->names([
+        'store' => 'roles.store',
+        'update' => 'roles.update',
+        'destroy' => 'roles.destroy',
+    ])->only(['store', 'update', 'destroy']);
+});
 
-Route::patch('/employees/{employee}/toggle-status', [\App\Http\Controllers\Admin\EmployeeController::class, 'toggleStatus'])->name('employees.toggle-status');
-Route::post('/employees/batch-action', [\App\Http\Controllers\Admin\EmployeeController::class, 'batchAction'])->name('employees.batch-action');
+// ===== ADMIN + QUẢN LÝ: Quản lý Nhân viên (role_id = 1, 2) =====
+Route::middleware('role:1,2')->group(function () {
+    Route::get('/employees/export/excel', [\App\Http\Controllers\Admin\EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
+    Route::get('/employees/export/pdf', [\App\Http\Controllers\Admin\EmployeeController::class, 'exportPdf'])->name('employees.export.pdf');
 
-Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
-Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
-Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
-Route::post('permissions/{id}/unban-chatbot', [UserController::class, 'unbanChatbot'])->name('users.unban-chatbot');
+    Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class)->names([
+        'index' => 'employees.index',
+        'store' => 'employees.store',
+        'update' => 'employees.update',
+        'destroy' => 'employees.destroy',
+    ])->except(['create', 'show', 'edit']);
 
-// Quản lý Vai trò (Roles)
-Route::resource('roles', RoleController::class)->names([
-    'store' => 'roles.store',
-    'update' => 'roles.update',
-    'destroy' => 'roles.destroy',
-])->only(['store', 'update', 'destroy']);
+    Route::patch('/employees/{employee}/toggle-status', [\App\Http\Controllers\Admin\EmployeeController::class, 'toggleStatus'])->name('employees.toggle-status');
+    Route::post('/employees/batch-action', [\App\Http\Controllers\Admin\EmployeeController::class, 'batchAction'])->name('employees.batch-action');
+});
 
 // Quản lý Giỏ hàng & Phí vận chuyển
 Route::get('/shoppingcart', [CartController::class, 'index'])->name('cart.index');
@@ -131,13 +136,16 @@ Route::resource('pages', PageController::class);
 Route::get('/pages/{page}/translation/en', [\App\Http\Controllers\Admin\PageTranslationController::class, 'edit'])->name('pages.translation.edit');
 Route::put('/pages/{page}/translation/en', [\App\Http\Controllers\Admin\PageTranslationController::class, 'update'])->name('pages.translation.update');
 
-// ===== Flash Sale =====
-Route::resource('flash-sales', FlashSaleController::class)->except(['create', 'edit', 'show']);
-Route::post('flash-sales/{flash_sale}/products', [FlashSaleProductController::class, 'store'])->name('flash-sales.products.store');
-Route::delete('flash-sales/{flash_sale}/products/{flash_sale_product}', [FlashSaleProductController::class, 'destroy'])->name('flash-sales.products.destroy');
+// ===== ADMIN + QUẢN LÝ (role_id = 1, 2) =====
+Route::middleware('role:1,2')->group(function () {
+    // Flash Sale
+    Route::resource('flash-sales', FlashSaleController::class)->except(['create', 'edit', 'show']);
+    Route::post('flash-sales/{flash_sale}/products', [FlashSaleProductController::class, 'store'])->name('flash-sales.products.store');
+    Route::delete('flash-sales/{flash_sale}/products/{flash_sale_product}', [FlashSaleProductController::class, 'destroy'])->name('flash-sales.products.destroy');
 
-// ===== Voucher =====
-Route::resource('vouchers', VoucherController::class)->except(['create', 'show', 'edit']);
+    // Voucher
+    Route::resource('vouchers', VoucherController::class)->except(['create', 'show', 'edit']);
+});
 
 // ===== Quản lý Biến Thể & Bán Kèm =====
 Route::post('/products/{id}/variants', [ProductController::class, 'storeVariant'])->name('products.variants.store');
@@ -210,9 +218,11 @@ Route::post('/chat/rooms/{room_id}/role', [ChatController::class, 'updateRole'])
 Route::post('/chat/messages', [ChatController::class, 'sendMessage'])->name('chat.messages.send');
 Route::post('/chat/messages/{message_id}/react', [ChatController::class, 'toggleReaction'])->name('chat.messages.react');
 
-// ===== Activity Logs (Audit System) =====
+// ===== Activity Logs (Audit System) - CHỈ ADMIN =====
 use App\Http\Controllers\Admin\ActivityLogController;
-Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
-Route::post('/activity-logs/verify', [ActivityLogController::class, 'verify'])->name('activity-logs.verify');
+Route::middleware('role:1')->group(function () {
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+    Route::post('/activity-logs/verify', [ActivityLogController::class, 'verify'])->name('activity-logs.verify');
+});
 
 

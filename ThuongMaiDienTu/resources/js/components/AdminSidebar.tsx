@@ -244,15 +244,23 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                             >
                                 <i className="fa-solid fa-house group-hover:-translate-y-0.5 transition-transform"></i> Home
                             </a>
-                            <form action={logoutRoute} method="POST" className="contents">
-                                <input type="hidden" name="_token" value={csrfToken} />
-                                <button 
-                                    type="submit"
-                                    className="flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-xl transition-all duration-300 text-[9px] font-black uppercase tracking-widest group"
-                                >
-                                    <i className="fa-solid fa-power-off group-hover:rotate-12 transition-transform"></i> Exit
-                                </button>
-                            </form>
+                            <button 
+                                type="button"
+                                onClick={() => {
+                                    fetch(logoutRoute, {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': csrfToken,
+                                            'Accept': 'application/json',
+                                        },
+                                    }).finally(() => {
+                                        window.location.href = '/Home';
+                                    });
+                                }}
+                                className="flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white rounded-xl transition-all duration-300 text-[9px] font-black uppercase tracking-widest group"
+                            >
+                                <i className="fa-solid fa-power-off group-hover:rotate-12 transition-transform"></i> Exit
+                            </button>
                         </div>
                     </div>
                 ) : (
@@ -264,12 +272,24 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
                         <a href="/" title="Home" className="w-10 h-10 bg-slate-800 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-xl flex items-center justify-center transition-all shadow-lg">
                             <i className="fa-solid fa-house"></i>
                         </a>
-                        <form action={logoutRoute} method="POST">
-                            <input type="hidden" name="_token" value={csrfToken} />
-                            <button type="submit" title="Exit" className="w-10 h-10 bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-xl flex items-center justify-center transition-all shadow-lg">
-                                <i className="fa-solid fa-power-off"></i>
-                            </button>
-                        </form>
+                        <button 
+                            type="button"
+                            title="Exit"
+                            onClick={() => {
+                                fetch(logoutRoute, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': csrfToken,
+                                        'Accept': 'application/json',
+                                    },
+                                }).finally(() => {
+                                    window.location.href = '/Home';
+                                });
+                            }}
+                            className="w-10 h-10 bg-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white rounded-xl flex items-center justify-center transition-all shadow-lg"
+                        >
+                            <i className="fa-solid fa-power-off"></i>
+                        </button>
                     </div>
                 )}
             </div>
