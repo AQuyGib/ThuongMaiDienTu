@@ -846,10 +846,76 @@ function renderResult(d) {
         claimsHTML = `
             <div class="repair-history" style="margin-top: 24px;">
                 <h4 style="font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
-                    <i class="fa-solid fa-list-che// =========================================================================
-// HÀM CHÍNH 4: MỞ CỬA SỔ POPUP NHẬP YÊU CẦU DỊCH VỤ (openClaimModal)
-// Cấu hình giao diện form nhập tùy theo khách bấm nút "Bảo hành" hay "Đổi trả".
-// =========================================================================
+                    <i class="fa-solid fa-list-check" style="color: #0046ab;"></i> Lịch sử yêu cầu dịch vụ
+                </h4>
+                ${items}
+            </div>
+        `;
+    }
+
+    // Nút yêu cầu bảo hành/đổi trả (Warranty / Claim CTA Buttons)
+    let ctaHTML = '';
+    if (d.can_claim_warranty || d.can_claim_return) {
+        let warrantyBtn = d.can_claim_warranty ? `
+            <button type="button" class="btn-create-ticket" onclick="openClaimModal('${d.imei}', '${d.product_name}', 'warranty')">
+                <i class="fa-solid fa-screwdriver-wrench"></i> Gửi yêu cầu bảo hành
+            </button>
+        ` : '';
+
+        let returnBtn = d.can_claim_return ? `
+            <button type="button" class="btn-create-ticket" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="openClaimModal('${d.imei}', '${d.product_name}', 'return')">
+                <i class="fa-solid fa-arrow-rotate-left"></i> Gửi yêu cầu đổi trả
+            </button>
+        ` : '';
+
+        let returnDaysNote = d.can_claim_return && d.return_days_left > 0 ? `
+            <div style="font-size: 12px; color: #d97706; margin-top: 8px; font-weight: 500;">
+                <i class="fa-solid fa-clock"></i> Bạn còn <strong>${d.return_days_left}</strong> ngày để gửi yêu cầu đổi trả hàng hoàn tiền.
+            </div>
+        ` : '';
+
+        ctaHTML = `
+            <div class="warranty-cta" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    ${warrantyBtn}
+                    ${returnBtn}
+                </div>
+                ${returnDaysNote}
+            </div>
+        `;
+    }
+
+    return `<div class="result-card">
+        <div class="result-header">
+            <img src="${imgSrc}" alt="" class="result-product-img">
+            <div class="result-product-info">
+                <h3>${d.product_name}</h3>
+                ${d.variant_label ? `<div class="variant-label">${d.variant_label}</div>` : ''}
+                <div class="imei-label">IMEI: ${d.imei}</div>
+            </div>
+            <div class="warranty-status-badge ${statusClass}">
+                <i class="fa-solid ${getStatusIcon(d.warranty_status)}"></i>
+                ${getStatusLabel(d.warranty_status)}
+            </div>
+        </div>
+        <div class="result-body">
+            ${infoHTML}
+            ${progressHTML}
+            ${noteHTML}
+            ${repairHTML}
+            ${claimsHTML}
+            ${ctaHTML}
+        </div>
+    </div>`;
+}
+
+function switchPolicyTab(tabId, el) {
+    document.querySelectorAll('.policy-nav a').forEach(a => a.classList.remove('active'));
+    el.classList.add('active');
+    
+    document.querySelectorAll('.policy-section').forEach(s => s.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+}
 function openClaimModal(imei, productName, defaultType) {
     // 1. Lưu trữ thông tin ẩn và hiển thị thông tin sản phẩm/IMEI lên giao diện
     document.getElementById('modalImei').value = imei; // Gán ngầm IMEI vào input hidden để gửi lên server.
