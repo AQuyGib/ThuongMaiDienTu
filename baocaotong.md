@@ -1339,6 +1339,12 @@ usecaseDiagram
     (Đăng nhập qua Google SSO) --> Google
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_1.png)
+
+
+
+
+
 ### 7.1.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -1355,6 +1361,9 @@ flowchart TD
     CheckMail -- Có --> CreateSession
     CheckMail -- Chưa --> AutoCreate[Tự động tạo user mới với mật khẩu random] --> CreateSession
 ```
+
+![Sơ đồ hoạt động](images/activity_1.png)
+
 
 ### 7.1.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -1418,6 +1427,9 @@ usecaseDiagram
     System --> (Khóa tài khoản nếu nhập sai nhiều lần)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_2.png)
+
+
 ### 7.2.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -1436,6 +1448,9 @@ flowchart TD
     CheckLimit -- Chưa quá --> ReturnError[Thông báo mã OTP không hợp lệ] --> InputOTP
     CheckLimit -- Quá 5 lần --> LockAccount[Hủy phiên làm việc + Khóa đăng nhập tài khoản 15 phút] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_2.png)
+
 
 ### 7.6.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -1494,6 +1509,9 @@ usecaseDiagram
     System --> (Gửi email chứa link reset)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_3.png)
+
+
 ### 7.3.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -1510,6 +1528,9 @@ flowchart TD
     InputNewPass --> UpdateDB[Cập nhật mật khẩu mới băm Bcrypt + Hủy Token]
     UpdateDB --> ShowToastSuccess[Thông báo đổi mật khẩu thành công] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_3.png)
+
 
 ### 7.3.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -1566,6 +1587,9 @@ usecaseDiagram
     System --> (Tự động ghi nhận thông tin đăng nhập)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_4.png)
+
+
 ### 7.4.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -1577,6 +1601,9 @@ flowchart TD
     CheckAnomaly -- Không --> SaveLog
     SaveLog --> DisplayTable[Hiển thị danh sách nhật ký trên giao diện] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_4.png)
+
 
 ### 7.4.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -1640,6 +1667,9 @@ usecaseDiagram
     Staff --> (Truy cập tính năng hệ thống)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_5.png)
+
+
 ### 7.5.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -1652,6 +1682,9 @@ flowchart TD
     MatchPermission -- Có --> AllowAccess
     MatchPermission -- Không --> DenyAccess[Chặn truy cập + Hiển thị lỗi HTTP 403 Forbidden] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_5.png)
+
 
 ### 7.5.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -1713,6 +1746,9 @@ usecaseDiagram
     Staff --> (Xem tiến độ KPI cá nhân)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_6.png)
+
+
 ### 7.6.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -1726,6 +1762,9 @@ flowchart TD
     CountRepair --> UpdateProgress
     UpdateProgress --> ShowDashboard[Hiển thị cột tiến trình màu sắc động trên Dashboard] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_6.png)
+
 
 ### 7.6.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -1787,6 +1826,9 @@ usecaseDiagram
     System --> (Tự động bắt sự kiện thay đổi Model)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_7.png)
+
+
 ### 7.7.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -1798,6 +1840,9 @@ flowchart TD
     AdminView --> FilterLog[Admin lọc log theo IP hoặc Người thao tác]
     FilterLog --> RenderDiff[Hệ thống hiển thị so sánh JSON đỏ/xanh lá] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_7.png)
+
 
 ### 7.7.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -1857,6 +1902,9 @@ usecaseDiagram
     Admin --> (Xóa danh mục không sử dụng)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_8.png)
+
+
 ### 7.8.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -1868,6 +1916,9 @@ flowchart TD
     CheckCycle -- Không --> SaveCategory[Lưu vào bảng categories]
     SaveCategory --> RefreshTree[Cập nhật lại giao diện cây danh mục Nested Tree View] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_8.png)
+
 
 ### 7.8.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -1927,6 +1978,9 @@ usecaseDiagram
     Admin --> (Tải lên album ảnh sản phẩm)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_9.png)
+
+
 ### 7.9.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -1940,6 +1994,9 @@ flowchart TD
     GenerateMatrix --> InputVariantDetails[Nhập SKU, Giá bán, Tồn kho cho từng phiên bản biến thể]
     InputVariantDetails --> SaveVariants[Lưu thông tin sản phẩm và các biến thể vào bảng product_variants] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_9.png)
+
 
 ### 7.9.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2000,6 +2057,9 @@ usecaseDiagram
     Import --> System : "<<include>>"
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_10.png)
+
+
 ### 7.10.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2019,6 +2079,9 @@ flowchart TD
     CheckErrorCount -- Có lỗi --> ShowErrorReport[Hiển thị bảng báo cáo lỗi chi tiết từng dòng] --> End
     CheckErrorCount -- Không lỗi --> ShowSuccess[Thông báo nhập dữ liệu thành công 100%] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_10.png)
+
 
 ### 7.10.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2077,6 +2140,9 @@ usecaseDiagram
     System --> (Kiểm tra giới hạn tồn kho thực tế)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_11.png)
+
+
 ### 7.11.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2089,6 +2155,9 @@ flowchart TD
     Recalculate --> ReturnJSON[Trả về dữ liệu JSON chứa giỏ hàng mới]
     ReturnJSON --> UpdateDOM[JS cập nhật giao diện giỏ hàng và header không reload trang] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_11.png)
+
 
 ### 7.11.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2148,6 +2217,9 @@ usecaseDiagram
     System --> (Tải động dữ liệu bằng AJAX)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_12.png)
+
+
 ### 7.12.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2160,6 +2232,9 @@ flowchart TD
     CheckCount -- Có --> RenderHTML[Tạo mã HTML lưới sản phẩm] --> ReturnResponse[Gửi AJAX trả về hiển thị mượt mà] --> End([Kết thúc])
     CheckCount -- Không --> ShowEmpty[Hiển thị thông báo Không tìm thấy sản phẩm phù hợp] --> ReturnResponse
 ```
+
+![Sơ đồ hoạt động](images/activity_12.png)
+
 
 ### 7.12.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2219,6 +2294,9 @@ usecaseDiagram
     Customer --> (Bật highlight điểm khác biệt)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_13.png)
+
+
 ### 7.13.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2232,6 +2310,9 @@ flowchart TD
     UserToggle -- Có --> HighlightRows[Ẩn thông số trùng, tô màu thông số khác biệt] --> End
     UserToggle -- Không --> ShowAll[Hiển thị đầy đủ thông số] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_13.png)
+
 
 ### 7.13.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2293,6 +2374,9 @@ usecaseDiagram
     System --> (Xác thực giá trị giỏ hàng server-side)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_14.png)
+
+
 ### 7.14.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2304,6 +2388,9 @@ flowchart TD
     ServerCheck -- Trùng khớp --> AddToCart[Thêm toàn bộ sản phẩm vào giỏ với giá chiết khấu tương ứng]
     AddToCart --> RedirectCart[Chuyển hướng người dùng sang trang thanh toán] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_14.png)
+
 
 ### 7.14.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2364,6 +2451,9 @@ usecaseDiagram
     Admin --> (Phê duyệt đơn hàng đã nhận tiền)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_15.png)
+
+
 ### 7.15.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2377,6 +2467,9 @@ flowchart TD
     SuccessPage --> AdminReview[Admin đối chiếu giao dịch ngân hàng thực tế]
     AdminReview --> UpdateStatus[Admin duyệt đơn: Đơn sang Paid + Ghi nhận phiếu thu Cashbook] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_15.png)
+
 
 ### 7.15.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2442,6 +2535,9 @@ usecaseDiagram
     (Tính toán khoảng cách) --> MapAPI
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_16.png)
+
+
 ### 7.16.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2457,6 +2553,9 @@ flowchart TD
     CheckDistBulky -- Có --> AddSurcharge[Cộng thêm phụ phí cồng kềnh 150.000 VNĐ] --> UpdateTotal
     UpdateTotal --> RenderUI[Hiển thị chi tiết phí ship và tổng tiền mới lên UI] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_16.png)
+
 
 ### 7.16.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2515,6 +2614,9 @@ usecaseDiagram
     Admin --> (Xóa bình luận vi phạm)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_17.png)
+
+
 ### 7.17.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2529,6 +2631,9 @@ flowchart TD
     UpdateApproved --> UpdateProductRating[Tự động tính lại điểm đánh giá trung bình của sản phẩm]
     UpdateProductRating --> RenderReview[Hiển thị công khai bình luận lên trang chi tiết] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_17.png)
+
 
 ### 7.17.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2589,6 +2694,9 @@ usecaseDiagram
     System --> (Tự động đồng bộ Wishlist lên DB khi đăng nhập)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_18.png)
+
+
 ### 7.18.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2599,6 +2707,9 @@ flowchart TD
     WriteDB --> ToggleHeart
     ToggleHeart --> ShowToast[Hiển thị SweetAlert đã lưu sản phẩm yêu thích] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_18.png)
+
 
 ### 7.18.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2656,6 +2767,9 @@ usecaseDiagram
     System --> (Ghi nhận ID sản phẩm khi click xem)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_19.png)
+
+
 ### 7.19.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2666,6 +2780,9 @@ flowchart TD
     WriteDB --> FIFO
     FIFO --> RenderCarousel[Hiển thị lên khung Carousel ở chân trang] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_19.png)
+
 
 ### 7.19.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2723,6 +2840,9 @@ usecaseDiagram
     System --> (Quét và đối soát cơ sở dữ liệu)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_20.png)
+
+
 ### 7.20.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2737,6 +2857,9 @@ flowchart TD
     CheckExist -- Có --> CalcDate[Tính toán số ngày bảo hành còn lại từ hiện tại]
     CalcDate --> ShowResultTable[Hiển thị bảng chi tiết bảo hành kèm tiến trình thời hạn] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_20.png)
+
 
 ### 7.20.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2795,6 +2918,9 @@ usecaseDiagram
     System --> (Tự động gán Kỹ thuật viên)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_21.png)
+
+
 ### 7.21.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2806,6 +2932,9 @@ flowchart TD
     CreateTicket --> SendMailConfirm[Gửi Email xác nhận đặt lịch kèm mã phiếu]
     SendMailConfirm --> ShowSuccess[Hiển thị thông báo đặt lịch thành công] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_21.png)
+
 
 ### 7.21.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2868,6 +2997,9 @@ usecaseDiagram
     (Yêu cầu AI chẩn đoán lỗi) --> AI
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_22.png)
+
+
 ### 7.22.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2880,6 +3012,9 @@ flowchart TD
     ParseJSON --> RenderPanel[Hiển thị kết quả chẩn đoán: tên lỗi, giá ước tính, cảnh báo]
     RenderPanel --> SaveAILog[Lưu vết chẩn đoán của AI vào bảng repair_tickets] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_22.png)
+
 
 ### 7.22.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -2943,6 +3078,9 @@ usecaseDiagram
     Admin --> (Phê duyệt xuất hóa đơn sửa chữa)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_23.png)
+
+
 ### 7.23.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -2957,6 +3095,9 @@ flowchart TD
     ValidateIMEI -- Có --> AutoDeductStock[Tự động trừ kho linh kiện theo số serial/IMEI] --> SaveTicket
     SaveTicket[Cập nhật trạng thái phiếu thành DONE] --> GenServiceInvoice[Tự động sinh Hóa đơn dịch vụ service_invoices] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_23.png)
+
 
 ### 7.23.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3020,6 +3161,9 @@ usecaseDiagram
     System --> (Tự động cập nhật trạng thái thời gian thực)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_24.png)
+
+
 ### 7.24.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3029,6 +3173,9 @@ flowchart TD
     ClientCatch --> UpdateStepper[Thay đổi màu sắc vạch tiến trình và nút tích trên giao diện Stepper]
     UpdateStepper --> AppendTimeline[Thêm dòng nhật ký mới vào bảng Lịch sử hoạt động bên dưới] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_24.png)
+
 
 ### 7.24.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3090,6 +3237,9 @@ usecaseDiagram
     System --> (Tạo phiếu thu dòng tiền Cashbook)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_25.png)
+
+
 ### 7.25.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3104,6 +3254,9 @@ flowchart TD
     GeneratePDF --> DownloadPDF[Tải file hóa đơn PDF về máy tính] --> End([Kết thúc])
     CreateCashbook --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_25.png)
+
 
 ### 7.25.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3169,6 +3322,9 @@ usecaseDiagram
     System --> (Tự động trừ kho vật lý)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_26.png)
+
+
 ### 7.26.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3185,6 +3341,9 @@ flowchart TD
     CreateOrder --> DeductStock[Trừ tồn kho vật lý của biến thể]
     DeductStock --> PrintInvoice[Kích hoạt in hóa đơn nhiệt 80mm] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_26.png)
+
 
 ### 7.26.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3249,6 +3408,9 @@ usecaseDiagram
     System --> (Tạo song song 2 phiếu thu trong Cashbook)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_27.png)
+
+
 ### 7.27.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3261,6 +3423,9 @@ flowchart TD
     ConfirmOrder --> CreateCashEntry[Tạo phiếu thu tiền mặt trong Cashbook]
     CreateCashEntry --> CreateBankEntry[Tạo phiếu thu chuyển khoản trong Cashbook] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_27.png)
+
 
 ### 7.27.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3321,6 +3486,9 @@ usecaseDiagram
     (Bấm nút In hóa đơn nhiệt) ..> (Truyền lệnh in tới máy in vật lý K80) : "<<include>>"
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_28.png)
+
+
 ### 7.28.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3330,6 +3498,9 @@ flowchart TD
     CallPrint --> BrowserDialog[Hiển thị hộp thoại in mặc định của Trình duyệt]
     BrowserDialog --> ExecutePrint[Máy in nhiệt vật lý thực hiện in hóa đơn ra giấy] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_28.png)
+
 
 ### 7.28.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3389,6 +3560,9 @@ usecaseDiagram
     Admin --> (Quản lý hạn mức công nợ NCC)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_29.png)
+
+
 ### 7.29.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3398,6 +3572,9 @@ flowchart TD
     CheckGST -- Hợp lệ --> SaveSupplier[Lưu thông tin vào bảng suppliers]
     SaveSupplier --> ShowSuccessToast[Hiển thị Custom Toast thành công] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_29.png)
+
 
 ### 7.29.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3459,6 +3636,9 @@ usecaseDiagram
     System --> (Tự động tăng tồn kho vật lý)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_30.png)
+
+
 ### 7.30.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3466,13 +3646,16 @@ flowchart TD
     InputQty --> OpenIMEIModal[Mở Modal Nhập N mã IMEI/Serial định danh]
     OpenIMEIModal --> InputIMEIs[Thủ kho quét mã vạch N số IMEI]
     InputIMEIs --> CheckIMEIUnique{Tất cả N mã IMEI chưa tồn tại trong hệ thống?}
-    CheckIMEIUnique -- Có trùng mã -- > ShowIMEIError[Báo lỗi trùng mã IMEI và dòng bị trùng]
+    CheckIMEIUnique -- Có trùng mã --> ShowIMEIError[Báo lỗi trùng mã IMEI và dòng bị trùng]
     CheckIMEIUnique -- Không trùng --> ConfirmPO[Thủ kho nhấn Hoàn tất nhập kho]
     ConfirmPO --> SavePO[Lưu phiếu PO vào bảng goods_receipts]
     SavePO --> SaveIMEIs[Lưu danh sách IMEI vào bảng product_imeis trạng thái Available]
     SaveIMEIs --> IncreaseStock[Tăng số lượng tồn kho vật lý của biến thể sản phẩm]
     IncreaseStock --> CreateExpense[Tự động tạo phiếu chi EXPENSE mua hàng trong Cashbook] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_30.png)
+
 
 ### 7.30.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3530,6 +3713,9 @@ usecaseDiagram
     System --> (Áp dụng khóa bi quan chống tranh chấp)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_31.png)
+
+
 ### 7.31.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3543,6 +3729,9 @@ flowchart TD
     BroadcastStock --> UpdatePOSUI[Cập nhật số tồn kho trên giao diện thu ngân POS]
     BroadcastStock --> UpdateOnlineUI[Cập nhật số tồn kho trên trang chi tiết Web] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_31.png)
+
 
 ### 7.31.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3602,6 +3791,9 @@ usecaseDiagram
     System --> (Gửi Mail cảnh báo khi chạm ngưỡng)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_32.png)
+
+
 ### 7.32.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3614,6 +3806,9 @@ flowchart TD
     QueueMailJob --> SendMail[Gửi Email chi tiết mã hàng, số tồn thực tế tới Thủ kho]
     SendMail --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_32.png)
+
 
 ### 7.32.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3670,6 +3865,9 @@ usecaseDiagram
     Manager --> (Phê duyệt phiếu điều chuyển)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_33.png)
+
+
 ### 7.33.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3687,6 +3885,9 @@ flowchart TD
     CompleteTransfer --> TransferStock[Giảm tồn kho tại Kho xuất & Tăng tồn kho tại Kho nhập]
     TransferStock --> UpdateIMEIWarehouse[Cập nhật lại mã kho sở hữu của danh sách IMEI điều chuyển] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_33.png)
+
 
 ### 7.33.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3753,6 +3954,9 @@ usecaseDiagram
     System --> (Cập nhật cân bằng số tồn kho)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_34.png)
+
+
 ### 7.34.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3766,6 +3970,9 @@ flowchart TD
     UpdateStock --> CreateAuditLogs[Ghi nhận chênh lệch vào bảng inventory_audit_details]
     CreateAuditLogs --> WriteInventoryLogs[Ghi log lịch sử biến động kho loại Audit Adjustment] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_34.png)
+
 
 ### 7.34.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3829,6 +4036,9 @@ usecaseDiagram
     System --> (Tự động ghi nhận log khi tồn kho thay đổi)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_35.png)
+
+
 ### 7.35.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3837,6 +4047,9 @@ flowchart TD
     CalculateNewStock --> CreateLogEntry[Tạo bản ghi mới trong bảng inventory_logs]
     CreateLogEntry --> SaveDB[Lưu vào Database] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_35.png)
+
 
 ### 7.35.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3894,6 +4107,9 @@ usecaseDiagram
     System --> (Tự động nâng hạng VIP thành viên)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_36.png)
+
+
 ### 7.36.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3906,6 +4122,9 @@ flowchart TD
     CompareThresholds -- Có --> UpgradeRank[Cập nhật hạng VIP mới cho khách hàng]
     UpgradeRank --> NotifyUser[Gửi thông báo chúc mừng nâng hạng kèm ưu đãi mới] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_36.png)
+
 
 ### 7.36.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -3969,6 +4188,9 @@ usecaseDiagram
     System --> (Sinh mã voucher đưa vào ví cá nhân)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_37.png)
+
+
 ### 7.37.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -3982,6 +4204,9 @@ flowchart TD
     GenVoucherCode --> SaveVoucher[Lưu voucher vào bảng coupons gắn với user_id của khách]
     SaveVoucher --> ShowSuccessModal[Hiển thị SweetAlert2 đổi quà thành công kèm mã coupon] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_37.png)
+
 
 ### 7.37.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4041,6 +4266,9 @@ usecaseDiagram
     System --> (Tự động tính toán góc dừng vòng quay)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_38.png)
+
+
 ### 7.38.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4059,6 +4287,9 @@ flowchart TD
     SendJSON --> SpinCanvas[JS chạy hiệu ứng quay Canvas giảm tốc trong 5 giây và dừng ở đúng góc]
     SpinCanvas --> ShowResultAlert[Hiển thị SweetAlert2 chúc mừng trúng quà kèm âm thanh] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_38.png)
+
 
 ### 7.38.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4124,6 +4355,9 @@ usecaseDiagram
     Customer --> (Nhấp xem thông báo chuông)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_39.png)
+
+
 ### 7.39.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4140,6 +4374,9 @@ flowchart TD
     NextChunk -- Có --> ChunkUsers
     NextChunk -- Không --> UpdateCampaignCompleted[Đổi trạng thái chiến dịch sang COMPLETED] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_39.png)
+
 
 ### 7.39.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4202,6 +4439,9 @@ usecaseDiagram
     Admin --> (Phê duyệt thủ công các bài nhạy cảm)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_40.png)
+
+
 ### 7.40.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4216,6 +4456,9 @@ flowchart TD
     CheckDecision -- MANUAL_REVIEW --> SetPending[Đổi trạng thái sang PENDING chờ duyệt]
     SetPending --> AdminApprove[Admin phê duyệt thủ công trên trang quản trị] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_40.png)
+
 
 ### 7.40.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4280,6 +4523,9 @@ usecaseDiagram
     Admin --> (Duyệt thủ công đơn hàng bị gắn cờ)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_41.png)
+
+
 ### 7.41.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4294,6 +4540,9 @@ flowchart TD
     AutoHold --> NotifyAdmin[Gửi cảnh báo đỏ cho Admin yêu cầu gọi điện xác nhận] --> End
     CheckRisk -- Từ 30% đến 70% --> AutoHold
 ```
+
+![Sơ đồ hoạt động](images/activity_41.png)
+
 
 ### 7.41.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4360,6 +4609,9 @@ usecaseDiagram
     System --> (Tự động ghi nhận dòng tiền giao dịch)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_42.png)
+
+
 ### 7.42.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4374,6 +4626,9 @@ flowchart TD
     SaveLedger --> CommitFinanceTx[Xác nhận Transaction và lưu DB]
     CommitFinanceTx --> RenderDashboard[Cập nhật số dư hiển thị trên Dashboard kế toán] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_42.png)
+
 
 ### 7.42.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4432,6 +4687,9 @@ usecaseDiagram
     Admin --> (Gắn thẻ sản phẩm vào video)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_43.png)
+
+
 ### 7.43.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4443,6 +4701,9 @@ flowchart TD
     LoadVideoJS --> ShowTagOverlay[Hiển thị danh sách sản phẩm gắn tag bên cạnh]
     ShowTagOverlay --> CommentSection[Bình luận đệ quy bằng AJAX dưới video] --> End([Kết thúc])
 ```
+
+![Sơ đồ hoạt động](images/activity_43.png)
+
 
 ### 7.43.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4500,6 +4761,9 @@ usecaseDiagram
     System --> (Truy vấn bảng dịch động trong DB)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_44.png)
+
+
 ### 7.44.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4515,6 +4779,9 @@ flowchart TD
     RenderEN --> End([Kết thúc])
     RenderFallback --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_44.png)
+
 
 ### 7.44.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4574,6 +4841,9 @@ usecaseDiagram
     System --> (Tự động ghi phiếu chi Cashbook)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_45.png)
+
+
 ### 7.45.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4590,6 +4860,9 @@ flowchart TD
     AddStockLog --> CreateCashExpense[Tự động tạo phiếu chi EXPENSE hoàn tiền trong Cashbook]
     CreateCashExpense --> NotifyCustomer[Gửi Email thông báo hoàn tiền thành công cho khách] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_45.png)
+
 
 ### 7.45.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4652,6 +4925,9 @@ usecaseDiagram
     GeminiAI --> (Parse JSON tạo phiếu sửa chữa)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_46.png)
+
+
 ### 7.46.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4668,6 +4944,9 @@ flowchart TD
     ReturnMsg --> End
     ReturnMsg2 --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_46.png)
+
 
 ### 7.46.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4740,6 +5019,9 @@ usecaseDiagram
     System --> (Pessimistic Locking chống Overselling)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_47.png)
+
+
 ### 7.47.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4751,6 +5033,9 @@ flowchart TD
     CheckStock -- Không --> Rollback[Rollback Transaction] --> SoldOut[Hiển thị: Sản phẩm đã hết] --> End
     CheckStock -- Có --> IncrSold[sold_quantity += số lượng mua] --> CreateOrder[Tạo đơn hàng với giá Flash Sale] --> Commit[Commit Transaction] --> Success[Đặt hàng thành công] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_47.png)
+
 
 ### 7.47.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4814,6 +5099,9 @@ usecaseDiagram
     System --> (Chặn request viết bình luận khi bị cấm)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_48.png)
+
+
 ### 7.48.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4827,6 +5115,9 @@ flowchart TD
     BanTemp --> DeleteComment[Xóa bình luận + Cascade] --> NotifyBan[Gửi thông báo cấm] --> End
     BanPerm --> DeleteComment
 ```
+
+![Sơ đồ hoạt động](images/activity_48.png)
+
 
 ### 7.48.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4886,6 +5177,9 @@ usecaseDiagram
     AI --> (Sinh metadata SEO)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_49.png)
+
+
 ### 7.49.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4897,6 +5191,9 @@ flowchart TD
     CheckScore -- Có --> AutoApprove[Duyệt Published + Cộng 20 điểm Loyalty] --> GenSEO[Sinh seo_title, seo_description, seo_keywords] --> End
     CheckScore -- Không --> KeepPending[Giữ Pending chờ Admin duyệt] --> GenSEO
 ```
+
+![Sơ đồ hoạt động](images/activity_49.png)
+
 
 ### 7.49.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -4956,6 +5253,9 @@ usecaseDiagram
     System --> (Auto-Scroll Focus theo tab)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_50.png)
+
+
 ### 7.50.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -4971,6 +5271,9 @@ flowchart TD
     SaveBtn -- Có --> SaveDB[Lưu cấu hình vào DB] --> End([Kết thúc])
     SaveBtn -- Không --> EditConfig
 ```
+
+![Sơ đồ hoạt động](images/activity_50.png)
+
 
 ### 7.50.6. Bảng kịch bản hoạt động (Workflows)
 
@@ -5026,6 +5329,9 @@ usecaseDiagram
     System --> (Build Vite và khởi động server)
 ```
 
+![Sơ đồ Use-case chức năng](images/use_case_51.png)
+
+
 ### 7.51.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
 ```mermaid
 flowchart TD
@@ -5042,6 +5348,9 @@ flowchart TD
     InputMySQL --> GenKey
     SelectOption -- Option 5 REBUILD --> ClearCache[php artisan cache:clear + config:clear] --> Migrate2[php artisan migrate] --> BuildVite[npm run build] --> Serve[php artisan serve] --> End
 ```
+
+![Sơ đồ hoạt động](images/activity_51.png)
+
 
 ### 7.51.6. Bảng kịch bản hoạt động (Workflows)
 

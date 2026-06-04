@@ -3,12 +3,14 @@
 ## Current State & Focus
 - **Xuất và hoàn thiện Báo cáo tổng hợp (.md và .docx) (Ngày 04/06/2026):**
   - **Mục lục đầy đủ:** Cập nhật mục lục của `BaoCao_ChiTiet_DuAn.md` và `baocaotong.md` bao quát toàn bộ 51 chức năng (từ 7.1 đến 7.51) và đồng bộ hóa các con số thống kê chính xác: nâng từ "8 phân hệ (45 chức năng)" lên thành **9 phân hệ (51 chức năng)** và từ "20 bảng cơ sở dữ liệu" lên thành **61 bảng cơ sở dữ liệu**.
-  - **Nhúng hình ảnh giao diện Mockup Premium:**
+  - **Nhúng hình ảnh giao diện Mockup Premium & 102 Sơ đồ UML (Use-case & Activity):**
     - Sử dụng AI để sinh 6 hình ảnh thiết kế giao diện UI chất lượng cao: `login_2fa_ui.png`, `cart_payment_ui.png`, `repair_portal_ui.png`, `lucky_wheel_ui.png`, `ai_chatbot_ui.png`, `admin_dashboard_ui.png`.
-    - Tổ chức lưu trữ ảnh tại thư mục `images/` và nhúng trực tiếp vào Chương 4 của báo cáo bằng thẻ hình ảnh Markdown chuẩn.
+    - Viết các script tự động hóa tối ưu (`render_all_usecases.py` và `render_all_activities.py`) sử dụng Playwright chạy song song một tiến trình kết hợp dịch cú pháp tự động từ Mermaid sang flowchart để kết xuất hình ảnh **nền trắng chữ đen, viền đen mảnh** chuẩn học thuật.
+    - Sửa lỗi cú pháp khoảng trắng mũi tên (`-- >` thành `-->`) ở sơ đồ hoạt động số 30 và lỗi link labels (`<<include>>`) ở sơ đồ use-case số 10.
+    - Sinh thành công **51 ảnh sơ đồ Use-case** và **51 ảnh sơ đồ Hoạt động (Activity)**, tổng cộng 102 hình ảnh UML chất lượng cao lưu vào thư mục `images/` ở cả 2 thư mục dự án `ThuongMaiDienTu` và `pywword`.
+    - Tự động nhúng tất cả 102 hình ảnh này dưới các khối Mermaid tương ứng trong phụ lục `BaoCao_DacTa_ChiTiet_ChucNang.md` và tệp báo cáo tổng `baocaotong.md`.
   - **Xuất tài liệu MS Word (.docx):**
-    - Sử dụng `Pandoc` để chuyển đổi `baocaotong.md` thành `baocaotong.docx` thành công (kích thước ~3.7MB).
-    - Toàn bộ 6 hình ảnh UI mockup chất lượng cao đã được nhúng tự động và trực tiếp vào bên trong file Word.
+    - Sử dụng `Pandoc` để chuyển đổi `baocaotong.md` thành `baocaotong.docx` thành công ở cả 2 thư mục dự án (kích thước tệp Word nâng lên thành **5.11MB** chứa đầy đủ toàn bộ 102 ảnh sơ đồ UML và 6 ảnh UI mockup sắc nét).
 - **Đối soát và bổ sung 6 chức năng thiếu của Nguyễn Anh Quý (Ngày 04/06/2026):**
   - Cross-check 15 chức năng trong `cn.md` so với 45 CN chính thức. Phát hiện **6 chức năng THIẾU HOÀN TOÀN**: Chatbot AI, Flash Sale, CRM KH, CRUD Bài viết, Theme Customizer, Setup Wizard.
   - Bổ sung phân hệ IX (CN 46-51) vào Chương 2 của `BaoCao_ChiTiet_DuAn.md`. Tổng số CN nâng từ 45 → **51 chức năng** (9 phân hệ).

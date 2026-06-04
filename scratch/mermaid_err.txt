@@ -1,0 +1,8 @@
+No diagram type detected matching given configuration for text: usecaseDiagram
+actor Guest as "Khách vãng lai"
+actor Google as "Google OAuth API"
+
+Guest --> (Đăng ký tài khoản thủ công)
+Guest --> (Đăng nhập bằng Email/Password)
+Guest --> (Đăng nhập qua Google SSO)
+(Đăng nhập qua Google SSO) --> Google
