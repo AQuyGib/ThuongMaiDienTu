@@ -1281,4 +1281,127 @@ class WarrantyClaimTest extends TestCase
                      ]
                  ]);
     }
+
+    /** Test: Admin có thể xem và in hoá đơn của yêu cầu bảo hành/đổi trả */
+    public function test_admin_can_view_and_print_warranty_claim_invoice(): void
+    {
+        $admin = $this->makeAdmin();
+        $item = $this->makeInventoryItem('IMEI-INVOICE-TEST');
+        $this->makeWarranty($item, 'active', 5, 12);
+
+        $claim = WarrantyClaim::create([
+            'imei_serial' => $item->imei_serial,
+            'customer_name' => 'Khách In Hóa Đơn',
+            'customer_phone' => '0912345678',
+            'claim_type' => 'warranty',
+            'reason' => 'Lỗi sọc màn hình.',
+            'status' => 'approved',
+            'admin_note' => 'Đổi màn hình mới miễn phí.',
+        ]);
+
+        $response = $this->actingAs($admin, 'web')
+                         ->get(route('admin.warranty-claims.invoice', $claim->id));
+
+        $response->assertStatus(200)
+                 ->assertSee('Khách In Hóa Đơn')
+                 ->assertSee('BIÊN NHẬN BẢO HÀNH')
+                 ->assertSee('IMEI-INVOICE-TEST')
+                 ->assertSee('Đổi màn hình mới miễn phí.');
+    }
+
+    /** Test: Khách hàng (role_id=3) không thể tự ý xem/in hoá đơn admin */
+    public function test_customer_cannot_view_or_print_warranty_claim_invoice(): void
+    {
+        $customer = $this->makeCustomer('attacker@test.com');
+        $item = $this->makeInventoryItem('IMEI-INVOICE-ATTACK');
+        $this->makeWarranty($item, 'active', 5, 12);
+
+        $claim = WarrantyClaim::create([
+            'imei_serial' => $item->imei_serial,
+            'customer_name' => 'Khách Hàng Thật',
+            'customer_phone' => '0912345678',
+            'claim_type' => 'return',
+            'reason' => 'Hoàn tiền.',
+            'status' => 'approved',
+            'refund_amount' => 5000000,
+            'refund_method' => 'cash',
+        ]);
+
+        $response = $this->actingAs($customer, 'web')
+                         ->get(route('admin.warranty-claims.invoice', $claim->id));
+
+        $this->assertNotEquals(200, $response->status());
+    }
+
+    /** Test: Người dùng chưa đăng nhập không thể xem/in hoá đơn */
+    public function test_unauthenticated_user_cannot_view_or_print_warranty_claim_invoice(): void
+    {
+        $item = $this->makeInventoryItem('IMEI-INVOICE-GUEST');
+        $this->makeWarranty($item, 'active', 5, 12);
+
+        $claim = WarrantyClaim::create([
+            'imei_serial' => $item->imei_serial,
+            'customer_name' => 'Khách Hàng',
+            'customer_phone' => '0912345678',
+            'claim_type' => 'exchange',
+            'reason' => 'Lỗi.',
+            'status' => 'approved',
+        ]);
+
+        $response = $this->get(route('admin.warranty-claims.invoice', $claim->id));
+        $response->assertRedirect();
+    }
+
+    /** Test: Admin có thể lưu và cập nhật refund_amount / refund_method qua store và update */
+    public function test_admin_can_store_and_update_refund_fields(): void
+    {
+        $admin = $this->makeAdmin();
+        $item = $this->makeInventoryItem('IMEI-REFUND-FIELDS-TEST');
+        $this->makeWarranty($item, 'active', 5, 12);
+
+        // 1. Test Store
+        $response = $this->actingAs($admin, 'web')
+            ->post(route('admin.warranty-claims.store'), [
+                'customer_name' => 'Khách Hàng A',
+                'customer_phone' => '0987654321',
+                'imei_serial' => 'IMEI-REFUND-FIELDS-TEST',
+                'claim_type' => 'return',
+                'reason' => 'Đổi trả hoàn tiền.',
+                'status' => 'pending',
+                'refund_amount' => 3000000,
+                'refund_method' => 'bank_transfer',
+            ]);
+
+        $response->assertRedirect(route('admin.warranty-claims.index'));
+        $claim = WarrantyClaim::where('imei_serial', 'IMEI-REFUND-FIELDS-TEST')->first();
+        $this->assertNotNull($claim);
+        $this->assertEquals(3000000, $claim->refund_amount);
+        $this->assertEquals('bank_transfer', $claim->refund_method);
+
+        // 2. Test Update & Duyệt -> tạo Cashbook
+        $response2 = $this->actingAs($admin, 'web')
+            ->put(route('admin.warranty-claims.update', $claim->id), [
+                'customer_name' => 'Khách Hàng A',
+                'customer_phone' => '0987654321',
+                'imei_serial' => 'IMEI-REFUND-FIELDS-TEST',
+                'claim_type' => 'return',
+                'reason' => 'Đổi trả hoàn tiền.',
+                'status' => 'approved',
+                'refund_amount' => 3500000,
+                'refund_method' => 'bank_transfer',
+            ]);
+
+        $response2->assertRedirect(route('admin.warranty-claims.index'));
+        $claim->refresh();
+        $this->assertEquals(3500000, $claim->refund_amount);
+        $this->assertEquals('approved', $claim->status);
+
+        // Kiểm tra xem Cashbook có ghi nhận Expense không
+        $cashbook = \App\Models\Cashbook::where('reference_id', $claim->id)
+            ->where('reference_type', 'warranty_claim')
+            ->first();
+        $this->assertNotNull($cashbook);
+        $this->assertEquals('Expense', $cashbook->type);
+        $this->assertEquals(3500000, $cashbook->amount);
+    }
 }

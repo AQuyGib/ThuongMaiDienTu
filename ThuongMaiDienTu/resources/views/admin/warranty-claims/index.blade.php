@@ -222,6 +222,12 @@
                                             Không có ghi chú
                                         @endif
                                     </div>
+                                    @if($claim->status === 'approved')
+                                        {{-- Nút in hóa đơn hiển thị khi yêu cầu đã được phê duyệt thành công --}}
+                                        <a href="{{ route('admin.warranty-claims.invoice', $claim->id) }}" target="_blank" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-[10px] font-bold transition-all flex items-center gap-1 mb-1.5" title="In hóa đơn">
+                                            <i class="fa-solid fa-print"></i> In hóa đơn
+                                        </a>
+                                    @endif
                                 @endif
 
                                 <div class="flex items-center gap-1">

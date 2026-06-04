@@ -225,6 +225,7 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::delete('warranty-claims/{id}', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'destroy'])->name('admin.warranty-claims.destroy');
     Route::post('warranty-claims/{id}/approve', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'approve'])->name('admin.warranty-claims.approve');
     Route::post('warranty-claims/{id}/reject', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'reject'])->name('admin.warranty-claims.reject');
+    Route::get('warranty-claims/{id}/invoice', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'printInvoice'])->name('admin.warranty-claims.invoice');
 });
 
 Route::middleware('auth')->group(function () {

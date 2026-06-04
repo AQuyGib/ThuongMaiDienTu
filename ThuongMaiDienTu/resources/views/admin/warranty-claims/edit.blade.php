@@ -98,7 +98,8 @@
             @endif
         </div>
 
-        <!-- Card 3: Thông tin tài khoản ngân hàng (chỉ cho Đổi trả hoàn tiền) -->
+        <!-- Card 3: Thông tin nhận tiền hoàn (chỉ cho Đổi trả hoàn tiền) -->
+        <!-- Card này ẩn/hiện động dựa trên 'claim_type' == 'return' (sẽ hiển thị) hoặc khác (sẽ ẩn) -->
         <div id="bankDetailsCard" class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4 {{ old('claim_type', $claim->claim_type) == 'return' ? '' : 'hidden' }}">
             <div class="border-b border-gray-100 pb-3">
                 <h2 class="text-base font-semibold text-gray-900 flex items-center gap-2">
@@ -106,7 +107,24 @@
                 </h2>
                 <p class="text-xs text-gray-500 mt-0.5">Thông tin tài khoản ngân hàng để thực hiện hoàn tiền cho khách.</p>
             </div>
-            <div class="grid gap-4 md:grid-cols-3">
+            
+            {{-- Chọn phương thức hoàn tiền và điền số tiền trước --}}
+            <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Phương thức hoàn tiền</label>
+                    <select name="refund_method" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="cash" {{ old('refund_method', $claim->refund_method) == 'cash' ? 'selected' : '' }}>Tiền mặt (Cash)</option>
+                        <option value="bank_transfer" {{ old('refund_method', $claim->refund_method) == 'bank_transfer' ? 'selected' : '' }}>Chuyển khoản ngân hàng (Bank Transfer)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Số tiền hoàn trả (VNĐ)</label>
+                    <input type="number" name="refund_amount" value="{{ old('refund_amount', $claim->refund_amount) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="VD: 5000000">
+                </div>
+            </div>
+
+            {{-- Phần điền tài khoản ngân hàng bên dưới: chỉ hiện nếu phương thức hoàn là chuyển khoản (bank_transfer) --}}
+            <div id="bankAccountDetails" class="grid gap-4 md:grid-cols-3 pt-4 border-t border-gray-100 {{ old('refund_method', $claim->refund_method) == 'bank_transfer' ? '' : 'hidden' }}">
                 <div>
                     <label class="mb-1 block text-sm font-medium text-gray-700">Tên ngân hàng</label>
                     <input type="text" name="bank_name" value="{{ old('bank_name', $claim->bank_name) }}" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="VD: Vietcombank">
@@ -201,6 +219,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 bankDetailsCard.classList.remove('hidden');
             } else {
                 bankDetailsCard.classList.add('hidden');
+            }
+        });
+    }
+
+    // 3. Ẩn/hiện chi tiết tài khoản ngân hàng dựa theo Phương thức hoàn tiền
+    const refundMethodSelect = document.querySelector('select[name="refund_method"]');
+    const bankAccountDetails = document.getElementById('bankAccountDetails');
+
+    if (refundMethodSelect && bankAccountDetails) {
+        refundMethodSelect.addEventListener('change', function() {
+            if (this.value === 'bank_transfer') {
+                bankAccountDetails.classList.remove('hidden');
+            } else {
+                bankAccountDetails.classList.add('hidden');
             }
         });
     }

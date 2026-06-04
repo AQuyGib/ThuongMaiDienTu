@@ -73,6 +73,8 @@ class WarrantyClaimController extends Controller
             'bank_name' => 'nullable|string|max:100',
             'bank_account_number' => 'nullable|string|max:50',
             'bank_account_name' => 'nullable|string|max:100',
+            'refund_amount' => 'nullable|integer|min:0',
+            'refund_method' => 'nullable|in:cash,bank_transfer',
         ], [
             'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
             'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
@@ -82,6 +84,10 @@ class WarrantyClaimController extends Controller
         ]);
 
         $matchedUser = User::where('phone_number', $request->customer_phone)->first();
+        $isReturn = $request->claim_type === 'return';
+        $isExchange = $request->claim_type === 'exchange';
+        $refundAmount = $isReturn ? (int) $request->input('refund_amount', 0) : 0;
+        $refundMethod = $isReturn ? $request->input('refund_method', 'cash') : null;
 
         $claim = WarrantyClaim::create([
             'user_id' => $matchedUser ? $matchedUser->user_id : null,
@@ -93,10 +99,36 @@ class WarrantyClaimController extends Controller
             'reason' => $request->reason,
             'status' => $request->status,
             'admin_note' => $request->admin_note,
-            'bank_name' => $request->claim_type === 'return' ? $request->bank_name : null,
-            'bank_account_number' => $request->claim_type === 'return' ? $request->bank_account_number : null,
-            'bank_account_name' => $request->claim_type === 'return' ? $request->bank_account_name : null,
+            'bank_name' => $isReturn ? $request->bank_name : null,
+            'bank_account_number' => $isReturn ? $request->bank_account_number : null,
+            'bank_account_name' => $isReturn ? $request->bank_account_name : null,
+            'refund_amount' => $isReturn ? $refundAmount : null,
+            'refund_method' => $isReturn ? $refundMethod : null,
+            'refunded_at' => ($isReturn && $request->status === 'approved' && $refundAmount > 0) ? Carbon::now() : null,
         ]);
+
+        // Kích hoạt tác vụ phụ khi duyệt trực tiếp lúc tạo mới
+        if ($request->status === 'approved') {
+            if ($isReturn && $refundAmount > 0) {
+                $methodLabel = $refundMethod === 'bank_transfer' ? 'chuyển khoản' : 'tiền mặt';
+                Cashbook::create([
+                    'type'           => 'Expense',
+                    'amount'         => $refundAmount,
+                    'reference_id'   => $claim->id,
+                    'reference_type' => 'warranty_claim',
+                    'description'    => "Hoàn tiền đổi trả IMEI {$claim->imei_serial} – KH: {$claim->customer_name} ({$methodLabel})",
+                ]);
+            }
+            if ($isReturn || $isExchange) {
+                $item = InventoryItem::where('imei_serial', $claim->imei_serial)->first();
+                if ($item) {
+                    $item->update(['status' => 'In_Stock']);
+                    Warranty::where('item_id', $item->item_id)
+                        ->where('warranty_status', 'active')
+                        ->update(['warranty_status' => 'paused']);
+                }
+            }
+        }
 
         ActivityLog::create([
             'user_id' => Auth::id(),
@@ -122,6 +154,7 @@ class WarrantyClaimController extends Controller
     public function update(Request $request, $id)
     {
         $claim = WarrantyClaim::findOrFail($id);
+        $oldStatus = $claim->status;
 
         $request->validate([
             'customer_name' => 'required|string|max:100',
@@ -135,6 +168,8 @@ class WarrantyClaimController extends Controller
             'bank_name' => 'nullable|string|max:100',
             'bank_account_number' => 'nullable|string|max:50',
             'bank_account_name' => 'nullable|string|max:100',
+            'refund_amount' => 'nullable|integer|min:0',
+            'refund_method' => 'nullable|in:cash,bank_transfer',
         ], [
             'customer_name.required' => 'Vui lòng nhập tên khách hàng.',
             'customer_phone.required' => 'Vui lòng nhập số điện thoại.',
@@ -144,6 +179,10 @@ class WarrantyClaimController extends Controller
         ]);
 
         $matchedUser = User::where('phone_number', $request->customer_phone)->first();
+        $isReturn = $request->claim_type === 'return';
+        $isExchange = $request->claim_type === 'exchange';
+        $refundAmount = $isReturn ? (int) $request->input('refund_amount', 0) : 0;
+        $refundMethod = $isReturn ? $request->input('refund_method', 'cash') : null;
 
         $claim->update([
             'user_id' => $matchedUser ? $matchedUser->user_id : $claim->user_id,
@@ -155,10 +194,41 @@ class WarrantyClaimController extends Controller
             'reason' => $request->reason,
             'status' => $request->status,
             'admin_note' => $request->admin_note,
-            'bank_name' => $request->claim_type === 'return' ? $request->bank_name : null,
-            'bank_account_number' => $request->claim_type === 'return' ? $request->bank_account_number : null,
-            'bank_account_name' => $request->claim_type === 'return' ? $request->bank_account_name : null,
+            'bank_name' => $isReturn ? $request->bank_name : null,
+            'bank_account_number' => $isReturn ? $request->bank_account_number : null,
+            'bank_account_name' => $isReturn ? $request->bank_account_name : null,
+            'refund_amount' => $isReturn ? $refundAmount : null,
+            'refund_method' => $isReturn ? $refundMethod : null,
+            'refunded_at' => ($isReturn && $request->status === 'approved' && !$claim->refunded_at && $refundAmount > 0) ? Carbon::now() : $claim->refunded_at,
         ]);
+
+        // Đồng bộ dữ liệu nếu được chuyển sang trạng thái đã duyệt
+        if ($request->status === 'approved') {
+            $exists = Cashbook::where('reference_id', $claim->id)
+                ->where('reference_type', 'warranty_claim')
+                ->exists();
+
+            if (!$exists && $isReturn && $refundAmount > 0) {
+                $methodLabel = $refundMethod === 'bank_transfer' ? 'chuyển khoản' : 'tiền mặt';
+                Cashbook::create([
+                    'type'           => 'Expense',
+                    'amount'         => $refundAmount,
+                    'reference_id'   => $claim->id,
+                    'reference_type' => 'warranty_claim',
+                    'description'    => "Hoàn tiền đổi trả IMEI {$claim->imei_serial} – KH: {$claim->customer_name} ({$methodLabel})",
+                ]);
+            }
+
+            if ($oldStatus !== 'approved' && ($isReturn || $isExchange)) {
+                $item = InventoryItem::where('imei_serial', $claim->imei_serial)->first();
+                if ($item) {
+                    $item->update(['status' => 'In_Stock']);
+                    Warranty::where('item_id', $item->item_id)
+                        ->where('warranty_status', 'active')
+                        ->update(['warranty_status' => 'paused']);
+                }
+            }
+        }
 
         ActivityLog::create([
             'user_id' => Auth::id(),
@@ -276,5 +346,20 @@ class WarrantyClaimController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Đã từ chối yêu cầu thành công.');
+    }
+
+    /**
+     * Hiển thị giao diện in hóa đơn bảo hành, đổi trả, trả hàng/hoàn tiền
+     */
+    public function printInvoice($id)
+    {
+        // Truy vấn yêu cầu bảo hành/đổi trả theo ID hoặc ném lỗi 404 nếu không tìm thấy
+        $claim = WarrantyClaim::findOrFail($id);
+
+        // Truy vấn thông tin sản phẩm vật lý tương ứng qua số IMEI
+        $item = InventoryItem::with('variant.product')->where('imei_serial', $claim->imei_serial)->first();
+
+        // Trả về view hóa đơn chuyên biệt dành cho in ấn
+        return view('admin.warranty-claims.invoice', compact('claim', 'item'));
     }
 }
