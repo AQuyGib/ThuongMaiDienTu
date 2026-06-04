@@ -32,10 +32,11 @@ class DatabaseSeeder extends Seeder
             RepairTicketSeeder::class,
             ArticleSeeder::class,
             AITestArticleSeeder::class,
-            CashbookSeeder::class,
             FlashSaleSeeder::class,
             LargeProductSeeder::class,
             WishlistRecentlyViewedSeeder::class,
+            InstallmentSeeder::class,
+            CashbookSeeder::class,
         ]);
     }
 }

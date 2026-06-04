@@ -14,7 +14,7 @@
             <div class="badge-installment">Trả góp 0%</div>
         </div>
 
-        <!-- 2. Khối các nút hành động nhanh (Wishlist và Add-to-cart)
+        <!-- 2. Khối các nút hành động nhanh (Wishlist)
              Mặc định ẩn, hover vào thẻ card sẽ hiển thị lên bằng CSS transition.
         -->
         <div class="product-card-actions">
@@ -24,16 +24,10 @@
                 title="Yêu thích">
                 <i class="fa-regular fa-heart"></i>
             </button>
-            <!-- Nút Thêm nhanh vào Giỏ hàng (AJAX Add To Cart) -->
-            <button class="action-btn-circle btn-add-cart" 
-                onclick="event.preventDefault(); event.stopPropagation(); addToCart('{{ $product->product_id }}')" 
-                title="Thêm vào giỏ">
-                <i class="fa-solid fa-cart-plus"></i>
-            </button>
         </div>
 
         <!-- 3. Liên kết chi tiết sản phẩm: Bao bọc phần Ảnh và Nội dung chữ -->
-        <a href="{{ route('product.show', $product->product_id) }}" style="text-decoration: none; display: flex; flex-direction: column; height: 100%;">
+        <a href="{{ route('product.show', $product->product_id) }}" style="text-decoration: none; display: flex; flex-direction: column; flex-grow: 1; height: auto;">
             <!-- 3.1. Vùng chứa ảnh đại diện sản phẩm (Cố định chiều cao 160px để đảm bảo lưới thẳng hàng) -->
             <div class="product-img-wrapper" style="width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; overflow: hidden;">
                 <img src="{{ $product->thumbnail ?? 'https://via.placeholder.com/300x300?text=' . urlencode($product->name) }}"
@@ -68,5 +62,18 @@
                 </div>
             </div>
         </a>
+
+        <!-- Các nút hành động ở dưới cùng (Mua ngay & Thêm giỏ hàng) -->
+        <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 12px; z-index: 10;">
+            <button onclick="buyNow('{{ $product->product_id }}')" 
+                style="flex: 1; background: linear-gradient(90deg, #0046ab, #0056d6); color: white; border: none; padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 6px rgba(0, 70, 171, 0.15); display: flex; align-items: center; justify-content: center; gap: 4px;">
+                <i class="fa-solid fa-bolt"></i> Mua ngay
+            </button>
+            <button onclick="addToCart('{{ $product->product_id }}')" 
+                style="padding: 8px 12px; background: #f0f7ff; color: #0046ab; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center;"
+                title="Thêm vào giỏ">
+                <i class="fa-solid fa-cart-plus"></i>
+            </button>
+        </div>
     </div>
 @endforeach

@@ -3,6 +3,13 @@
 
 @push('styles')
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        corePlugins: {
+            preflight: false,
+        }
+    }
+</script>
 <style>
 .pay-radio:checked ~ .pay-label { border-color:#2563eb; background:#eff6ff; }
 .pay-radio:checked ~ .pay-label .dot-outer { border-color:#2563eb; }
@@ -581,7 +588,7 @@
       </div>
     </div>
 
-  </div>
+  </form>
 </div>
 </div>
 

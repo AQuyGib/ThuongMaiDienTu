@@ -292,12 +292,15 @@
         */
         .fs-progress-wrapper {
             margin-top: 15px;
-            background: #fee2e2;
+            background: #fca5a5;
             border-radius: 20px;
             height: 22px;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(215, 0, 24, 0.1);
+            border: 1px solid rgba(215, 0, 24, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .fs-progress-bar {
             background: linear-gradient(90deg, #f87171, #ef4444, #dc2626);
@@ -305,6 +308,9 @@
             animation: lavaFlow 2s linear infinite;
             height: 100%;
             border-radius: 20px;
+            position: absolute;
+            left: 0;
+            top: 0;
         }
         @keyframes lavaFlow {
             0% { background-position: 100% 0%; }
@@ -317,15 +323,19 @@
             font-size: 11px;
             font-weight: 700;
             color: #fff;
-            text-shadow: 0px 0px 3px rgba(0,0,0,0.5);
+            text-shadow: 0px 1px 3px rgba(0,0,0,0.6);
             z-index: 2;
+            top: 50%;
+            transform: translateY(-50%);
         }
         .fs-fire-icon {
             position: absolute;
-            left: 5px;
-            color: #fff;
+            left: 8px;
+            color: #ffeb3b;
             font-size: 12px;
-            z-index: 2;
+            z-index: 3;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
         /* Lưới sản phẩm mặc định: 5 cột bằng nhau trải đều */
@@ -639,7 +649,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            min-height: 380px; 
+            min-height: 420px; 
         }
 
         .product-card-premium:hover {
@@ -1153,7 +1163,7 @@
 
                 <div class="product-grid-white">
                     @foreach($sale->mapped_products as $product)
-                        <a href="{{ route('product.show', $product->product_id) }}" class="product-card">
+                        <div class="product-card">
                             <span class="badge-top-left">Trả góp 0%</span>
                             @php
                                 $currentPrice = $product->flash_sale_price;
@@ -1164,13 +1174,15 @@
                                 <span class="badge-top-right">-{{ $discount }}%</span>
                             @endif
 
-                            <img src="{{ $product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}"
-                                alt="{{ $product->name }}" class="product-img" loading="lazy">
+                            <a href="{{ route('product.show', $product->product_id) }}" style="text-decoration: none; display: flex; flex-direction: column; flex-grow: 1; height: auto;">
+                                <img src="{{ $product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}"
+                                    alt="{{ $product->name }}" class="product-img" loading="lazy">
 
-                            <span class="category-badge">{{ $product->category->name ?? '' }}</span>
-                            <h3 class="product-name">{{ $product->name }}</h3>
-                            <div class="product-price">{{ number_format($currentPrice, 0, ',', '.') }}đ</div>
-                            <div class="product-old-price">{{ number_format($oldPrice, 0, ',', '.') }}đ</div>
+                                <span class="category-badge">{{ $product->category->name ?? '' }}</span>
+                                <h3 class="product-name">{{ $product->name }}</h3>
+                                <div class="product-price">{{ number_format($currentPrice, 0, ',', '.') }}đ</div>
+                                <div class="product-old-price">{{ number_format($oldPrice, 0, ',', '.') }}đ</div>
+                            </a>
                             
                             <!-- Thanh tiến độ dung nham Flash Sale: tính toán tỷ lệ % số lượng đã bán thực tế -->
                             @php
@@ -1178,7 +1190,7 @@
                                 $limit = $product->flash_sale_limit ?? 1;
                                 $percent = min(100, round(($sold / $limit) * 100));
                             @endphp
-                            <div class="fs-progress-wrapper">
+                            <div class="fs-progress-wrapper" style="margin-bottom: 12px;">
                                 <div class="fs-progress-bar" style="width: {{ $percent }}%"></div>
                                 <i class="fa-solid fa-fire fs-fire-icon"></i>
                                 <span class="fs-progress-text">
@@ -1189,7 +1201,20 @@
                                     @endif
                                 </span>
                             </div>
-                        </a>
+
+                            <!-- Nút mua ngay & thêm vào giỏ hàng ở dưới cùng -->
+                            <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 5px;">
+                                <button onclick="buyNow('{{ $product->product_id }}')" 
+                                    style="flex: 1; background: linear-gradient(90deg, #d70018, #ff4b2b); color: white; border: none; padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 6px rgba(215, 0, 24, 0.2); display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                    <i class="fa-solid fa-bolt"></i> Mua ngay
+                                </button>
+                                <button onclick="addToCart('{{ $product->product_id }}')" 
+                                    style="padding: 8px 12px; background: #fff5f5; color: #d70018; border: 1px solid #fed7d7; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center;"
+                                    title="Thêm vào giỏ">
+                                    <i class="fa-solid fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -1206,22 +1231,37 @@
 
                 <div class="product-grid-white">
                     @foreach($flashSaleProducts as $product)
-                        <a href="{{ route('product.show', $product->product_id) }}" class="product-card">
+                        <div class="product-card">
                             <span class="badge-top-left">Giá sốc</span>
                             @if($product->old_price && $product->old_price > $product->base_price)
                                 <span class="badge-top-right">-{{ round((($product->old_price - $product->base_price) / $product->old_price) * 100) }}%</span>
                             @endif
 
-                            <img src="{{ $product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}"
-                                alt="{{ $product->name }}" class="product-img" loading="lazy">
+                            <a href="{{ route('product.show', $product->product_id) }}" style="text-decoration: none; display: flex; flex-direction: column; flex-grow: 1; height: auto;">
+                                <img src="{{ $product->thumbnail ?? 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300' }}"
+                                    alt="{{ $product->name }}" class="product-img" loading="lazy">
 
-                            <span class="category-badge">{{ $product->category->name ?? '' }}</span>
-                            <h3 class="product-name">{{ $product->name }}</h3>
-                            <div class="product-price">{{ number_format($product->base_price, 0, ',', '.') }}đ</div>
-                            @if($product->old_price)
-                                <div class="product-old-price">{{ number_format($product->old_price, 0, ',', '.') }}đ</div>
-                            @endif
-                        </a>
+                                <span class="category-badge">{{ $product->category->name ?? '' }}</span>
+                                <h3 class="product-name">{{ $product->name }}</h3>
+                                <div class="product-price">{{ number_format($product->base_price, 0, ',', '.') }}đ</div>
+                                @if($product->old_price)
+                                    <div class="product-old-price">{{ number_format($product->old_price, 0, ',', '.') }}đ</div>
+                                @endif
+                            </a>
+
+                            <!-- Nút mua ngay & thêm vào giỏ hàng ở dưới cùng -->
+                            <div style="display: flex; gap: 8px; margin-top: auto; padding-top: 5px;">
+                                <button onclick="buyNow('{{ $product->product_id }}')" 
+                                    style="flex: 1; background: linear-gradient(90deg, #d70018, #ff4b2b); color: white; border: none; padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 6px rgba(215, 0, 24, 0.2); display: flex; align-items: center; justify-content: center; gap: 4px;">
+                                    <i class="fa-solid fa-bolt"></i> Mua ngay
+                                </button>
+                                <button onclick="addToCart('{{ $product->product_id }}')" 
+                                    style="padding: 8px 12px; background: #fff5f5; color: #d70018; border: 1px solid #fed7d7; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center;"
+                                    title="Thêm vào giỏ">
+                                    <i class="fa-solid fa-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -1420,8 +1460,26 @@
     })();
 
     /* ============================================================
-       4. AJAX ADD TO CART - THÊM NHANH SẢN PHẨM VÀO GIỎ HÀNG
+       4. AJAX BUY NOW & ADD TO CART
        ============================================================ */
+    function buyNow(productId) {
+        fetch('{{ route("cart.add") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ product_id: productId, quantity: 1, buy_now: 1 })
+        })
+        .then(response => {
+            window.location.href = '{{ route("cart.index") }}';
+        })
+        .catch(error => {
+            console.error('Lỗi khi mua ngay:', error);
+            window.location.href = '{{ route("cart.index") }}';
+        });
+    }
+
     function addToCart(productId) {
         fetch('{{ route("cart.add") }}', {
             method: 'POST',

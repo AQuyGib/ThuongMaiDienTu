@@ -4,6 +4,13 @@
 
 @push('styles')
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            }
+        }
+    </script>
     <style>
         /* ============================================================
            CSS ĐƯỜNG DẪN TIẾN TRÌNH VÀ ICON TRẠNG THÁI (TIMELINE)
@@ -495,5 +502,20 @@
         document.getElementById('input-code').value = '';
         document.getElementById('input-code').focus();
     }
+
+    // Tự động tra cứu khi có query parameter 'code' hoặc 'search' từ URL
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code') || urlParams.get('search');
+        if (code) {
+            const inputCode = document.getElementById('input-code');
+            if (inputCode) {
+                inputCode.value = code;
+                // Giả lập submit form
+                const event = new Event('submit', { cancelable: true });
+                document.getElementById('form-code').dispatchEvent(event);
+            }
+        }
+    });
 </script>
 @endsection

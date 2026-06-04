@@ -28,7 +28,6 @@ try {
     if (!$user) {
         // Tạo user mẫu nếu database trống
         $user = User::create([
-            'username' => 'testpointsuser',
             'full_name' => 'Test Points User',
             'email' => 'testpoints@techzone.vn',
             'password_hash' => bcrypt('password123'),

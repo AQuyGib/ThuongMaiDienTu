@@ -359,5 +359,24 @@ class UserController extends Controller
             'device'  => $device
         ];
     }
+
+    /**
+     * Mở khóa Chatbot cho người dùng.
+     */
+    public function unbanChatbot($id)
+    {
+        $user = User::findOrFail($id);
+        $user->chatbot_banned_until = null;
+        $user->save();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã mở khóa Trợ lý AI Chatbot cho tài khoản "' . $user->full_name . '" thành công.'
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Đã mở khóa Chatbot thành công.');
+    }
 }
 

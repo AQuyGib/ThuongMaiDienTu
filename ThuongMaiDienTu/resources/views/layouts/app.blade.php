@@ -167,9 +167,9 @@
 
         /* Container */
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 15px;
+            max-width: 1200px !important;
+            margin: 0 auto !important;
+            padding: 0 15px !important;
         }
 
         /* ============================
@@ -981,7 +981,7 @@
            RESPONSIVE STYLES
            ============================ */
         @media (max-width: 1200px) {
-            .container { max-width: 100%; }
+            .container { max-width: 100% !important; }
         }
 
         @media (max-width: 1024px) {

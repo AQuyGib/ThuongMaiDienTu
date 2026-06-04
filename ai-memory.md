@@ -1,6 +1,40 @@
 # Project Memory
 
 ## Current State & Focus
+- **Tối ưu giao diện Flash Sale & Nút mua ngay / Thêm giỏ hàng ở Trang chủ (Ngày 04/06/2026):**
+  - **Khắc phục:**
+    - Cải thiện độ tương phản và căn giữa văn bản tiến trình Flash Sale (`.fs-progress-text`) và biểu tượng lửa (`.fs-fire-icon`) trên thanh tiến trình bằng cách thay đổi màu nền wrapper sang `#fca5a5`, thêm flex alignment, thiết lập `position: absolute; top: 50%; transform: translateY(-50%);` và đặt màu sắc rực rỡ `#ffeb3b` cho biểu tượng lửa.
+    - Đổi cấu trúc thẻ sản phẩm Flash Sale từ dạng thẻ link `<a>` bao bọc toàn bộ thành thẻ `div.product-card` chứa liên kết ảnh/thông tin ở trên và nhóm nút chức năng "Mua ngay" (nút có màu gradient đỏ rực rỡ), "Thêm vào giỏ" ở dưới cùng.
+    - Cập nhật file partial `partials/product_grid_items.blade.php` cho các sản phẩm thông thường ở trang chủ: đưa nhóm nút "Mua ngay" (màu xanh dương thương hiệu) và "Thêm vào giỏ" cố định ở phía dưới cùng thẻ sản phẩm thay vì nút lơ lửng khi hover.
+    - Bổ sung hàm `buyNow()` bằng AJAX trong Javascript block của `home.blade.php` để xử lý thêm sản phẩm và tự động chuyển hướng người dùng trực tiếp tới trang giỏ hàng (`cart.index`).
+- **Sửa lỗi thêm sản phẩm vào Flash Sale ở Trang quản trị Admin (Ngày 04/06/2026):**
+  - **Vấn đề:** Khi thêm một sản phẩm vào chiến dịch Flash Sale bằng AJAX ở Admin, hệ thống báo lỗi SweetAlert: `"Missing required parameter for [Route: admin.flash-sales.products.destroy] ... [Missing parameter: flash_sale_product]"`. Nguyên nhân do trong hàm `store` của `FlashSaleProductController.php` khi tạo link `delete_url` cho dữ liệu trả về đã gọi đến thuộc tính `$flashSaleProduct->id`. Tuy nhiên khóa chính của bảng `flash_sale_products` là `flash_sale_product_id` nên thuộc tính `id` trả về `null`, dẫn đến hàm sinh URL `route()` bị thiếu tham số bắt buộc.
+  - **Khắc phục:** Sửa đổi `$flashSaleProduct->id` thành `$flashSaleProduct->flash_sale_product_id` trong phương thức `store()` của `FlashSaleProductController.php`. Hệ thống hoạt động hoàn hảo và không còn báo lỗi khi gán sản phẩm vào Flash Sale thông qua AJAX.
+- **Đồng bộ nhánh tối ưu hóa (Merge master into AnhQuy/ToiUu) - Ngày 04/06/2026:**
+  - Thực hiện merge thành công phiên bản mới nhất của nhánh `master` (remote `origin/master`) vào nhánh hiện tại `AnhQuy/ToiUu` (fast-forward hoàn toàn sạch sẽ không phát sinh xung đột).
+  - Đồng bộ hóa toàn bộ các nâng cấp mới nhất của hệ thống thông báo đa kênh (Notification System), mô-đun trả góp tích hợp AI (Installment), quản lý thu chi (Cashbook), và các tính năng giao diện, danh mục mới.
+- **Sửa lỗi Unit Test của dịch vụ Trả góp AI (InstallmentAIService):**
+  - **Vấn đề:** Ca kiểm thử `test_low_risk_assessment` thất bại do hàm `env('GEMINI_API_KEY')` trong `InstallmentAIService` không bị xóa bởi `putenv('GEMINI_API_KEY=')` trong Laravel test environment, dẫn đến việc service vẫn gọi thật đến API Gemini thay vì chạy logic Heuristic Fallback giả lập.
+  - **Khắc phục:**
+    - Chuyển logic lấy API key trong `InstallmentAIService.php` từ `env('GEMINI_API_KEY') ?: config('services.gemini.api_key')` thành gọi duy nhất `config('services.gemini.api_key')` để tuân thủ Laravel best practice (không gọi trực tiếp `env()` ngoài file cấu hình, tránh lỗi khi cấu hình được cache).
+    - Cập nhật phương thức `setUp()` trong `InstallmentAIServiceTest.php` để thiết lập config `services.gemini.api_key` thành `null`. Nhờ đó, việc giả lập Fallback chạy chính xác và 100% test suite vượt qua thành công (`Tests: 56 passed`).
+- **Nâng cấp Hệ thống Thông báo Toàn diện (System-Wide Notification System):**
+  - Thiết kế và tích hợp luồng thông báo tự động qua `NotificationService` vào các dịch vụ & controller nghiệp vụ cốt lõi:
+    - **Rewards & Lucky Wheel (`RewardsService`):** Tự động gửi thông báo `rewards.redeemed` khi đổi điểm thưởng thành công (kèm mã voucher & hạn dùng 30 ngày) và `lucky_wheel.won` khi quay trúng thưởng (kèm mã trúng giải & hạn nhận quà 7 ngày).
+    - **Repair Ticket Management (`RepairTicketInvoiceController`):** Tự động gửi thông báo tiếp nhận thiết bị `repair_ticket.created` và cập nhật tiến trình `repair_ticket.status_updated` bằng tiếng Việt thân thiện dựa trên IMEI & trạng thái phiếu sửa chữa cho khách hàng liên kết.
+    - **Service Invoice Processing (`ServiceInvoiceController` & `RepairTicketInvoiceController`):** Tự động gửi thông báo `service_invoice.created` khi xuất hóa đơn dịch vụ mới và `service_invoice.paid` khi hóa đơn được chuyển sang trạng thái đã thanh toán (`paid`).
+    - **Installment Transactions (`Admin\InstallmentController`):** Tự động gửi thông báo `installment.payment_success` xác nhận đóng tiền trả góp hàng tháng định kỳ cho từng kỳ thanh toán (term number) cụ thể.
+  - **Cơ chế xử lý thông báo thông minh khi dùng số điện thoại khác / không khớp tài khoản:**
+    - Hệ thống ưu tiên truy vấn theo `user_id` liên kết trực tiếp (nếu có) để gửi thông báo hệ thống vào tài khoản khách hàng, tránh việc nhập số điện thoại liên hệ khác làm gián đoạn thông báo.
+    - Khi không tìm thấy theo số điện thoại, hệ thống tự động đối chiếu thông tin qua Email (`customer_email`) của khách hàng để tìm tài khoản khớp.
+    - Trong trường hợp khách hàng hoàn toàn không có tài khoản (hoặc thông tin hoàn toàn mới), hệ thống sẽ tự động kích hoạt gửi **Email thông báo trực tiếp qua SMTP (Laravel Mail)** tới email khách hàng đã đăng ký trên form sửa chữa/hóa đơn, đảm bảo khách hàng vãng lai vẫn cập nhật được tiến độ.
+  - **Cơ chế điều hướng và tra cứu thông minh khi nhấp vào thông báo:**
+    - Đối với thông báo liên quan đến đổi thưởng/quay số (`rewards.redeemed`, `lucky_wheel.won`), `action_url` được gán đến trang lịch sử phần thưởng `/rewards/history`.
+    - Đối với thông báo liên quan đến đơn hàng (`order.created`, `order.status_updated`), `action_url` tự động đính kèm tham số mã đơn hàng dưới dạng `/orders?code=[order_code]`.
+    - Trang tra cứu hành trình đơn hàng (`ordertracking.blade.php`) được tích hợp script lắng nghe sự kiện `DOMContentLoaded` tự động lấy mã `code` từ URL, điền vào ô tìm kiếm và kích hoạt submit form tra cứu tự động bằng AJAX để hiển thị ngay tiến trình đơn hàng.
+  - **Tối ưu hóa UI/UX hòm thư thông báo (`notifications.index.blade.php`):**
+    - Bổ sung toàn bộ các phân loại thông báo mới vào bộ lọc tìm kiếm và mảng cấu hình giao diện.
+    - Thiết kế hệ thống icon động (`fa-clover`, `fa-gift`, `fa-wrench`, `fa-file-invoice`, etc.) và phối màu CSS phong phú, hài hòa (Rich Aesthetics) mang lại trải nghiệm Premium trực quan cho người dùng.
 - **Tích hợp nhánh AI & Hoàn tất Merge (Merge Branch AnhQuy/TichHopAI into master):**
   - Thực hiện merge thành công nhánh `AnhQuy/TichHopAI` vào nhánh `master` và giải quyết xung đột thủ công trong file `ThuongMaiDienTu/ai-memory.md` bằng cách hợp nhất lịch sử phát triển của cả hai nhánh một cách khoa học.
   - Đồng bộ và cài đặt toàn bộ dependencies mới của dự án bằng lệnh `composer install --ignore-platform-reqs`, giúp tải đầy đủ các thư viện hỗ trợ AI và API Sanctum.
@@ -30,7 +64,7 @@
   - Added `min_rank` constraint to each lucky wheel configuration (None, Bronze, Silver, Gold, Diamond), allowing rank restrictions for custom wheels.
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
-  - Merged `master` into branch `Vinhem/Tinhphivanchuyen` successfully to sync the latest project developments.
+  - Merged `master` into branch `AnhQuy/ThongBao` successfully.
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
   - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
@@ -44,12 +78,6 @@
   - Bổ sung bình luận tiếng Việt chi tiết cho toàn bộ mã nguồn JavaScript lọc sản phẩm (`product-filter.js`) giúp lập trình viên và quản trị viên dễ dàng nắm bắt logic.
   - Bổ sung bình luận tiếng Việt siêu chi tiết, dễ hiểu cho các lập trình viên khác tại `ProductController.php`, `ProductFilterController.php`, và `ProductFilterService.php` giải thích cặn kẽ các logic lọc AJAX, gợi ý bán chéo FBT, Combo sản phẩm, và cơ chế bảo mật server-side.
   - Hoàn tất tài liệu hóa chi tiết bằng comment tiếng Việt trong `PointsService.php` (Tích điểm & phân hạng), `CrossSellService.php` (Gợi ý bán chéo phân tầng), `ArticleController.php` (Admin CRUD bài viết), `ArticleFrontendController.php` (Khách hàng đăng bài & duyệt bài cộng điểm), `Article.php` (Model bài viết) và toàn bộ các file views liên quan đến Articles ở cả Frontend và Admin Dashboard.
-- **Tối ưu hóa UI Tỉnh/Thành phố & Đồng bộ Phí Giao Hàng (`Vinhem/Tinhphivanchuyen`):**
-  - **Sửa lỗi load danh sách Tỉnh/Thành phố:** Thay thế API `esgoo.net` (đang bị lỗi phản hồi cực chậm, gây treo dropdown) trong file `profile.blade.php` bằng kho dữ liệu tĩnh từ `raw.githubusercontent.com/kenzouno1/DiaGioiHanhChinhVN`. Tốc độ load cải thiện từ >20s xuống <200ms, mang lại trải nghiệm tức thì khi thêm địa chỉ mới.
-  - **Đồng bộ tính năng "Chọn địa chỉ đã lưu" sang trang Ước tính phí giao hàng:** Bổ sung logic hiển thị modal "Chọn địa chỉ đã lưu" vào file `ShippingCosts.blade.php` (tương tự như trang `pay.blade.php`), tự động map Tỉnh/Thành phố từ địa chỉ của người dùng để gán cho chức năng tính phí vận chuyển dựa vào hàm `findProvinceCodeFromCity` (ví dụ 'hcm', 'hn').
-  - **Truyền dữ liệu xuống View:** Cập nhật `CartController::shipping()` trong Admin controller để truy vấn `$addresses` của user đăng nhập và truyền xuống cho view `ShippingCosts.blade.php`.
-  - **Ẩn Tỉnh/Thành phố ở trang thanh toán:** Ẩn menu thả xuống chọn Tỉnh/Thành phố ở form trang `/pay` (`pay.blade.php`) theo yêu cầu. Bỏ qua validate trường `province` phía frontend, thiết lập thành `nullable` trong `CartController` (mặc định 'other' nếu khách hàng không chọn từ địa chỉ đã lưu).
-
 ## Files Changed
 - **Testing & Bug Fixes:**
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/ServiceInvoiceController.php`
@@ -201,6 +229,8 @@
   - Added `min_rank` constraint to each lucky wheel configuration (None, Bronze, Silver, Gold, Diamond), allowing rank restrictions for custom wheels.
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
+  - Thực hiện merge thành công nhánh `AnhQuy/ToiUu` vào nhánh `master` (03/06/2026). Giải quyết xung đột thủ công trong file `ThuongMaiDienTu/app/Http/Controllers/RewardsController.php` liên quan đến validate loại vòng quay `wheel_type` (đã giữ lại cấu trúc validate chi tiết 4 tầng vòng quay standard, silver, gold, diamond của nhánh AnhQuy/ToiUu). Chạy thành công toàn bộ suite kiểm thử và đẩy các thay đổi lên remote.
+  - Đã thực hiện merge nhánh `master` (remote `origin/master`) vào nhánh hiện tại `AnhQuy/ToiUu` thành công mà không xảy ra xung đột (03/06/2026). Toàn bộ các cập nhật giao diện, Live Theme Customizer, logic giỏ hàng/thanh toán và cải tiến trong `start.bat` từ master đã được đồng bộ hóa.
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
   - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
@@ -306,42 +336,36 @@
   - Verify the new detail-page compare button visually against the existing product action buttons.
   - Consider extracting compare button styles into reusable Blade components to reduce duplication.
   - Verify and apply the new migration against the actual database engine.(`RewardSeeder.php`, `RewardHistorySeeder.php`).
+- **QA & Security Audit & Remediation (Khắc phục hoàn toàn các lỗi bảo mật & logic):**
+  - Thực hiện vá lỗi thành công 100% các lỗ hổng phát hiện trong QA Audit:
+    - **DOM-based XSS ở Chatbot**: Tích hợp `DOMPurify` làm sạch HTML tin nhắn AI trước khi chèn vào DOM.
+    - **F12 bypass số tin nhắn chatbot**: Di chuyển cơ chế đếm từ client sang Session (`chatbot_message_count`) và thực hiện phát hành coupon ở backend tin cậy.
+    - **Spam gửi chatbot / Double submit**: Vô hiệu hóa input/button khi đang chờ AI phản hồi.
+    - **Trừ tồn kho quà tặng (`RewardsService@spinWheel`)**: Sử dụng giao dịch DB kèm `lockForUpdate()` và `decrement('stock')` đảm bảo trừ kho atomic, không phát sinh quà tặng quá giới hạn tồn kho.
+    - **Validation wheel_type**: Xác thực đầu vào `wheel_type` nghiêm ngặt tại `RewardsController@spin`.
+    - **Sửa lỗi cú pháp index.blade.php**: Xóa bỏ thuộc tính không hợp lệ `style.styleDisplay` và khôi phục biến `ok` trong JS lọc quà tặng.
+    - **Chống F12 bypass chẩn đoán sửa chữa AI (`storeRepairTicket`)**: Sử dụng cơ chế token đối soát Session (`ai_diagnose_token`) thay vì tin cậy dữ liệu ẩn client gửi lên.
+    - **Đồng bộ hóa lỗi AJAX Flash Sale**: Trả về mã lỗi JSON 422 thay vì HTTP 302 Redirect khi lỗi giá bán Flash Sale lớn hơn hoặc bằng giá gốc trong `FlashSaleProductController@store`.
+    - **Giới hạn cứng danh sách so sánh**: Áp dụng `array_slice` với `MAX_ITEMS` trong `CompareController@data` và `searchCompare` để ngăn chặn DoS qua mảng ID khổng lồ.
+
+## Files Changed
+- **QA & Security Audit Report:**
+  - `C:\Users\ANH QUY\.gemini\antigravity\brain\270e51ca-65ed-4380-a631-d02340a0a674\security_qa_defect_report.md`
+- **Security Hotfixes:**
+  - `ThuongMaiDienTu/app/Http/Controllers/ChatbotController.php`
+  - `ThuongMaiDienTu/resources/views/partials/chatbot.blade.php`
+  - `ThuongMaiDienTu/app/Services/RewardsService.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/RewardsController.php`
+  - `ThuongMaiDienTu/resources/views/frontend/rewards/index.blade.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ProfileController.php`
+  - `ThuongMaiDienTu/resources/views/frontend/profile.blade.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/FlashSaleProductController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/CompareController.php`
 
 ## TODOs & Follow-up Work
-- **Lucky Wheel & Rewards:**
-  - Check database translations for reward model attributes if multi-language data-level localization becomes necessary.
-  - Test custom sound effects triggering on spin start and stop if requested by the user.
-- **Vouchers / Coupon System:**
-  - Theo dõi trải nghiệm người dùng khi áp dụng mã giảm giá và đảm bảo phí ship (nếu có) được cập nhật đồng bộ.
-  - Test thực tế luồng mua hàng trọn vẹn với mã đổi thưởng.
-- **Articles:**
-  - If desired, refine tag taxonomy so lifestyle tags map to a dedicated database column instead of inferred article attributes.
-  - If desired, further reduce duplication by moving article preview markup into a shared partial component.
-- **Storefront:**
-  - Verify the new detail-page compare button visually against the existing product action buttons.
-  - Consider extracting compare button styles into reusable Blade components to reduce duplication.
-  - Verify and apply the new migration against the actual database engine.
-- **Environment & System Setup:**
-  - Kích hoạt thành công tiện ích mở rộng `zip` (`ext-zip`) và `gd` (`ext-gd`) trong tệp cấu hình PHP của hệ thống (`C:\xampp\php\php.ini`).
-  - Đã sẵn sàng hỗ trợ người dùng chạy lại `composer install` không bị gián đoạn và có tốc độ giải nén tối đa.
-  - Tích hợp **SUPER PIPELINE** (Standard Pipeline & Clean Rebuild Pipeline) vào `start.bat` để tổ hợp chạy toàn trình từ đầu đến cuối chỉ với 1-Click.
-  - **BUG FIX (Super Pipeline + MySQL):** Sửa 2 lỗi nghiêm trọng: (1) Thêm kiểm tra MySQL process (`mysqld.exe`) đang chạy trước khi gọi `migrate:fresh --seed` trong cả 2 pipeline (Standard & Clean Rebuild), tránh script treo chết khi MySQL chưa bật. (2) Thêm `goto PROCESS` sau `npm run build` trong PIPELINE_CLEAN_REBUILD — trước đó script rơi thẳng xuống nhãn `:VIEW_SITEMAP` khiến Laravel server không bao giờ được khởi chạy.
-  - Khắc phục thành công lỗi `QueryException: General error: 1 error in index orders_user_id_status_index after drop column` trên SQLite bằng cách tự động drop index ghép trước khi drop cột và tái tạo lại sau khi đổi cấu trúc cột trong tệp migration `2026_05_14_130000_add_cancelled_status_to_orders_table.php`.
-  - Khai báo bổ sung gói `"laravel/sanctum": "^4.0"` vào mục `"require"` của [composer.json](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/composer.json) giải quyết triệt để lỗi `Trait "Laravel\Sanctum\HasApiTokens" not found`, giúp package tự động cài đặt mượt mà khi rebuild.
-  - **BUG FIX (start.bat Option 5 / Parentheses Syntax & CRLF Line Endings Crash):** Khắc phục triệt để lỗi Windows CMD parser sụp đổ gây ra lỗi `The system cannot find the batch label specified - PIPELINE_STANDARD` khi chọn Option 5. Chúng tôi đã xử lý 2 nguyên nhân cốt lõi: (1) Sửa 6 điểm lỗi dấu ngoặc đơn đóng `)` chưa được escape nằm trong các câu lệnh `echo` và `set` thuộc các khối lệnh `if (...)` lồng nhau (tại dòng 183, 201, 899, 994, 995, và 996) bằng cách đổi thành ngoặc vuông `[...]`. (2) Phát hiện và sửa đổi định dạng xuống dòng của file `start.bat` từ Unix-style (LF) về lại Windows-style (CRLF) bằng PowerShell. Định dạng xuống dòng LF là nguyên nhân kinh điển khiến CMD trên Windows không thể tìm thấy bất kỳ nhãn nào khi chạy lệnh `goto`. Hệ thống hiện đã hoạt động hoàn hảo 100%.
-- **Live Theme Customizer Compiler Fix & Customizer Focus Optimization:**
-  - Đại trùng tu và tích hợp Same-Origin Iframe Sync chất lượng cao trỏ trực tiếp đến `/?theme_preview=1`.
-  - Đã xử lý loại bỏ hoàn toàn các đoạn mã dư thừa, cú pháp lỗi của component `MockProductCard` cũ bị bỏ lại tại `ThemeSettings.tsx` (dòng 934-953), giúp khôi phục trạng thái biên dịch thành công 100% cho trình biên dịch Vite dev server trên máy host.
-  - Sửa lỗi co rút và lệch khung xem trước bằng cách chuyển macOS Safari sang định vị tuyệt đối `absolute top-4 left-4`, mở rộng kích thước pre-transform `100/previewScale %` và sử dụng `origin-top-left` kèm `shrink-0`. Khung máy tính giờ đây hiển thị siêu nét, lấp đầy 100% diện tích giả lập thực tế không còn lề thừa hay thanh cuộn ngang khó chịu.
-  - Khắc phục lỗi rò rỉ và hiển thị bong bóng Chatbot bằng cách cập nhật selector thực tế trong Iframe: ẩn triệt để `.chatbot-fab`, `#chatbot-fab`, `#ai-chat-window`, `#pending-payment-alert`, `.compare-bar`, `.compare-bar-inner`, và `.compare-floating-bar`.
-  - Sửa lỗi hiển thị chữ thô do ký tự thoát `\${` ở các trường Logo, Topbar, Hotline, Địa chỉ và Copyright. Các biến giờ đây được đánh giá nội suy chính xác 100% theo dữ liệu thời gian thực của Admin.
-  - Loại bỏ hoàn toàn các nhãn text `.customizer-badge` đè che khuất các phần tử thật của website. Thay thế hiệu ứng viền highlight thành một đường viền outline nét đứt màu đỏ thương hiệu `#d70018` tuyệt đẹp có bóng mờ phát sáng dịu mà không gây xê dịch hay móp xẹp chiều cao của Header/Topbar.
-  - Kích hoạt cơ chế cuộn thông minh cuộn mượt mà lên đỉnh đầu khi chọn tab Đầu trang (Header) và cuộn xuống đáy trang khi chọn tab Chân trang (Footer).
-- **Storefront Live Theme Integration & Layout Bug Fix:**
-  - **Đồng bộ hóa SettingsStorefront:** Kích hoạt đăng ký lớp `App\Providers\SettingsServiceProvider::class` trong tệp cấu hình khởi động của Laravel (`bootstrap/providers.php`). Trước đó, do thiếu đăng ký này, toàn bộ biến `$globalSettings` không bao giờ được khởi tạo và chia sẻ đến các view Blade trên storefront trực tiếp, khiến các cài đặt giao diện (màu sắc, logo, hotline, chân trang, v.v.) bị bỏ qua hoàn toàn.
-  - **Sửa lỗi cú pháp HTML vỡ khung top-bar:** Tái cấu trúc khối lệnh điều kiện `@if` ẩn hiện Topbar thông báo trong `header.blade.php`. Chuyển dịch vị trí đóng thẻ `@endif` xuống bao trọn toàn bộ cấu trúc `.top-bar` thay vì cắt ngang giữa chừng. Lỗi này trước đây khiến trình duyệt render dư thừa các thẻ `</div>` khi thanh thông báo bị ẩn (`announcement_show` = 0), gây vỡ toàn bộ cấu trúc layout DOM của trang web.
-  - **Dọn dẹp cache hệ thống:** Đã thực hiện xóa cache cấu hình và view (`optimize:clear`) để hệ thống nạp lại lớp service provider mới nhất và áp dụng tức thì.
-  - **Sắp xếp phân hệ Tùy biến Header & Footer trực quan:** Tái cấu trúc bộ chọn tab (`activeTab`) trong component `ThemeSettings.tsx` từ dạng hàng ngang (flex row) thành dạng cột đứng (flex column). Nhờ đó, tùy chọn "Tùy biến Header (Đầu trang)" luôn nằm ở **phía trên** và "Tùy biến Footer (Chân trang)" luôn nằm ở **phía dưới**, tương ứng 100% với vị trí thực tế của các phần tử này trên bố cục một website. Tối ưu hóa thêm độ trễ `setTimeout` khi cuộn mượt (smooth scroll) xem trước để bảo đảm trình duyệt tính toán và dịch chuyển tiêu điểm chính xác tuyệt đối.
+- Kiểm thử tích hợp toàn diện hệ thống để đảm bảo tính ổn định sau đợt vá bảo mật.
+- Theo dõi log lỗi của `RepairAIService` và chatbot để tối ưu hóa phản hồi của AI.
+
 
 
 

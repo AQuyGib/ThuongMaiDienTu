@@ -83,7 +83,10 @@ class FlashSaleEndToEndTest extends TestCase
         $this->actingAs($user)->post(route('cart.confirm'), [
             'name' => 'Nguyen Van A',
             'phone' => '0901234567',
-            'address' => '123 Duong ABC, Quan 1, TP HCM',
+            'address' => '123 Duong ABC',
+            'province' => 'hcm',
+            'district' => 'Quan 1',
+            'ward' => 'Ben Nghe',
             'note' => 'Ghi chu test',
         ])->assertJson(['status' => 'success']);
         $this->assertFalse(session()->has('cart'));

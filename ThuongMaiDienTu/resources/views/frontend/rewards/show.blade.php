@@ -4,6 +4,13 @@
 @push('styles')
 {{-- Nhúng Tailwind CSS phục vụ vẽ giao diện động dạng utility-first --}}
 <script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        corePlugins: {
+            preflight: false,
+        }
+    }
+</script>
 @endpush
 
 @section('content')

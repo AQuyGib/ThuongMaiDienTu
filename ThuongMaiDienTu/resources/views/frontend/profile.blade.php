@@ -1966,6 +1966,7 @@
                 </div>
 
                 <!-- Hidden inputs for AI diagnostic results -->
+                <input type="hidden" name="ai_diagnose_token" id="hidAiDiagnoseToken">
                 <input type="hidden" name="ai_diagnosed" id="hidAiDiagnosed" value="0">
                 <input type="hidden" name="ai_fault_type" id="hidAiFaultType">
                 <input type="hidden" name="ai_probable_causes" id="hidAiProbableCauses">
@@ -2924,6 +2925,7 @@
         removeRepairImage();
         document.getElementById('aiDiagnosisReport').style.display = 'none';
         document.getElementById('hidAiDiagnosed').value = '0';
+        document.getElementById('hidAiDiagnoseToken').value = '';
     }
     function closeTrackingModal() {
         document.getElementById('trackingModal').classList.remove('active');
@@ -3043,6 +3045,7 @@
                     document.getElementById('aiDispatchReason').innerText = data.ai_dispatch_reason;
 
                     document.getElementById('hidAiDiagnosed').value = '1';
+                    document.getElementById('hidAiDiagnoseToken').value = data.diagnose_token;
                     document.getElementById('hidAiFaultType').value = data.ai_fault_type;
                     document.getElementById('hidAiProbableCauses').value = JSON.stringify(data.ai_probable_causes);
                     document.getElementById('hidAiRiskWarnings').value = JSON.stringify(data.ai_risk_warnings);
