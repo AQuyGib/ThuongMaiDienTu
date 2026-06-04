@@ -3,6 +3,14 @@
 ## Tiến độ và Ngữ cảnh hiện tại
 Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/CMS chuyên nghiệp. Đang phát triển các phân hệ: Articles & Lifestyle, Storefront (So sánh & Bộ lọc), Phiếu sửa chữa & Dịch vụ (Repair Tickets & Customer Portal), và Phân hệ Quản lý & Phát Video (Videos Management).
 
+- **Sửa lỗi hiển thị di động & Việt hóa chú thích CommunicationHub:**
+  - Khắc phục triệt để lỗi hiển thị đồng thời cả danh sách phòng (Cột 1) và khung chat bị bóp méo (Cột 2) trên các thiết bị di động bằng cách sử dụng React conditional rendering: chỉ render duy nhất Cột 1 hoặc Cột 2 vào DOM tùy thuộc vào trạng thái `mobileView` (`'rooms'` hoặc `'chat'`) khi ở màn hình điện thoại, giải quyết triệt để vấn đề xung đột CSS.
+  - Sử dụng hook lắng nghe sự kiện window resize để xác định trạng thái `isDesktop` (width >= 768px) nhằm tự động hiển thị side-by-side đầy đủ cả hai cột trên máy tính mà không cần tải lại trang.
+  - Dịch toàn bộ chú thích (comments) trong file `CommunicationHub.tsx` (Trung tâm giao tiếp) từ tiếng Anh sang tiếng Việt rõ ràng, dễ hiểu (giữ nguyên chú thích tiếng Anh cho các file khác theo đúng yêu cầu).
+  - **Khắc phục lỗi vị trí hiển thị (CSS Position drawer):** Loại bỏ class `relative` bị trùng lặp với `fixed` tại thẻ container ngoài cùng của component `CommunicationHub.tsx` (dòng 644). Lỗi này làm drawer bị ghi đè thuộc tính CSS position sang relative, dẫn đến hiện tượng trôi lơ lửng và đè bẹp lên giao diện Admin Dashboard thay vì bám cố định vào mép phải của viewport.
+  - **Giải quyết xung đột Git trong app.tsx:** Loại bỏ triệt để các marker xung đột Git (`<<<<<<< HEAD`, `=======`, `>>>>>>> origin/master`) ở hàm chặn chuyển trang admin (dòng 206) trong file `resources/js/app.tsx`. Đã giữ lại cấu trúc kiểm tra thông minh để chỉ force-reload các module phức tạp (sản phẩm, nhân viên, phiếu sửa chữa, activity-logs, bình luận) và duy trì SPA soft-navigation cho các trang admin đơn giản còn lại.
+  - **Việt hóa chú thích trong app.tsx:** Dịch toàn bộ chú thích (comments) trong file `app.tsx` sang tiếng Việt rõ ràng, chi tiết, giải thích rõ cơ chế điều hướng mềm (soft-navigation), gắn component React động, xử lý unmount/re-mount sạch sẽ để hỗ trợ lập trình viên.
+
 ## Các file đã tạo / chỉnh sửa & Công việc hoàn thành
 
 ### 23. Tính năng Tra cứu hành trình Đơn hàng (Order Tracking System)
