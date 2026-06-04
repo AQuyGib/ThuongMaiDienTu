@@ -665,3 +665,75 @@
 - **Hợp nhất Git và giải quyết xung đột Merge trong các file ai-memory.md:**
   - Giải quyết các xung đột merge phức tạp (Git conflicts) thành công trong cả hai tệp `ai-memory.md` ở thư mục gốc và thư mục con `ThuongMaiDienTu/ai-memory.md`, bảo đảm giữ lại đầy đủ lịch sử nâng cấp tính năng Advanced Audit Logs và SweetAlert2 Premium.
   - Thực hiện merge và commit trực tiếp toàn bộ các bản vá nóng vào nhánh `master` một cách an toàn.
+=======
+- **Nâng cấp Bảng điều khiển KPI (KPI Dashboard & Seeder Upgrades):**
+  - **Kích hoạt Timestamps:** Chuyển thuộc tính `public $timestamps = true;` trong model [RepairTicket.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/RepairTicket.php) giúp Laravel tự động ghi nhận thời gian khi tạo/sửa phiếu sửa chữa.
+  - **Phân bổ thời gian ảo lịch sử:** Cập nhật seeder [RepairTicketSeeder.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/database/seeders/RepairTicketSeeder.php) gán giá trị `created_at` và `updated_at` ngẫu nhiên lùi về 10 ngày trong quá khứ, giúp biểu đồ doanh thu và tăng trưởng hiển thị dữ liệu lịch sử chuẩn xác.
+  - **Sắp xếp & Giới hạn Bảng vàng:** Nâng cấp [KPIController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/KPIController.php) sắp xếp danh sách nhân viên bán hàng/kỹ thuật viên theo doanh thu và số ca sửa hoàn thành giảm dần, đồng thời giới hạn hiển thị **Top 10** nhân sự hàng đầu trên Leaderboard.
+  - **Thêm chỉ số Tỷ lệ Hoàn Thành Đơn Hàng:** Tích hợp tính toán tỷ lệ đơn Delivered trên tổng số đơn phát sinh và hiển thị card chỉ số mới kèm vòng xoay SVG Radial Gauge màu lục sáng trên [KPIDashboard.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/KPIDashboard.tsx).
+
+## Update: June 04, 2026 (Late Night)
+- **Hoàn thành Nâng cấp Bảng điều khiển KPI (KPI Dashboard Upgrade Phase 2):**
+  - **Tích hợp Drawer Chi tiết Nhân viên (Employee detailed KPI Drawer):**
+    - Thiết kế panel trượt slide-over (slide-out panel) tuyệt đẹp bằng Tailwind CSS cố định ở mép phải (`fixed inset-y-0 right-0 z-50`). Tích hợp backdrop phủ mờ mượt mà, hỗ trợ nhấn tắt khi click ngoài vùng panel.
+    - Tạo skeleton loading (hiệu ứng xung động gradient) khi đang tải dữ liệu chi tiết từ backend.
+    - Hiển thị đầy đủ thông tin cá nhân (Ảnh đại diện viết tắt họ tên, trạng thái Online/Offline bằng đèn nhấp nháy, email, SĐT, ID nhân viên).
+    - Hiển thị Thẻ điểm hiệu năng (Scorecard) tương ứng theo vai trò: đối với Sales hiển thị Doanh thu, Đơn hoàn thành, và AOV; đối với Kỹ thuật hiển thị Ca sửa xong, Tổng số phiếu tiếp nhận, và Tỷ lệ thành công kèm thanh progress màu lục.
+    - Hiển thị danh sách 10 giao dịch gần nhất của nhân sự: Mã đơn hàng/phiếu sửa chữa kèm mã RT, tên khách hàng, tên dịch vụ/IMEI, giá trị giao dịch, thời gian và nhãn trạng thái HSL trực quan.
+  - **Tích hợp Row Click trong Leaderboard Tables:**
+    - Cấu hình component `TableCard` nhận thêm prop `onRowClick` và gán sự kiện click vào các thẻ `tr` của bảng vàng danh dự Sales & Kỹ thuật.
+    - Thêm con trỏ `cursor-pointer` và hiệu ứng màu nền highlight thông minh (`hover:bg-indigo-50/40` cho Sales, `hover:bg-emerald-50/40` cho Tech).
+    - Đồng bộ hóa các sự kiện gọi API `/admin/kpi/employee/{id}` và tự động xác định chính xác role để hiển thị giao diện Scorecard phù hợp.
+  - **Nâng cấp Xuất file Excel Đẹp & Chuẩn xác (Excel Export Style & Encoding Upgrade):**
+    - Chuyển đổi từ export CSV trô phẳng sang xuất file Excel HTML Spreadsheet (`.xls`) đầy đủ kiểu dáng.
+    - Cấu hình style CSS trực tiếp (Segoe UI font, border collapse, margin/padding) và gán màu sắc tiêu chuẩn thương hiệu (Indigo `#4f46e5` cho Sales, Emerald `#10b981` cho Kỹ thuật) giúp bảng dữ liệu xuất ra có giao diện chuyên nghiệp như một báo cáo CRM thực tế.
+    - Tích hợp thẻ `<meta charset="UTF-8">` và tiền tố **UTF-8 BOM (`\uFEFF`)** ở đầu tệp nhị phân giúp Microsoft Excel trên Windows tự động mở bằng bảng mã UTF-8, giải quyết triệt để lỗi phông chữ (lỗi hiển thị dấu tiếng Việt như Nguyễn Văn A).
+    - Xuất file đúng định dạng tên chuẩn hóa: `[Bang_Vang_Sales/Bang_Vang_Ky_Thuat]_[Kỳ_lọc_thống_kê]_[Ngày_xuất].xls` (Ví dụ: `Bang_Vang_Sales_Thang_nay_04_06_2026.xls`), tự động nạp tiêu đề phụ và thời gian xuất báo cáo.
+  - **Sửa lỗi Phóng to biểu đồ & Vẽ vòng xoay Cơ cấu Sales (Chart Resize & Doughnut Circle Render Fix):**
+    - Tích hợp hàm `setTimeout` với độ trễ 100ms trong `useEffect` khởi tạo biểu đồ. Điều này đảm bảo Chart.js chỉ vẽ lại canvas sau khi quá trình thay đổi kích thước layout (Maximize/Minimize khi người dùng bấm nút phóng to) đã hoàn tất hoàn toàn, loại bỏ triệt để hiện tượng méo biểu đồ hoặc sai lệch kích cỡ canvas.
+    - Bật bộ lọc legend filter giới hạn hiển thị tối đa **Top 5** nhân viên xuất sắc nhất và giảm padding trên biểu đồ Doughnut cơ cấu doanh thu. Giải pháp này giúp tiết kiệm 70% không gian dọc, trả lại đủ diện tích trống để Chart.js hiển thị vòng tròn biểu đồ Doughnut cực kỳ to, đẹp và rõ nét thay vì bị đè bẹp biến mất bởi danh sách legend quá dài.
+  - **Tối ưu hóa Khả năng hiển thị Đa thiết bị (Mobile Responsiveness Upgrade):**
+    - Thiết kế lại thanh điều khiển biểu đồ (Line Chart Header): Chuyển đổi linh hoạt từ hàng ngang (`flex-row`) sang dạng xếp chồng dọc (`flex-col`) trên các màn hình di động nhỏ hẹp để ngăn chặn hoàn toàn lỗi tràn layout và vỡ giao diện nút bấm.
+    - Định dạng lại kích thước font chữ trên Card hiệu năng của Drawer: Sử dụng kiểu kích cỡ chữ thích ứng (`text-base sm:text-lg`) giúp các chỉ số doanh thu dài (như *72.000.000đ*) co giãn tự động và không bị tràn hay hiển thị xuống dòng trên các dòng điện thoại màn hình siêu nhỏ (như iPhone SE).
+    - Cải tiến độ rộng trượt của Drawer trên di động: Điều chỉnh padding bên trái (`pl-6 sm:pl-10`) giúp mở rộng tối đa vùng hiển thị nội dung trên màn hình điện thoại mà vẫn chừa lại 24px để người dùng nhấp ra ngoài để đóng.
+    - **Tái cấu trúc Layout biểu đồ (Flexbox Refactor):** Thay thế toàn bộ cơ chế căn lề tuyệt đối (`absolute inset-0 pt-16`) bằng luồng hộp mềm dẻo (`flex flex-col` cho container và `flex-1 w-full min-h-0 relative` cho canvas). Điều này giải quyết triệt để lỗi toggle buttons đè chồng chéo lên biểu đồ/trục số Y khi tiêu đề co giãn xuống dòng trên di động, giúp canvas tự động tính toán chính xác diện tích hiển thị còn lại.
+
+### Cập nhật ngày 05/06/2026 - Phân quyền truy cập (RBAC - Role-Based Access Control)
+- **Nâng cấp Middleware IsAdmin:** Sửa file `app/Http/Middleware/IsAdmin.php` để cho phép 3 vai trò truy cập trang quản trị: Admin (role_id=1), Quản lý (role_id=2), Nhân viên (role_id=4). Chặn hoàn toàn Khách hàng (role_id=3).
+- **Tạo Middleware CheckRole mới:** File `app/Http/Middleware/CheckRole.php` - kiểm tra role_id chi tiết theo từng nhóm route. Sử dụng cú pháp `middleware('role:1,2')`.
+- **Đăng ký alias 'role':** Cập nhật `bootstrap/app.php` thêm alias `'role' => CheckRole::class`.
+- **Phân quyền route trong `routes/admin.php`:**
+  - Chỉ Admin (role:1): Tài khoản, Nhân viên, Vai trò, Nhật ký hoạt động
+  - Admin + Quản lý (role:1,2): Flash Sale, Voucher
+  - Tất cả nhân sự (role:1,2,4): Dashboard, KPI, Đơn hàng, Phiếu sửa chữa, Sản phẩm, v.v.
+- **Phân quyền Sidebar:** Cập nhật `resources/views/admin/partials/sidebar.blade.php` - thêm key `roles` vào mỗi menu item và lọc theo `$userRoleId` hiện tại. Truyền thêm `role_id` vào props React sidebar.
+- **Header Frontend:** Đã kiểm tra link "Admin Dashboard" trên header.blade.php tại dòng 438 - đã sẵn guard `in_array(Auth::user()->role_id, [1, 2, 4])`.
+- **Tối ưu hóa giao diện Thêm tài khoản (UserModal & CustomSelect):**
+  - Cập nhật `UserManagement.tsx` để hỗ trợ linh hoạt các thuộc tính `className` và `buttonClassName` cho component `CustomSelect`.
+  - Thiết lập cho các hộp chọn (CustomSelect) trong `UserModal` (Vai trò hệ thống, Hạng thành viên, Trạng thái vận hành) có kích thước rộng tối đa (`w-full`) và chiều cao `h-14` (56px) thay vì co hẹp `min-w-[160px]` như trước.
+  - Đồng bộ hóa chiều cao và bo góc của các trường nhập dữ liệu cá nhân ở cột trái (Họ tên, Email, Số điện thoại) từ `py-5` và `rounded-[1.5rem]` thành `py-4`, `rounded-2xl` và kích thước font chữ `text-sm font-bold`.
+  - Sự thay đổi này giúp toàn bộ giao diện form tạo tài khoản mới/cập nhật tài khoản cân đối tuyệt đối, liền mạch, đồng nhất về kích thước chiều cao và độ bo góc giữa tất cả các trường nhập liệu và hộp chọn.
+- **Sửa lỗi hiển thị Mật khẩu & Điều chỉnh Ràng buộc Tạo tài khoản:**
+  - **Khắc phục lỗi hiển thị 2 con mắt:** Thêm CSS rule `input[type="password"]::-ms-reveal` và `::-ms-clear` ẩn nút hiển thị mật khẩu mặc định của Edge/Chrome trong file `app.css` để tránh đè lên nút hiện/ẩn mật khẩu tùy chỉnh của React.
+  - **Nâng cấp bảo mật mật khẩu:** Thay đổi độ dài mật khẩu tối thiểu bắt buộc từ 6 lên 8 ký tự ở cả frontend (`minLength={8}` trên inputs trong `UserManagement.tsx`) và backend validator (file `UserController.php`).
+  - **Bỏ bắt buộc Hạng thành viên với tài khoản Nhân sự:** Điều chỉnh logic frontend và backend để trường "Hạng thành viên" (Member Tier) chỉ bắt buộc khi chọn vai trò Khách hàng (role_id = 3). Với các vai trò nhân sự (Admin, Quản lý, Nhân viên), Hạng thành viên sẽ chuyển sang trạng thái disabled (Không áp dụng) và tự động gán giá trị mặc định là `'Dong'` dưới DB.
+- **Tương thích Mobile & Đồng bộ hóa thông báo lỗi:**
+  - **Đồng bộ hóa thông báo lỗi (SweetAlert):** Kích hoạt thuộc tính `noValidate` trên thẻ form và triển khai bộ kiểm tra (custom validations) bằng JS trong `handleSubmit` trước khi gửi request Axios. Thay vì hiển thị bong bóng thông báo HTML5 mặc định của trình duyệt, toàn bộ thông báo lỗi (nhập thiếu thông tin, sai định dạng email, mật khẩu dưới 8 ký tự, mật khẩu không khớp, chưa chọn vai trò hoặc hạng thành viên) giờ đây được đồng bộ hóa và hiển thị dưới dạng **SweetAlert Modal** cao cấp cực kỳ đẹp mắt và đồng bộ.
+  - **Tối ưu hóa Responsive cho Mobile:**
+    - Thay thế kích thước padding và bo góc cố định của modal (`rounded-[3.5rem]`, `p-6/p-12`) bằng các lớp thích ứng (`rounded-3xl sm:rounded-[3.5rem]`, `p-4 sm:p-6`, `p-6 sm:p-12`) để modal hiển thị khít và gọn đẹp trên màn hình điện thoại.
+    - Sửa đổi cấu trúc lưới bên phải từ `grid-cols-2` thành `grid-cols-1 sm:grid-cols-2` giúp các ô nhập mật khẩu và vai trò xếp chồng dọc tự nhiên trên di động thay vì bị bóp nghẹt chiều rộng.
+    - Điều chỉnh tiêu đề và dòng chữ mô tả phụ ngắn gọn hơn trên di động (`text-2xl sm:text-3xl`, `tracking-wider sm:tracking-[0.3em]`) để tránh bị tràn và xuống dòng lỗi.
+    - Footer modal sử dụng `flex-col-reverse sm:flex-row` và `w-full sm:w-auto` cho các nút bấm, giúp nút "Hủy" và "Khởi tạo" xếp chồng rộng toàn màn hình trên di động để dễ chạm nhấn.
+- **Tích hợp ràng buộc kiểm tra Số điện thoại:**
+  - **Kiểm tra định dạng Số điện thoại Việt Nam:** Cấu hình regex kiểm tra số điện thoại di động Việt Nam `^(0|\+84|84)[3|5|7|8|9][0-9]{8}$` (phải gồm 10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09) ở cả frontend (`UserManagement.tsx`) và backend validator (`UserController.php`).
+  - **Hiển thị thông báo SweetAlert:** Nếu số điện thoại do người dùng nhập vào không hợp lệ, hệ thống sẽ chặn submit và đưa ra thông báo cảnh báo SweetAlert định dạng sai vô cùng rõ ràng và đồng bộ.
+- **Tối ưu hóa toàn diện giao diện Dashboard và Bộ lọc trên Mobile:**
+  - **Khắc phục lỗi tràn ngang màn hình (Horizontal Overflow Fix):**
+    - Sửa đổi container nút bấm ở header trang từ `flex items-center gap-3` thành `flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto`. Các nút "Xuất dữ liệu" và "Thêm tài khoản" sẽ kéo rộng 100% và xếp chồng dọc trên di động để vừa khít màn hình.
+    - Điều chỉnh tiêu đề chính xuống `text-3xl sm:text-4xl` và mô tả phụ `tracking-wider sm:tracking-widest` để không bị đẩy dài vượt khung màn hình.
+    - Cập nhật bộ lọc (Filters Bar) sử dụng `p-4 sm:p-6 rounded-2xl sm:rounded-[2rem]`, thay thế `min-w-[280px]` bằng `min-w-0 w-full` cho thanh tìm kiếm và cho phép các dropdown co giãn linh hoạt (`flex-1 sm:flex-initial`).
+    - Bọc danh sách tab `VercelTabs` trong container `overflow-x-auto no-scrollbar` để thanh tab có thể cuộn ngang mượt mà trên di động thay vì ép dẹt các tab hoặc gây tràn layout trang chính.
+
+
+
+

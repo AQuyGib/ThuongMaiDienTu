@@ -79,43 +79,45 @@ export function VercelTabs({ tabs, defaultTab, value, onChange, className }: Ver
       onValueChange={setActiveTab}
       className={`flex w-full flex-col items-center ${className}`}
     >
-      <TabsList className="relative h-auto select-none gap-[6px] bg-transparent p-0">
-        {/* Hover Highlight */}
-        <div
-          className="absolute top-0 left-0 flex h-[30px] items-center rounded-[6px] bg-[#0e0f1114] transition-all duration-300 ease-out dark:bg-[#ffffff1a]"
-          style={{
-            ...hoverStyle,
-            opacity: hoveredIndex !== null ? 1 : 0,
-          }}
-        />
-
-        {/* Active Indicator */}
-        <div
-          className="absolute bottom-[-6px] h-[2px] bg-[#0e0f11] transition-all duration-300 ease-out dark:bg-white"
-          style={activeStyle}
-        />
-
-        {tabs.map((tab, index) => (
-          <TabsTrigger
-            key={tab.value}
-            value={tab.value}
-            ref={(el) => {
-              tabRefs.current[index] = el;
+      <div className="w-full max-w-full overflow-x-auto no-scrollbar flex justify-center pb-2">
+        <TabsList className="relative h-auto select-none gap-[6px] bg-transparent p-0 flex-nowrap shrink-0">
+          {/* Hover Highlight */}
+          <div
+            className="absolute top-0 left-0 flex h-[30px] items-center rounded-[6px] bg-[#0e0f1114] transition-all duration-300 ease-out dark:bg-[#ffffff1a]"
+            style={{
+              ...hoverStyle,
+              opacity: hoveredIndex !== null ? 1 : 0,
             }}
-            className={`z-10 h-[30px] cursor-pointer rounded-md border-0 bg-transparent px-3 py-2 outline-none transition-colors duration-300 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none ${
-              activeTab === tab.value
-                ? "text-[#0e0e10] dark:text-white"
-                : "text-[#0e0f1199] dark:text-[#ffffff99]"
-            }`}
-            onMouseEnter={() => setHoveredIndex(index)}
-            onMouseLeave={() => setHoveredIndex(null)}
-          >
-            <span className="whitespace-nowrap font-medium text-sm leading-5">
-              {tab.label}
-            </span>
-          </TabsTrigger>
-        ))}
-      </TabsList>
+          />
+
+          {/* Active Indicator */}
+          <div
+            className="absolute bottom-[-6px] h-[2px] bg-[#0e0f11] transition-all duration-300 ease-out dark:bg-white"
+            style={activeStyle}
+          />
+
+          {tabs.map((tab, index) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              ref={(el) => {
+                tabRefs.current[index] = el;
+              }}
+              className={`z-10 h-[30px] cursor-pointer rounded-md border-0 bg-transparent px-3 py-2 outline-none transition-colors duration-300 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 data-[state=active]:bg-transparent data-[state=active]:shadow-none ${
+                activeTab === tab.value
+                  ? "text-[#0e0e10] dark:text-white"
+                  : "text-[#0e0f1199] dark:text-[#ffffff99]"
+              }`}
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            >
+              <span className="whitespace-nowrap font-medium text-sm leading-5">
+                {tab.label}
+              </span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
 
       {/* Content Area */}
       <div className="mt-8 w-full px-4">

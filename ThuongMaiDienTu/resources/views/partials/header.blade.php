@@ -441,10 +441,7 @@
                             </a>
                         @endif
                         <a href="/profile">{{ __('ui.profile') }}</a>
-                        <form action="{{ route('logout') ?? '/logout' }}" method="POST">
-                            @csrf
-                            <button type="submit">{{ __('ui.logout') }}</button>
-                        </form>
+                        <a href="javascript:void(0)" onclick="fetch('{{ route('logout') }}',{method:'POST',headers:{'X-CSRF-TOKEN':'{{ csrf_token() }}'}}).finally(()=>{window.location.href='/Home';})">{{ __('ui.logout') }}</a>
                     </div>
                 </div>
             @else

@@ -176,7 +176,7 @@
                                             <td class="text-center">
                                                 @if($pay->status === 'Unpaid')
                                                     <span class="badge bg-slate-100 text-slate-600 rounded">Chưa đóng</span>
-                                                    <form action="{{ route('admin.installments.pay-month', $pay->id) }}" method="POST" class="d-inline ms-2" onsubmit="return confirm('Xác nhận khách hàng đã nộp tiền kỳ thứ {{ $pay->payment_no }} này?')">
+                                                    <form action="{{ route('admin.installments.pay-month', $pay->id) }}" method="POST" class="d-inline ms-2 pay-month-form" data-payment-no="{{ $pay->payment_no }}">
                                                         @csrf
                                                         <button type="submit" class="btn btn-xs btn-success py-0.5 px-1.5 rounded font-bold text-[9px] uppercase tracking-wide text-white" style="background-color: #10b981; border: none;">
                                                             Đóng tiền
@@ -296,7 +296,7 @@
                     @if($installment->status === 'Pending_Approval')
                         <div class="flex flex-col gap-3 mt-2">
                             <!-- Approve form -->
-                            <form action="{{ route('admin.installments.approve', $installment->id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn phê duyệt hồ sơ trả góp này và khởi tạo lịch đóng tiền?')">
+                            <form action="{{ route('admin.installments.approve', $installment->id) }}" method="POST" id="approveInstallmentForm">
                                 @csrf
                                 <button type="submit" class="w-full btn btn-success py-2.5 font-bold rounded-2xl flex items-center justify-center gap-2 text-sm">
                                     <i class="fa-solid fa-circle-check"></i> PHÊ DUYỆT HỒ SƠ
@@ -347,4 +347,53 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const approveForm = document.getElementById('approveInstallmentForm');
+    if (approveForm) {
+        approveForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Xác nhận phê duyệt',
+                text: 'Bạn có chắc chắn muốn phê duyệt hồ sơ trả góp này và khởi tạo lịch đóng tiền?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Đồng ý phê duyệt',
+                cancelButtonText: 'Hủy bỏ'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    approveForm.submit();
+                }
+            });
+        });
+    }
+
+    const payMonthForms = document.querySelectorAll('.pay-month-form');
+    payMonthForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const paymentNo = form.getAttribute('data-payment-no');
+            Swal.fire({
+                title: 'Xác nhận đóng tiền',
+                text: `Xác nhận khách hàng đã nộp tiền kỳ thứ ${paymentNo} này?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Đã đóng tiền',
+                cancelButtonText: 'Hủy bỏ'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+});
+</script>
+@endpush
 @endsection
