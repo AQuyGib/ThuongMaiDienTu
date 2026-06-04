@@ -1,6 +1,17 @@
 # Project Memory
 
 ## Current State & Focus
+- **Merge master → Vinhem/MaGiamGia (Ngày 04/06/2026):**
+  - Merge thành công từ `master` vào branch `Vinhem/MaGiamGia` bằng strategy `ort` (84 file thay đổi, 10392 insertions).
+  - Đã đồng bộ toàn bộ tính năng mới nhất: Installment module, Chatbot security, Cashbook sync, Order tracking redesign, Notification system, Flash Sale fixes, và các cải tiến khác.
+- **Nâng cấp Quản lý Voucher `/admin/vouchers` (Ngày 04/06/2026):**
+  - Thêm cột `usage_limit` (nullable int) và `times_used` (int default 0) vào bảng `coupons_flash_sales` qua migration.
+  - **Ràng buộc mã voucher:** Cho phép nhập cả chữ hoa và chữ thường, độ dài từ 6 đến 20 ký tự. Nếu nhập quá ký tự hoặc có ký tự đặc biệt sẽ hiện lỗi chữ đỏ và khóa nút tạo.
+  - **Ràng buộc giảm theo tiền:** 6–8 chữ số (100.000đ – 99.999.999đ). Nếu nhập chữ hoặc ký tự đặc biệt sẽ báo lỗi chữ đỏ và khóa nút tạo.
+  - **Ràng buộc giảm theo phần trăm:** Từ 10% đến 100%. Nếu nhập chữ hoặc ký tự đặc biệt sẽ báo lỗi chữ đỏ và khóa nút tạo.
+  - **Giới hạn lượt dùng:** Chỉ từ 1 đến 100 lần. Nếu nhập chữ, ký tự đặc biệt hoặc ngoài khoảng 1-100 sẽ báo lỗi chữ đỏ và khóa nút tạo.
+  - Backend validation đồng bộ hoàn toàn với client-side.
+
 - **Tích hợp luồng thanh toán QR & Tra cứu Đơn hàng (Ngày 04/06/2026):**
   - **Cải tiến:**
     - Cập nhật file `maQR.blade.php`: Sau khi hoàn tất hiệu ứng xử lý đối soát và phê duyệt đơn hàng thành công (4.5s), tự động redirect người dùng sang `/orders?new_order={order_id}` sau 1.5s để xem ngay thông tin đơn hàng vừa đặt.

@@ -837,7 +837,7 @@ function applyDiscount() {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': '{{ csrf_token() }}'
       },
-      body: JSON.stringify({ code: code })
+      body: JSON.stringify({ code: code, subtotal: subtotalVal })
     })
     .then(async (response) => {
       const payload = await response.json();
@@ -1063,6 +1063,7 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       'X-CSRF-TOKEN': '{{ csrf_token() }}'
     },
     body: JSON.stringify(data)
@@ -1086,7 +1087,9 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
         document.getElementById('success-overlay').classList.remove('hidden');
       }
     } else {
-      alert(res.message || 'Đã xảy ra lỗi khi đặt hàng!');
+      // Hiện lỗi cụ thể từ server (validation errors hoặc logic errors)
+      const msg = res.message || (res.errors ? Object.values(res.errors).flat().join('\n') : 'Đã xảy ra lỗi khi đặt hàng!');
+      alert(msg);
       btn.innerHTML = '<i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG';
       btn.disabled = false;
     }
