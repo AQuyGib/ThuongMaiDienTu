@@ -2,38 +2,39 @@ import './bootstrap';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
-// Lazy load all components to prevent one failure from breaking the whole app
+// Tải chậm (Lazy load) tất cả các component để tránh việc một component lỗi làm hỏng toàn bộ ứng dụng
 import AdminSidebar from './components/AdminSidebar';
 import AdminTopbar from './components/AdminTopbar';
 
-// Lazy load other components
+// Tải chậm (Lazy load) các component quản trị khác
 const UserManagement = React.lazy(() => import('./components/UserManagement'));
 const SessionManagement = React.lazy(() => import('./components/SessionManagement'));
 const KPIDashboard = React.lazy(() => import('./components/KPIDashboard'));
 const ThemeSettings = React.lazy(() => import('./components/ThemeSettings'));
 const SecuritySettings = React.lazy(() => import('./components/SecuritySettings'));
 const VerifyOtp = React.lazy(() => import('./components/VerifyOtp'));
+const EmployeeManager = React.lazy(() => import('./components/EmployeeManager'));
 
 const mountedRoots = new Map<string, any>();
 
 const renderComponent = (id: string, Component: React.ElementType) => {
     const container = document.getElementById(id);
     if (!container) {
-        // If the container is gone, make sure we clear it from mountedRoots
+        // Nếu container không tồn tại, đảm bảo dọn dẹp và xóa khỏi mountedRoots
         if (mountedRoots.has(id)) {
-            try { mountedRoots.get(id).unmount(); } catch (e) {}
+            try { mountedRoots.get(id).unmount(); } catch (e) { }
             mountedRoots.delete(id);
         }
         return;
     }
 
-    // ALWAYS unmount if it exists to ensure fresh state and props
+    // LUÔN LUÔN unmount root cũ nếu đã tồn tại để đảm bảo làm mới state và props hoàn toàn
     if (mountedRoots.has(id)) {
-        try { 
+        try {
             const oldRoot = mountedRoots.get(id);
-            oldRoot.unmount(); 
+            oldRoot.unmount();
         } catch (e) {
-            console.warn(`[React] Unmount warning for ${id}:`, e);
+            console.warn(`[React] Cảnh báo khi unmount root ${id}:`, e);
         }
         mountedRoots.delete(id);
     }
@@ -41,11 +42,11 @@ const renderComponent = (id: string, Component: React.ElementType) => {
     console.log(`[React] Mounting ${id} with fresh props...`);
     const root = createRoot(container);
     mountedRoots.set(id, root);
-    
+
     try {
         const propsStr = container.getAttribute('data-props');
         const props = propsStr ? JSON.parse(propsStr) : {};
-        
+
         root.render(
             <React.Suspense fallback={<div className="p-10 flex items-center justify-center text-slate-400 animate-pulse text-xs uppercase font-black tracking-[0.2em]">Đang tải dữ liệu...</div>}>
                 <Component {...props} />
@@ -58,19 +59,20 @@ const renderComponent = (id: string, Component: React.ElementType) => {
 };
 
 const init = () => {
-    // 1. Mount Admin Sidebar & Topbar
+    // 1. Gắn (Mount) Sidebar và Topbar khu vực quản trị Admin
     renderComponent('joly-admin-sidebar', AdminSidebar);
     renderComponent('joly-admin-topbar', AdminTopbar);
 
-    // 2. Other components (Lazy Render)
+    // 2. Gắn các component chức năng quản trị khác (Tải chậm - Lazy)
     renderComponent('admin-user-management', UserManagement);
     renderComponent('admin-session-management', SessionManagement);
     renderComponent('admin-kpi-dashboard', KPIDashboard);
     renderComponent('admin-theme-settings', ThemeSettings);
     renderComponent('security-settings-app', SecuritySettings);
     renderComponent('verify-otp-app', VerifyOtp);
+    renderComponent('admin-employee-management', EmployeeManager);
 
-    // Legacy / Demo
+    // Component cũ / Demo
     const demoContainer = document.getElementById('joly-demo');
     if (demoContainer) {
         import('./components/Demo').then(({ default: Demo }) => {
@@ -80,7 +82,8 @@ const init = () => {
     }
 };
 
-// --- SOFT NAVIGATION ENGINE ---
+// --- CƠ CHẾ ĐIỀU HƯỚNG MỀM (SPA - SOFT NAVIGATION ENGINE) ---
+// Cập nhật thanh tiến trình chạy (Loading Bar) phía trên cùng của trang
 const updateProgressBar = (width: string) => {
     let bar = document.getElementById('spa-progress-bar');
     if (!bar) {
@@ -98,9 +101,10 @@ const updateProgressBar = (width: string) => {
     }
 };
 
+// Thực hiện chuyển trang mềm (soft navigation) bằng cách nạp nội dung AJAX thay vì reload toàn bộ
 const softNavigate = async (url: string) => {
     try {
-        console.log(`[SPA] Navigating to ${url}...`);
+        console.log(`[SPA] Đang điều hướng đến ${url}...`);
 
         const contentArea = document.getElementById('joly-main-container');
         if (contentArea) {
@@ -116,10 +120,25 @@ const softNavigate = async (url: string) => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
 
-        // 1. Update Title
+        // 1. Cập nhật Tiêu đề trang (Title)
         document.title = doc.title;
 
-        // 2. Update Content
+        // 2. Đồng bộ các style riêng biệt của trang mới vào head của tài liệu hiện tại
+        const currentHead = document.head;
+        const currentStyleTags = Array.from(currentHead.querySelectorAll('style[data-spa-page-style], link[data-spa-page-style]'));
+        currentStyleTags.forEach(tag => tag.remove());
+
+        const newPageStyles = Array.from(doc.head.querySelectorAll('style, link[rel="stylesheet"]'));
+        newPageStyles.forEach((node, index) => {
+            const clone = node.cloneNode(true) as HTMLElement;
+            if (clone instanceof HTMLStyleElement || clone instanceof HTMLLinkElement) {
+                clone.setAttribute('data-spa-page-style', 'true');
+                clone.setAttribute('data-spa-page-style-index', String(index));
+                currentHead.appendChild(clone);
+            }
+        });
+
+        // 3. Cập nhật nội dung chính của Container
         const newContent = doc.getElementById('joly-main-container');
         const currentContainer = document.getElementById('joly-main-container');
         if (newContent && currentContainer) {
@@ -127,13 +146,13 @@ const softNavigate = async (url: string) => {
             currentContainer.classList.remove('spa-content-fading');
             currentContainer.classList.add('spa-content-entering');
 
-            // Clean up animation class after it finishes
+            // Xóa bỏ các class hiệu ứng chuyển cảnh sau khi hoàn tất
             setTimeout(() => {
                 currentContainer.classList.remove('spa-content-entering');
             }, 600);
         }
 
-        // 3. Update Sidebar & Topbar Props (Update attributes so init() can read them)
+        // 4. Đồng bộ hóa Props mới của Sidebar & Topbar (Cập nhật thuộc tính để hàm init() đọc lại cấu trúc mới)
         const newSidebar = doc.getElementById('joly-admin-sidebar');
         const currentSidebar = document.getElementById('joly-admin-sidebar');
         if (newSidebar && currentSidebar) {
@@ -146,10 +165,10 @@ const softNavigate = async (url: string) => {
             currentTopbar.setAttribute('data-props', newTopbar.getAttribute('data-props') || '{}');
         }
 
-        // 4. Re-initialize components (renderComponent will handle unmounting/re-mounting)
+        // 5. Khởi tạo lại toàn bộ React Component (renderComponent sẽ tự unmount/re-mount)
         init();
 
-        // 5. Execute Scripts in the new content
+        // 6. Thực thi lại các thẻ script chứa trong nội dung mới nạp để chạy listener/logic
         const scripts = currentContainer.querySelectorAll('script');
         scripts.forEach(oldScript => {
             const newScript = document.createElement('script');
@@ -158,44 +177,63 @@ const softNavigate = async (url: string) => {
             oldScript.parentNode?.replaceChild(newScript, oldScript);
         });
 
-        // 6. Finalize
+        // 7. Hoàn tất quá trình chuyển trang, đưa thanh tiến trình lên 100%
         updateProgressBar('100%');
         const scrollContainer = document.getElementById('joly-main-content');
         if (scrollContainer) scrollContainer.scrollTop = 0;
 
         window.history.pushState({}, '', url);
-        console.log(`[SPA] Navigation complete.`);
+        console.log(`[SPA] Điều hướng hoàn tất.`);
     } catch (e) {
-        console.error(`[SPA] Navigation failed:`, e);
+        console.error(`[SPA] Lỗi khi điều hướng mềm:`, e);
         updateProgressBar('100%');
-        window.location.href = url; // Fallback to normal navigation
+        window.location.href = url; // Dự phòng: Chuyển hướng thông thường nếu có lỗi xảy ra
     }
 };
 
-// Intercept all admin clicks
+// Đón chặn tất cả sự kiện click vào thẻ liên kết để chuyển hướng mềm
 document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     const anchor = target.closest('a');
 
-    // Only perform soft navigation if we are already in the admin area
+    // Chỉ áp dụng chuyển trang mềm nếu người dùng hiện tại đang ở vùng quản trị Admin
     const isInAdminArea = document.getElementById('joly-admin-sidebar') !== null;
 
     if (anchor && anchor.href && anchor.href.startsWith(window.location.origin + '/admin')) {
-        // Skip if target is _blank
+        // Bỏ qua nếu mở tab mới (target="_blank")
         if (anchor.target === '_blank') return;
-        // Skip logout or special routes
-        if (anchor.href.includes('logout')) return;
-        
-        // If we are NOT in admin area, let the browser do a full reload to enter it
+        // Bỏ qua các route đăng xuất, xuất excel, in pdf hoặc liên kết tải xuống tài liệu
+        if (anchor.href.includes('logout') || anchor.href.includes('export') || anchor.href.includes('/pdf') || anchor.hasAttribute('download')) return;
+
+        // Các phân hệ này sử dụng bố cục/styles riêng biệt hoặc bảng dữ liệu nặng; bắt buộc tải lại trang đầy đủ để tránh lỗi vỡ giao diện (UI)
+        // Lưu ý: '/admin/comments' bắt buộc tải lại để các script Blade push riêng biệt (như SweetAlert, modal listeners) được khởi chạy mới hoàn toàn.
+        if (
+            anchor.href.includes('/admin/inventory') ||
+            anchor.href.includes('/admin/purchase-orders') ||
+            anchor.href.includes('/admin/products') ||
+            anchor.href.includes('/admin/employees') ||
+            anchor.href.includes('/admin/videos') ||
+            anchor.href.includes('/admin/service-invoices') ||
+            anchor.href.includes('/admin/repair-tickets') ||
+            anchor.href.includes('/admin/comments') ||
+            anchor.href.includes('/admin/activity-logs')
+        ) {
+            window.location.href = anchor.href;
+            return;
+        }
+
+        // Nếu không thuộc khu vực Admin, để trình duyệt reload bình thường để khởi tạo Layout Admin
         if (!isInAdminArea) return;
 
         e.preventDefault();
         softNavigate(anchor.href);
     }
 });
-
 window.addEventListener('popstate', () => {
-    softNavigate(window.location.href);
+    const isInAdminArea = document.getElementById('joly-admin-sidebar') !== null;
+    if (isInAdminArea && window.location.pathname.startsWith('/admin')) {
+        softNavigate(window.location.href);
+    }
 });
 
 if (document.readyState === 'loading') {

@@ -10,6 +10,7 @@ return new class extends Migration {
             $table->enum('type', ['Income', 'Expense']);
             $table->unsignedBigInteger('amount');
             $table->unsignedInteger('reference_id')->nullable();
+            $table->string('reference_type')->nullable();
             $table->text('description')->nullable();
             $table->timestamp('created_at')->useCurrent();
         });

@@ -1,113 +1,238 @@
 @php
-    $menu = [
+    $isEn = app()->getLocale() === 'en';
+    $userRoleId = \Auth::check() ? (int) \Auth::user()->role_id : 0;
+
+    // Danh sách menu đầy đủ với phân quyền theo role_id
+    // roles: [1] = Admin only, [1,2] = Admin + Quản lý, [1,2,4] = Tất cả nhân sự
+    $allMenu = [
         [
-            'label' => 'Bảng điều khiển',
+            'label' => $isEn ? 'Dashboard' : 'Bảng điều khiển',
             'route' => route('admin.dashboard'),
             'icon' => 'fa-solid fa-house',
             'active' => request()->routeIs('admin.dashboard') || request()->is('admin'),
-            'section' => 'Tổng quan'
+            'section' => $isEn ? 'Overview' : 'Tổng quan',
+            'roles' => [1, 2, 4]
         ],
         [
-            'label' => 'Thống kê KPI',
+            'label' => $isEn ? 'KPI Statistics' : 'Thống kê KPI',
             'route' => route('admin.kpi.index'),
             'icon' => 'fa-solid fa-chart-line',
             'active' => request()->routeIs('admin.kpi.*'),
-            'section' => 'Tổng quan'
+            'section' => $isEn ? 'Overview' : 'Tổng quan',
+            'roles' => [1, 2, 4]
         ],
         [
-            'label' => 'Đơn hàng',
-            'route' => Route::has('admin.orders.index') ? route('admin.orders.index') : '#',
+            'label' => $isEn ? 'Orders' : 'Đơn hàng',
+            'route' => \Route::has('admin.orders.index') ? route('admin.orders.index') : '#',
             'icon' => 'fa-solid fa-shopping-bag',
             'active' => request()->is('admin/orders*'),
-            'section' => 'Kinh doanh'
+            'section' => $isEn ? 'Business' : 'Kinh doanh',
+            'roles' => [1, 2, 4]
         ],
         [
-            'label' => 'Khách hàng',
+            'label' => $isEn ? 'Customers' : 'Khách hàng',
             'route' => route('admin.customers.index'),
             'icon' => 'fa-solid fa-user-group',
             'active' => request()->is('admin/customers*'),
-            'section' => 'Kinh doanh'
+            'section' => $isEn ? 'Business' : 'Kinh doanh',
+            'roles' => [1, 2]
         ],
         [
-            'label' => 'Sổ Quỹ & Thu chi',
+            'label' => $isEn ? 'Cashbook & Expenses' : 'Sổ Quỹ & Thu chi',
             'route' => route('admin.cashbooks.index'),
             'icon' => 'fa-solid fa-vault',
             'active' => request()->is('admin/cashbooks*'),
-            'section' => 'Kinh doanh'
+            'section' => $isEn ? 'Business' : 'Kinh doanh',
+            'roles' => [1, 2]
         ],
         [
-            'label' => 'Flash Sale',
+            'label' => $isEn ? 'Service Invoices' : 'Hóa đơn dịch vụ',
+            'route' => route('admin.service-invoices.index'),
+            'icon' => 'fa-solid fa-file-invoice-dollar',
+            'active' => request()->is('admin/service-invoices*'),
+            'section' => $isEn ? 'Business' : 'Kinh doanh',
+            'roles' => [1, 2, 4]
+        ],
+        [
+            'label' => $isEn ? 'Installments' : 'Hợp đồng trả góp',
+            'route' => route('admin.installments.index'),
+            'icon' => 'fa-solid fa-credit-card',
+            'active' => request()->is('admin/installments*'),
+            'section' => $isEn ? 'Business' : 'Kinh doanh',
+            'roles' => [1, 2]
+        ],
+        [
+            'label' => $isEn ? 'Repair Tickets' : 'Phiếu sửa chữa',
+            'route' => route('admin.repair-tickets.index'),
+            'icon' => 'fa-solid fa-wrench',
+            'active' => request()->is('admin/repair-tickets*'),
+            'section' => $isEn ? 'Business' : 'Kinh doanh',
+            'roles' => [1, 2, 4]
+        ],
+        [
+            'label' => $isEn ? 'Warranty Claims' : 'Bảo hành & Đổi trả',
+            'route' => route('admin.warranty-claims.index'),
+            'icon' => 'fa-solid fa-shield-halved',
+            'active' => request()->is('admin/warranty-claims*'),
+            'section' => $isEn ? 'Business' : 'Kinh doanh',
+            'roles' => [1, 2, 4]
+        ],
+        [
+            'label' => $isEn ? 'Flash Sale' : 'Flash Sale',
             'route' => route('admin.flash-sales.index'),
             'icon' => 'fa-solid fa-bolt',
             'active' => request()->is('admin/flash-sales*'),
-            'section' => 'Kinh doanh'
+            'section' => $isEn ? 'Business' : 'Kinh doanh',
+            'roles' => [1, 2]
         ],
         [
-            'label' => 'Sản phẩm',
+            'label' => $isEn ? 'Products' : 'Sản phẩm',
             'route' => route('admin.products.index'),
             'icon' => 'fa-solid fa-box-open',
             'active' => request()->is('admin/products*'),
-            'section' => 'Sản phẩm & Kho'
+            'section' => $isEn ? 'Products & Inventory' : 'Sản phẩm & Kho',
+            'roles' => [1, 2, 4]
         ],
         [
-            'label' => 'Bài viết & CMS',
+            'label' => $isEn ? 'Articles & CMS' : 'Bài viết & CMS',
             'route' => route('admin.articles.index'),
             'icon' => 'fa-solid fa-newspaper',
             'active' => request()->is('admin/articles*'),
-            'section' => 'Sản phẩm & Kho'
+            'section' => $isEn ? 'Products & Inventory' : 'Sản phẩm & Kho',
+            'roles' => [1, 2]
         ],
         [
-            'label' => 'Quản lý Kho',
+            'label' => $isEn ? 'Inventory Management' : 'Quản lý Kho',
             'route' => route('admin.inventory.index'),
             'icon' => 'fa-solid fa-warehouse',
-            'active' => request()->is('admin/inventory*'),
-            'section' => 'Sản phẩm & Kho'
+            'active' => request()->is('admin/inventory*') || request()->is('admin/purchase-orders*'),
+            'section' => $isEn ? 'Products & Inventory' : 'Sản phẩm & Kho',
+            'roles' => [1, 2]
         ],
         [
-            'label' => 'Danh mục',
+            'label' => $isEn ? 'Videos' : 'Video',
+            'route' => route('admin.videos.index'),
+            'icon' => 'fa-solid fa-video',
+            'active' => request()->is('admin/videos*'),
+            'section' => $isEn ? 'Products & Inventory' : 'Sản phẩm & Kho',
+            'roles' => [1, 2]
+        ],
+        [
+            'label' => $isEn ? 'Comments & Reviews' : 'Bình luận & Đánh giá',
+            'route' => route('admin.comments.index'),
+            'icon' => 'fa-solid fa-comments',
+            'active' => request()->is('admin/comments*'),
+            'section' => $isEn ? 'Products & Inventory' : 'Sản phẩm & Kho',
+            'roles' => [1, 2]
+        ],
+        [
+            'label' => $isEn ? 'Warehouse Transfer' : 'Điều chuyển kho',
+            'route' => route('admin.warehouse-transfers.index'),
+            'icon' => 'fa-solid fa-truck-ramp-box',
+            'active' => request()->is('admin/warehouse-transfers*'),
+            'section' => $isEn ? 'Products & Inventory' : 'Sản phẩm & Kho',
+            'roles' => [1, 2]
+        ],
+        [
+            'label' => $isEn ? 'Suppliers' : 'Nhà cung cấp',
+            'route' => route('admin.suppliers.index'),
+            'icon' => 'fa-solid fa-truck-field',
+            'active' => request()->is('admin/suppliers*'),
+            'section' => $isEn ? 'Products & Inventory' : 'Sản phẩm & Kho',
+            'roles' => [1, 2]
+        ],
+        [
+            'label' => $isEn ? 'Categories' : 'Danh mục',
             'route' => route('admin.categories.index'),
             'icon' => 'fa-solid fa-layer-group',
             'active' => request()->is('admin/categories*'),
-            'section' => 'Sản phẩm & Kho'
+            'section' => $isEn ? 'Products & Inventory' : 'Sản phẩm & Kho',
+            'roles' => [1, 2]
         ],
         [
-            'label' => 'Tùy biến Giao diện',
+            'label' => $isEn ? 'Rewards' : 'Đổi thưởng',
+            'route' => route('admin.rewards.index'),
+            'icon' => 'fa-solid fa-gift',
+            'active' => request()->routeIs('admin.rewards.index'),
+            'section' => $isEn ? 'Settings' : 'Thiết lập',
+            'roles' => [1, 2]
+        ],
+        [
+            'label' => $isEn ? 'Vouchers' : 'Voucher',
+            'route' => route('admin.vouchers.index'),
+            'icon' => 'fa-solid fa-ticket',
+            'active' => request()->routeIs('admin.vouchers.*'),
+            'section' => $isEn ? 'Settings' : 'Thiết lập',
+            'roles' => [1, 2]
+        ],
+        [
+            'label' => $isEn ? 'Theme Customization' : 'Tùy biến Giao diện',
             'route' => route('admin.settings.theme'),
             'icon' => 'fa-solid fa-paint-brush',
             'active' => request()->routeIs('admin.settings.theme'),
-            'section' => 'Thiết lập'
-        ]
-    ];
-
-    if(Auth::check() && Auth::user()->role_id == 1) {
-        $menu[] = [
-            'label' => 'Tài khoản',
+            'section' => $isEn ? 'Settings' : 'Thiết lập',
+            'roles' => [1, 2]
+        ],
+        [
+            'label' => $isEn ? 'Notifications' : 'Thông báo',
+            'route' => route('admin.notifications.index'),
+            'icon' => 'fa-regular fa-bell',
+            'active' => request()->is('admin/notifications*'),
+            'section' => $isEn ? 'Settings' : 'Thiết lập',
+            'roles' => [1, 2]
+        ],
+        [
+            'label' => $isEn ? 'Home Management' : 'Quản lý Trang chủ',
+            'route' => route('admin.home-sections.index'),
+            'icon' => 'fa-solid fa-house-laptop',
+            'active' => request()->is('admin/home-sections*'),
+            'section' => $isEn ? 'Settings' : 'Thiết lập',
+            'roles' => [1, 2]
+        ],
+        // ===== CHỈ ADMIN =====
+        [
+            'label' => $isEn ? 'Accounts' : 'Tài khoản',
             'route' => route('admin.users.index'),
             'icon' => 'fa-solid fa-user-gear',
             'active' => request()->is('admin/users*') || request()->is('admin/permissions*'),
-            'section' => 'Thiết lập'
-        ];
-        $menu[] = [
-            'label' => 'Cài đặt hệ thống',
-            'route' => Route::has('admin.settings.index') ? route('admin.settings.index') : '#',
+            'section' => $isEn ? 'Settings' : 'Thiết lập',
+            'roles' => [1]
+        ],
+        [
+            'label' => $isEn ? 'Employees' : 'Nhân viên',
+            'route' => route('admin.employees.index'),
+            'icon' => 'fa-solid fa-user-tie',
+            'active' => request()->is('admin/employees*'),
+            'section' => $isEn ? 'Settings' : 'Thiết lập',
+            'roles' => [1, 2]
+        ],
+        [
+            'label' => $isEn ? 'System Settings' : 'Cài đặt hệ thống',
+            'route' => \Route::has('admin.settings.index') ? route('admin.settings.index') : '#',
             'icon' => 'fa-solid fa-cog',
             'active' => request()->routeIs('admin.settings.index'),
-            'section' => 'Thiết lập'
-        ];
-        $menu[] = [
-            'label' => 'Nhật ký hoạt động',
-            'route' => Route::has('admin.activity-logs.index') ? route('admin.activity-logs.index') : '#',
+            'section' => $isEn ? 'Settings' : 'Thiết lập',
+            'roles' => [1]
+        ],
+        [
+            'label' => $isEn ? 'Activity Logs' : 'Nhật ký hoạt động',
+            'route' => \Route::has('admin.activity-logs.index') ? route('admin.activity-logs.index') : '#',
             'icon' => 'fa-solid fa-clock-rotate-left',
             'active' => request()->is('admin/activity-logs*'),
-            'section' => 'Thiết lập'
-        ];
-    }
+            'section' => $isEn ? 'Settings' : 'Thiết lập',
+            'roles' => [1]
+        ],
+    ];
+
+    // Lọc menu theo role_id hiện tại
+    $menu = array_values(array_filter($allMenu, fn($item) => in_array($userRoleId, $item['roles'])));
 
     $props = [
         'user' => [
-            'full_name' => Auth::user()->full_name ?? 'Admin',
-            'role_name' => optional(Auth::user()->role)->name ?? 'Administrator',
-            'email' => Auth::user()->email ?? ''
+            'full_name' => \Auth::user()->full_name ?? 'Admin',
+            'role_name' => optional(\Auth::user()->role)->name ?? 'Administrator',
+            'role_id' => $userRoleId,
+            'email' => \Auth::user()->email ?? ''
         ],
         'menu' => $menu,
         'homeRoute' => route('admin.dashboard'),
@@ -120,6 +245,6 @@
     {{-- Static fallback or loader --}}
     <div class="w-72 bg-slate-900 h-full flex flex-col items-center justify-center gap-4">
         <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Khởi tạo Sidebar...</p>
+        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{{ $isEn ? 'Initializing Sidebar...' : 'Khởi tạo Sidebar...' }}</p>
     </div>
 </div>

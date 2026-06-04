@@ -35,15 +35,17 @@ class ForgotPasswordController extends Controller
 
         // Send Email
         try {
-            Mail::send('emails.forgot_password', ['otp' => $otp], function($message) use($email) {
+            Mail::send('emails.forgot_password', ['otp' => $otp, 'email' => $email], function($message) use($email) {
                 $message->to($email);
                 $message->subject('Mã OTP khôi phục mật khẩu');
             });
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Gửi email OTP thất bại: ' . $e->getMessage());
+            $errorMsg = 'Không thể gửi email xác thực. Vui lòng liên hệ quản trị viên hoặc kiểm tra cấu hình gửi mail SMTP trong file .env.';
             if ($request->ajax()) {
-                return response()->json(['success' => true, 'email' => $email, 'message' => 'Mã OTP đã được gửi đến email (Log: ' . $otp . ')']);
+                return response()->json(['success' => false, 'message' => $errorMsg]);
             }
-            return redirect()->route('password.request')->with(['email' => $email, 'step' => 2, 'success' => 'Mã OTP đã được gửi đến email (Log: ' . $otp . ')']);
+            return redirect()->route('password.request')->withErrors(['email' => $errorMsg]);
         }
 
         if ($request->ajax()) {
@@ -90,6 +92,15 @@ class ForgotPasswordController extends Controller
         }
 
         return redirect()->route('password.reset.form')->with('success', 'Xác minh thành công. Vui lòng nhập mật khẩu mới.');
+    }
+
+    public function showResetPasswordForm(Request $request)
+    {
+        $email = session('reset_email') ?? $request->query('email');
+        if (!$email || !session('otp_verified')) {
+            return redirect()->route('password.request')->withErrors(['error' => 'Vui lòng xác minh mã OTP trước.']);
+        }
+        return view('Auth.reset_password', compact('email'));
     }
 
     public function resetPassword(Request $request)
