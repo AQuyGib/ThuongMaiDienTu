@@ -123,6 +123,7 @@ Route::middleware('auth')->group(function() {
     Route::get('/lifestyle/{id}/edit', [\App\Http\Controllers\ArticleFrontendController::class, 'edit'])->name('articles.edit');
     Route::put('/lifestyle/{id}', [\App\Http\Controllers\ArticleFrontendController::class, 'update'])->name('articles.update');
     Route::delete('/lifestyle/{id}', [\App\Http\Controllers\ArticleFrontendController::class, 'destroy'])->name('articles.destroy');
+    Route::post('/lifestyle/ai-assist', [\App\Http\Controllers\ArticleFrontendController::class, 'aiAssist'])->name('articles.ai-assist');
 });
 Route::get('/lifestyle/{slug}', [\App\Http\Controllers\ArticleFrontendController::class, 'show'])->name('articles.show');
 
@@ -141,14 +142,26 @@ Route::middleware(['auth', \App\Http\Middleware\IsAdmin::class])->prefix('admin'
     Route::post('/notifications/low-stock-check', [NotificationCampaignController::class, 'lowStockCheck'])->name('admin.notifications.low-stock-check');
 });
 
-// Product Filtering
+// ============================================================
+// ROUTE: SẢN PHẨM FRONTEND (PRODUCT LISTING & DETAIL)
+// Các route phục vụ trang danh sách sản phẩm, lọc nâng cao theo danh mục,
+// và trang chi tiết sản phẩm (product.show) cho khách hàng.
+// Controller: Frontend\ProductController (index, show)
+// ============================================================
+
+// Trang danh sách tất cả sản phẩm (có hỗ trợ phân trang, lọc theo query params)
 Route::get('/products', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.index');
+// API endpoint lọc sản phẩm AJAX (được gọi từ JavaScript bộ lọc nâng cao)
 Route::get('/products/filter', [ProductFilterController::class, 'filterProducts'])->name('products.filter');
+// Trang danh sách sản phẩm theo danh mục cụ thể (VD: /products/dien-thoai)
 Route::get('/products/{categorySlug}', [App\Http\Controllers\Frontend\ProductController::class, 'index'])->name('products.category');
+// Trang chi tiết sản phẩm - hiển thị đầy đủ thông tin, biến thể, đánh giá, combo, cross-sell
 Route::get('/san-pham/{id}', [App\Http\Controllers\Frontend\ProductController::class, 'show'])->name('product.show');
+// Redirect từ URL cũ /product/{id} sang URL mới /san-pham/{id} để giữ tương thích ngược (backward compatible)
 Route::get('/product/{id}', function ($id) {
     return redirect()->route('product.show', $id);
 })->name('product.legacy');
+// API endpoint lấy danh sách bộ lọc đặc thù theo danh mục (RAM, ROM, Chip...) cho sidebar lọc
 Route::get('/api/categories/{id}/filters', [ProductFilterController::class, 'getCategoryFilters'])->name('api.categories.filters');
 
 // Admin Customer Management
@@ -189,12 +202,37 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::post('comments/reviews/{id}/clear-reports', [CommentManagementController::class, 'clearReviewReports'])->name('admin.comments.reviews.clear-reports');
     Route::post('comments/video-comments/{id}/clear-reports', [CommentManagementController::class, 'clearVideoCommentReports'])->name('admin.comments.video-comments.clear-reports');
     Route::post('comments/users/{id}/unban', [CommentManagementController::class, 'unbanUser'])->name('admin.comments.users.unban');
+
+    // Installment Management
+    Route::get('installments', [\App\Http\Controllers\Admin\InstallmentController::class, 'index'])->name('admin.installments.index');
+    Route::get('installments/create', [\App\Http\Controllers\Admin\InstallmentController::class, 'create'])->name('admin.installments.create');
+    Route::post('installments', [\App\Http\Controllers\Admin\InstallmentController::class, 'store'])->name('admin.installments.store');
+    Route::get('installments/{id}', [\App\Http\Controllers\Admin\InstallmentController::class, 'show'])->name('admin.installments.show');
+    Route::get('installments/{id}/edit', [\App\Http\Controllers\Admin\InstallmentController::class, 'edit'])->name('admin.installments.edit');
+    Route::put('installments/{id}', [\App\Http\Controllers\Admin\InstallmentController::class, 'update'])->name('admin.installments.update');
+    Route::delete('installments/{id}', [\App\Http\Controllers\Admin\InstallmentController::class, 'destroy'])->name('admin.installments.destroy');
+    Route::post('installments/{id}/approve', [\App\Http\Controllers\Admin\InstallmentController::class, 'approve'])->name('admin.installments.approve');
+    Route::post('installments/{id}/reject', [\App\Http\Controllers\Admin\InstallmentController::class, 'reject'])->name('admin.installments.reject');
+    Route::get('installments/{id}/invoice', [\App\Http\Controllers\Admin\InstallmentController::class, 'printInvoice'])->name('admin.installments.invoice');
+    Route::post('installments/payments/{id}/pay', [\App\Http\Controllers\Admin\InstallmentController::class, 'payMonth'])->name('admin.installments.pay-month');
+
+    // Warranty Claim Management
+    Route::get('warranty-claims', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'index'])->name('admin.warranty-claims.index');
+    Route::get('warranty-claims/create', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'create'])->name('admin.warranty-claims.create');
+    Route::post('warranty-claims', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'store'])->name('admin.warranty-claims.store');
+    Route::get('warranty-claims/{id}/edit', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'edit'])->name('admin.warranty-claims.edit');
+    Route::put('warranty-claims/{id}', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'update'])->name('admin.warranty-claims.update');
+    Route::delete('warranty-claims/{id}', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'destroy'])->name('admin.warranty-claims.destroy');
+    Route::post('warranty-claims/{id}/approve', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'approve'])->name('admin.warranty-claims.approve');
+    Route::post('warranty-claims/{id}/reject', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'reject'])->name('admin.warranty-claims.reject');
+    Route::get('warranty-claims/{id}/invoice', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'printInvoice'])->name('admin.warranty-claims.invoice');
 });
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::post('/profile/update', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::post('/profile/repair-tickets/ai-diagnose', [ProfileController::class, 'aiDiagnoseRepairTicket'])->name('profile.repair-tickets.ai-diagnose');
     Route::post('/profile/repair-tickets', [ProfileController::class, 'storeRepairTicket'])->name('profile.repair-tickets.store');
     Route::post('/profile/address', [ProfileController::class, 'addAddress'])->name('profile.address.store');
     Route::post('/profile/address/{id}', [ProfileController::class, 'updateAddress'])->name('profile.address.update');
@@ -218,10 +256,15 @@ Route::get('/api/category-products/{id}', [SearchController::class, 'getProducts
 use App\Http\Controllers\Frontend\WarrantyController;
 use App\Http\Controllers\PolicyController;
 
-Route::get('/chinh-sach-bao-hanh', [PolicyController::class, 'warranty'])->name('policy.warranty');
-Route::get('/chinh-sach-doi-tra', [PolicyController::class, 'returnPolicy'])->name('policy.return');
+Route::get('/warranty-policy', [PolicyController::class, 'warranty'])->name('policy.warranty');
+Route::get('/return-policy-info', [PolicyController::class, 'returnPolicy'])->name('policy.return');
+
+// Redirect cũ → mới (giữ SEO / bookmark cũ không bị 404)
+Route::redirect('/chinh-sach-bao-hanh', '/warranty-policy', 301);
+Route::redirect('/chinh-sach-doi-tra', '/return-policy-info', 301);
 Route::get('/warranty', [WarrantyController::class, 'index'])->name('warranty.index');
 Route::post('/warranty/lookup', [WarrantyController::class, 'lookup'])->name('warranty.lookup');
+Route::post('/warranty/claim', [WarrantyController::class, 'storeClaim'])->name('warranty.claim.store');
 Route::get('/return-policy', [WarrantyController::class, 'returnPolicy'])->name('warranty.return');
 
 // Product Compare
@@ -232,4 +275,41 @@ Route::get('/api/products/search-compare', [CompareController::class, 'searchCom
 
 // AI Chatbot
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\InstallmentController;
+
 Route::post('/chatbot', [ChatbotController::class, 'chat'])->name('chatbot.chat');
+Route::post('/chatbot/create-ticket', [ChatbotController::class, 'createTicketFromChat'])->name('chatbot.create-ticket');
+Route::post('/installments/register', [InstallmentController::class, 'register'])->name('installments.register')->middleware('auth');
+
+
+Route::get('/debug-queue', function() {
+    $queue = config('queue.default');
+    $jobsCount = \Schema::hasTable('jobs') ? \DB::table('jobs')->count() : 'Table not found';
+    $failedCount = \Schema::hasTable('failed_jobs') ? \DB::table('failed_jobs')->count() : 'Table not found';
+    $logsCount = \Schema::hasTable('activity_logs') ? \DB::table('activity_logs')->count() : 'Table not found';
+    $latestLogs = \Schema::hasTable('activity_logs') ? \DB::table('activity_logs')->orderBy('log_id', 'desc')->take(5)->get() : [];
+    
+    return response()->json([
+        'queue_driver' => $queue,
+        'jobs_count' => $jobsCount,
+        'failed_jobs_count' => $failedCount,
+        'logs_count' => $logsCount,
+        'latest_logs' => $latestLogs
+    ]);
+});
+
+Route::get('/auto-seed', function() {
+    try {
+        \Artisan::call('migrate:fresh', ['--seed' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Database migrated and seeded successfully!'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 200);
+    }
+});
+

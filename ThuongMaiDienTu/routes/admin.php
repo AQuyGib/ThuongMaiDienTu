@@ -54,8 +54,11 @@ Route::delete('/videos/comments/{comment}', [VideoManagementController::class, '
 
 
 // ===== Quản lý Đơn hàng =====
+Route::get('orders/ai-logs', [OrderController::class, 'aiLogs'])->name('orders.aiLogs');
+Route::post('orders/batch-get-ids', [OrderController::class, 'batchGetIds'])->name('orders.batchGetIds');
 Route::resource('orders', OrderController::class);
 Route::post('orders/{id}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+Route::post('orders/{id}/reanalyze', [OrderController::class, 'reanalyze'])->name('orders.reanalyze');
 
 // CRUD Quyền hạn & Tài khoản (Permissions)
 Route::resource('permissions', UserController::class)->names([
@@ -65,9 +68,24 @@ Route::resource('permissions', UserController::class)->names([
     'destroy' => 'users.destroy',
 ])->except(['create', 'show', 'edit']);
 
+// CRUD Quản lý Nhân viên (Employee Management)
+Route::get('/employees/export/excel', [\App\Http\Controllers\Admin\EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
+Route::get('/employees/export/pdf', [\App\Http\Controllers\Admin\EmployeeController::class, 'exportPdf'])->name('employees.export.pdf');
+
+Route::resource('employees', \App\Http\Controllers\Admin\EmployeeController::class)->names([
+    'index' => 'employees.index',
+    'store' => 'employees.store',
+    'update' => 'employees.update',
+    'destroy' => 'employees.destroy',
+])->except(['create', 'show', 'edit']);
+
+Route::patch('/employees/{employee}/toggle-status', [\App\Http\Controllers\Admin\EmployeeController::class, 'toggleStatus'])->name('employees.toggle-status');
+Route::post('/employees/batch-action', [\App\Http\Controllers\Admin\EmployeeController::class, 'batchAction'])->name('employees.batch-action');
+
 Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
 Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
 Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
+Route::post('permissions/{id}/unban-chatbot', [UserController::class, 'unbanChatbot'])->name('users.unban-chatbot');
 
 // Quản lý Vai trò (Roles)
 Route::resource('roles', RoleController::class)->names([
@@ -83,8 +101,10 @@ Route::get('/pay', [CartController::class, 'pay'])->name('cart.pay');
 Route::get('/ai', [CartController::class, 'ai'])->name('cart.qr');
 
 // ===== Quản lý Bài viết (Articles / Ecosystem) =====
+Route::post('articles/bulk-approve-ai', [ArticleController::class, 'bulkApproveAi'])->name('articles.bulk-approve-ai');
 Route::resource('articles', ArticleController::class);
 Route::post('articles/{id}/approve', [ArticleController::class, 'approve'])->name('articles.approve');
+Route::post('articles/{id}/reject', [ArticleController::class, 'reject'])->name('articles.reject');
 
 // ===== Quản lý Nhà Cung Cấp =====
 Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
@@ -177,3 +197,21 @@ Route::put('repair-tickets/{repairTicket}', [RepairTicketInvoiceController::clas
 Route::delete('repair-tickets/{repairTicket}', [RepairTicketInvoiceController::class, 'destroyTicket'])->name('repair-tickets.destroy');
 Route::get('repair-tickets/{repairTicket}/invoice/create', [RepairTicketInvoiceController::class, 'create'])->name('repair-tickets.invoice.create');
 Route::post('repair-tickets/invoice', [RepairTicketInvoiceController::class, 'store'])->name('repair-tickets.invoice.store');
+
+// ===== Chat Hub (Communication Hub) =====
+use App\Http\Controllers\Admin\ChatController;
+Route::get('/chat/init', [ChatController::class, 'init'])->name('chat.init');
+Route::post('/chat/rooms', [ChatController::class, 'createRoom'])->name('chat.rooms.create');
+Route::delete('/chat/rooms/{room_id}', [ChatController::class, 'deleteRoom'])->name('chat.rooms.delete');
+Route::post('/chat/rooms/{room_id}/members', [ChatController::class, 'addMember'])->name('chat.rooms.members.add');
+Route::delete('/chat/rooms/{room_id}/members/{user_id}', [ChatController::class, 'removeMember'])->name('chat.rooms.members.remove');
+Route::post('/chat/rooms/{room_id}/role', [ChatController::class, 'updateRole'])->name('chat.rooms.role.update');
+Route::post('/chat/messages', [ChatController::class, 'sendMessage'])->name('chat.messages.send');
+Route::post('/chat/messages/{message_id}/react', [ChatController::class, 'toggleReaction'])->name('chat.messages.react');
+
+// ===== Activity Logs (Audit System) =====
+use App\Http\Controllers\Admin\ActivityLogController;
+Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+Route::post('/activity-logs/verify', [ActivityLogController::class, 'verify'])->name('activity-logs.verify');
+
+

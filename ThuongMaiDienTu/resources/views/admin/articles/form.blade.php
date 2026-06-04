@@ -5,17 +5,26 @@
 @section('content')
 <div class="space-y-6">
     <style>
+        /* Card mờ ảo (glassmorphism) cho giao diện nhập liệu */
         .glass-card { background: rgba(255,255,255,.9); backdrop-filter: blur(16px); border: 1px solid rgba(226,232,240,.8); box-shadow: 0 18px 50px -30px rgba(15,23,42,.28); }
         .field:focus-within { transform: translateY(-1px); }
+        
+        /* Giao diện khung preview (Dark mode) mô phỏng thiết bị thực tế */
         .preview-pane { background: linear-gradient(180deg, rgba(15,23,42,.96), rgba(15,23,42,.88)); }
         .preview-shell { box-shadow: 0 30px 80px -35px rgba(15,23,42,.55); }
         .chip { box-shadow: 0 10px 20px -14px rgba(37,99,235,.5); }
+        
+        /* Nhãn in hoa siêu nhỏ mang phong cách công nghệ */
         .tiny-label { letter-spacing: .28em; font-size: 10px; font-weight: 900; text-transform: uppercase; color: #94a3b8; }
+        
+        /* Nút chọn thiết bị mô phỏng responsive */
         .device-btn.active { background: #0f172a; color: #fff; }
         .preview-frame { transition: width .28s ease, height .28s ease, transform .28s ease; }
         .preview-viewport { background: #f4f6f8; }
         .preview-viewport::-webkit-scrollbar { width: 6px; height: 6px; }
         .preview-viewport::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        
+        /* Cấu hình ẩn bớt sidebar khi ở kích thước mobile */
         .preview-frame[data-device="mobile"] .article-layout {
             display: block;
         }
@@ -28,6 +37,8 @@
         #content_editor { min-height: 460px; }
         .tox-tinymce { border-radius: 1.5rem !important; border: 1px solid #e2e8f0 !important; }
         .tox .tox-editor-container { border-radius: 1.5rem !important; }
+        
+        /* Responsive CSS cho khung preview di động */
         @media (max-width: 768px) {
             .preview-frame { width: 100% !important; max-width: 100% !important; transform: none !important; }
             .preview-viewport { padding: 12px !important; }
@@ -44,6 +55,8 @@
             .article-content { font-size: 15px !important; line-height: 1.75 !important; }
             .breadcrumb { font-size: 12px !important; gap: 6px !important; }
         }
+        
+        /* CSS phong cách hiển thị nội dung Rich Text của preview */
         .preview-content h1, .preview-content h2, .preview-content h3 { color: #111827; font-weight: 900; line-height: 1.25; margin: 1.25rem 0 .75rem; }
         .preview-content h1 { font-size: 2rem; }
         .preview-content h2 { font-size: 1.5rem; }
@@ -65,6 +78,7 @@
         .article-content blockquote { border-left: 4px solid #d70018; background: #f3f4f6; padding: .85rem 1rem; border-radius: 0 .75rem .75rem 0; color: #374151; font-style: normal; }
     </style>
 
+    {{-- KHỐI HEADER TRANG QUẢN TRỊ --}}
     <div class="rounded-[2rem] overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 text-white shadow-2xl">
         <div class="p-6 md:p-8 flex flex-col xl:flex-row xl:items-end justify-between gap-6">
             <div class="max-w-3xl space-y-4">
@@ -86,6 +100,7 @@
         </div>
     </div>
 
+    {{-- PHẦN THÔNG BÁO LỖI VALIDATION --}}
     @if($errors->any())
         <div class="glass-card rounded-[1.5rem] p-4 border border-rose-100 text-rose-700 bg-rose-50/70">
             <ul class="space-y-1 text-sm font-medium">
@@ -96,6 +111,7 @@
         </div>
     @endif
 
+    {{-- FORM THÊM / CẬP NHẬT BÀI VIẾT --}}
     <form id="articleForm" action="{{ $article->exists ? route('admin.articles.update', $article->article_id) : route('admin.articles.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         @if($article->exists)
@@ -103,6 +119,8 @@
         @endif
 
         <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            
+            {{-- CỘT TRÁI: KHU VỰC THÔNG TIN BÀI VIẾT VÀ SOẠN THẢO --}}
             <div class="xl:col-span-7 space-y-6">
                 <div class="glass-card rounded-[2rem] p-6 md:p-7 space-y-6">
                     <div class="flex items-start justify-between gap-4">
@@ -114,14 +132,19 @@
                     </div>
 
                     <div class="grid gap-5">
+                        {{-- Tiêu đề --}}
                         <div class="field">
                             <label class="block text-sm font-bold text-slate-700 mb-2">Tiêu đề bài viết <span class="text-rose-500">*</span></label>
                             <input id="titleInput" type="text" name="title" value="{{ old('title', $article->title) }}" class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50/80 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition" placeholder="Nhập tiêu đề hấp dẫn..." required>
                         </div>
+                        
+                        {{-- Tóm tắt ngắn --}}
                         <div class="field">
                             <label class="block text-sm font-bold text-slate-700 mb-2">Mô tả ngắn</label>
                             <textarea id="summaryInput" name="summary" rows="4" class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50/80 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition" placeholder="Tóm tắt ngắn gọn nội dung bài viết...">{{ old('summary', $article->summary) }}</textarea>
                         </div>
+                        
+                        {{-- Trình soạn thảo TinyMCE --}}
                         <div class="field">
                             <div class="flex items-center justify-between gap-3 mb-2">
                                 <label class="block text-sm font-bold text-slate-700">Nội dung chi tiết <span class="text-rose-500">*</span></label>
@@ -132,6 +155,7 @@
                     </div>
                 </div>
 
+                {{-- CẤU HÌNH LIÊN KẾT HỆ SINH THÁI VÀ ĐỊNH DẠNG --}}
                 <div class="glass-card rounded-[2rem] p-6 md:p-7 space-y-5">
                     <div class="tiny-label">02 — Cấu hình xuất bản</div>
                     <h2 class="text-xl font-black text-slate-900">Thiết lập hiển thị</h2>
@@ -145,6 +169,7 @@
                                 <option value="storytelling" {{ old('format_type', $article->format_type) === 'storytelling' ? 'selected' : '' }}>Storytelling</option>
                             </select>
                         </div>
+                        {{-- Cho phép liên kết bài viết tới một mã đơn sửa chữa thiết bị để hiển thị module Nhật ký Hồi sinh Thiết bị --}}
                         <div class="field">
                             <label class="block text-sm font-bold text-slate-700 mb-2">Mã đơn sửa chữa liên kết</label>
                             <input id="ticketInput" type="number" name="related_ticket_id" value="{{ old('related_ticket_id', $article->related_ticket_id) }}" class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 bg-slate-50/80 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition" placeholder="VD: 1">
@@ -153,7 +178,9 @@
                 </div>
             </div>
 
+            {{-- CỘT PHẢI: THUMBNAIL, DUYỆT BÀI UGC & CỘNG ĐIỂM THÀNH VIÊN, HÀNH ĐỘNG --}}
             <div class="xl:col-span-5 space-y-6">
+                {{-- Khối quản lý ảnh Thumbnail đại diện --}}
                 <div class="glass-card rounded-[2rem] p-6 md:p-7 space-y-5">
                     <div class="tiny-label">03 — Hình ảnh</div>
                     <h2 class="text-xl font-black text-slate-900">Thumbnail & trạng thái</h2>
@@ -177,31 +204,85 @@
                     </div>
                 </div>
 
+                {{-- DUYỆT BÀI VÀ CỘNG ĐIỂM THƯỞNG: Chỉ hiển thị khi sửa một bài viết được gửi từ phía khách hàng (UGC) --}}
                 @if($article->exists && $article->author_type === 'customer')
                     <div class="glass-card rounded-[2rem] p-6 md:p-7 border border-amber-100 space-y-4">
                         <div class="tiny-label">04 — UGC & Gamification</div>
                         <h2 class="text-xl font-black text-slate-900">Duyệt bài & điểm thưởng</h2>
                         <div class="text-sm text-slate-600 space-y-1">
-                            <p><span class="font-bold">Trạng thái:</span> {{ $article->status }}</p>
-                            <p><span class="font-bold">Tác giả:</span> {{ $article->author->full_name ?? 'Không xác định' }}</p>
+                            <p><span class="font-bold">Trạng thái hiện tại:</span> 
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold
+                                    @if($article->status === 'approved') bg-emerald-100 text-emerald-800
+                                    @elseif($article->status === 'rejected') bg-rose-100 text-rose-800
+                                    @else bg-amber-100 text-amber-800 @endif">
+                                    {{ $article->status }}
+                                </span>
+                            </p>
+                            <p><span class="font-bold">Khách hàng viết bài:</span> {{ $article->author->full_name ?? 'Không xác định' }}</p>
                         </div>
 
+                        {{-- Hiển thị thông tin nhận định từ AI nếu có --}}
+                        @if($article->ai_checked)
+                            <div class="rounded-[1.5rem] bg-slate-50 border border-slate-200 p-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500 animate-pulse"></i>
+                                        Nhận định từ AI
+                                    </div>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider
+                                        @if($article->ai_moderation_verdict === 'approved') bg-emerald-50 text-emerald-700 border border-emerald-200
+                                        @elseif($article->ai_moderation_verdict === 'flagged') bg-amber-50 text-amber-700 border border-amber-200
+                                        @else bg-rose-50 text-rose-700 border border-rose-200 @endif">
+                                        {{ $article->ai_moderation_verdict === 'approved' ? 'AN TOÀN' : ($article->ai_moderation_verdict === 'flagged' ? 'CẦN XEM XÉT' : 'VI PHẠM') }}
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-center text-[11px]">
+                                    <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                        <div class="text-[9px] text-slate-400 font-bold uppercase">Chất lượng</div>
+                                        <div class="font-extrabold text-slate-800 mt-0.5">{{ $article->ai_quality_score }}/100</div>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                        <div class="text-[9px] text-slate-400 font-bold uppercase">Điểm SEO</div>
+                                        <div class="font-extrabold text-slate-800 mt-0.5">{{ $article->seo_score }}/100</div>
+                                    </div>
+                                    <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                        <div class="text-[9px] text-slate-400 font-bold uppercase">Gợi ý thưởng</div>
+                                        <div class="font-extrabold text-amber-600 mt-0.5">+{{ $article->ai_analysis['recommended_reward_points'] ?? 20 }}đ</div>
+                                    </div>
+                                </div>
+                                <p class="text-[11px] text-slate-600 bg-white p-2.5 rounded-xl border border-slate-100 leading-relaxed">
+                                    <strong>Chi tiết:</strong> {{ $article->ai_analysis['moderation_reason'] ?? 'Không có lý do chi tiết.' }}
+                                </p>
+                            </div>
+                        @endif
+
+                        {{-- Nếu bài viết đang ở trạng thái chờ duyệt --}}
                         @if($article->status === 'pending')
                             <div class="rounded-[1.5rem] bg-amber-50 border border-amber-100 p-4 space-y-3">
-                                <p class="text-sm font-medium text-slate-700">Duyệt và cộng điểm thưởng cho bài viết này.</p>
+                                <p class="text-sm font-medium text-slate-700">Duyệt bài và tiến hành cộng điểm thưởng tích lũy cho thành viên.</p>
                                 <div class="flex gap-3">
-                                    <input type="number" form="approve_form" name="points" class="w-28 px-4 py-3 rounded-2xl border border-slate-200 bg-white outline-none focus:ring-4 focus:ring-amber-500/10" placeholder="500">
-                                    <button type="submit" form="approve_form" class="flex-1 rounded-2xl bg-amber-500 text-white font-black hover:bg-amber-600 transition px-4 py-3">Duyệt & Cộng điểm</button>
+                                    {{-- Ô nhập số điểm thưởng --}}
+                                    <input type="number" form="approve_form" name="points" value="{{ old('points', $article->ai_analysis['recommended_reward_points'] ?? '') }}" class="w-28 px-4 py-3 rounded-2xl border border-slate-200 bg-white outline-none focus:ring-4 focus:ring-amber-500/10 text-slate-800 font-bold text-center" placeholder="Điểm...">
+                                    <button type="submit" form="approve_form" class="flex-1 rounded-2xl bg-amber-500 text-white font-black hover:bg-amber-600 transition px-4 py-3 shadow-md shadow-amber-200">Duyệt & Cộng điểm</button>
+                                </div>
+                                <div class="pt-2 border-t border-amber-100/50">
+                                    <button type="submit" form="reject_form" class="w-full rounded-2xl bg-rose-500 text-white font-black hover:bg-rose-600 transition px-4 py-3 shadow-md shadow-rose-100">Từ chối bài viết</button>
                                 </div>
                             </div>
+                        {{-- Nếu bài viết đã được duyệt thành công trước đó --}}
                         @elseif($article->status === 'approved')
-                            <div class="rounded-[1.5rem] bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 font-semibold">
-                                Đã cộng {{ $article->reward_points_awarded }} điểm cho khách hàng.
+                            <div class="rounded-[1.5rem] bg-emerald-50 border border-emerald-100 p-4 text-emerald-700 font-semibold text-center">
+                                Đã duyệt thành công và đã cộng {{ $article->reward_points_awarded }} điểm vào ví tích điểm của khách hàng.
+                            </div>
+                        @elseif($article->status === 'rejected')
+                            <div class="rounded-[1.5rem] bg-rose-50 border border-rose-100 p-4 text-rose-700 font-semibold text-center">
+                                Bài viết đã bị từ chối phê duyệt.
                             </div>
                         @endif
                     </div>
                 @endif
 
+                {{-- Khối nút hành động nhanh lưu trữ/xem trước --}}
                 <div class="glass-card rounded-[2rem] p-6 md:p-7 space-y-4 sticky top-6">
                     <div class="tiny-label">05 — Xuất bản</div>
                     <h2 class="text-xl font-black text-slate-900">Hành động nhanh</h2>
@@ -217,10 +298,13 @@
         </div>
     </form>
 
+    {{-- Form phụ dùng để submit request duyệt/từ chối bài viết UGC --}}
     @if($article->exists && $article->author_type === 'customer' && $article->status === 'pending')
         <form id="approve_form" action="{{ route('admin.articles.approve', $article->article_id) }}" method="POST" class="hidden">@csrf</form>
+        <form id="reject_form" action="{{ route('admin.articles.reject', $article->article_id) }}" method="POST" class="hidden">@csrf</form>
     @endif
 
+    {{-- PHẦN REAL-TIME LIVE PREVIEW MÔ PHỎNG HIỂN THỊ TRÊN CÁC DÒNG THIẾT BỊ --}}
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
         <div class="xl:col-span-7">
             <div class="glass-card rounded-[2rem] p-5 md:p-6">
@@ -229,12 +313,15 @@
                         <div class="tiny-label">Real-time Visualization</div>
                         <h3 class="mt-2 text-xl font-black text-slate-900">Bài đăng sẽ hiển thị như sau</h3>
                     </div>
+                    {{-- Bộ nút chuyển chế độ xem thiết bị --}}
                     <div class="flex items-center gap-2 rounded-full bg-slate-100 p-1 border border-slate-200">
                         <button type="button" class="device-btn active px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.2em]" data-device="desktop">Desktop</button>
                         <button type="button" class="device-btn px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.2em]" data-device="tablet">Tablet</button>
                         <button type="button" class="device-btn px-4 py-2 rounded-full text-xs font-black uppercase tracking-[0.2em]" data-device="mobile">Mobile</button>
                     </div>
                 </div>
+                
+                {{-- Giả lập thiết bị --}}
                 <div class="preview-shell preview-pane rounded-[2rem] overflow-hidden border border-slate-700">
                     <div class="p-4 border-b border-white/10 flex items-center justify-between text-white/70 text-xs font-bold uppercase tracking-[0.25em]">
                         <span>Lifestyle preview</span>
@@ -243,12 +330,15 @@
                             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         </div>
                     </div>
+                    
+                    {{-- Bề mặt giả lập trang public --}}
                     <div class="preview-viewport p-4 md:p-6 text-white overflow-auto">
                         <div id="previewFrame" class="preview-frame mx-auto rounded-[1.75rem] overflow-hidden bg-white shadow-2xl">
                             <div class="bg-[#d70018] text-white px-5 py-3 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.28em]">
                                 <span id="previewDeviceLabel">Desktop preview</span>
                                 <span class="flex items-center gap-2 text-white/80"><span class="w-2 h-2 rounded-full bg-white"></span> Live</span>
                             </div>
+                            
                             <div class="article-surface bg-white">
                                 <div class="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-5">
                                     <div class="breadcrumb text-[13px] text-slate-500 mb-5 flex items-center gap-2 flex-wrap">
@@ -258,11 +348,12 @@
                                         <i class="fa-solid fa-angle-right text-[10px]"></i>
                                         <span class="truncate max-w-xs text-slate-400" id="previewBreadcrumb">{{ $article->title ?: 'Bài viết' }}</span>
                                     </div>
-
+ 
                                     <div class="article-layout grid xl:grid-cols-[minmax(0,800px)_320px] gap-8">
                                         <div class="article-main min-w-0">
+                                            {{-- Live tiêu đề --}}
                                             <h1 class="article-title text-[28px] md:text-[36px] font-black leading-tight text-slate-900 mb-4" id="previewTitle">{{ $article->title ?: 'Tiêu đề bài viết của bạn sẽ xuất hiện ở đây' }}</h1>
-
+ 
                                             <div class="article-meta flex items-center justify-between border-b border-slate-200 pb-4 mb-5 gap-4 flex-wrap">
                                                 <div class="meta-left flex items-center gap-3 min-w-0">
                                                     <div class="author-avatar w-10 h-10 rounded-full bg-[#d70018] text-white flex items-center justify-center font-black">A</div>
@@ -276,11 +367,14 @@
                                                     <span class="share-btn share-link w-9 h-9 rounded-full bg-slate-500 text-white flex items-center justify-center"><i class="fa-solid fa-link"></i></span>
                                                 </div>
                                             </div>
-
+ 
+                                            {{-- Live tóm tắt ngắn --}}
                                             <div class="article-summary-box rounded-r-2xl p-4 md:p-5 mb-6 text-slate-700 font-semibold leading-relaxed text-[15px]" id="previewSummary">{{ $article->summary ?: 'Mô tả ngắn giúp người xem hiểu bài viết nhanh hơn.' }}</div>
-
+ 
+                                            {{-- Live nội dung HTML chi tiết --}}
                                             <div class="article-content text-[16px] leading-[1.8] text-[#333] overflow-hidden" id="previewContent">{!! $article->content ? $article->content : '<p>Phần nội dung chi tiết sẽ được render ở đây sau khi bạn nhập nội dung.</p>' !!}</div>
-
+ 
+                                            {{-- Live liên kết sửa chữa --}}
                                             <div id="previewEcosystem" class="ecosystem-banner mt-8 rounded-[1.5rem] p-5 md:p-6 bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] text-white overflow-hidden relative">
                                                 <div class="ecosystem-title text-lg font-black mb-2 flex items-center gap-2">
                                                     <i class="fa-solid fa-screwdriver-wrench"></i>
@@ -288,14 +382,14 @@
                                                 </div>
                                                 <p class="text-sm leading-relaxed text-white/90" id="previewEcosystemText">Bài viết sẽ hiển thị theo phong cách public hoàn chỉnh, bao gồm khối ecosystem nếu có liên kết ticket.</p>
                                             </div>
-
+ 
                                             <div class="mt-6 flex items-center gap-2 flex-wrap text-xs text-slate-600">
                                                 <i class="fa-solid fa-tags text-slate-400"></i>
                                                 <span class="px-3 py-1 bg-slate-100 rounded-full font-bold uppercase" id="previewFormatChip">{{ $article->format_type ?: 'standard' }}</span>
                                                 <span class="px-3 py-1 bg-slate-100 rounded-full font-bold uppercase">Công nghệ</span>
                                             </div>
                                         </div>
-
+ 
                                         <aside class="article-sidebar space-y-5 hidden xl:block">
                                             <div class="sidebar-widget bg-white rounded-[1.5rem] border border-slate-200 p-5 shadow-sm">
                                                 <div class="widget-title text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
@@ -315,6 +409,8 @@
                 </div>
             </div>
         </div>
+        
+        {{-- Khối hướng dẫn soạn thảo bài viết --}}
         <div class="xl:col-span-5">
             <div class="glass-card rounded-[2rem] p-5 md:p-6 space-y-4">
                 <div class="tiny-label">Hướng dẫn</div>
@@ -329,8 +425,10 @@
     </div>
 </div>
 
+{{-- ĐOẠN MÃ JAVASCRIPT HỖ TRỢ TINYMCE VÀ ĐỒNG BỘ HOÁ LIVE PREVIEW --}}
 <script src="https://cdn.tiny.cloud/1/{{ config('services.tinymce.key') }}/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
+    // Khởi tạo TinyMCE
     tinymce.init({
         selector: '#content_editor',
         height: 460,
@@ -339,6 +437,7 @@
         menubar: false,
         content_style: 'body { font-family: Inter, Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.75; } img { max-width: 100%; height: auto; }',
         file_picker_types: 'image',
+        // Tích hợp upload ảnh chuyển đổi sang Base64
         file_picker_callback: function (cb, value, meta) {
             const input = document.createElement('input');
             input.type = 'file';
@@ -366,6 +465,7 @@
         }
     });
 
+    // Các biến DOM
     const titleInput = document.getElementById('titleInput');
     const summaryInput = document.getElementById('summaryInput');
     const formatInput = document.getElementById('formatInput');
@@ -395,6 +495,7 @@
         category: 'Công nghệ',
     };
 
+    // Chuẩn hóa phong cách ảnh trong nội dung bài viết
     function sanitizeAndDecorateContent(html) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(`<div>${html || ''}</div>`, 'text/html');
@@ -411,6 +512,7 @@
         return wrapper.innerHTML.trim() || '<p>Phần nội dung chi tiết sẽ được render ở đây sau khi bạn nhập nội dung.</p>';
     }
 
+    // Đổi giao diện view thiết bị
     function applyDeviceView(device) {
         currentDevice = device;
         deviceButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.device === device));
@@ -429,6 +531,7 @@
         previewDeviceLabel.textContent = config.label;
     }
 
+    // Render danh sách tin sidebar giả lập
     function renderSidebarArticles() {
         const container = document.getElementById('previewSidebarList');
         if (!container) return;
@@ -451,6 +554,7 @@
         `).join('');
     }
 
+    // Đồng bộ form dữ liệu sang live preview HTML
     function syncPreview() {
         const formatMap = { standard: 'Standard', lookbook: 'Lookbook', storytelling: 'Storytelling' };
         const title = titleInput?.value?.trim() || 'Tiêu đề bài viết của bạn sẽ xuất hiện ở đây';
@@ -480,6 +584,7 @@
         renderSidebarArticles();
     }
 
+    // Preview thumbnail tức thì qua FileReader
     function handleThumbnailPreview(file) {
         if (!file) return;
         const reader = new FileReader();
@@ -487,6 +592,7 @@
         reader.readAsDataURL(file);
     }
 
+    // Lắng nghe sự kiện
     thumbnailInput?.addEventListener('change', (event) => handleThumbnailPreview(event.target.files?.[0]));
     titleInput?.addEventListener('input', syncPreview);
     summaryInput?.addEventListener('input', syncPreview);
@@ -495,6 +601,7 @@
 
     deviceButtons.forEach(btn => btn.addEventListener('click', () => applyDeviceView(btn.dataset.device)));
 
+    // Nút chèn nhanh bài mẫu
     insertSampleBtn?.addEventListener('click', () => {
         const editor = tinymce.get('content_editor');
         if (editor) {
@@ -512,6 +619,7 @@
         }
     });
 
+    // Khởi tạo khi load trang
     document.addEventListener('DOMContentLoaded', () => {
         applyDeviceView('desktop');
         renderSidebarArticles();

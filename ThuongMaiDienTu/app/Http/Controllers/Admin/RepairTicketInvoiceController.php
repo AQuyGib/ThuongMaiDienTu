@@ -15,6 +15,11 @@ use Illuminate\View\View;
 
 class RepairTicketInvoiceController extends Controller
 {
+    /**
+     * Hiển thị danh sách các phiếu sửa chữa có trong hệ thống.
+     * Hỗ trợ nạp kèm thông tin hóa đơn dịch vụ liên kết (serviceInvoice),
+     * sắp xếp theo thứ tự phiếu mới nhất và phân trang 10 dòng/trang.
+     */
     public function index(): View
     {
         $repairTickets = RepairTicket::with('serviceInvoice')->latest('ticket_id')->paginate(10);
@@ -22,6 +27,11 @@ class RepairTicketInvoiceController extends Controller
         return view('admin.repair-tickets.index', compact('repairTickets'));
     }
 
+    /**
+     * Hiển thị giao diện tạo mới phiếu sửa chữa.
+     * Truy vấn danh sách khách hàng (role_id = 3) và kỹ thuật viên (role_id thuộc [1, 2, 4])
+     * để hiển thị trên các thẻ chọn (select box) trong form.
+     */
     public function createTicket(): View
     {
         $customers = User::where('role_id', 3)->orderBy('full_name')->get();
@@ -102,11 +112,70 @@ class RepairTicketInvoiceController extends Controller
         $data['service_name'] = $data['service_name'] ?? null;
         $data['service_fee'] = isset($data['service_fee']) && $data['service_fee'] !== '' ? $data['service_fee'] : 0;
 
-        RepairTicket::create($data);
+        $ticket = RepairTicket::create($data);
+
+        // Gửi thông báo cho khách hàng
+        $user = null;
+        if ($ticket->user_id) {
+            $user = User::find($ticket->user_id);
+        }
+        
+        if (!$user && $ticket->customer_phone) {
+            $user = User::where('phone_number', $ticket->customer_phone)->first();
+        }
+
+        if (!$user && $ticket->customer_email) {
+            $user = User::where('email', $ticket->customer_email)->first();
+        }
+
+        $statusMap = [
+            'Received' => 'Đã tiếp nhận',
+            'Checking' => 'Kiểm tra & Báo giá',
+            'Under_Repair' => 'Đang sửa chữa',
+            'Waiting_Parts' => 'Chờ linh kiện',
+            'Done' => 'Đã hoàn thành',
+        ];
+        $statusText = $statusMap[$ticket->status] ?? $ticket->status;
+
+        if ($user) {
+            try {
+                app(\App\Services\NotificationService::class)->createForUser($user, [
+                    'type' => 'repair_ticket.created',
+                    'title' => 'Đã tiếp nhận thiết bị sửa chữa',
+                    'content' => "Yêu cầu sửa chữa thiết bị IMEI/Serial: {$ticket->imei_serial} đã được tiếp nhận. Trạng thái: {$statusText}. Mã phiếu: #RT-{$ticket->ticket_id}.",
+                    'action_url' => url('/profile'),
+                    'data' => [
+                        'ticket_id' => $ticket->ticket_id,
+                        'imei_serial' => $ticket->imei_serial,
+                        'status' => $ticket->status,
+                    ]
+                ]);
+            } catch (\Throwable $ne) {}
+        } else {
+            // Nếu khách hàng dùng số điện thoại/email khác và không có tài khoản
+            if ($ticket->customer_email) {
+                try {
+                    \Illuminate\Support\Facades\Mail::raw(
+                        "Kính gửi quý khách {$ticket->customer_name},\n\nYêu cầu sửa chữa thiết bị IMEI/Serial: {$ticket->imei_serial} của quý khách đã được tiếp nhận thành công.\nMã phiếu sửa chữa: #RT-{$ticket->ticket_id}.\nTrạng thái hiện tại: {$statusText}.\n\nCảm ơn quý khách đã sử dụng dịch vụ của chúng tôi!",
+                        function ($message) use ($ticket) {
+                            $message->to($ticket->customer_email)
+                                    ->subject("[Hệ thống] Tiếp nhận sửa chữa thiết bị #RT-{$ticket->ticket_id}");
+                        }
+                    );
+                } catch (\Throwable $me) {
+                    \Illuminate\Support\Facades\Log::error("Lỗi gửi mail vãng lai: " . $me->getMessage());
+                }
+            }
+        }
 
         return redirect()->route('admin.repair-tickets.index')->with('success', 'Đã tạo phiếu sửa chữa thành công.');
     }
 
+    /**
+     * Hiển thị giao diện chỉnh sửa một phiếu sửa chữa cụ thể.
+     * Nạp thông tin phiếu sửa chữa hiện tại kèm danh sách khách hàng và kỹ thuật viên
+     * để hiển thị thông tin cũ và cho phép cập nhật.
+     */
     public function editTicket(RepairTicket $repairTicket): View
     {
         $customers = User::where('role_id', 3)->orderBy('full_name')->get();
@@ -187,11 +256,72 @@ class RepairTicketInvoiceController extends Controller
         $data['service_name'] = $data['service_name'] ?? null;
         $data['service_fee'] = isset($data['service_fee']) && $data['service_fee'] !== '' ? $data['service_fee'] : 0;
 
+        $oldStatus = $repairTicket->status;
         $repairTicket->update($data);
+
+        // Gửi thông báo cho khách hàng nếu thay đổi trạng thái
+        $user = null;
+        if ($repairTicket->user_id) {
+            $user = User::find($repairTicket->user_id);
+        }
+        
+        if (!$user && $repairTicket->customer_phone) {
+            $user = User::where('phone_number', $repairTicket->customer_phone)->first();
+        }
+
+        if (!$user && $repairTicket->customer_email) {
+            $user = User::where('email', $repairTicket->customer_email)->first();
+        }
+
+        if ($oldStatus !== $repairTicket->status) {
+            $statusMap = [
+                'Received' => 'Đã tiếp nhận',
+                'Checking' => 'Kiểm tra & Báo giá',
+                'Under_Repair' => 'Đang sửa chữa',
+                'Waiting_Parts' => 'Chờ linh kiện',
+                'Done' => 'Đã hoàn thành',
+            ];
+            $statusText = $statusMap[$repairTicket->status] ?? $repairTicket->status;
+
+            if ($user) {
+                try {
+                    app(\App\Services\NotificationService::class)->createForUser($user, [
+                        'type' => 'repair_ticket.status_updated',
+                        'title' => 'Trạng thái sửa chữa cập nhật',
+                        'content' => "Phiếu sửa chữa #RT-{$repairTicket->ticket_id} cho thiết bị IMEI: {$repairTicket->imei_serial} đã chuyển sang trạng thái: {$statusText}.",
+                        'action_url' => url('/profile'),
+                        'data' => [
+                            'ticket_id' => $repairTicket->ticket_id,
+                            'imei_serial' => $repairTicket->imei_serial,
+                            'old_status' => $oldStatus,
+                            'new_status' => $repairTicket->status,
+                        ]
+                    ]);
+                } catch (\Throwable $ne) {}
+            } else {
+                // Khách hàng không có tài khoản nhưng có điền email
+                if ($repairTicket->customer_email) {
+                    try {
+                        \Illuminate\Support\Facades\Mail::raw(
+                            "Kính gửi quý khách {$repairTicket->customer_name},\n\nTiến độ sửa chữa thiết bị IMEI/Serial: {$repairTicket->imei_serial} (Mã phiếu #RT-{$repairTicket->ticket_id}) đã có cập nhật mới.\nTrạng thái mới: {$statusText}.\n\nCảm ơn quý khách!",
+                            function ($message) use ($repairTicket) {
+                                $message->to($repairTicket->customer_email)
+                                        ->subject("[Hệ thống] Cập nhật trạng thái sửa chữa #RT-{$repairTicket->ticket_id}");
+                            }
+                        );
+                    } catch (\Throwable $me) {
+                        \Illuminate\Support\Facades\Log::error("Lỗi gửi mail cập nhật tiến độ vãng lai: " . $me->getMessage());
+                    }
+                }
+            }
+        }
 
         return redirect()->route('admin.repair-tickets.index')->with('success', 'Đã cập nhật phiếu sửa chữa thành công.');
     }
 
+    /**
+     * Xóa một phiếu sửa chữa ra khỏi hệ thống.
+     */
     public function destroyTicket(RepairTicket $repairTicket): RedirectResponse
     {
         $repairTicket->delete();
@@ -199,6 +329,12 @@ class RepairTicketInvoiceController extends Controller
         return redirect()->route('admin.repair-tickets.index')->with('success', 'Đã xóa phiếu sửa chữa thành công.');
     }
 
+    /**
+     * Phương thức create(): Chuẩn bị dữ liệu và hiển thị giao diện xuất hóa đơn dịch vụ từ phiếu sửa chữa.
+     * RÀNG BUỘC BẢO MẬT:
+     *   - Chỉ cho phép xuất hóa đơn nếu phiếu sửa chữa đã ở trạng thái hoàn thành ('Done').
+     *   - Tự động điền trước các thông tin khách hàng, số điện thoại, email, IMEI, tên dịch vụ và chi phí dịch vụ thực tế từ phiếu sửa chữa sang hóa đơn.
+     */
     public function create(RepairTicket $repairTicket): View|RedirectResponse
     {
         if ($repairTicket->status !== 'Done') {
@@ -277,13 +413,72 @@ class RepairTicketInvoiceController extends Controller
             'created_by' => $request->user()?->id,
         ]);
 
+        // Gửi thông báo cho khách hàng
+        $user = null;
         if ($request->filled('repair_ticket_id')) {
             $repairTicket = RepairTicket::find($request->integer('repair_ticket_id'));
-            if ($repairTicket && ! $repairTicket->invoice_no) {
-                $repairTicket->update([
-                    'invoice_no' => $invoice->invoice_no,
-                    'invoiced_at' => now(),
+            if ($repairTicket) {
+                if ($repairTicket->user_id) {
+                    $user = User::find($repairTicket->user_id);
+                } elseif ($repairTicket->customer_phone) {
+                    $user = User::where('phone_number', $repairTicket->customer_phone)->first();
+                }
+                
+                if (! $repairTicket->invoice_no) {
+                    $repairTicket->update([
+                        'invoice_no' => $invoice->invoice_no,
+                        'invoiced_at' => now(),
+                    ]);
+                }
+            }
+        }
+
+        if (!$user && $invoice->customer_phone) {
+            $user = User::where('phone_number', $invoice->customer_phone)->first();
+        }
+
+        if (!$user && $invoice->customer_email) {
+            $user = User::where('email', $invoice->customer_email)->first();
+        }
+
+        $statusMap = [
+            'draft' => 'Bản nháp',
+            'issued' => 'Đã phát hành',
+            'paid' => 'Đã thanh toán',
+            'cancelled' => 'Đã hủy',
+        ];
+        $statusText = $statusMap[$invoice->status] ?? $invoice->status;
+        $formattedAmount = number_format($invoice->total_amount);
+
+        if ($user) {
+            try {
+                app(\App\Services\NotificationService::class)->createForUser($user, [
+                    'type' => 'service_invoice.created',
+                    'title' => 'Hóa đơn dịch vụ mới được xuất',
+                    'content' => "Hóa đơn dịch vụ #{$invoice->invoice_no} trị giá {$formattedAmount}đ cho dịch vụ '{$invoice->service_name}' đã được tạo ở trạng thái: {$statusText}.",
+                    'action_url' => url('/profile'),
+                    'data' => [
+                        'invoice_id' => $invoice->id,
+                        'invoice_no' => $invoice->invoice_no,
+                        'total_amount' => $invoice->total_amount,
+                        'status' => $invoice->status,
+                    ]
                 ]);
+            } catch (\Throwable $ne) {}
+        } else {
+            // Gửi email hóa đơn trực tiếp cho khách hàng vãng lai
+            if ($invoice->customer_email) {
+                try {
+                    \Illuminate\Support\Facades\Mail::raw(
+                        "Kính gửi quý khách {$invoice->customer_name},\n\nHóa đơn dịch vụ #{$invoice->invoice_no} trị giá {$formattedAmount}đ cho dịch vụ '{$invoice->service_name}' đã được tạo thành công.\nTrạng thái hiện tại: {$statusText}.\n\nCảm ơn quý khách đã tin tưởng và sử dụng dịch vụ của chúng tôi!",
+                        function ($message) use ($invoice) {
+                            $message->to($invoice->customer_email)
+                                    ->subject("[Hệ thống] Hóa đơn dịch vụ mới #{$invoice->invoice_no}");
+                        }
+                    );
+                } catch (\Throwable $me) {
+                    \Illuminate\Support\Facades\Log::error("Lỗi gửi email hóa đơn vãng lai: " . $me->getMessage());
+                }
             }
         }
 
@@ -311,7 +506,7 @@ class RepairTicketInvoiceController extends Controller
             ]);
         }
 
-        $user = User::where('phone', $phone)->first();
+        $user = User::where('phone_number', $phone)->first();
         if ($user) {
             return response()->json([
                 'customer_name' => $user->full_name,

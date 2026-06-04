@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
+    use \App\Traits\HasAuditLog;
+
     protected $primaryKey = 'order_id';
-    public $timestamps = false;
     protected $guarded = [];
 
     public function user()
@@ -23,15 +24,30 @@ class Order extends Model
         return $this->hasMany(OrderDetail::class, 'order_id');
     }
 
+    public function installment()
+    {
+        return $this->hasOne(Installment::class, 'order_id');
+    }
+
+
     protected static function booted()
     {
+        static::saving(function (Order $order) {
+            if ($order->isDirty('status') && self::isCompletedStatus($order->status)) {
+                if (!$order->delivered_at) {
+                    $order->delivered_at = now();
+                }
+                $order->payment_status = 'paid';
+            }
+        });
+
         static::created(function (Order $order) {
             if ($order->user) {
                 app(NotificationService::class)->createForUser($order->user, [
                     'type' => 'order.created',
                     'title' => 'Đơn hàng đã được tạo',
                     'content' => 'Đơn hàng #' . $order->order_id . ' của bạn đã được ghi nhận và đang chờ xử lý.',
-                    'action_url' => url('/orders'),
+                    'action_url' => url('/orders?code=' . ($order->order_code ?? $order->order_id)),
                     'data' => [
                         'order_id' => $order->order_id,
                         'status' => $order->status,
@@ -73,7 +89,7 @@ class Order extends Model
                 'type' => 'order.status_updated',
                 'title' => 'Cập nhật trạng thái đơn hàng',
                 'content' => 'Đơn hàng #' . $order->order_id . ' hiện ' . $statusLabel . '.',
-                'action_url' => url('/orders'),
+                'action_url' => url('/orders?code=' . ($order->order_code ?? $order->order_id)),
                 'data' => [
                     'order_id' => $order->order_id,
                     'status' => $order->status,
@@ -82,10 +98,32 @@ class Order extends Model
         });
 
         static::saved(function ($order) {
-            if ($order->wasChanged('status')) {
+            if ($order->wasChanged('status') || $order->wasRecentlyCreated) {
                 if (self::isCompletedStatus($order->status)) {
                     app(PointsService::class)->applyOrderCompletedPoints($order);
                     self::syncMemberTierByPoints($order);
+
+                    // Tự động kích hoạt/đồng bộ bảo hành cho các thiết bị trong đơn hàng
+                    $deliveredAt = $order->delivered_at ?: now();
+                    foreach ($order->details as $detail) {
+                        $item = $detail->inventoryItem;
+                        if ($item) {
+                            $warrantyMonths = $item->getWarrantyMonthsFromProduct() ?: 12;
+                            $wStart = \Carbon\Carbon::parse($deliveredAt);
+                            $wEnd = (clone $wStart)->addMonths($warrantyMonths);
+
+                            \App\Models\Warranty::updateOrCreate(
+                                ['item_id' => $item->item_id],
+                                [
+                                    'start_date' => $wStart->toDateTimeString(),
+                                    'end_date' => $wEnd->toDateTimeString(),
+                                    'warranty_status' => $wEnd->isPast() ? 'expired' : 'active',
+                                    'warranty_type' => 'manufacturer',
+                                    'note' => 'Kích hoạt bảo hành tự động khi giao hàng thành công.',
+                                ]
+                            );
+                        }
+                    }
                 } elseif (strtolower((string) $order->status) === 'cancelled') {
                     app(PointsService::class)->cancelOrderPoints($order);
                     self::syncMemberTierByPoints($order);

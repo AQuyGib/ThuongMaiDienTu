@@ -3,15 +3,55 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Services\ArticleAIService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
+/**
+ * ArticleFrontendController - Bộ điều khiển giao diện bài viết phía khách hàng (Frontend Article Controller).
+ *
+ * Nhiệm vụ chính:
+ * 1. Hiển thị trang danh sách bài viết công khai với cơ chế chia bài viết nổi bật (Featured) và bài viết mới nhất (Latest), hỗ trợ lọc theo thẻ tag.
+ * 2. Cho phép người dùng xem chi tiết một bài viết kèm theo các bài viết liên quan khác và thông tin phiếu sửa chữa liên quan (nếu có).
+ * 3. Cho phép khách hàng tự đăng bài viết mới lên cộng đồng (Community Posts) ở trạng thái chờ duyệt (Pending).
+ * 4. Hỗ trợ khách hàng tự chỉnh sửa thông tin bài viết của chính họ (tự động chuyển trạng thái về chờ duyệt lại sau khi chỉnh sửa).
+ * 5. Cho phép khách hàng tự xóa/rút lại bài viết đã gửi lên của chính họ.
+ * 6. Kiểm tra bảo mật nghiêm ngặt ở Server-side, đảm bảo người dùng chỉ được sửa/xóa bài viết do chính họ làm tác giả, tránh giả mạo bằng F12.
+ */
 class ArticleFrontendController extends Controller
 {
+    /**
+     * Hiển thị danh sách bài viết công khai cho khách hàng.
+     * 
+     * @param Request $request Yêu cầu chứa tham số thẻ lọc tag
+     * @return \Illuminate\View\View Giao diện danh sách bài viết
+     */
     public function index(Request $request)
     {
+        // Lấy thẻ tag lọc từ URL query string
         $tag = $request->input('tag');
 
-        // 3 bài viết mới nhất làm bài nổi bật (Featured)
+        // BƯỚC 0: Lấy các tag động phổ biến từ DB để hiển thị ở thanh bộ lọc
+        $articlesWithTags = Article::where('status', 'approved')
+            ->whereNotNull('tags')
+            ->pluck('tags');
+
+        $tagCounts = [];
+        foreach ($articlesWithTags as $tagsArr) {
+            if (is_array($tagsArr)) {
+                foreach ($tagsArr as $t) {
+                    $cleanT = ltrim($t, '#');
+                    if (!empty($cleanT)) {
+                        $tagCounts[$cleanT] = ($tagCounts[$cleanT] ?? 0) + 1;
+                    }
+                }
+            }
+        }
+        arsort($tagCounts);
+        $topDynamicTags = array_slice(array_keys($tagCounts), 0, 8); // Top 8 tag phổ biến nhất
+
+        // BƯỚC 1: Lấy 3 bài viết đã được duyệt mới nhất để hiển thị ở khu vực bài viết nổi bật (Featured Articles)
         $featuredArticles = Article::where('status', 'approved')
             ->when($tag, function ($query, $tag) {
                 $this->applyTagFilter($query, $tag);
@@ -20,51 +60,81 @@ class ArticleFrontendController extends Controller
             ->take(3)
             ->get();
 
-        // Lấy IDs của các bài featured để loại trừ khỏi danh sách bên dưới
+        // Thu thập danh sách ID của các bài viết nổi bật để loại trừ khỏi danh sách bên dưới, tránh hiển thị trùng lặp
         $featuredIds = $featuredArticles->pluck('article_id')->toArray();
 
-        // Các bài viết còn lại: Lấy các bài đã duyệt HOẶC bài của chính mình (nếu đang đăng nhập)
+        // BƯỚC 2: Truy vấn danh sách các bài viết còn lại.
+        // Điều kiện hiển thị: các bài viết đã duyệt ('approved') HOẶC bài viết ở trạng thái chờ duyệt ('pending') của chính người dùng đang đăng nhập.
         $latestArticles = Article::query()
             ->where(function($query) {
                 $query->where('status', 'approved');
-                if (\Illuminate\Support\Facades\Auth::check()) {
+                // Nếu khách hàng đã đăng nhập, cho phép họ nhìn thấy bài viết đang chờ duyệt của chính mình
+                if (Auth::check()) {
                     $query->orWhere(function($q) {
-                        $q->where('author_id', \Illuminate\Support\Facades\Auth::id())
+                        $q->where('author_id', Auth::id())
                           ->where('author_type', 'customer');
                     });
                 }
             })
             ->when($tag, function ($query, $tag) {
+                // Áp dụng bộ lọc thẻ tag nếu khách hàng chọn phân loại bài viết
                 $this->applyTagFilter($query, $tag);
             })
-            ->whereNotIn('article_id', $featuredIds)
-            ->orderBy('created_at', 'desc')
-            ->paginate(12)
-            ->withQueryString();
+            ->whereNotIn('article_id', $featuredIds) // Loại trừ các bài nổi bật đã hiển thị ở trên
+            ->orderBy('created_at', 'desc') // Sắp xếp giảm dần theo thời gian tạo
+            ->paginate(12) // Phân trang 12 bài viết trên một trang
+            ->withQueryString(); // Duy trì tham số lọc khi chuyển trang
             
-        return view('articles.index', compact('featuredArticles', 'latestArticles', 'tag'));
+        // Trả về view danh sách bài viết
+        return view('articles.index', compact('featuredArticles', 'latestArticles', 'tag', 'topDynamicTags'));
     }
 
+    /**
+     * Áp dụng bộ lọc thẻ tag vào câu truy vấn danh sách bài viết (Hỗ trợ cả tag tĩnh và tag động AI).
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query Đối tượng xây dựng truy vấn Eloquent
+     * @param string $tag Tên thẻ tag cần lọc
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
     private function applyTagFilter($query, string $tag)
     {
-        return match ($tag) {
-            'standard', 'lookbook', 'storytelling' => $query->where('format_type', $tag),
-            'dienmay-pro' => $query->where('author_type', 'admin'),
-            'lifestyle' => $query,
-            default => $query,
-        };
+        if (in_array($tag, ['standard', 'lookbook', 'storytelling'])) {
+            return $query->where('format_type', $tag);
+        }
+        if ($tag === 'dienmay-pro') {
+            return $query->where('author_type', 'admin');
+        }
+        if ($tag === 'lifestyle') {
+            return $query;
+        }
+
+        // Lọc theo tag động của AI
+        $cleanTag = ltrim($tag, '#');
+        return $query->where(function($q) use ($cleanTag) {
+            $q->whereJsonContains('tags', '#' . $cleanTag)
+              ->orWhereJsonContains('tags', $cleanTag)
+              ->orWhere('tags', 'LIKE', "%#{$cleanTag}%")
+              ->orWhere('tags', 'LIKE', "%\"{$cleanTag}\"%");
+        });
     }
 
+    /**
+     * Hiển thị trang chi tiết bài viết công khai dựa theo slug.
+     * 
+     * @param string $slug Đường dẫn thân thiện của bài viết
+     * @return \Illuminate\View\View Giao diện chi tiết bài viết
+     */
     public function show($slug)
     {
+        // Truy vấn thông tin bài viết theo slug, chỉ cho phép hiển thị các bài viết đã duyệt
         $article = Article::where('slug', $slug)
             ->where('status', 'approved')
-            ->firstOrFail();
-            
-        // Liên kết với đơn sửa chữa nếu có
+            ->firstOrFail(); // Trả về trang lỗi 404 nếu không tìm thấy
+             
+        // Lấy thông tin phiếu sửa chữa liên quan gắn kèm với bài viết này nếu có
         $relatedTicket = $article->repairTicket;
         
-        // Lấy 5 bài viết mới nhất cho thanh sidebar
+        // Lấy ra danh sách 5 bài viết mới nhất đã duyệt (loại trừ bài viết hiện tại) để hiển thị ở thanh bên (Sidebar)
         $recentArticles = Article::where('status', 'approved')
             ->where('article_id', '!=', $article->article_id)
             ->orderBy('created_at', 'desc')
@@ -74,29 +144,46 @@ class ArticleFrontendController extends Controller
         return view('articles.show', compact('article', 'relatedTicket', 'recentArticles'));
     }
 
+    /**
+     * Hiển thị giao diện form viết bài mới cho khách hàng.
+     * 
+     * @return \Illuminate\View\View
+     */
     public function create()
     {
-        $article = new Article();
+        $article = new Article(); // Khởi tạo model rỗng phục vụ form tạo
         return view('articles.create', compact('article'));
     }
 
-    public function store(Request $request)
+    /**
+     * Tiếp nhận dữ liệu bài viết mới do khách hàng gửi lên và lưu ở trạng thái chờ duyệt (pending).
+     * 
+     * @param Request $request
+     * @param ArticleAIService $aiService
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store(Request $request, ArticleAIService $aiService)
     {
+        // Kiểm tra và ràng buộc dữ liệu đầu vào gửi từ Form
         $request->validate([
-            'title' => 'required|string|max:255',
-            'summary' => 'nullable|string|max:500',
-            'content' => 'required',
-            'thumbnail_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'title' => 'required|string|max:255', // Tiêu đề bắt buộc, tối đa 255 ký tự
+            'summary' => 'nullable|string|max:500', // Tóm tắt ngắn gọn tối đa 500 ký tự
+            'content' => 'required', // Nội dung bài viết bắt buộc nhập
+            'thumbnail_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // Ảnh đại diện tối đa 2MB
         ]);
 
         try {
+            // Lấy các dữ liệu hợp lệ được phép điền từ phía người dùng
             $data = $request->only(['title', 'summary', 'content']);
-            $data['slug'] = \Illuminate\Support\Str::slug($request->title) . '-' . time();
-            $data['author_id'] = \Illuminate\Support\Facades\Auth::id();
-            $data['author_type'] = 'customer'; // Đánh dấu là bài viết của khách hàng
-            $data['status'] = 'pending';   // Mặc định chờ duyệt
-            $data['format_type'] = 'standard';
+            
+            // Tự sinh slug từ tiêu đề tiếng Việt và hậu tố thời gian để đảm bảo tính duy nhất
+            $data['slug'] = Str::slug($request->title) . '-' . time();
+            $data['author_id'] = Auth::id(); // Lấy ID tài khoản người dùng đang đăng nhập
+            $data['author_type'] = 'customer'; // Phân loại tác giả là khách hàng (Customer)
+            $data['status'] = 'pending';   // Thiết lập trạng thái mặc định ban đầu là chờ duyệt (Pending)
+            $data['format_type'] = 'standard'; // Gán định dạng hiển thị mặc định
 
+            // Xử lý tải ảnh đại diện bài viết lên hệ thống
             if ($request->hasFile('thumbnail_file')) {
                 $file = $request->file('thumbnail_file');
                 $filename = time() . '_' . $file->getClientOriginalName();
@@ -104,7 +191,42 @@ class ArticleFrontendController extends Controller
                 $data['thumbnail'] = '/uploads/articles/' . $filename;
             }
 
-            Article::create($data);
+            // Gọi ArticleAIService phân tích bài viết trước khi lưu
+            $aiResult = $aiService->analyzeArticle($data['title'], $data['summary'], $data['content']);
+
+            $data['tags'] = $aiResult['tags'];
+            $data['seo_title'] = $aiResult['seo']['title_suggestion'];
+            $data['seo_description'] = $aiResult['seo']['meta_description_suggestion'];
+            $data['seo_keywords'] = $aiResult['seo']['keywords_analysis'];
+            $data['seo_score'] = $aiResult['seo']['seo_score'];
+            $data['ai_quality_score'] = $aiResult['quality_score'];
+            $data['ai_moderation_verdict'] = $aiResult['moderation_verdict'];
+            $data['ai_analysis'] = $aiResult;
+            $data['ai_checked'] = 1;
+
+            // Tiến hành ghi bản ghi bài viết mới vào DB
+            $article = Article::create($data);
+
+            // Xử lý Auto-Moderation duyệt tự động
+            $isAutoApproved = false;
+            $isAutoRejected = false;
+            $rewardPoints = $aiResult['recommended_reward_points'] ?? 20;
+            if ($aiResult['moderation_verdict'] === 'approved' && $aiResult['quality_score'] >= 80) {
+                // Sử dụng số điểm do AI đề xuất để duyệt bài và cộng điểm thưởng
+                $article->approveAndReward($rewardPoints);
+                $isAutoApproved = true;
+            } elseif ($aiResult['moderation_verdict'] === 'rejected') {
+                $article->update(['status' => 'rejected']);
+                $isAutoRejected = true;
+            }
+
+            if ($isAutoApproved) {
+                return redirect()->route('articles.index')->with('success', 'Bài viết chất lượng cao và đã được AI duyệt tự động thành công! Bạn được thưởng +' . $rewardPoints . ' điểm tích lũy ví!');
+            }
+
+            if ($isAutoRejected) {
+                return redirect()->route('articles.index')->with('error', 'Bài viết đã bị hệ thống AI tự động từ chối phê duyệt do vi phạm quy tắc nội dung (Spam/Từ ngữ nhạy cảm/Đạo văn).');
+            }
 
             return redirect()->route('articles.index')->with('success', 'Bài viết đã được gửi và đang chờ quản trị viên duyệt!');
         } catch (\Exception $e) {
@@ -112,23 +234,42 @@ class ArticleFrontendController extends Controller
         }
     }
 
+    /**
+     * Hiển thị giao diện sửa bài viết của khách hàng.
+     * Có kiểm tra bảo mật nghiêm ngặt để tránh người khác dùng F12 sửa ID bài viết của người khác.
+     * 
+     * @param int $id ID bài viết cần chỉnh sửa
+     * @return \Illuminate\View\View
+     */
     public function edit($id)
     {
+        // Truy vấn bài viết theo ID kết hợp bắt buộc điều kiện tác giả là chính người dùng đang đăng nhập
         $article = Article::where('article_id', $id)
-            ->where('author_id', \Illuminate\Support\Facades\Auth::id())
+            ->where('author_id', Auth::id())
             ->where('author_type', 'customer')
-            ->firstOrFail();
+            ->firstOrFail(); // Nếu cố tình can thiệp hoặc sai ID tác giả, trả về lỗi HTTP 404
 
         return view('articles.create', compact('article'));
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Cập nhật thông tin sửa đổi bài viết của khách hàng vào cơ sở dữ liệu.
+     * Tự động chuyển trạng thái bài viết về chờ duyệt lại (pending) để đảm bảo an toàn nội dung.
+     * 
+     * @param Request $request
+     * @param int $id ID bài viết
+     * @param ArticleAIService $aiService
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function update(Request $request, $id, ArticleAIService $aiService)
     {
+        // Kiểm tra bảo mật quyền sở hữu bài viết trước khi thực hiện xử lý
         $article = Article::where('article_id', $id)
-            ->where('author_id', \Illuminate\Support\Facades\Auth::id())
+            ->where('author_id', Auth::id())
             ->where('author_type', 'customer')
             ->firstOrFail();
 
+        // Ràng buộc dữ liệu chỉnh sửa bài viết đầu vào
         $request->validate([
             'title' => 'required|string|max:255',
             'summary' => 'nullable|string|max:500',
@@ -138,14 +279,17 @@ class ArticleFrontendController extends Controller
 
         try {
             $data = $request->only(['title', 'summary', 'content']);
+            
+            // Nếu tiêu đề bị sửa đổi, tiến hành cập nhật lại slug mới tương ứng
             if ($request->title !== $article->title) {
-                $data['slug'] = \Illuminate\Support\Str::slug($request->title) . '-' . time();
+                $data['slug'] = Str::slug($request->title) . '-' . time();
             }
             
-            // Nếu bài viết đã duyệt mà khách sửa, có nên chuyển về pending không? 
-            // Thường là có để đảm bảo nội dung mới vẫn sạch.
+            // BẮT BUỘC: Khi khách hàng chỉnh sửa bài viết đã duyệt, tự động reset trạng thái bài viết về chờ duyệt (pending)
+            // để ban quản trị kiểm soát chất lượng nội dung sửa đổi, chống F12 lách luật sửa nội dung xấu sau khi đã được duyệt.
             $data['status'] = 'pending'; 
 
+            // Cập nhật ảnh đại diện mới nếu có tải lên
             if ($request->hasFile('thumbnail_file')) {
                 $file = $request->file('thumbnail_file');
                 $filename = time() . '_' . $file->getClientOriginalName();
@@ -153,7 +297,55 @@ class ArticleFrontendController extends Controller
                 $data['thumbnail'] = '/uploads/articles/' . $filename;
             }
 
+            // Gọi ArticleAIService phân tích bài viết trước khi cập nhật
+            $aiResult = $aiService->analyzeArticle($data['title'], $data['summary'], $data['content']);
+
+            $data['tags'] = $aiResult['tags'];
+            $data['seo_title'] = $aiResult['seo']['title_suggestion'];
+            $data['seo_description'] = $aiResult['seo']['meta_description_suggestion'];
+            $data['seo_keywords'] = $aiResult['seo']['keywords_analysis'];
+            $data['seo_score'] = $aiResult['seo']['seo_score'];
+            $data['ai_quality_score'] = $aiResult['quality_score'];
+            $data['ai_moderation_verdict'] = $aiResult['moderation_verdict'];
+            $data['ai_analysis'] = $aiResult;
+            $data['ai_checked'] = 1;
+
+            // Tiến hành cập nhật dữ liệu mới vào DB
             $article->update($data);
+
+            // Xử lý Auto-Moderation duyệt tự động cho bài cập nhật
+            $isAutoApproved = false;
+            $isAutoRejected = false;
+            $rewardPoints = $aiResult['recommended_reward_points'] ?? 20;
+            $hadPointsBefore = $article->reward_points_awarded > 0;
+
+            if ($aiResult['moderation_verdict'] === 'approved' && $aiResult['quality_score'] >= 80) {
+                // Nếu bài viết đã từng được duyệt/cộng điểm trước đây, chỉ duyệt lại mà không cộng thêm điểm để tránh lạm dụng
+                if ($hadPointsBefore) {
+                    $article->update([
+                        'status' => 'approved',
+                        'published_at' => now(),
+                    ]);
+                    $isAutoApproved = true;
+                } else {
+                    $article->approveAndReward($rewardPoints);
+                    $isAutoApproved = true;
+                }
+            } elseif ($aiResult['moderation_verdict'] === 'rejected') {
+                $article->update(['status' => 'rejected']);
+                $isAutoRejected = true;
+            }
+
+            if ($isAutoApproved) {
+                if ($hadPointsBefore) {
+                    return redirect()->route('articles.index')->with('success', 'Bài viết cập nhật chất lượng cao đã được AI duyệt tự động thành công!');
+                }
+                return redirect()->route('articles.index')->with('success', 'Bài viết cập nhật chất lượng cao đã được AI duyệt tự động thành công! Bạn được thưởng +' . $rewardPoints . ' điểm tích lũy ví!');
+            }
+
+            if ($isAutoRejected) {
+                return redirect()->route('articles.index')->with('error', 'Bài viết cập nhật đã bị hệ thống AI tự động từ chối phê duyệt do vi phạm quy tắc nội dung.');
+            }
 
             return redirect()->route('articles.index')->with('success', 'Cập nhật bài viết thành công! Bài viết sẽ được duyệt lại.');
         } catch (\Exception $e) {
@@ -161,15 +353,121 @@ class ArticleFrontendController extends Controller
         }
     }
 
+    /**
+     * Cho phép khách hàng xóa/rút lại bài viết của chính mình.
+     * Ràng buộc bảo mật quyền sở hữu bắt buộc ở Server-side.
+     * 
+     * @param int $id ID bài viết cần xóa
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy($id)
     {
+        // Kiểm tra quyền tác giả: chỉ cho phép xóa bài viết của chính mình
         $article = Article::where('article_id', $id)
-            ->where('author_id', \Illuminate\Support\Facades\Auth::id())
+            ->where('author_id', Auth::id())
             ->where('author_type', 'customer')
             ->firstOrFail();
 
+        // Thực hiện xóa bài viết
         $article->delete();
 
         return redirect()->route('articles.index')->with('success', 'Đã rút lại bài viết thành công!');
+    }
+
+    /**
+     * Trợ lý SEO & Phân tích nội dung AI (AJAX).
+     */
+    public function aiAssist(Request $request, ArticleAIService $aiService)
+    {
+        if (!Auth::check()) {
+            return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
+        }
+
+        $user = Auth::user();
+        if ($user->chatbot_banned_until && $user->chatbot_banned_until > now()) {
+            $formattedTime = \Carbon\Carbon::parse($user->chatbot_banned_until)->format('d/m/Y H:i');
+            return response()->json([
+                'success' => false,
+                'message' => "Tài khoản của bạn đã bị cấm sử dụng các tính năng hỗ trợ AI đến {$formattedTime} do phát hiện hành vi spam.",
+                'is_banned' => true
+            ], 403);
+        }
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'summary' => 'nullable|string|max:500',
+            'content' => 'required|string',
+        ]);
+
+        // PHÒNG CHỐNG SPAM TỰ ĐỘNG (SPAM DETECTION SYSTEM)
+        $prompt = trim($request->input('title', '') . ' ' . $request->input('content', ''));
+        $isSpamming = false;
+        $spamReason = '';
+
+        // 1. Kiểm tra lặp lại tin nhắn liên tục
+        $lastPrompt = session()->get('ai_assist_last_prompt', '');
+        $repeatCount = session()->get('ai_assist_repeat_count', 0);
+        if ($prompt === $lastPrompt) {
+            $repeatCount++;
+        } else {
+            $repeatCount = 1;
+        }
+        session()->put('ai_assist_last_prompt', $prompt);
+        session()->put('ai_assist_repeat_count', $repeatCount);
+
+        // 2. Kiểm tra tần suất gửi tin nhắn quá nhanh (Rate limiting)
+        $timestamps = session()->get('ai_assist_timestamps', []);
+        $nowTime = time();
+        $timestamps = array_filter($timestamps, function($t) use ($nowTime) {
+            return ($nowTime - $t) < 20;
+        });
+        $timestamps[] = $nowTime;
+        session()->put('ai_assist_timestamps', $timestamps);
+
+        // 3. Kiểm tra spam bàn phím (Keyboard smash)
+        $hasSmashWord = false;
+        $words = explode(' ', $prompt);
+        foreach ($words as $word) {
+            if (strlen($word) > 30) {
+                $hasSmashWord = true;
+                break;
+            }
+        }
+
+        if ($repeatCount >= 4) {
+            $isSpamming = true;
+            $spamReason = 'Gửi liên tiếp một nội dung nhiều lần.';
+        } elseif (count($timestamps) > 6) {
+            $isSpamming = true;
+            $spamReason = 'Gửi quá nhiều yêu cầu liên tục trong thời gian ngắn.';
+        } elseif ($hasSmashWord) {
+            $isSpamming = true;
+            $spamReason = 'Nội dung chứa từ khóa dài bất thường (nghi vấn spam bàn phím).';
+        }
+
+        if ($isSpamming) {
+            $banDuration = now()->addDays(30);
+            $user->update(['chatbot_banned_until' => $banDuration]);
+            
+            // Xóa session liên quan để dọn dẹp
+            session()->forget(['ai_assist_last_prompt', 'ai_assist_repeat_count', 'ai_assist_timestamps']);
+            
+            \Illuminate\Support\Facades\Log::warning("User ID {$user->user_id} bị cấm sử dụng AI tự động do hành vi spam chấm điểm bài viết: {$spamReason}");
+            
+            $formattedTime = $banDuration->format('d/m/Y H:i');
+            return response()->json([
+                'success' => false,
+                'message' => "Hành vi spam bị phát hiện: {$spamReason} Tài khoản của bạn đã bị cấm sử dụng các tính năng hỗ trợ AI đến {$formattedTime}.",
+                'is_banned' => true
+            ], 403);
+        }
+
+        $analysis = $aiService->analyzeArticle(
+            $request->input('title'),
+            $request->input('summary'),
+            $request->input('content')
+        );
+
+        return response()->json($analysis);
     }
 }

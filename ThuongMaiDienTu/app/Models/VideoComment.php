@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class VideoComment extends Model
 {
+    use \App\Traits\HasAuditLog;
+
     protected $table = 'video_comments';
 
     protected $fillable = [

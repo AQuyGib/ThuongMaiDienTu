@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class InventoryAudit extends Model
 {
+    use \App\Traits\HasAuditLog;
+
     protected $table = 'inventory_audits';
     protected $primaryKey = 'audit_id';
 

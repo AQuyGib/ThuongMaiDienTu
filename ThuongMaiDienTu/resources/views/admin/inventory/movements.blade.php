@@ -335,9 +335,18 @@
                             <td>
                                 <span class="text-muted">{{ $movement->note ?? '—' }}</span>
                                 @if($movement->order_id)
-                                    <a href="{{ route('admin.orders.show', $movement->order_id) }}" class="badge bg-light text-primary border border-primary-subtle text-decoration-none ms-1">
-                                        Đơn #{{ $movement->order_id }}
-                                    </a>
+                                    @php
+                                        $orderExists = \App\Models\Order::where('order_id', $movement->order_id)->exists();
+                                    @endphp
+                                    @if($orderExists)
+                                        <a href="{{ route('admin.orders.show', $movement->order_id) }}" class="badge bg-light text-primary border border-primary-subtle text-decoration-none ms-1">
+                                            Đơn #{{ $movement->order_id }}
+                                        </a>
+                                    @else
+                                        <span class="badge bg-light text-muted border border-slate-200 ms-1 cursor-not-allowed" title="Đơn hàng mẫu (Không tồn tại thực tế)">
+                                            Đơn #{{ $movement->order_id }}
+                                        </span>
+                                    @endif
                                 @endif
                             </td>
                             <td>

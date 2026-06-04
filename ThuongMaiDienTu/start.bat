@@ -107,7 +107,7 @@ echo    [1] DEV MODE          - Che do Lap trinh (Hot Reloading bang Vite Server
 echo    [2] STABLE RUN        - Che do On dinh (Chay bang file Production Build - nhanh hon)
 echo    [3] RESET DATABASE    - [CANH BAO] Lam moi toan bo Database va Nap du lieu gia lap
 echo    [4] VIEW SITEMAP      - Xem danh sach lien ket website hoat dong
-echo    [5] SUPER PIPELINE    - [ONE CLICK] Tu A-Z + Reset DB + Chay website ngay
+echo    [5] FAST REBUILD ^& RUN - [ONE CLICK] Reset DB + Rebuild Vite + Mo Server ngay
 echo    [6] INITIALIZE        - Tai moi thu vien (Composer Install + NPM Install)
 echo    [7] UPGRADE SYSTEM    - [SUA LOI] Dong bo hoa va Cap nhat lai khoa composer.lock
 echo    [8] HEALTH DIAGNOSTIC - [MOI] Kiem tra suc khoe toan dien he thong du an
@@ -121,12 +121,12 @@ if "%choice%"=="1" goto DEV_MODE
 if "%choice%"=="2" goto STABLE_RUN
 if "%choice%"=="3" goto RESET_DB
 if "%choice%"=="4" goto VIEW_SITEMAP
-if "%choice%"=="5" goto SUPER_PIPELINE
+if "%choice%"=="5" goto PIPELINE_STANDARD
 if "%choice%"=="6" goto INITIALIZE
 if "%choice%"=="7" goto UPGRADE_ALL
 if "%choice%"=="8" goto DIAGNOSTICS
 if "%choice%"=="9" goto LOG_MGMT
-if "%choice%"=="10" exit
+if "%choice%"=="10" goto EXIT_CLEAN
 goto MENU
 
 :INITIALIZE
@@ -165,7 +165,7 @@ echo.
 if not exist .env (
     echo    [1/5] [ HANH DONG ] Dang copy .env.example sang .env...
     copy .env.example .env > nul
-    echo    ^|---> [OK] Da khoi tao tep .env thanh cong.
+    echo    ^|---^> [OK] Da khoi tao tep .env thanh cong.
 ) else (
     echo    [1/5] [+] .env da ton tai. Bo qua khoi tao.
 )
@@ -180,9 +180,9 @@ if exist vendor (
 )
 if !run_composer! equ 1 (
     echo.
-    echo    [2/5] [ HANH DONG ] Dang tai backend packages (Composer)...
+    echo    [2/5] [ HANH DONG ] Dang tai backend packages [Composer]...
     call !COMPOSER_CMD! install --prefer-dist --ignore-platform-reqs
-    echo    ^|---> [OK] Tai backend packages hoan tat.
+    echo    ^|---^> [OK] Tai backend packages hoan tat.
 ) else (
     echo.
     echo    [2/5] [+] Da bo qua buoc tai backend packages.
@@ -198,9 +198,9 @@ if exist node_modules (
 )
 if !run_npm! equ 1 (
     echo.
-    echo    [3/5] [ HANH DONG ] Dang tai frontend packages (NPM)...
+    echo    [3/5] [ HANH DONG ] Dang tai frontend packages [NPM]...
     call npm install
-    echo    ^|---> [OK] Tai frontend packages hoan tat.
+    echo    ^|---^> [OK] Tai frontend packages hoan tat.
 ) else (
     echo.
     echo    [3/5] [+] Da bo qua buoc tai frontend packages.
@@ -213,9 +213,9 @@ findstr /C:"APP_KEY=base64:" .env > nul
 if %errorlevel% neq 0 (
     echo    [ HANH DONG ] APP_KEY chua co. Dang khoi tao...
     call !PHP_CMD! artisan key:generate
-    echo    ^|---> [OK] Da sinh APP_KEY moi.
+    echo    ^|---^> [OK] Da sinh APP_KEY moi.
 ) else (
-    echo    ^|---> [+] APP_KEY da ton tai.
+    echo    ^|---^> [+] APP_KEY da ton tai.
 )
 
 :: 5. SQLite database file check
@@ -226,7 +226,7 @@ if %errorlevel% equ 0 (
     if not exist database\database.sqlite (
         echo    [ HANH DONG ] Dang tu dong tao tep database.sqlite...
         type nul > database\database.sqlite
-        echo    ^|---> [OK] Da khoi tao database.sqlite.
+        echo    ^|---^> [OK] Da khoi tao database.sqlite.
     )
 )
 
@@ -278,7 +278,7 @@ cls
 echo    [ HANH DONG ] Dang thiet lap cau hinh SQLITE...
 if not exist database\database.sqlite (
     type nul > database\database.sqlite
-    echo    ^|---> [OK] Da tao tep database/database.sqlite.
+    echo    ^|---^> [OK] Da tao tep database/database.sqlite.
 )
 echo    [ HANH DONG ] Dang cap nhat tep .env sang SQLite...
 powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=sqlite'; $c = $c -replace '^DB_HOST=.*', '#DB_HOST=127.0.0.1'; $c = $c -replace '^DB_PORT=.*', '#DB_PORT=3306'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=database/database.sqlite'; $c = $c -replace '^DB_USERNAME=.*', '#DB_USERNAME=root'; $c = $c -replace '^DB_PASSWORD=.*', '#DB_PASSWORD='; $c | Out-File -encoding utf8 .env"
@@ -360,21 +360,21 @@ echo.
 
 echo    [1/6] Dang xoa thu muc [vendor]...
 if exist vendor (rd /s /q vendor)
-echo    ^|---> [OK] Da xoa.
+echo    ^|---^> [OK] Da xoa.
 
 echo    [2/6] Dang xoa thu muc [node_modules]...
 if exist node_modules (rd /s /q node_modules)
-echo    ^|---> [OK] Da xoa.
+echo    ^|---^> [OK] Da xoa.
 
 echo    [3/6] Dang xoa file [.env] cu va [package-lock.json]...
 if exist .env (del /f /q .env)
 if exist package-lock.json (del /f /q package-lock.json)
 if exist database\database.sqlite (del /f /q database\database.sqlite)
-echo    ^|---> [OK] Da xoa.
+echo    ^|---^> [OK] Da xoa.
 
 echo    [4/6] Dang tai tao [.env] tu [.env.example]...
 copy .env.example .env > nul
-echo    ^|---> [OK] Da tai tao file .env moi.
+echo    ^|---^> [OK] Da tai tao file .env moi.
 
 echo.
 echo    [!] Vui long lua chon Driver CSDL de thiet lap truoc khi install:
@@ -382,33 +382,37 @@ echo    [1] SQLITE [Mac dinh / Khuyen dung cho dev nhanh]
 echo    [2] MYSQL  [Dung database chung voi XAMPP/Laragon]
 set /p rebuild_db_driver="   >> Lua chon driver [1-2]: "
 
-if "!rebuild_db_driver!"=="2" (
-    set "db_host=127.0.0.1"
-    set /p db_host="   >> Nhap DB Host [Mac dinh: 127.0.0.1]: "
-    set "db_port=3306"
-    set /p db_port="   >> Nhap DB Port [Mac dinh: 3306]: "
-    set "db_name=dienmay_pro"
-    set /p db_name="   >> Nhap ten database [Mac dinh: dienmay_pro]: "
-    set "db_user=root"
-    set /p db_user="   >> Nhap Username [Mac dinh: root]: "
-    set "db_pass="
-    set /p db_pass="   >> Nhap Password [Mac dinh: bo trong]: "
-    
-    powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=mysql'; $c = $c -replace '^DB_HOST=.*', 'DB_HOST=!db_host!'; $c = $c -replace '^DB_PORT=.*', 'DB_PORT=!db_port!'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=!db_name!'; $c = $c -replace '^DB_USERNAME=.*', 'DB_USERNAME=!db_user!'; $c = $c -replace '^DB_PASSWORD=.*', 'DB_PASSWORD=!db_pass!'; $c | Out-File -encoding utf8 .env"
-) else (
-    type nul > database\database.sqlite
-    powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=sqlite'; $c = $c -replace '^DB_HOST=.*', '#DB_HOST=127.0.0.1'; $c = $c -replace '^DB_PORT=.*', '#DB_PORT=3306'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=database/database.sqlite'; $c = $c -replace '^DB_USERNAME=.*', '#DB_USERNAME=root'; $c = $c -replace '^DB_PASSWORD=.*', '#DB_PASSWORD='; $c | Out-File -encoding utf8 .env"
-)
+if "!rebuild_db_driver!"=="2" goto REBUILD_DB_MYSQL
+
+:REBUILD_DB_SQLITE
+type nul > database\database.sqlite
+powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=sqlite'; $c = $c -replace '^DB_HOST=.*', '#DB_HOST=127.0.0.1'; $c = $c -replace '^DB_PORT=.*', '#DB_PORT=3306'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=database/database.sqlite'; $c = $c -replace '^DB_USERNAME=.*', '#DB_USERNAME=root'; $c = $c -replace '^DB_PASSWORD=.*', '#DB_PASSWORD='; $c | Out-File -encoding utf8 .env"
+goto REBUILD_DB_DONE
+
+:REBUILD_DB_MYSQL
+set "db_host=127.0.0.1"
+set /p db_host="   >> Nhap DB Host [Mac dinh: 127.0.0.1]: "
+set "db_port=3306"
+set /p db_port="   >> Nhap DB Port [Mac dinh: 3306]: "
+set "db_name=dienmay_pro"
+set /p db_name="   >> Nhap ten database [Mac dinh: dienmay_pro]: "
+set "db_user=root"
+set /p db_user="   >> Nhap Username [Mac dinh: root]: "
+set "db_pass="
+set /p db_pass="   >> Nhap Password [Mac dinh: bo trong]: "
+powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=mysql'; $c = $c -replace '^DB_HOST=.*', 'DB_HOST=!db_host!'; $c = $c -replace '^DB_PORT=.*', 'DB_PORT=!db_port!'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=!db_name!'; $c = $c -replace '^DB_USERNAME=.*', 'DB_USERNAME=!db_user!'; $c = $c -replace '^DB_PASSWORD=.*', 'DB_PASSWORD=!db_pass!'; $c | Out-File -encoding utf8 .env"
+
+:REBUILD_DB_DONE
 
 echo.
 echo    [5/6] Dang chay 'composer install' de nap lai Backend...
 call !COMPOSER_CMD! install --prefer-dist --ignore-platform-reqs
-echo    ^|---> [OK] Composer install hoan tat.
+echo    ^|---^> [OK] Composer install hoan tat.
 
 echo.
 echo    [6/6] Dang chay 'npm install' de nap lai Frontend...
 call npm install
-echo    ^|---> [OK] NPM install hoan tat.
+echo    ^|---^> [OK] NPM install hoan tat.
 
 echo.
 echo    [ HANH DONG ] Dang sinh APP_KEY moi va link folder public storage...
@@ -503,22 +507,22 @@ echo.
 echo    [1/4] Dang lam sach va rebuild Vendor PHP (Composer)...
 if exist vendor rd /s /q vendor
 call !COMPOSER_CMD! install --prefer-dist --ignore-platform-reqs
-echo    ^|---> [OK] Composer install hoan tat.
+echo    ^|---^> [OK] Composer install hoan tat.
 
 echo    [2/4] Dang lam sach va rebuild Frontend Assets (NPM)...
 if exist node_modules rd /s /q node_modules
 if exist package-lock.json del /f /q package-lock.json
 call npm install
-echo    ^|---> [OK] NPM install hoan tat.
+echo    ^|---^> [OK] NPM install hoan tat.
 
 echo    [3/4] Chay composer dump-autoload va update...
 call !COMPOSER_CMD! dump-autoload
 call !COMPOSER_CMD! update --ignore-platform-reqs
-echo    ^|---> [OK] Composer dump-autoload hoan tat.
+echo    ^|---^> [OK] Composer dump-autoload hoan tat.
 
 echo    [4/4] Dang don dep cache he thong...
 call !PHP_CMD! artisan optimize:clear > nul
-echo    ^|---> [OK] Da optimize va clear cache Laravel.
+echo    ^|---^> [OK] Da optimize va clear cache Laravel.
 
 echo.
 echo    [ SUCCESS ] He thong da duoc khoi phuc sach se va nang cap len ban moi nhat 100%%!
@@ -561,7 +565,7 @@ goto SUPER_PIPELINE
 cls
 echo.
 echo    ====================================================================
-echo    [ PIPELINE STANDARD ] DANG THUC HIEN TIEU CHUAN TOAN DIEN
+echo    [ FAST REBUILD ^& RUN ] RESET CSDL + BIEN DICH VITE + KHOI CHAY MOI TRUONG
 echo    ====================================================================
 echo.
 
@@ -570,7 +574,7 @@ echo    [1/7] Dang giai phong cac tien trinh cu...
 taskkill /f /im php.exe >nul 2>&1
 taskkill /f /im node.exe >nul 2>&1
 if exist public\hot del /f /q public\hot
-echo    ^|---> [OK] Da don dep xong tien trinh cu.
+echo    ^|---^> [OK] Da don dep xong tien trinh cu.
 
 :: 2. File .env
 if not exist .env (
@@ -618,23 +622,23 @@ if %errorlevel% equ 0 (
         pause
         goto MENU
     )
-    echo    ^|---> [OK] MySQL dang hoat dong.
+    echo    ^|---^> [OK] MySQL dang hoat dong.
 )
 if not exist public\storage (
     call !PHP_CMD! artisan storage:link
 )
-echo    ^|---> [OK] Cau hinh he thong hop le.
+echo    ^|---^> [OK] Cau hinh he thong hop le.
 
 :: 6. Migrate ^& Seed
 echo    [6/7] [ HANH DONG ] Dang lam moi co so du lieu va nap du lieu gia lap...
 call !PHP_CMD! artisan migrate:fresh --seed
 call !PHP_CMD! artisan optimize:clear
-echo    ^|---> [OK] Reset DB va nap data thanh cong!
+echo    ^|---^> [OK] Reset DB va nap data thanh cong!
 
 :: 7. Build ^& Run
 echo    [7/7] Dang bien dich tai nguyen frontend (Build Assets)...
 call npm run build
-echo    ^|---> [OK] Chuan bi assets hoan tat.
+echo    ^|---^> [OK] Chuan bi assets hoan tat.
 timeout /t 2 > nul
 goto PROCESS
 
@@ -670,47 +674,52 @@ if exist node_modules (rd /s /q node_modules)
 if exist .env (del /f /q .env)
 if exist package-lock.json (del /f /q package-lock.json)
 if exist database\database.sqlite (del /f /q database\database.sqlite)
-echo    ^|---> [OK] He thong da duoc lam sach 100%%.
+echo    ^|---^> [OK] He thong da duoc lam sach 100%%.
 
 :: 2. Tai tao .env
 echo    [2/8] Dang khoi tao file .env moi...
 copy .env.example .env > nul
-echo    ^|---> [OK] Da copy .env.example.
+echo    ^|---^> [OK] Da copy .env.example.
 
 :: 3. Chon Database driver tu dong hoac cho nguoi dung chon nhanh
 echo    [3/8] Thiet lap CSDL cho he thong:
 echo    [1] SQLITE [Mac dinh / Khuyen dung cho moi truong dev cuc nhanh]
 echo    [2] MYSQL  [Dung CSDL XAMPP/Laragon]
 set /p pipe_db_driver="   >> Chon CSDL (1-2) [Mac dinh: 1]: "
-if "!pipe_db_driver!"=="2" (
-    set "db_host=127.0.0.1"
-    set /p db_host="   >> Nhap DB Host [Mac dinh: 127.0.0.1]: "
-    set "db_port=3306"
-    set /p db_port="   >> Nhap DB Port [Mac dinh: 3306]: "
-    set "db_name=dienmay_pro"
-    set /p db_name="   >> Nhap ten database [Mac dinh: dienmay_pro]: "
-    set "db_user=root"
-    set /p db_user="   >> Nhap Username [Mac dinh: root]: "
-    set "db_pass="
-    set /p db_pass="   >> Nhap Password [Mac dinh: bo trong]: "
-    powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=mysql'; $c = $c -replace '^DB_HOST=.*', 'DB_HOST=!db_host!'; $c = $c -replace '^DB_PORT=.*', 'DB_PORT=!db_port!'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=!db_name!'; $c = $c -replace '^DB_USERNAME=.*', 'DB_USERNAME=!db_user!'; $c = $c -replace '^DB_PASSWORD=.*', 'DB_PASSWORD=!db_pass!'; $c | Out-File -encoding utf8 .env"
-) else (
-    type nul > database\database.sqlite
-    powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=sqlite'; $c = $c -replace '^DB_HOST=.*', '#DB_HOST=127.0.0.1'; $c = $c -replace '^DB_PORT=.*', '#DB_PORT=3306'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=database/database.sqlite'; $c = $c -replace '^DB_USERNAME=.*', '#DB_USERNAME=root'; $c = $c -replace '^DB_PASSWORD=.*', '#DB_PASSWORD='; $c | Out-File -encoding utf8 .env"
-)
-echo    ^|---> [OK] Thiet lap database hoan tat.
+if "!pipe_db_driver!"=="2" goto PIPE_DB_MYSQL
+
+:PIPE_DB_SQLITE
+type nul > database\database.sqlite
+powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=sqlite'; $c = $c -replace '^DB_HOST=.*', '#DB_HOST=127.0.0.1'; $c = $c -replace '^DB_PORT=.*', '#DB_PORT=3306'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=database/database.sqlite'; $c = $c -replace '^DB_USERNAME=.*', '#DB_USERNAME=root'; $c = $c -replace '^DB_PASSWORD=.*', '#DB_PASSWORD='; $c | Out-File -encoding utf8 .env"
+goto PIPE_DB_DONE
+
+:PIPE_DB_MYSQL
+set "db_host=127.0.0.1"
+set /p db_host="   >> Nhap DB Host [Mac dinh: 127.0.0.1]: "
+set "db_port=3306"
+set /p db_port="   >> Nhap DB Port [Mac dinh: 3306]: "
+set "db_name=dienmay_pro"
+set /p db_name="   >> Nhap ten database [Mac dinh: dienmay_pro]: "
+set "db_user=root"
+set /p db_user="   >> Nhap Username [Mac dinh: root]: "
+set "db_pass="
+set /p db_pass="   >> Nhap Password [Mac dinh: bo trong]: "
+powershell -Command "$c = gc .env; $c = $c -replace '^DB_CONNECTION=.*', 'DB_CONNECTION=mysql'; $c = $c -replace '^DB_HOST=.*', 'DB_HOST=!db_host!'; $c = $c -replace '^DB_PORT=.*', 'DB_PORT=!db_port!'; $c = $c -replace '^DB_DATABASE=.*', 'DB_DATABASE=!db_name!'; $c = $c -replace '^DB_USERNAME=.*', 'DB_USERNAME=!db_user!'; $c = $c -replace '^DB_PASSWORD=.*', 'DB_PASSWORD=!db_pass!'; $c | Out-File -encoding utf8 .env"
+
+:PIPE_DB_DONE
+echo    ^|---^> [OK] Thiet lap database hoan tat.
 
 :: 4. Composer install
 echo.
 echo    [4/8] Dang cai dat thu vien Backend (Composer)...
 call !COMPOSER_CMD! install --prefer-dist --ignore-platform-reqs
-echo    ^|---> [OK] Tai va cai dat goi backend thanh cong.
+echo    ^|---^> [OK] Tai va cai dat goi backend thanh cong.
 
 :: 5. NPM install
 echo.
 echo    [5/8] Dang cai dat thu vien Frontend (NPM)...
 call npm install
-echo    ^|---> [OK] Tai va cai dat goi frontend thanh cong.
+echo    ^|---^> [OK] Tai va cai dat goi frontend thanh cong.
 
 :: 6. APP_KEY ^& Storage Link
 echo.
@@ -719,7 +728,7 @@ call !PHP_CMD! artisan key:generate
 if not exist public\storage (
     call !PHP_CMD! artisan storage:link
 )
-echo    ^|---> [OK] Da sinh khoa bao mat he thong.
+echo    ^|---^> [OK] Da sinh khoa bao mat he thong.
 
 :: 7. Kiem tra MySQL truoc khi migrate
 echo.
@@ -734,7 +743,7 @@ if %errorlevel% equ 0 (
         pause
         goto MENU
     )
-    echo    ^|---> [OK] MySQL dang hoat dong.
+    echo    ^|---^> [OK] MySQL dang hoat dong.
 )
 
 :: 8. Migrate ^& Seed
@@ -742,13 +751,13 @@ echo.
 echo    [8/9] Khoi tao cau truc CSDL va nap toan bo du lieu mau gia lap...
 call !PHP_CMD! artisan migrate:fresh --seed
 call !PHP_CMD! artisan optimize:clear
-echo    ^|---> [OK] CSDL da san sang cung toan bo combo va home banners.
+echo    ^|---^> [OK] CSDL da san sang cung toan bo combo va home banners.
 
 :: 9. Build Assets
 echo.
 echo    [9/9] Dang bien dich giao dien web (Build Production Assets)...
 call npm run build
-echo    ^|---> [OK] Build hoan tat!
+echo    ^|---^> [OK] Build hoan tat!
 timeout /t 2 > nul
 goto PROCESS
 
@@ -820,7 +829,7 @@ if not exist .env (
         set ENV_STATUS=✔ Tep .env ton tai va APP_KEY hop le.
     )
 )
-echo    ^|---> !ENV_STATUS!
+echo    ^|---^> !ENV_STATUS!
 
 echo    [2/5] Kiem tra cac thu muc tam (Write permissions)...
 set FOLDERS_OK=1
@@ -829,9 +838,9 @@ if not exist storage\framework\cache (mkdir storage\framework\cache & set FOLDER
 if not exist storage\framework\sessions (mkdir storage\framework\sessions & set FOLDERS_OK=0)
 if not exist storage\logs (mkdir storage\logs & set FOLDERS_OK=0)
 if !FOLDERS_OK! equ 1 (
-    echo    ^|---> ✔ Cac thu muc tam storage/framework deu san sang va writable.
+    echo    ^|---^> ✔ Cac thu muc tam storage/framework deu san sang va writable.
 ) else (
-    echo    ^|---> ⚠ Da tu dong phat hien thieu thu muc tam va tao moi thanh cong.
+    echo    ^|---^> ⚠ Da tu dong phat hien thieu thu muc tam va tao moi thanh cong.
 )
 
 echo    [3/5] Kiem tra ket noi CSDL MySQL...
@@ -841,20 +850,20 @@ if %errorlevel% neq 0 (
 ) else (
     set DB_REPORT=✔ MySQL dang bat, Cong CSDL=!DB_PORT!, Ten CSDL=!DB_NAME!.
 )
-echo    ^|---> !DB_REPORT!
+echo    ^|---^> !DB_REPORT!
 
 echo    [4/5] Kiem tra thu vien node_modules...
 if exist node_modules (
-    echo    ^|---> ✔ Thu muc node_modules da duoc cai dat.
+    echo    ^|---^> ✔ Thu muc node_modules da duoc cai dat.
 ) else (
-    echo    ^|---> ❌ Thieu thu muc node_modules! Vui long chay Lua chon [6] de cai dat.
+    echo    ^|---^> ❌ Thieu thu muc node_modules! Vui long chay Lua chon [6] de cai dat.
 )
 
 echo    [5/5] Kiem tra cac goi backend vendor...
 if exist vendor (
-    echo    ^|---> ✔ Thu muc backend vendor da san sang.
+    echo    ^|---^> ✔ Thu muc backend vendor da san sang.
 ) else (
-    echo    ^|---> ❌ Thieu thu muc backend vendor! Vui long chay Lua chon [6] de cai dat.
+    echo    ^|---^> ❌ Thieu thu muc backend vendor! Vui long chay Lua chon [6] de cai dat.
 )
 echo.
 echo    --------------------------------------------------------------------
@@ -887,7 +896,7 @@ if "%log_choice%"=="1" (
         powershell -command "Get-Content storage\logs\laravel.log -Tail 30"
     ) else (
         color 0a
-        echo    [+] Khong co bat ky nhat ky loi nao duoc ghi nhan (Moi thu hoat dong rat tot!).
+        echo    [+] Khong co bat ky nhat ky loi nao duoc ghi nhan [Moi thu hoat dong rat tot!].
     )
     echo.
     color 0e
@@ -982,9 +991,9 @@ netstat -o -n -a | findstr :8000 > nul
 if %errorlevel% equ 0 (
     color 0e
     echo    [!] Canh bao: Cong 8000 hien tai dang bi chiem dung boi tien trinh khac!
-    echo    [1] Tu dong giai phong cong 8000 (Tat ung dung dang chan)
-    echo    [2] Chuyen sang khoi chay tren cong phu (Cong 8080)
-    set /p port_choice="   >> Nhap lua chon (1-2): "
+    echo    [1] Tu dong giai phong cong 8000 [Tat ung dung dang chan]
+    echo    [2] Chuyen sang khoi chay tren cong phu [Cong 8080]
+    set /p port_choice="   >> Nhap lua chon [1-2]: "
     if "!port_choice!"=="1" (
         for /f "tokens=5" %%p in ('netstat -aon ^| findstr :8000') do (
             taskkill /f /pid %%p >nul 2>&1
@@ -1032,4 +1041,10 @@ pause > nul
 echo    [!] Dang giai phong va tat toan bo tien trinh ngam php/node...
 taskkill /f /im php.exe >nul 2>&1
 taskkill /f /im node.exe >nul 2>&1
-exit
+:: ======================================================================
+:: EXIT SYSTEM CLEANLY (THOAT CO CHE AN TOAN TRA VE MA 0)
+:: ======================================================================
+:EXIT_CLEAN
+:: Reset lai errorlevel ve 0 tranh lỗi do cac lenh taskkill truoc do de lai
+cmd /c "exit /b 0"
+exit /b 0

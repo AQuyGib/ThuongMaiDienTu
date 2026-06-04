@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\AIOrderLog;
 use App\Services\PointsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,14 @@ class OrderController extends Controller
                             ->orWhere('phone_number', 'like', '%' . $search . '%');
                     });
             });
+        }
+
+        // Lọc theo khoảng ngày tạo đơn hàng
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
         }
 
         // Đếm số lượng theo từng trạng thái cho các tab filter
@@ -131,10 +140,13 @@ class OrderController extends Controller
                 'items' => $groupedItems,
                 'points' => $pointsInfo,
                 'customer_balance' => $customerBalance,
+                'ai_status' => $order->ai_status ?? 'pending',
+                'ai_risk_score' => (int) ($order->ai_risk_score ?? 0),
+                'ai_analysis' => $order->ai_analysis,
             ]);
         }
 
-        return view('admin.orders.show', compact('order'));
+        return redirect()->route('admin.orders.index', ['open_order_id' => $id]);
     }
 
     /**
@@ -166,11 +178,44 @@ class OrderController extends Controller
                 if ($earned > 0) {
                     $pointsMessage = " Đã tích +{$earned} điểm cho khách hàng.";
                 }
+
+                // Ghi nhận doanh thu đơn hàng vào Sổ Quỹ
+                $exists = \App\Models\Cashbook::where('reference_id', $order->order_id)
+                    ->where('reference_type', 'order')
+                    ->exists();
+                if (!$exists) {
+                    \App\Models\Cashbook::create([
+                        'type' => 'Income',
+                        'amount' => $order->final_amount,
+                        'description' => 'Khách hàng thanh toán đơn hàng #' . $order->order_code,
+                        'reference_id' => $order->order_id,
+                        'reference_type' => 'order',
+                    ]);
+                }
             } elseif (strtolower($currentStatus) === 'cancelled') {
                 $refunded = (int) ($order->wallet_points_used ?? 0);
                 $revoked = (int) ($order->wallet_points_earned ?? 0);
                 if ($refunded > 0 || $revoked > 0) {
                     $pointsMessage = ' Đã xử lý hoàn/thu hồi điểm.';
+                }
+
+                // Nếu đơn hàng bị hủy, kiểm tra xem đã ghi nhận doanh thu chưa để ghi nhận hoàn tiền
+                $hasIncome = \App\Models\Cashbook::where('reference_id', $order->order_id)
+                    ->where('reference_type', 'order')
+                    ->where('type', 'Income')
+                    ->exists();
+                $hasRefund = \App\Models\Cashbook::where('reference_id', $order->order_id)
+                    ->where('reference_type', 'order')
+                    ->where('type', 'Expense')
+                    ->exists();
+                if ($hasIncome && !$hasRefund) {
+                    \App\Models\Cashbook::create([
+                        'type' => 'Expense',
+                        'amount' => $order->final_amount,
+                        'description' => 'Hoàn tiền hủy đơn hàng #' . $order->order_code,
+                        'reference_id' => $order->order_id,
+                        'reference_type' => 'order',
+                    ]);
                 }
             }
         }
@@ -200,5 +245,78 @@ class OrderController extends Controller
 
         return redirect()->route('admin.orders.index')
             ->with('success', 'Đã xóa đơn hàng #' . $id . ' thành công.');
+    }
+
+    /**
+     * Kích hoạt quét lại đơn hàng bằng AI qua AJAX.
+     */
+    public function reanalyze(Request $request, $id)
+    {
+        $order = Order::with(['user', 'details.inventoryItem.variant.product'])->findOrFail($id);
+        
+        $aiOrderService = app(\App\Services\AIOrderService::class);
+        $result = $aiOrderService->analyzeOrder($order, 'manual');
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Quét lại bằng AI thành công!',
+            'ai_status' => $result['status'],
+            'ai_risk_score' => $result['risk_score'],
+            'ai_analysis' => $result['reason']
+        ]);
+    }
+
+    /**
+     * Trang lịch sử làm việc của AI (AI Order Logs).
+     */
+    public function aiLogs(Request $request)
+    {
+        $query = AIOrderLog::with(['order.user']);
+
+        // Bộ lọc trạng thái AI
+        if ($request->filled('ai_status')) {
+            $query->where('ai_status', $request->ai_status);
+        }
+
+        // Bộ lọc loại kích hoạt
+        if ($request->filled('trigger_type')) {
+            $query->where('trigger_type', $request->trigger_type);
+        }
+
+        $logs = $query->orderByDesc('log_id')->paginate(15)->appends($request->query());
+
+        return view('admin.orders.ai_logs', compact('logs'));
+    }
+
+    /**
+     * Lấy danh sách ID đơn hàng cần quét theo ngày và điều kiện.
+     */
+    public function batchGetIds(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'scan_type' => 'required|in:all,unscanned',
+        ]);
+
+        $query = Order::query()
+            ->whereBetween('created_at', [
+                $request->start_date . ' 00:00:00',
+                $request->end_date . ' 23:59:59'
+            ]);
+
+        if ($request->scan_type === 'unscanned') {
+            $query->where(function($q) {
+                $q->whereNull('ai_status')
+                  ->orWhere('ai_status', 'pending');
+            });
+        }
+
+        $orders = $query->select('order_id', 'order_code')->get();
+
+        return response()->json([
+            'success' => true,
+            'orders' => $orders
+        ]);
     }
 }

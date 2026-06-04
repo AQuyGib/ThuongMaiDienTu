@@ -99,6 +99,18 @@ class RewardsController extends Controller
             return response()->json(['success' => false, 'message' => 'Vui lòng đăng nhập.'], 401);
         }
 
+        // Validate tham số wheel_type để ngăn chặn tấn công/lỗi nghiệp vụ
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'wheel_type' => ['nullable', 'string', 'in:standard,silver,gold,diamond']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Loại vòng quay không hợp lệ.'
+            ], 422);
+        }
+
         // Lấy loại vòng quay (Mặc định là vòng thường - standard)
         $wheelType = $request->input('wheel_type', 'standard');
 

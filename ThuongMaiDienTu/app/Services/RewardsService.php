@@ -146,6 +146,25 @@ class RewardsService
                 'updated_at' => now(),
             ]);
 
+            // Gửi thông báo cho khách hàng
+            try {
+                $expiresAt = now()->addDays(30)->format('d/m/Y H:i');
+                app(\App\Services\NotificationService::class)->createForUser($user, [
+                    'type' => 'rewards.redeemed',
+                    'title' => 'Đổi phần thưởng thành công',
+                    'content' => "Bạn đã đổi thành công phần thưởng '{$reward->name}' với chi phí {$reward->points_cost} điểm. Mã voucher: {$redemptionCode} (Hạn dùng đến {$expiresAt}).",
+                    'action_url' => url('/rewards/history'),
+                    'data' => [
+                        'redemption_id' => $redemptionId,
+                        'redemption_code' => $redemptionCode,
+                        'reward_name' => $reward->name,
+                        'points_spent' => $reward->points_cost,
+                    ]
+                ]);
+            } catch (\Throwable $ne) {
+                // Ignore notification error to avoid transaction rollback
+            }
+
             return [
                 'redemption_code' => $redemptionCode,
                 'reward_name' => $reward->name,
@@ -227,10 +246,14 @@ class RewardsService
                 throw new RuntimeException('Không đủ điểm để quay vòng may mắn này.');
             }
 
-            // Lấy danh sách các ô quà đang hoạt động của Vòng quay
+            // Lấy danh sách các ô quà đang hoạt động của Vòng quay và còn tồn kho (hoặc không giới hạn tồn kho)
             $allRewards = DB::table('reward_catalog')
                 ->where('reward_type', 'wheel_prize')
                 ->where('is_active', true)
+                ->where(function($query) {
+                    $query->whereNull('stock')
+                          ->orWhere('stock', '>', 0);
+                })
                 ->get();
 
             // Lọc ra các quà thuộc tầng vòng quay tương ứng (standard, silver, gold)
@@ -289,6 +312,20 @@ class RewardsService
                 'updated_at' => now(),
             ]);
 
+            // Giảm số lượng tồn kho của quà tặng vòng quay (nếu có giới hạn tồn kho)
+            if (! is_null($reward->stock)) {
+                $lockedReward = DB::table('reward_catalog')
+                    ->where('reward_id', $reward->reward_id)
+                    ->lockForUpdate()
+                    ->first();
+                if ($lockedReward && ! is_null($lockedReward->stock)) {
+                    DB::table('reward_catalog')->where('reward_id', $reward->reward_id)->update([
+                        'stock' => max(0, (int) $lockedReward->stock - 1),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+
             // Sinh mã code trúng thưởng
             $spinCode = 'SPN' . now()->format('YmdHis') . Str::upper(Str::random(6));
             $snapshot = [
@@ -327,6 +364,26 @@ class RewardsService
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            // Gửi thông báo cho khách hàng
+            try {
+                $wheelName = $wheelType === 'silver' ? 'Vòng quay Bạc' : ($wheelType === 'gold' ? 'Vòng quay Vàng' : 'Vòng quay Thường');
+                $expiresAt = now()->addDays(7)->format('d/m/Y H:i');
+                app(\App\Services\NotificationService::class)->createForUser($user, [
+                    'type' => 'lucky_wheel.won',
+                    'title' => 'Quay trúng thưởng Vòng Quay May Mắn!',
+                    'content' => "Chúc mừng! Bạn đã quay trúng phần quà '{$reward->name}' từ {$wheelName}. Mã trúng thưởng của bạn là: {$spinCode} (Hạn nhận đến {$expiresAt}).",
+                    'action_url' => url('/rewards/history'),
+                    'data' => [
+                        'spin_id' => $spinId,
+                        'spin_code' => $spinCode,
+                        'reward_name' => $reward->name,
+                        'wheel_type' => $wheelType,
+                    ]
+                ]);
+            } catch (\Throwable $ne) {
+                // Ignore notification error
+            }
 
             return [
                 'spin_code' => $spinCode,

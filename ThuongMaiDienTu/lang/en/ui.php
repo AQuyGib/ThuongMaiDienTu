@@ -45,6 +45,11 @@ return [
     'footer_return_policy'  => 'Return Policy',
     'footer_privacy'        => 'Privacy Policy',
     'footer_connect'        => 'Connect with us',
+    'footer_subscribe'      => 'Subscribe to promotions',
+    'footer_warranty_lookup'=> 'Warranty lookup',
+    'footer_compare'        => 'Compare products',
+    'footer_all_products'   => 'All products',
+    'footer_rewards_history'=> 'Points history',
 
     // ===== MEGA MENU EXTRA =====
     'rewards_page'          => 'Rewards',
@@ -76,6 +81,8 @@ return [
     'chatbot_quick_laptop_query'=> 'Which laptop is suitable for students?',
     'chatbot_quick_promo_btn'   => '🔥 Promotions',
     'chatbot_quick_promo_query' => 'Which products are currently on promotion?',
+    'chatbot_clear_tooltip'     => 'Clear conversation',
+    'chatbot_clear_confirm'     => 'Are you sure you want to clear the conversation history?',
 
     // ===== REPAIR TRACKING =====
     'repair_title'                  => 'Details of repair progress #RT-:id',
