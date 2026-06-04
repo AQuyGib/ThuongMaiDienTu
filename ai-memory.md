@@ -273,6 +273,10 @@
   - Added `min_rank` constraint to each lucky wheel configuration (None, Bronze, Silver, Gold, Diamond), allowing rank restrictions for custom wheels.
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
+  - **Merge nhánh Vinhem/MaGiamGia vào master (04/06/2026):**
+    - Hoàn tất hợp nhất nhánh `Vinhem/MaGiamGia` vào nhánh `master` thành công.
+    - Giải quyết xung đột trong `ordertracking.blade.php`: Giữ lại cấu trúc giao diện Tailwind hiện đại của nhánh `master` và tích hợp các tính năng mới từ nhánh `Vinhem/MaGiamGia` (tìm kiếm đơn hàng động AJAX, cơ chế highlight viền xanh nhấp nháy `new-order-highlight` khi truy cập qua `new_order={id}`, các modal chi tiết sản phẩm và modal bảo hành/đổi trả).
+    - Giải quyết xung đột trong `ai-memory.md` sạch sẽ không còn các thẻ xung đột git.
   - Thực hiện merge thành công nhánh `AnhQuy/ToiUu` vào nhánh `master` (03/06/2026). Giải quyết xung đột thủ công trong file `ThuongMaiDienTu/app/Http/Controllers/RewardsController.php` liên quan đến validate loại vòng quay `wheel_type` (đã giữ lại cấu trúc validate chi tiết 4 tầng vòng quay standard, silver, gold, diamond của nhánh AnhQuy/ToiUu). Chạy thành công toàn bộ suite kiểm thử và đẩy các thay đổi lên remote.
   - Đã thực hiện merge nhánh `master` (remote `origin/master`) vào nhánh hiện tại `AnhQuy/ToiUu` thành công mà không xảy ra xung đột (03/06/2026). Toàn bộ các cập nhật giao diện, Live Theme Customizer, logic giỏ hàng/thanh toán và cải tiến trong `start.bat` từ master đã được đồng bộ hóa.
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
