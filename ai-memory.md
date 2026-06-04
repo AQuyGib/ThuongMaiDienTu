@@ -1,11 +1,19 @@
 # Project Memory
 
 ## Current State & Focus
+- **Xuất và hoàn thiện Báo cáo tổng hợp (.md và .docx) (Ngày 04/06/2026):**
+  - **Mục lục đầy đủ:** Cập nhật mục lục của `BaoCao_ChiTiet_DuAn.md` và `baocaotong.md` bao quát toàn bộ 51 chức năng (từ 7.1 đến 7.51) và đồng bộ hóa các con số thống kê chính xác: nâng từ "8 phân hệ (45 chức năng)" lên thành **9 phân hệ (51 chức năng)** và từ "20 bảng cơ sở dữ liệu" lên thành **61 bảng cơ sở dữ liệu**.
+  - **Nhúng hình ảnh giao diện Mockup Premium:**
+    - Sử dụng AI để sinh 6 hình ảnh thiết kế giao diện UI chất lượng cao: `login_2fa_ui.png`, `cart_payment_ui.png`, `repair_portal_ui.png`, `lucky_wheel_ui.png`, `ai_chatbot_ui.png`, `admin_dashboard_ui.png`.
+    - Tổ chức lưu trữ ảnh tại thư mục `images/` và nhúng trực tiếp vào Chương 4 của báo cáo bằng thẻ hình ảnh Markdown chuẩn.
+  - **Xuất tài liệu MS Word (.docx):**
+    - Sử dụng `Pandoc` để chuyển đổi `baocaotong.md` thành `baocaotong.docx` thành công (kích thước ~3.7MB).
+    - Toàn bộ 6 hình ảnh UI mockup chất lượng cao đã được nhúng tự động và trực tiếp vào bên trong file Word.
 - **Đối soát và bổ sung 6 chức năng thiếu của Nguyễn Anh Quý (Ngày 04/06/2026):**
   - Cross-check 15 chức năng trong `cn.md` so với 45 CN chính thức. Phát hiện **6 chức năng THIẾU HOÀN TOÀN**: Chatbot AI, Flash Sale, CRM KH, CRUD Bài viết, Theme Customizer, Setup Wizard.
   - Bổ sung phân hệ IX (CN 46-51) vào Chương 2 của `BaoCao_ChiTiet_DuAn.md`. Tổng số CN nâng từ 45 → **51 chức năng** (9 phân hệ).
   - Tạo đặc tả SRS đầy đủ 8 phần (Overview, UI, Actors, Use-case Mermaid, Activity Mermaid, Workflows, Business Rules, Screen Descriptions) cho 6 CN mới (7.46-7.51) trong `BaoCao_DacTa_ChiTiet_ChucNang.md`.
-  - Gộp lại `baocaotong.md` (405KB, 5006 dòng) với mục lục cập nhật 51 CN.
+  - Gộp lại `baocaotong.md` với mục lục cập nhật 51 CN.
 - **Đồng bộ và hoàn thiện tài liệu báo cáo dự án (Ngày 04/06/2026):**
   - Đồng bộ chi tiết phân bổ nhánh Git thực tế của các thành viên vào mục 1.2 của tệp `BaoCao_ChiTiet_DuAn.md`.
   - Bổ sung phân hệ thứ VIII (chức năng 42-45) vào báo cáo chính `BaoCao_ChiTiet_DuAn.md` để nâng tổng số chức năng lên đúng 45 chức năng (8 phân hệ) theo đúng tiêu đề.

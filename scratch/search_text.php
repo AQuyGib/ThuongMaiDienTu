@@ -1,11 +1,17 @@
 <?php
-$content = file_get_contents('BaoCao_DacTa_ChiTiet_ChucNang.md');
-if (preg_match_all('/chatbot/i', $content, $matches, PREG_OFFSET_CAPTURE)) {
-    echo "Found " . count($matches[0]) . " matches:\n";
-    foreach ($matches[0] as $m) {
-        $line = substr_count(substr($content, 0, $m[1]), "\n") + 1;
-        echo "Line $line\n";
+$files = ['BaoCao_ChiTiet_DuAn.md', 'BaoCao_DacTa_ChiTiet_ChucNang.md', 'baocaotong.md'];
+$patterns = ['/8 phân hệ/i', '/45 chức năng/i', '/45 CN/i', '/20 bảng/i'];
+foreach ($files as $file) {
+    if (!file_exists($file)) continue;
+    echo "=== $file ===\n";
+    $content = file_get_contents($file);
+    $lines = explode("\n", $content);
+    foreach ($lines as $i => $line) {
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $line)) {
+                echo "Line " . ($i + 1) . ": $line\n";
+            }
+        }
     }
-} else {
-    echo "No matches found for 'chatbot'.\n";
+    echo "\n";
 }
