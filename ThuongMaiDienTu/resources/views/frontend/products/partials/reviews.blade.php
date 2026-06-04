@@ -1,6 +1,18 @@
 {{-- resources/views/frontend/products/partials/reviews.blade.php --}}
 
 @push('styles')
+<script>
+    // Phục hồi vị trí cuộn trang (scroll position) tức thời ngay khi HTML đang tải để tránh giật màn hình
+    (function() {
+        const scrollY = sessionStorage.getItem('scroll_y_position');
+        if (scrollY !== null) {
+            if ('scrollRestoration' in history) {
+                history.scrollRestoration = 'manual';
+            }
+            window.scrollTo(0, parseInt(scrollY));
+        }
+    })();
+</script>
 <!-- CSS TÙY CHỈNH HỆ THỐNG ĐÁNH GIÁ (REVIEWS & RATING SYSTEM) CỦA DIENMAYPRO -->
 <style>
 .pd-reviews { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); padding:24px; margin-bottom:24px; }
@@ -247,12 +259,12 @@
                         <!-- Menu 3 chấm dọc (Kebab Menu) cho chủ sở hữu hoặc Admin -->
                         @if(auth()->check() && (auth()->id() === $r->user_id || in_array(auth()->user()->role_id, [1, 2])))
                         <div class="review-kebab-wrapper">
-                            <button type="button" class="kebab-trigger" onclick="toggleKebab(this)" title="Tùy chọn">
+                            <button type="button" class="kebab-trigger" onclick="toggleKebab(this, event)" title="Tùy chọn">
                                 <i class="fa-solid fa-ellipsis-vertical"></i>
                             </button>
                             <div class="kebab-dropdown">
                                 @if(auth()->id() === $r->user_id)
-                                <button type="button" onclick="openEditReview({{ $r->id }}, {{ $r->rating }}, '{{ addslashes($r->content) }}')">
+                                <button type="button" class="kebab-edit-btn" data-id="{{ $r->id }}" data-rating="{{ $r->rating }}" data-content="{{ htmlspecialchars($r->content) }}" data-media="{{ json_encode($r->media ?? []) }}" data-is-reply="false" onclick="openEditReview(this)">
                                     <i class="fa-solid fa-pen"></i> Chỉnh sửa
                                 </button>
                                 <div class="kebab-divider"></div>
@@ -292,7 +304,7 @@
 
                     <!-- Nút thao tác phụ trợ: Phản hồi hoặc Báo cáo vi phạm -->
                     @if(auth()->check())
-                    <div style="display: flex; gap: 15px; margin-top: 10px; margin-left: 54px;">
+                    <div class="review-actions-bar" style="display: flex; gap: 15px; margin-top: 10px; margin-left: 54px;">
                         <button class="reply-btn" style="margin-top: 0;" onclick="toggleReplyForm({{ $r->id }})"><i class="fa-solid fa-reply"></i> Trả lời</button>
                         <button type="button" class="report-btn" style="background: none; border: none; color: #dc2626; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; display: inline-flex; align-items: center; gap: 5px;" onclick="reportReview({{ $r->id }})" title="Báo cáo đánh giá vi phạm">
                             <i class="fa-solid fa-flag"></i> Báo cáo
@@ -358,12 +370,12 @@
 
                                     @if(auth()->check() && (auth()->id() === $reply->user_id || in_array(auth()->user()->role_id, [1, 2])))
                                     <div class="review-kebab-wrapper">
-                                        <button type="button" class="kebab-trigger" onclick="toggleKebab(this)" title="Tùy chọn" style="font-size:14px; padding:2px 6px;">
+                                        <button type="button" class="kebab-trigger" onclick="toggleKebab(this, event)" title="Tùy chọn" style="font-size:14px; padding:2px 6px;">
                                             <i class="fa-solid fa-ellipsis-vertical"></i>
                                         </button>
                                         <div class="kebab-dropdown">
                                             @if(auth()->id() === $reply->user_id)
-                                            <button type="button" onclick="openEditReview({{ $reply->id }}, {{ $reply->rating }}, '{{ addslashes($reply->content) }}')">
+                                            <button type="button" class="kebab-edit-btn" data-id="{{ $reply->id }}" data-rating="{{ $reply->rating }}" data-content="{{ htmlspecialchars($reply->content) }}" data-media="{{ json_encode($reply->media ?? []) }}" data-is-reply="true" onclick="openEditReview(this)">
                                                 <i class="fa-solid fa-pen"></i> Chỉnh sửa
                                             </button>
                                             <div class="kebab-divider"></div>
@@ -395,7 +407,7 @@
                                 @endif
                                 
                                 @if(auth()->check())
-                                <div style="display: flex; gap: 15px; margin-top: 5px; margin-left: 44px;">
+                                <div class="review-actions-bar" style="display: flex; gap: 15px; margin-top: 5px; margin-left: 44px;">
                                     <button class="reply-btn-nested" style="margin-left:0; background:none; border:none; color:#0046ab; font-size:12px; font-weight:600; cursor:pointer;" onclick="replyToUser({{ $r->id }}, '{{ addslashes($replyName) }}', {{ $reply->id }})"><i class="fa-solid fa-reply"></i> Trả lời</button>
                                     <button type="button" class="report-btn" style="background: none; border: none; color: #dc2626; font-size: 13px; font-weight: 600; cursor: pointer; padding: 0; display: inline-flex; align-items: center; gap: 5px;" onclick="reportReview({{ $reply->id }})" title="Báo cáo bình luận vi phạm">
                                         <i class="fa-solid fa-flag"></i> Báo cáo
@@ -454,25 +466,7 @@
 <div id="toast-container"></div>
 <div id="toast-center-container"></div>
 
-{{-- Modal chỉnh sửa đánh giá (Edit Review Modal) --}}
-<div class="edit-review-overlay" id="editReviewOverlay">
-    <div class="edit-review-modal">
-        <h4><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa đánh giá</h4>
-        <input type="hidden" id="editReviewId">
-        <div class="edit-star-container" id="editStarContainer">
-            <i class="fa-solid fa-star" data-val="1"></i>
-            <i class="fa-solid fa-star" data-val="2"></i>
-            <i class="fa-solid fa-star" data-val="3"></i>
-            <i class="fa-solid fa-star" data-val="4"></i>
-            <i class="fa-solid fa-star" data-val="5"></i>
-        </div>
-        <textarea id="editReviewContent" class="edit-review-textarea" placeholder="Nhập nội dung đánh giá..."></textarea>
-        <div class="edit-review-actions">
-            <button type="button" class="btn-cancel" onclick="closeEditReview()">Hủy</button>
-            <button type="button" id="btnSaveEdit" style="background:#0046ab; color:#fff;" onclick="saveEditReview()">Lưu thay đổi</button>
-        </div>
-    </div>
-</div>
+
 
 {{-- Lightbox trình chiếu ảnh/video full màn hình --}}
 <div id="mediaLightbox" onclick="closeMediaLightbox()">
@@ -483,6 +477,17 @@
 
 @push('scripts')
 <script>
+// Phục hồi vị trí cuộn trang (scroll position) tức thời ngay khi HTML đang tải để tránh giật màn hình
+(function() {
+    const scrollY = sessionStorage.getItem('scroll_y_position');
+    if (scrollY !== null) {
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, parseInt(scrollY));
+    }
+})();
+
 // Biến toàn cục lưu trữ thông số Rating và File danh sách đăng tải
 let currentRating = 5;
 let editRating = 5;
@@ -490,14 +495,14 @@ let selectedMediaFiles = [];
 let replyMediaFiles = {}; // Phục vụ lưu trữ tệp đính kèm theo từng comment cha riêng biệt
 
 /* ===== KEBAB MENU (3 CHẤM DỌC) ===== */
-function toggleKebab(btn) {
+function toggleKebab(btn, event) {
     const dropdown = btn.nextElementSibling;
     // Đóng tất cả kebab khác trước
     document.querySelectorAll('.kebab-dropdown.active').forEach(d => {
         if (d !== dropdown) d.classList.remove('active');
     });
     dropdown.classList.toggle('active');
-    event.stopPropagation();
+    if (event) event.stopPropagation();
 }
 
 // Đóng kebab khi click ra ngoài
@@ -507,98 +512,343 @@ document.addEventListener('click', function(e) {
     }
 });
 
-/* ===== EDIT REVIEW MODAL ===== */
-function openEditReview(id, rating, content) {
+/* ===== INLINE EDIT REVIEW / REPLY ===== */
+function openEditReview(btn) {
+    const id = btn.getAttribute('data-id');
+    const rating = parseInt(btn.getAttribute('data-rating') || '5');
+    const content = btn.getAttribute('data-content');
+    const isReply = btn.getAttribute('data-is-reply') === 'true';
+    const mediaList = JSON.parse(btn.getAttribute('data-media') || '[]');
+
     // Đóng kebab menu
     document.querySelectorAll('.kebab-dropdown.active').forEach(d => d.classList.remove('active'));
     
-    document.getElementById('editReviewId').value = id;
-    document.getElementById('editReviewContent').value = content;
-    editRating = rating;
-    
-    // Cập nhật sao trong modal edit
-    const stars = document.querySelectorAll('#editStarContainer .fa-star');
-    stars.forEach(s => {
-        s.classList.toggle('selected', s.getAttribute('data-val') <= rating);
-    });
-    
-    document.getElementById('editReviewOverlay').classList.add('active');
-    setTimeout(() => document.getElementById('editReviewContent').focus(), 100);
-}
-
-function closeEditReview() {
-    document.getElementById('editReviewOverlay').classList.remove('active');
-}
-
-// Xử lý click sao trong modal edit
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('#editStarContainer .fa-star').forEach(star => {
-        star.addEventListener('click', function() {
-            editRating = this.getAttribute('data-val');
-            document.querySelectorAll('#editStarContainer .fa-star').forEach(s => {
-                s.classList.toggle('selected', s.getAttribute('data-val') <= editRating);
-            });
-        });
-    });
-});
-
-function saveEditReview() {
-    const id = document.getElementById('editReviewId').value;
-    const content = document.getElementById('editReviewContent').value.trim();
-    
-    if (!content) {
-        showAlert('Thiếu nội dung', 'Vui lòng nhập nội dung đánh giá!');
+    // Kiểm tra xem có đang sửa chính nó rồi không
+    if (document.getElementById('inline-edit-' + id)) {
         return;
     }
     
-    const btn = document.getElementById('btnSaveEdit');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+    // Tìm container chứa đánh giá/bình luận
+    const container = document.getElementById('review-' + id);
+    if (!container) return;
     
-    fetch(`/reviews/${id}`, {
-        method: 'PUT',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({ rating: editRating, content: content })
-    })
-    .then(async response => {
-        const data = await response.json();
-        if (!response.ok) {
-            const err = new Error(data.message || 'Lỗi hệ thống');
-            err.status = response.status;
-            throw err;
+    // Tìm phần tử hiển thị nội dung chữ
+    const contentEl = container.querySelector('.review-content, .review-content-replied');
+    if (!contentEl) return;
+    
+    // Tìm phần tử hiển thị sao (chỉ có ở review chính)
+    const starsEl = container.querySelector('.review-stars');
+
+    // Tìm phần tử hiển thị ảnh cũ tĩnh bên dưới bình luận/đánh giá
+    const mediaEl = container.querySelector('.review-media-display');
+
+    // Tìm thanh công cụ phản hồi / báo cáo
+    const actionsBar = container.querySelector('.review-actions-bar');
+    
+    // Ẩn nội dung cũ
+    contentEl.style.display = 'none';
+    if (starsEl) starsEl.style.display = 'none';
+    if (mediaEl) mediaEl.style.display = 'none';
+    if (actionsBar) actionsBar.style.display = 'none';
+    
+    // Tạo form chỉnh sửa inline
+    const editForm = document.createElement('div');
+    editForm.className = 'inline-edit-form';
+    editForm.id = 'inline-edit-' + id;
+    editForm.style.marginTop = '10px';
+    editForm.style.background = '#f8fafc';
+    editForm.style.padding = '15px';
+    editForm.style.borderRadius = '12px';
+    editForm.style.border = '1px solid #e2e8f0';
+    if (isReply) {
+        editForm.style.marginLeft = '44px'; // Thụt lề bằng với avatar reply con
+    } else {
+        editForm.style.marginLeft = '54px'; // Thụt lề bằng với avatar review chính
+    }
+    
+    let starsHtml = '';
+    let currentInlineRating = rating;
+    if (!isReply) {
+        starsHtml = `
+            <div class="inline-edit-stars" style="display: flex; gap: 8px; font-size: 20px; color: #ccc; cursor: pointer; margin-bottom: 12px;">
+                ${[1, 2, 3, 4, 5].map(v => `
+                    <i class="fa-solid fa-star ${v <= rating ? 'selected' : ''}" data-val="${v}" style="color: ${v <= rating ? '#f59e0b' : '#ccc'}"></i>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    // Render existing media files
+    let existingMediaHtml = '';
+    if (mediaList && mediaList.length > 0) {
+        existingMediaHtml = `
+            <div class="inline-edit-existing-media" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                ${mediaList.map(url => {
+                    const isVideo = /\.(mp4|mov|avi|mkv)$/i.test(url);
+                    return `
+                        <div class="media-preview-item" data-url="${url}" style="position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb;">
+                            ${isVideo ? `<video src="${url}" style="width: 100%; height: 100%; object-fit: cover;"></video>` : `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">`}
+                            <button type="button" class="media-preview-remove" onclick="this.parentNode.remove()" style="position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    const uploadInputId = 'inline-media-input-' + id;
+    const previewGridId = 'inline-media-preview-' + id;
+    let localSelectedFiles = []; // Lưu trữ file tải lên mới
+    
+    let uploadHtml = `
+        <div class="review-media-upload" style="margin-bottom: 10px;">
+            <label class="media-upload-label" for="${uploadInputId}" style="margin: 0; padding: 6px 12px; font-size: 12px; border: 1px dashed #ccc; border-radius: 6px; background: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-photo-film"></i> Thêm ảnh/video mới
+            </label>
+            <input type="file" id="${uploadInputId}" multiple accept="image/*,video/*" style="display:none;">
+            <div class="media-preview-grid" id="${previewGridId}" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
+        </div>
+    `;
+    
+    editForm.innerHTML = `
+        ${starsHtml}
+        <textarea class="reply-textarea" style="margin-bottom: 10px; height: 80px; resize: none; width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; display: block;">${content}</textarea>
+        ${existingMediaHtml}
+        ${uploadHtml}
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn-cancel" style="padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none;">Hủy</button>
+            <button type="button" class="btn-submit-reply" style="padding: 8px 24px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none;">Lưu thay đổi</button>
+        </div>
+    `;
+    
+    // Chèn form chỉnh sửa ngay trước nội dung hiển thị cũ
+    contentEl.parentNode.insertBefore(editForm, contentEl);
+    
+    // Tự động focus và di chuyển con trỏ xuống cuối textarea
+    const textarea = editForm.querySelector('textarea');
+    textarea.focus();
+    const len = textarea.value.length;
+    textarea.setSelectionRange(len, len);
+    
+    // Xử lý sự kiện tải lên tệp mới
+    const fileInput = editForm.querySelector('#' + uploadInputId);
+    const previewGrid = editForm.querySelector('#' + previewGridId);
+    
+    fileInput.addEventListener('change', function() {
+        const files = Array.from(this.files);
+        
+        files.forEach(file => {
+            if (file.type.startsWith('image/') && file.size > 5 * 1024 * 1024) {
+                showToastReview('Lỗi file', `Kích thước ảnh "${file.name}" vượt quá 5MB.`, 'warning');
+                return;
+            }
+            if (file.type.startsWith('video/') && file.size > 100 * 1024 * 1024) {
+                showToastReview('Lỗi file', `Kích thước video "${file.name}" vượt quá 100MB.`, 'warning');
+                return;
+            }
+            
+            localSelectedFiles.push(file);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'media-preview-item';
+                previewItem.setAttribute('data-new', 'true');
+                
+                const isVid = file.type.startsWith('video/');
+                if (isVid) {
+                    previewItem.innerHTML = `
+                        <video src="${e.target.result}"></video>
+                        <button type="button" class="media-preview-remove">×</button>
+                    `;
+                } else {
+                    previewItem.innerHTML = `
+                        <img src="${e.target.result}">
+                        <button type="button" class="media-preview-remove">×</button>
+                    `;
+                }
+                
+                previewItem.querySelector('.media-preview-remove').addEventListener('click', function() {
+                    const idx = localSelectedFiles.indexOf(file);
+                    if (idx > -1) {
+                        localSelectedFiles.splice(idx, 1);
+                     }
+                    previewItem.remove();
+                });
+                
+                previewGrid.appendChild(previewItem);
+            }
+            reader.readAsDataURL(file);
+        });
+        
+        this.value = '';
+    });
+
+    // Xử lý sự kiện click đổi sao (nếu có)
+    if (!isReply) {
+        editForm.querySelectorAll('.inline-edit-stars i').forEach(star => {
+            star.addEventListener('click', function() {
+                currentInlineRating = parseInt(this.getAttribute('data-val'));
+                editForm.querySelectorAll('.inline-edit-stars i').forEach(s => {
+                    const val = parseInt(s.getAttribute('data-val'));
+                    s.style.color = val <= currentInlineRating ? '#f59e0b' : '#ccc';
+                    s.classList.toggle('selected', val <= currentInlineRating);
+                });
+            });
+        });
+    }
+    
+    // Xử lý nút Hủy
+    editForm.querySelector('.btn-cancel').addEventListener('click', function() {
+        editForm.remove();
+        contentEl.style.display = '';
+        if (starsEl) starsEl.style.display = '';
+        if (mediaEl) mediaEl.style.display = '';
+        if (actionsBar) actionsBar.style.display = '';
+    });
+    
+    // Xử lý nút Lưu thay đổi
+    editForm.querySelector('.btn-submit-reply').addEventListener('click', function() {
+        const newContent = textarea.value.trim();
+        if (!newContent) {
+            showToastReview('Thiếu nội dung', 'Vui lòng nhập nội dung!', 'warning');
+            return;
         }
-        return data;
-    })
-    .then(data => {
-        if (data.success) {
-            sessionStorage.setItem('review_toast', JSON.stringify({
-                msg: data.message,
-                isCenter: true
-            }));
-            sessionStorage.setItem('scroll_to_reviews', 'true');
-            location.reload();
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = 'Lưu thay đổi';
-            showAlert('Lỗi', data.message || 'Không thể cập nhật.');
+
+        const retainedMedia = [];
+        editForm.querySelectorAll('.inline-edit-existing-media .media-preview-item').forEach(item => {
+            retainedMedia.push(item.getAttribute('data-url'));
+        });
+
+        // Validate số lượng ảnh (cũ + mới) không vượt quá 5
+        const totalImages = retainedMedia.filter(url => !/\.(mp4|mov|avi|mkv)$/i.test(url)).length 
+            + localSelectedFiles.filter(f => f.type.startsWith('image/')).length;
+        if (totalImages > 5) {
+            showToastReview('Lỗi', 'Bạn chỉ được phép lưu trữ tối đa 5 hình ảnh.', 'warning');
+            return;
         }
-    })
-    .catch(err => {
-        btn.disabled = false;
-        btn.innerHTML = 'Lưu thay đổi';
-        const title = err.status === 403 ? 'Không có quyền' : 'Lỗi';
-        showAlert(title, err.message);
+
+        const formData = new FormData();
+        formData.append('_method', 'PUT');
+        formData.append('rating', currentInlineRating);
+        formData.append('content', newContent);
+        
+        retainedMedia.forEach(url => {
+            formData.append('retained_media[]', url);
+        });
+        
+        localSelectedFiles.forEach(file => {
+            formData.append('media[]', file);
+        });
+        
+        const saveBtn = this;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+        
+        fetch(`/reviews/${id}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: formData
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                const err = new Error(data.message || 'Lỗi hệ thống');
+                err.status = response.status;
+                throw err;
+            }
+            return data;
+        })
+        .then(data => {
+            if (data.success) {
+                // Cập nhật các thuộc tính data trên nút Chỉnh sửa để lần sau mở form hiển thị đúng dữ liệu mới nhất
+                btn.setAttribute('data-rating', currentInlineRating);
+                btn.setAttribute('data-content', newContent);
+                btn.setAttribute('data-media', JSON.stringify(data.media || []));
+
+                // Cập nhật text content hiển thị trực tiếp
+                contentEl.textContent = newContent;
+
+                // Cập nhật sao hiển thị (chỉ với review chính)
+                if (starsEl) {
+                    starsEl.innerHTML = [1, 2, 3, 4, 5].map(v => 
+                        `<i class="${v <= currentInlineRating ? 'fa-solid' : 'fa-regular'} fa-star"></i>`
+                    ).join('');
+                }
+
+                // Cập nhật danh sách ảnh/video đính kèm
+                let mediaContainer = container.querySelector('.review-media-display');
+                const updatedMedia = data.media || [];
+                if (updatedMedia.length > 0) {
+                    if (!mediaContainer) {
+                        mediaContainer = document.createElement('div');
+                        mediaContainer.className = 'review-media-display';
+                        contentEl.parentNode.insertBefore(mediaContainer, contentEl.nextSibling);
+                    }
+                    mediaContainer.innerHTML = updatedMedia.map(url => {
+                        const isVideo = /\.(mp4|mov|avi|mkv)$/i.test(url);
+                        return `
+                            <div class="review-media-thumb" onclick="openMediaLightbox('${url}', ${isVideo})">
+                                ${isVideo ? `<video src="${url}"></video><div class="play-icon"><i class="fa-solid fa-play"></i></div>` : `<img src="${url}" loading="lazy">`}
+                            </div>
+                        `;
+                    }).join('');
+                    mediaContainer.style.display = '';
+                } else {
+                    if (mediaContainer) mediaContainer.remove();
+                }
+
+                // Nếu bình luận chuyển sang chờ kiểm duyệt
+                if (!data.is_approved) {
+                    container.style.opacity = '0.6';
+                    // Thêm badge chờ duyệt hoặc chỉnh badge cũ
+                    let badge = container.querySelector('.user-badge');
+                    if (badge) {
+                        badge.outerHTML = '<span class="user-badge" style="background:#f59e0b; color:#fff;">Chờ duyệt</span>';
+                    } else {
+                        const userMeta = container.querySelector('.user-meta');
+                        if (userMeta) {
+                            const newBadge = document.createElement('span');
+                            newBadge.className = 'user-badge';
+                            newBadge.style.background = '#f59e0b';
+                            newBadge.style.color = '#fff';
+                            newBadge.textContent = 'Chờ duyệt';
+                            userMeta.appendChild(newBadge);
+                        }
+                    }
+                    showToastReview('Chờ kiểm duyệt', data.message, 'warning');
+                } else {
+                    // Nếu được duyệt thẳng, đảm bảo bỏ độ mờ và badge Chờ duyệt nếu có
+                    container.style.opacity = '1';
+                    let badge = container.querySelector('.user-badge');
+                    if (badge && badge.textContent === 'Chờ duyệt') {
+                        badge.remove();
+                    }
+                    showToastReview('Thành công', data.message || 'Cập nhật thành công!', 'success');
+                }
+
+                // Đóng form edit và hiện lại nội dung tĩnh
+                editForm.remove();
+                contentEl.style.display = '';
+                if (starsEl) starsEl.style.display = '';
+                if (actionsBar) actionsBar.style.display = '';
+            } else {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = 'Lưu thay đổi';
+                showAlert('Lỗi', data.message || 'Không thể cập nhật.');
+            }
+        })
+        .catch(err => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = 'Lưu thay đổi';
+            const title = err.status === 403 ? 'Không có quyền' : 'Lỗi';
+            showAlert(title, err.message);
+        });
     });
 }
-
-// Đóng edit modal khi click overlay
-document.addEventListener('click', function(e) {
-    if (e.target.id === 'editReviewOverlay') closeEditReview();
-});
 
 document.addEventListener('DOMContentLoaded', function() {
     // 1. Kiểm tra và hiển thị các Toast thông báo lưu trữ tạm trong sessionStorage sau khi reload trang
@@ -613,21 +863,23 @@ document.addEventListener('DOMContentLoaded', function() {
             showToastReview(data.title, data.msg, data.type);
         }
         sessionStorage.removeItem('review_toast');
-        
-        // Cuộn mượt màn hình trực tiếp đến khung Reviews tránh nhảy trang
-        const reviewsSec = document.getElementById('reviews-section');
-        if (reviewsSec) {
-            if ('scrollRestoration' in history) {
-                history.scrollRestoration = 'manual';
-            }
-            setTimeout(() => {
-                reviewsSec.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
-        }
     }
 
     // Luôn kiểm tra cờ scroll lưu trữ tạm
-    if (sessionStorage.getItem('scroll_to_reviews') === 'true') {
+    const scrollY = sessionStorage.getItem('scroll_y_position');
+    if (scrollY !== null) {
+        sessionStorage.removeItem('scroll_y_position');
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, parseInt(scrollY));
+        setTimeout(() => {
+            window.scrollTo(0, parseInt(scrollY));
+        }, 50);
+        setTimeout(() => {
+            window.scrollTo(0, parseInt(scrollY));
+        }, 150);
+    } else if (sessionStorage.getItem('scroll_to_reviews') === 'true') {
         sessionStorage.removeItem('scroll_to_reviews');
         if ('scrollRestoration' in history) {
             history.scrollRestoration = 'manual';
@@ -862,7 +1114,7 @@ function submitReview() {
                 msg: data.message || 'DienMayPro cảm ơn quý khách đã gửi bình luận!',
                 isCenter: true
             }));
-            sessionStorage.setItem('scroll_to_reviews', 'true');
+            sessionStorage.setItem('scroll_y_position', window.scrollY);
             location.reload(); 
         } else {
             if(btn) { 
@@ -1001,7 +1253,7 @@ function submitReply(parentId) {
                 msg: data.message || 'DienMayPro cảm ơn quý khách đã gửi bình luận!',
                 isCenter: true
             }));
-            sessionStorage.setItem('scroll_to_reviews', 'true');
+            sessionStorage.setItem('scroll_y_position', window.scrollY);
             location.reload();
         } else {
             if(btn) { 
@@ -1264,7 +1516,7 @@ function reportReview(id) {
             .then(data => {
                 showToastReview('Báo cáo thành công', data.message, 'success');
                 closeConfirmModal();
-                sessionStorage.setItem('scroll_to_reviews', 'true');
+                sessionStorage.setItem('scroll_y_position', window.scrollY);
                 setTimeout(() => {
                     location.reload();
                 }, 1500);

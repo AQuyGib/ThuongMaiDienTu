@@ -151,6 +151,64 @@ class ReviewController extends Controller
             'content.max' => 'Nội dung đánh giá không được vượt quá 2000 ký tự.',
         ]);
 
+        // Lấy danh sách tệp cũ được chọn để giữ lại
+        $retainedMedia = $request->input('retained_media', []);
+        if (!is_array($retainedMedia)) {
+            $retainedMedia = [];
+        }
+        $retainedMedia = array_filter($retainedMedia);
+
+        $imageCount = 0;
+        foreach ($retainedMedia as $url) {
+            $isVideo = preg_match('/\.(mp4|mov|avi|mkv)$/i', $url);
+            if (!$isVideo) {
+                $imageCount++;
+            }
+        }
+
+        // Kiểm tra và validate các file tải lên mới
+        if ($request->hasFile('media')) {
+            $mediaFiles = $request->file('media');
+            foreach ($mediaFiles as $file) {
+                $mime = $file->getMimeType();
+                $size = $file->getSize(); // in bytes
+                
+                if (str_starts_with($mime, 'image/')) {
+                    $imageCount++;
+                    if ($size > 5 * 1024 * 1024) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Kích thước ảnh "' . $file->getClientOriginalName() . '" vượt quá giới hạn 5MB.'
+                        ], 422);
+                    }
+                } elseif (str_starts_with($mime, 'video/')) {
+                    if ($size > 100 * 1024 * 1024) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Kích thước video "' . $file->getClientOriginalName() . '" vượt quá giới hạn 100MB.'
+                        ], 422);
+                    }
+                }
+            }
+            if ($imageCount > 5) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn chỉ được phép lưu trữ tối đa 5 hình ảnh.'
+                ], 422);
+            }
+        }
+
+        // Lưu file mới
+        $newMediaPaths = [];
+        if ($request->hasFile('media')) {
+            foreach ($request->file('media') as $file) {
+                $path = $file->store('reviews', 'public');
+                $newMediaPaths[] = asset('storage/' . $path);
+            }
+        }
+
+        $finalMedia = array_merge($retainedMedia, $newMediaPaths);
+
         // Kiểm duyệt nội dung chỉnh sửa
         $isAdmin = in_array(Auth::user()->role_id, [1, 2]);
         $isApproved = $review->is_approved;
@@ -162,12 +220,21 @@ class ReviewController extends Controller
         $review->update([
             'rating' => $request->rating,
             'content' => $request->content,
+            'media' => !empty($finalMedia) ? $finalMedia : null,
             'is_approved' => $isApproved,
         ]);
 
+        $isReply = !is_null($review->parent_id);
+        $successMsg = $isReply ? 'Đã cập nhật bình luận thành công!' : 'Đã cập nhật đánh giá thành công!';
+        $pendingMsg = $isReply 
+            ? 'Bình luận đã được cập nhật và đang chờ kiểm duyệt do chứa từ khóa nhạy cảm.' 
+            : 'Đánh giá đã được cập nhật và đang chờ kiểm duyệt do chứa từ khóa nhạy cảm.';
+
         return response()->json([
             'success' => true,
-            'message' => $isApproved ? 'Đã cập nhật đánh giá thành công!' : 'Đánh giá đã được cập nhật và đang chờ kiểm duyệt do chứa từ khóa nhạy cảm.'
+            'message' => $isApproved ? $successMsg : $pendingMsg,
+            'is_approved' => $isApproved,
+            'media' => $finalMedia
         ]);
     }
 
