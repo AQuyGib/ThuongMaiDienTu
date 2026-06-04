@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Jenssegers\Agent\Agent;
 
 class UserController extends Controller
 {
@@ -266,14 +267,21 @@ class UserController extends Controller
      */
     public function revokeSessions($id)
     {
+        $user = User::findOrFail($id);
+        
+        // 1. Xóa toàn bộ các phiên trong database
         DB::table('sessions')->where('user_id', $id)->delete();
         
+        // 2. Quan trọng: Xóa remember_token để ngăn chặn việc tự động đăng nhập lại từ cookie
+        $user->remember_token = null;
+        $user->save();
+        
         if (request()->ajax()) {
-            return response()->json(['message' => 'Đã đăng xuất tất cả các phiên làm việc thành công.']);
+            return response()->json(['message' => 'Đã thu hồi toàn bộ phiên làm việc và vô hiệu hóa ghi nhớ đăng nhập thành công.']);
         }
 
         return redirect()->back()
-            ->with('success', 'Đã đăng xuất tất cả các phiên làm việc thành công.');
+            ->with('success', 'Đã thu hồi toàn bộ phiên làm việc thành công.');
     }
 
     /**
@@ -303,32 +311,72 @@ class UserController extends Controller
      */
     public function deleteSession($sessionId)
     {
-        DB::table('sessions')->where('id', $sessionId)->delete();
+        $session = DB::table('sessions')->where('id', $sessionId)->first();
+        if ($session) {
+            $userId = $session->user_id;
+            DB::table('sessions')->where('id', $sessionId)->delete();
+            
+            // Xóa remember_token của user để tránh tự động đăng nhập lại
+            $user = User::find($userId);
+            if ($user) {
+                $user->remember_token = null;
+                $user->save();
+            }
+        }
+
         if (request()->ajax()) {
-            return response()->json(['message' => 'Đã xóa phiên đăng nhập thành công.']);
+            return response()->json(['message' => 'Đã thu hồi phiên đăng nhập và vô hiệu hóa ghi nhớ đăng nhập thành công.']);
         }
         return redirect()->back()->with('success', 'Đã xóa phiên đăng nhập thành công.');
     }
 
-    private function parseUserAgent($userAgent)
+    private function parseUserAgent($userAgent = null)
     {
-        $os = "Unknown OS";
-        $browser = "Unknown Browser";
-        $device = "Máy tính";
+        // Khởi tạo đối tượng Agent
+        $agent = new Agent();
 
-        if (preg_match('/windows|win32/i', $userAgent)) $os = 'Windows';
-        elseif (preg_match('/macintosh|mac os x/i', $userAgent)) $os = 'Mac OS';
-        elseif (preg_match('/linux/i', $userAgent)) $os = 'Linux';
-        elseif (preg_match('/iphone/i', $userAgent)) { $os = 'iOS'; $device = 'iPhone'; }
-        elseif (preg_match('/android/i', $userAgent)) { $os = 'Android'; $device = 'Điện thoại Android'; }
+        // Nếu bạn có truyền một chuỗi User-Agent cụ thể vào hàm, thiết lập nó cho Agent
+        if ($userAgent) {
+            $agent->setUserAgent($userAgent);
+        }
 
-        if (preg_match('/firefox/i', $userAgent)) $browser = 'Firefox';
-        elseif (preg_match('/chrome/i', $userAgent)) $browser = 'Chrome';
-        elseif (preg_match('/safari/i', $userAgent)) $browser = 'Safari';
-        elseif (preg_match('/msie/i', $userAgent)) $browser = 'Internet Explorer';
-        elseif (preg_match('/edge/i', $userAgent)) $browser = 'Edge';
+        // 1. Xác định thiết bị
+        $device = 'Máy tính'; // Giá trị mặc định
+        if ($agent->isMobile()) {
+            $device = 'Điện thoại';
+        } elseif ($agent->isTablet()) {
+            $device = 'Máy tính bảng';
+        }
 
-        return ['os' => $os, 'browser' => $browser, 'device' => $device];
+        // 2. Lấy hệ điều hành và trình duyệt, nếu không nhận diện được sẽ gán giá trị mặc định
+        $os = $agent->platform() ?: 'Unknown OS';
+        $browser = $agent->browser() ?: 'Unknown Browser';
+
+        // 3. Trả về kết quả dưới dạng mảng
+        return [
+            'os'      => $os,
+            'browser' => $browser,
+            'device'  => $device
+        ];
+    }
+
+    /**
+     * Mở khóa Chatbot cho người dùng.
+     */
+    public function unbanChatbot($id)
+    {
+        $user = User::findOrFail($id);
+        $user->chatbot_banned_until = null;
+        $user->save();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã mở khóa Trợ lý AI Chatbot cho tài khoản "' . $user->full_name . '" thành công.'
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Đã mở khóa Chatbot thành công.');
     }
 }
 

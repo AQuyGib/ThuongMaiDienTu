@@ -456,7 +456,7 @@ async function loadComparePage() {
                                             ${p.discount_percent ? `<span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">-${p.discount_percent}%</span>` : ''}
                                         </div>
                                     </div>
-                                    <a href="/products/${p.product_id}" class="inline-flex w-full items-center justify-center py-2.5 rounded-xl border-2 border-blue-600 text-blue-600 font-bold text-xs hover:bg-blue-600 hover:text-white transition-all">Xem chi tiết</a>
+                                    <a href="/product/${p.product_id}" class="inline-flex w-full items-center justify-center py-2.5 rounded-xl border-2 border-blue-600 text-blue-600 font-bold text-xs hover:bg-blue-600 hover:text-white transition-all">Xem chi tiết</a>
                                 </div>
                             </div>
                         </th>
@@ -569,7 +569,7 @@ async function loadComparePage() {
                             </div>
                         `).join('')}
                     </div>
-                    <a href="/products/${p.product_id}" class="mt-6 flex w-full items-center justify-center py-3 rounded-2xl bg-blue-600 text-white font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">Xem chi tiết sản phẩm</a>
+                    <a href="/product/${p.product_id}" class="mt-6 flex w-full items-center justify-center py-3 rounded-2xl bg-blue-600 text-white font-black text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">Xem chi tiết sản phẩm</a>
                 </div>
             `).join('');
         }

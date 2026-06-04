@@ -78,6 +78,15 @@ class PurchaseOrderController extends Controller
                 'total_cost'  => $totalCost,
             ]);
 
+            $supplier = Supplier::find($request->supplier_id);
+            \App\Models\Cashbook::create([
+                'type' => 'Expense',
+                'amount' => $totalCost,
+                'description' => 'Thanh toán đơn nhập hàng #' . $po->po_id . ' từ nhà cung cấp: ' . ($supplier ? $supplier->name : 'N/A'),
+                'reference_id' => $po->po_id,
+                'reference_type' => 'purchase_order',
+            ]);
+
             foreach ($request->items as $item) {
                 InventoryItem::create([
                     'variant_id'    => $item['variant_id'],
@@ -98,9 +107,10 @@ class PurchaseOrderController extends Controller
      */
     public function show($id)
     {
-        $po = PurchaseOrder::with(['supplier', 'inventoryItems.variant.product'])->findOrFail($id);
+        $po = PurchaseOrder::with('supplier')->withCount('inventoryItems')->findOrFail($id);
+        $inventoryItems = $po->inventoryItems()->with('variant.product')->paginate(50);
 
-        return view('admin.purchase-orders.show', compact('po'));
+        return view('admin.purchase-orders.show', compact('po', 'inventoryItems'));
     }
 
     /**
