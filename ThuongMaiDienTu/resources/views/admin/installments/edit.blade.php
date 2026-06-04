@@ -20,6 +20,17 @@
         </div>
     @endif
 
+    @if($errors->any())
+        <div class="alert alert-danger rounded-xl mb-4 border-0 shadow-sm text-sm">
+            <div class="font-bold mb-1"><i class="fa-solid fa-circle-exclamation me-2"></i> Lỗi nhập liệu:</div>
+            <ul class="mb-0 ps-3">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <form action="{{ route('admin.installments.update', $installment->id) }}" method="POST">
         @csrf
         @method('PUT')
@@ -46,7 +57,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label text-slate-500 text-xs font-bold uppercase">Địa chỉ giao hàng <span class="text-rose-500">*</span></label>
-                            <input type="text" name="shipping_address" class="form-control border-slate-200 py-2 rounded-xl focus-ring text-sm" value="{{ old('shipping_address', $installment->order->shipping_address ?? 'Nhận tại cửa hàng') }}" required>
+                            <input type="text" name="shipping_address" class="form-control border-slate-200 py-2 rounded-xl focus-ring text-sm" placeholder="Nhập địa chỉ giao hàng" value="{{ old('shipping_address', $installment->order->shipping_address ?? '') }}" required>
                         </div>
                     </div>
                 </div>

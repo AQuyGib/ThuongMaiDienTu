@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Installment;
 use App\Models\InstallmentPayment;
 use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\InventoryItem;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
@@ -140,7 +141,7 @@ class InstallmentController extends Controller
             'customer_phone' => ['required', 'string', 'regex:/^0[0-9]{8,9}$/'],
             'customer_id_card' => ['required_if:method,financial_company', 'nullable', 'string', 'regex:/^[0-9]{12}$/'],
             'trade_in' => ['nullable', 'boolean'],
-            'shipping_address' => ['nullable', 'string', 'max:250'],
+            'shipping_address' => ['required', 'string', 'max:250'],
         ]);
 
         $userId = $request->input('user_id') ? (int) $request->input('user_id') : null;
@@ -154,7 +155,7 @@ class InstallmentController extends Controller
         $custPhone = strip_tags($request->input('customer_phone'));
         $custIdCard = strip_tags($request->input('customer_id_card'));
         $tradeIn = (bool) $request->input('trade_in', false);
-        $shippingAddress = strip_tags($request->input('shipping_address') ?: 'Nhận tại cửa hàng');
+        $shippingAddress = strip_tags($request->input('shipping_address'));
 
         $product = \App\Models\Product::findOrFail($productId);
         $variant = null;
@@ -173,6 +174,32 @@ class InstallmentController extends Controller
         }
 
         $productPrice = (int) ($variant ? $variant->total_price : $product->base_price);
+
+        // ==========================================
+        // CHỨC NĂNG: TÍNH TOÁN TRỢ GIÁ "THU CŨ ĐỔI MỚI" (TRADE-IN)
+        // ------------------------------------------
+        // [DÀNH CHO NGƯỜI KHÔNG BIẾT CODE - Ý NGHĨA CHỨC NĂNG]:
+        // Khi khách hàng đổi điện thoại/thiết bị cũ để nâng cấp lên sản phẩm mới, cửa hàng sẽ tặng 
+        // một khoản tiền giảm giá đặc biệt (trợ giá) để trừ thẳng vào giá bán khi làm hồ sơ trả góp.
+        //
+        // CÁCH HOẠT ĐỘNG:
+        // - Khách hàng sẽ được giảm giá 10% của giá bán sản phẩm.
+        // - Số tiền giảm này bị giới hạn tối đa là 2.000.000đ (dù máy có đắt đến mấy thì trợ giá tối đa là 2 triệu).
+        // - Đối với phụ kiện giá rẻ (ví dụ cáp sạc 2 triệu), hệ thống tự giảm 10% tức là 200.000đ,
+        //   giúp giá bán sau giảm vẫn hợp lý (còn lại 1,8 triệu) chứ không bị đưa về 0đ (miễn phí) hoặc bị âm tiền.
+        // ==========================================
+        
+        // Kiểm tra xem khách hàng có tham gia chương trình Thu cũ đổi mới hay không (biến $tradeIn nhận giá trị boolean từ request)
+        if ($tradeIn) {
+            // Tính số tiền trợ giá thu cũ đổi mới bằng 10% đơn giá hiện tại của sản phẩm
+            $tenPercentOfPrice = (int)round($productPrice * 0.1);
+            // Giới hạn mức trợ giá thu cũ đổi mới tối đa là 2.000.000 VNĐ
+            $tradeInDiscount = min($tenPercentOfPrice, 2000000);
+            // Khấu trừ số tiền trợ giá vừa tính được trực tiếp vào đơn giá sản phẩm ban đầu
+            $discountedPrice = $productPrice - $tradeInDiscount;
+            // Đảm bảo đơn giá sản phẩm sau khi trừ trợ giá không bao giờ bị âm hoặc nhỏ hơn 0đ
+            $productPrice = max(0, $discountedPrice);
+        }
 
         // Server-side calculation to ensure consistency
         $interestRate = 0;
@@ -247,6 +274,13 @@ class InstallmentController extends Controller
                         'warehouse_loc' => 'Cửa hàng',
                         'status' => 'In_Stock',
                     ]);
+                    $variant->increment('stock');
+                }
+
+                // Phòng hờ bất đồng bộ dữ liệu: Đảm bảo tồn kho biến thể ít nhất là 1 để trừ kho thành công
+                if ($variant->stock < 1) {
+                    $variant->stock = 1;
+                    $variant->save();
                 }
 
                 OrderDetail::create([
