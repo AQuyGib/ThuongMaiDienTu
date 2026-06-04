@@ -1,8 +1,11 @@
 <?php
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasAuditLog;
 
 class PurchaseOrder extends Model {
+    use HasAuditLog;
+
     protected $primaryKey = 'po_id';
     const UPDATED_AT = null;
     protected $guarded = [];

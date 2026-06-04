@@ -44,10 +44,24 @@
             'section' => $isEn ? 'Business' : 'Kinh doanh'
         ],
         [
+            'label' => $isEn ? 'Installments' : 'Hợp đồng trả góp',
+            'route' => route('admin.installments.index'),
+            'icon' => 'fa-solid fa-credit-card',
+            'active' => request()->is('admin/installments*'),
+            'section' => $isEn ? 'Business' : 'Kinh doanh'
+        ],
+        [
             'label' => $isEn ? 'Repair Tickets' : 'Phiếu sửa chữa',
             'route' => route('admin.repair-tickets.index'),
             'icon' => 'fa-solid fa-wrench',
             'active' => request()->is('admin/repair-tickets*'),
+            'section' => $isEn ? 'Business' : 'Kinh doanh'
+        ],
+        [
+            'label' => $isEn ? 'Warranty Claims' : 'Bảo hành & Đổi trả',
+            'route' => route('admin.warranty-claims.index'),
+            'icon' => 'fa-solid fa-shield-halved',
+            'active' => request()->is('admin/warranty-claims*'),
             'section' => $isEn ? 'Business' : 'Kinh doanh'
         ],
         [

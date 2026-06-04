@@ -52,9 +52,8 @@ class CustomerController extends Controller
         // Admin (Role 1) có thể xem logs
         $logs = [];
         if (Auth::user()->role_id == 1) {
-            $logs = ActivityLog::with('user')
-                ->where('action', 'LIKE', '%khách hàng%')
-                ->orderByDesc('created_at')
+            $logs = ActivityLog::where('subject_type', User::class)
+                ->orderByDesc('log_id')
                 ->take(20)
                 ->get();
         }
@@ -90,12 +89,7 @@ class CustomerController extends Controller
             'status' => $validated['status'],
         ]);
 
-        // Log hành động
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "Thêm mới khách hàng: " . $customer->full_name . " (ID: " . $customer->user_id . ")",
-            'ip_address' => $request->ip(),
-        ]);
+        // Log hành động tự động qua HasAuditLog trait
 
         return redirect()->route('admin.customers.index')->with('success', 'Thêm khách hàng thành công!');
     }
@@ -176,12 +170,7 @@ class CustomerController extends Controller
                 ->withInput();
         }
 
-        // Log hành động
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "Cập nhật khách hàng: " . $customer->full_name . " (ID: " . $customer->user_id . ")",
-            'ip_address' => $request->ip(),
-        ]);
+        // Log hành động tự động qua HasAuditLog trait
 
         return redirect()->route('admin.customers.index')->with('success', 'Cập nhật khách hàng thành công!');
     }
@@ -209,12 +198,7 @@ class CustomerController extends Controller
         // Laravel SoftDeletes sẽ tự động xử lý khi gọi delete()
         $customer->delete();
 
-        // Log hành động
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "Xóa khách hàng (Soft Delete): " . $name . " (ID: " . $id . ")",
-            'ip_address' => $request->ip(),
-        ]);
+        // Log hành động tự động qua HasAuditLog trait
 
         return redirect()->route('admin.customers.index')->with('success', 'Đã xóa tạm khách hàng thành công!');
     }
@@ -238,7 +222,7 @@ class CustomerController extends Controller
                 if (!in_array(Auth::user()->role_id, [1, 2])) {
                     return response()->json(['success' => false, 'message' => 'Bạn không có quyền xóa!']);
                 }
-                User::whereIn('user_id', $ids)->delete();
+                User::whereIn('user_id', $ids)->get()->each->delete();
                 $msg = "Đã xóa tạm " . count($ids) . " khách hàng.";
                 break;
             case 'restore':
@@ -257,11 +241,17 @@ class CustomerController extends Controller
         }
 
         // Log hành động
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "Thao tác hàng loạt ($action) trên các ID: " . implode(', ', $ids),
-            'ip_address' => $request->ip(),
-        ]);
+        try {
+            \App\Traits\HasAuditLog::logManualEvent(
+                $action === 'delete' ? 'deleted' : ($action === 'restore' ? 'restored' : 'updated'),
+                User::class,
+                null,
+                null,
+                ['ids' => $ids, 'action' => $action]
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log customer bulkAction: " . $e->getMessage());
+        }
 
         return response()->json(['success' => true, 'message' => $msg]);
     }
@@ -277,11 +267,11 @@ class CustomerController extends Controller
         $customer = User::onlyTrashed()->findOrFail($id);
         $customer->restore();
 
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "Khôi phục khách hàng: " . $customer->full_name . " (ID: " . $id . ")",
-            'ip_address' => request()->ip(),
-        ]);
+        try {
+            \App\Traits\HasAuditLog::logManualEvent('restored', User::class, $id, null, $customer->getAttributes());
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log customer restore: " . $e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Đã khôi phục khách hàng thành công!');
     }
@@ -296,11 +286,11 @@ class CustomerController extends Controller
         $name = $customer->full_name;
         $customer->forceDelete();
 
-        ActivityLog::create([
-            'user_id' => Auth::id(),
-            'action' => "XÓA VĨNH VIỄN khách hàng: " . $name . " (ID: " . $id . ")",
-            'ip_address' => request()->ip(),
-        ]);
+        try {
+            \App\Traits\HasAuditLog::logManualEvent('deleted', User::class, $id, $customer->getAttributes(), null);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log customer forceDelete: " . $e->getMessage());
+        }
 
         return redirect()->back()->with('success', 'Đã xóa vĩnh viễn khách hàng!');
     }
@@ -331,6 +321,17 @@ class CustomerController extends Controller
         }
 
         $customers = $query->orderByDesc('created_at')->get();
+
+        // Ghi nhật ký hoạt động
+        try {
+            \App\Traits\HasAuditLog::logManualEvent('export', User::class, null, null, [
+                'format' => 'CSV',
+                'record_count' => $customers->count(),
+                'export_type' => 'customer',
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to log customer export: " . $e->getMessage());
+        }
 
         $filename = "customers_export_" . date('YmdHis') . ".csv";
 

@@ -39,6 +39,16 @@
             'article.published' => 'Bài viết mới',
             'review.created' => 'Review mới',
             'inventory.low_stock' => 'Tồn kho thấp',
+            'lucky_wheel.won' => 'Quay số trúng thưởng',
+            'rewards.redeemed' => 'Đổi điểm thưởng',
+            'repair_ticket.created' => 'Tiếp nhận sửa chữa',
+            'repair_ticket.status_updated' => 'Cập nhật sửa chữa',
+            'service_invoice.created' => 'Hóa đơn dịch vụ mới',
+            'service_invoice.paid' => 'Thanh toán hóa đơn dịch vụ',
+            'installment.created' => 'Đăng ký trả góp',
+            'installment.payment_success' => 'Đóng tiền trả góp định kỳ',
+            'installment.approved' => 'Hồ sơ trả góp được duyệt',
+            'installment.rejected' => 'Hồ sơ trả góp bị từ chối',
         ],
         'filters' => [
             'type' => request('type'),
@@ -68,6 +78,16 @@
                     'article.published' => ['icon' => 'fa-newspaper', 'color' => 'article'],
                     'review.created' => ['icon' => 'fa-star', 'color' => 'review'],
                     'inventory.low_stock' => ['icon' => 'fa-boxes-stacked', 'color' => 'warning'],
+                    'lucky_wheel.won' => ['icon' => 'fa-clover', 'color' => 'lucky'],
+                    'rewards.redeemed' => ['icon' => 'fa-gift', 'color' => 'reward'],
+                    'repair_ticket.created' => ['icon' => 'fa-wrench', 'color' => 'repair'],
+                    'repair_ticket.status_updated' => ['icon' => 'fa-screwdriver-wrench', 'color' => 'repair'],
+                    'service_invoice.created' => ['icon' => 'fa-file-invoice', 'color' => 'invoice'],
+                    'service_invoice.paid' => ['icon' => 'fa-file-invoice-dollar', 'color' => 'invoice'],
+                    'installment.created' => ['icon' => 'fa-wallet', 'color' => 'installment'],
+                    'installment.payment_success' => ['icon' => 'fa-check-circle', 'color' => 'installment'],
+                    'installment.approved' => ['icon' => 'fa-circle-check', 'color' => 'order'],
+                    'installment.rejected' => ['icon' => 'fa-circle-xmark', 'color' => 'promo'],
                 ][$notification->type] ?? ['icon' => 'fa-bell', 'color' => 'default'];
             @endphp
             
@@ -213,6 +233,12 @@
 .notification-review { background: #fffbeb; color: #f59e0b; }
 .notification-warning { background: #fff7ed; color: #f97316; }
 .notification-default { background: #f8fafc; color: #64748b; }
+.notification-lucky { background: #fdf2f8; color: #db2777; }
+.notification-reward { background: #faf5ff; color: #7c3aed; }
+.notification-points { background: #fffbeb; color: #d97706; }
+.notification-repair { background: #f0f9ff; color: #0284c7; }
+.notification-invoice { background: #ecfdf5; color: #059669; }
+.notification-installment { background: #eef2ff; color: #4f46e5; }
 
 .notification-body { display: flex; flex-direction: column; gap: 8px; }
 .notification-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }

@@ -848,6 +848,7 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - Chuyển đổi cấu trúc nút bấm thành dạng xếp chồng chiều dọc (`flex-col w-full`) sang trọng theo chuẩn thiết kế macOS/iOS mới, đi kèm các nút gradient phủ bóng mờ và phản hồi nhấn phím (`active:scale-95`).
     - Khắc phục lỗi biên dịch `Expected ")" but found "{"` bằng cách bổ sung cú pháp đóng ngoặc `)}` bị thiếu ở cuối khối điều kiện JSX Modal tạo phòng mới (`isAddRoomOpen`).
 
+
 ### 53. Tích hợp dữ liệu thật cho Kênh nhắn tin (Communication Hub)
 - **Hạ tầng & API (ChatController.php & admin.php & migration):**
   - Đăng ký các REST API routes phục vụ CRUD phòng chat (`/chat/rooms`), thành viên (`/chat/rooms/{room_id}/members`), chức vụ/vai trò (`/chat/rooms/{room_id}/role`), gửi tin nhắn có đính kèm file (`/chat/messages`), và tương tác cảm xúc emoji (`/chat/messages/{message_id}/react`) trong `routes/admin.php`.
@@ -860,5 +861,142 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Loại bỏ hoàn toàn mảng mock tĩnh `ALL_MEMBERS` và thay bằng trạng thái `allEmployees` đồng bộ trực tiếp từ database.
   - Thay đổi toàn bộ các hàm handler sự kiện (gửi tin nhắn, tải file đính kèm thực tế, reaction emoji, thêm/xóa thành viên, đổi chức vụ thành viên, xóa phòng chat) từ mô phỏng giả lập sang gọi Axios trực tiếp tới REST backend, đảm bảo tính đồng bộ dữ liệu thời gian thực.
 - **Sửa lỗi Integrity Constraint Violation (role_id foreign key check failed):**
-  - Khắc phục lỗi khi đăng ký/đăng nhập Google, hệ thống cố gắng lưu user mới với `role_id = 3` nhưng bảng `roles` bị trống dẫn đến vi phạm ràng buộc khóa ngoại `users_role_id_foreign`.
   - Tích hợp cơ chế tự động điền (self-healing roles seeder) trong `AppServiceProvider@bootInfrastructure`. Nếu bảng `roles` rỗng, hệ thống sẽ tự động chèn 4 vai trò cốt lõi (`Admin`, `Quản lý`, `Khách hàng`, `Nhân viên`) vào database để đảm bảo toàn bộ luồng đăng ký/đăng nhập qua Google hay qua email diễn ra trơn tru.
+
+=======
+### 53. Tách biệt Chatbot AI tư vấn và Chatbot đặt lịch sửa chữa (Hybrid Intent Router & Card UI)
+- **Hạ tầng & Backend (ChatbotController.php & routes/web.php):**
+  - Triển khai **Hybrid Intent Router** để phân tách rõ ràng luồng tư vấn bán hàng RAG và luồng đặt lịch sửa chữa.
+  - Khi nhận yêu cầu chat, hệ thống sử dụng `detectIntent()` để phân loại ý định qua bộ lọc từ khóa nhanh `hasRepairKeywords()` kết hợp gọi Gemini API phân loại cực nhanh để trả về ý định `REPAIR` hoặc `CONSULT`.
+  - Nếu ý định là `REPAIR`, hệ thống lập tức ngắt luồng RAG và trả về phản hồi JSON có cờ `is_repair_form: true` cùng dữ liệu thông tin người dùng được pre-fill sẵn (tên, email, số điện thoại từ Auth session).
+  - Loại bỏ hoàn toàn cơ chế trích xuất thẻ JSON tự động cũ (`[[CREATE_REPAIR_TICKET:...]]`) để tránh lỗi AI ảo giác dữ liệu và tăng bảo mật.
+  - Xây dựng phương thức `createTicketFromChat` tiếp nhận dữ liệu từ Form trực quan, validate chặt chẽ các trường bắt buộc và tạo bản ghi phiếu sửa chữa `RepairTicket` mới.
+  - Đăng ký route POST `/chatbot/create-ticket` trong `routes/web.php`.
+- **Giao diện Frontend (chatbot.blade.php):**
+  - Cập nhật `callBackend` trả về toàn bộ đối tượng JSON response để lấy thông tin cờ điều khiển và dữ liệu pre-fill.
+  - Cập nhật `window.chatbotSend` nhận diện cờ `is_repair_form` để gọi hàm helper `appendRepairCard(defaultData)`.
+  - Hàm `appendRepairCard` chèn trực tiếp Form đặt lịch sửa chữa trực quan (Card UI) thiết kế hiện đại, đầy đủ input, màu sắc nổi bật vào khung chat (bỏ qua DOMPurify để bảo toàn form).
+  - Viết hàm xử lý gửi AJAX `window.submitRepairCard(event, cardId)` để gửi dữ liệu form tới máy chủ. Khi tạo phiếu thành công, form tự động chuyển sang giao diện thông báo màu xanh lá (success theme) hiển thị mã phiếu đặt lịch và ngày giờ hẹn.
+  - Tích hợp **Nút làm trống hộp thoại chat** (icon thùng rác `fa-trash-can`) trên Header của khung chat. Khi click, hệ thống hiển thị hộp thoại xác nhận đa ngôn ngữ (`chatbot_clear_confirm`), tiến hành xóa sạch nội dung hội thoại, reset bộ lưu trữ `localStorage` và tự động gửi lại lời chào đầu tiên của robot.
+
+### 54. Nâng cấp Bảo mật và Trải nghiệm Người dùng cho AI Chatbot (Chống Spam, Bắt buộc Đăng nhập, và Lọc mô tả Sửa chữa)
+- **Database & Model (Migration & User.php):**
+  - Tạo và chạy migration `2026_06_04_000301_add_chatbot_banned_until_to_users_table` bổ sung cột `chatbot_banned_until` kiểu timestamp (nullable) vào bảng `users`.
+  - Cập nhật `$casts` trong model `User.php` để tự động cast `chatbot_banned_until` và `comment_banned_until` thành kiểu `datetime`.
+- **Hạn chế Quyền truy cập (Auth & Ban Control):**
+  - **Backend (`ChatbotController.php`):** Thêm kiểm tra `auth()->check()` trong phương thức `chat()`. Khách vãng lai sẽ bị chặn bằng response 401. Đồng thời kiểm tra nếu người dùng bị ban (`chatbot_banned_until > now()`) thì trả về lỗi 403.
+  - **Frontend (`chatbot.blade.php`):** 
+    - Nếu là khách chưa đăng nhập (`@guest`), hiển thị màn hình yêu cầu đăng nhập bằng card thủy tinh sang trọng với nút chuyển hướng đến trang `/login`.
+    - Nếu là tài khoản bị ban chat (`chatbot_banned_until > now()`), hiển thị card thông báo khóa tính năng kèm mốc thời gian mở khóa chi tiết.
+    - Cập nhật mã nguồn Javascript kiểm tra và phòng tránh các lỗi `null reference` đối với các phần tử DOM chat khi khách chưa đăng nhập hoặc bị khóa tài khoản.
+- **Hệ thống Phát hiện Spam Tự động (Spam Detection System):**
+  - Lưu trữ và phân tích lịch sử thao tác của người dùng trong Session Laravel:
+    - **Velocity Check:** Giới hạn tối đa 6 tin nhắn trong vòng 20 giây.
+    - **Repetition Check:** Phát hiện người dùng gửi liên tiếp cùng một nội dung 4 lần.
+    - **Keyboard Smash Check:** Kiểm tra sự xuất hiện của từ bất thường có độ dài vượt quá 30 ký tự không dấu cách.
+  - Khi phát hiện hành vi spam, hệ thống tự động cập nhật `chatbot_banned_until = now()->addDays(30)` vào database để cấm người dùng chat 30 ngày, log cảnh báo vào hệ thống, và trả về lỗi 403.
+  - Trên Frontend, nếu nhận được mã lỗi ban hoặc yêu cầu đăng nhập khi đang chat, hệ thống tự động reload trang sau 2 giây để hiển thị giao diện khóa/đăng nhập tương ứng.
+- **AI Intent Validation (Bộ lọc Mô tả Sửa chữa):**
+  - Khi Hybrid Router phát hiện ý định `REPAIR`, hệ thống sẽ gọi Gemini kiểm tra xem mô tả lỗi của khách hàng đã ĐỦ thông tin thiết bị và mô tả lỗi cụ thể chưa.
+  - Nếu AI đánh giá là `INCOMPLETE`, thay vì hiển thị Card UI Đặt lịch, AI sẽ phản hồi bằng một câu chat thông thường lịch sự và nhẹ nhàng yêu cầu khách hàng cung cấp chi tiết thiết bị và lỗi (ví dụ: tên máy, hiện tượng hỏng hóc cụ thể).
+  - Chỉ khi mô tả đã `COMPLETE`, Card UI Đặt lịch sửa chữa mới được render, giúp hạn chế rác dữ liệu và nâng cao chất lượng dịch vụ.
+- **Kiểm thử:**
+  - Viết và chạy thành công file test `tests/Feature/ChatbotSecurityTest.php` kiểm thử toàn bộ các kịch bản: chặn khách vãng lai (401), chặn tài khoản bị ban (403), và cơ chế tự động cấm chat khi phát hiện spam tin nhắn liên tục (banned 30 ngày). 100% assertions hoạt động chính xác.
+
+### 55. Tích hợp Tính năng Quản trị Mở khóa cấm Chatbot cho Admin (Admin Unban Chatbot)
+- **Hạ tầng & Route (`routes/admin.php`):**
+  - Khai báo route POST `/permissions/{id}/unban-chatbot` ánh xạ tới `UserController@unbanChatbot` phục vụ yêu cầu AJAX từ bảng quản trị tài khoản.
+- **Backend Controller (`UserController.php`):**
+  - Thêm phương thức `unbanChatbot($id)` tìm kiếm người dùng, set trường `chatbot_banned_until` về `null`, lưu cơ sở dữ liệu và trả về JSON phản hồi thành công (xử lý tốt cả AJAX và request thường).
+- **Giao diện React Admin (`UserManagement.tsx`):**
+  - Cập nhật định nghĩa kiểu dữ liệu `User` bổ sung trường `chatbot_banned_until`.
+  - Hiển thị badge màu đỏ **"Cấm Chatbot"** kèm biểu tượng `ShieldAlert` và tooltip ghi rõ thời hạn cấm trong cột trạng thái của bảng danh sách người dùng.
+  - Tích hợp thêm nút hành động nhanh **"Mở khóa Chatbot"** (biểu tượng `ShieldCheck` màu xanh lá) trực tiếp tại mỗi dòng của người dùng đang bị cấm. Khi nhấn sẽ gọi hộp thoại xác nhận `Swal` và gửi AJAX mở khóa.
+  - Thiết kế thêm khối thông báo khóa Chatbot nổi bật màu đỏ kèm nút hành động **"Mở khóa"** nhanh bên trong **Modal chỉnh sửa thông tin người dùng** (`UserModal`), cho phép quản trị viên hủy cấm chat của tài khoản trực tiếp khi đang edit.
+- **Kiểm thử & Biên dịch:**
+  - Viết bổ sung test case `test_admin_can_unban_chatbot_user` trong `tests/Feature/ChatbotSecurityTest.php` mô phỏng tài khoản admin thực hiện mở khóa cho người dùng bị cấm chat chatbot qua AJAX. Test chạy thành công tuyệt đối (Green).
+  - Biên dịch toàn bộ tài nguyên frontend React bằng `npm run build` thành công, không gặp bất kỳ lỗi cú pháp hoặc cảnh báo kiểu dữ liệu TypeScript nào.
+
+### 56. Tích hợp Hệ thống Phòng chống Spam cho toàn bộ tính năng Hỗ trợ AI của Khách hàng
+- **Hệ thống hóa Chính sách Cấm (Ban & Spam Detection System):**
+  - Đồng bộ hóa lệnh cấm sử dụng cột `chatbot_banned_until` trong cơ sở dữ liệu trên tất cả các dịch vụ hỗ trợ AI công khai dành cho khách hàng.
+- **Áp dụng cho Phân tích & Chẩn đoán lỗi bằng AI (`ProfileController@aiDiagnoseRepairTicket`):**
+  - Chèn kiểm tra cấm tài khoản ở đầu phương thức. Nếu người dùng bị ban thì từ chối xử lý bằng mã HTTP 403.
+  - Tích hợp bộ kiểm duyệt spam nâng cao dựa trên lịch sử gửi yêu cầu lưu trong session:
+    - **Velocity Check:** Phát hiện gửi quá 6 yêu cầu chẩn đoán trong 20 giây.
+    - **Repetition Check:** Phát hiện gửi trùng nội dung mô tả lỗi liên tiếp 4 lần.
+    - **Keyboard Smash:** Phát hiện các từ khóa dài bất thường (> 30 ký tự) không chứa khoảng trắng.
+  - Khi phát hiện vi phạm, tài khoản lập tức bị cấm sử dụng các tính năng AI trong 30 ngày (`chatbot_banned_until = now()->addDays(30)`) và trả về 403 kèm thông báo chi tiết.
+- **Áp dụng cho Trợ lý SEO & Chấm điểm bài viết AI (`ArticleFrontendController@aiAssist`):**
+  - Tích hợp cơ chế kiểm tra trạng thái cấm và bộ lọc spam tương tự dựa trên tiêu đề và nội dung bài viết gửi lên phân tích thông qua AJAX.
+- **Kiểm thử tự động:**
+  - Bổ sung 4 kịch bản kiểm thử vào `tests/Feature/ChatbotSecurityTest.php` bao gồm:
+    1. `test_ai_diagnose_rejects_banned_user` (Chặn chẩn đoán lỗi đối với tài khoản đã bị cấm).
+    2. `test_ai_diagnose_spam_detection` (Phát hiện spam chẩn đoán lỗi và tự động cấm).
+    3. `test_ai_assist_rejects_banned_user` (Chặn chấm điểm bài viết đối với tài khoản đã bị cấm).
+    4. `test_ai_assist_spam_detection` (Phát hiện spam chấm điểm bài viết và tự động cấm).
+  - Kết quả chạy PHPUnit đạt **8/8 test cases thành công tuyệt đối (Green)**.
+
+### 57. Tối ưu Quy trình Đặt lịch Sửa chữa Có trạng thái (Stateful Repair Booking Flow) & Khóa Tư vấn
+- **Khóa luồng Đặt lịch (Booking Flow Lock):**
+  - Sử dụng cờ session `repair_booking_in_progress` để khóa người dùng vào tiến trình đặt lịch khi họ bắt đầu gửi yêu cầu sửa chữa. Khi cờ này có giá trị `true`, chatbot sẽ bỏ qua việc phân loại lại ý định thông thường (giúp tránh việc hệ thống nhảy sang tư vấn bán hàng khi khách gửi thông tin dòng máy hoặc IMEI không chứa từ khóa sửa chữa).
+- **Tích lũy & Hợp nhất Dữ liệu (State Accumulation):**
+  - Sử dụng mảng session `repair_booking_data` lưu trữ các thông tin đã thu thập (`device_model`, `issue_desc`, `imei_serial`).
+  - Mỗi khi khách hàng gửi câu chat tiếp theo trong tiến trình đặt lịch, hệ thống sẽ chuyển dữ liệu cũ đã tích lũy cùng câu chat mới cho Gemini API phân tích và hợp nhất một cách thông minh (giữ nguyên dữ liệu cũ nếu câu chat mới không thay đổi hoặc không cung cấp thông tin đó).
+- **Tiêu chuẩn Hoàn tất Tối thiểu (Minimum Info Requirements):**
+  - Chỉ yêu cầu tối thiểu thông tin dòng máy (`device_model`) và lỗi cụ thể (`issue_desc`) để tạo form đặt lịch, tránh bắt buộc quá khắt khe các ký tự/mô tả dài gây phiền hà cho người dùng.
+- **Hủy Tiến trình Đặt lịch:**
+  - Cho phép người dùng gõ lệnh "hủy", "hủy đặt lịch", hoặc "cancel" để tự do thoát khỏi luồng đặt lịch sửa chữa bất cứ lúc nào, dọn dẹp các session liên quan và quay về tư vấn sản phẩm thông thường.
+- **Kiểm thử Tự động:**
+  - Bổ sung kịch bản kiểm thử `test_stateful_repair_booking_flow` trong `tests/Feature/ChatbotSecurityTest.php` mô phỏng đầy đủ quy trình 3 bước gửi tin nhắn không đủ thông tin, bổ sung dòng máy, bổ sung mô tả lỗi, tự động kiểm tra lưu trữ session và xác thực Form Card được render đúng dữ liệu mặc định.
+  - Chạy PHPUnit thành công **9/9 test cases (43 assertions) đạt Green tuyệt đối**.
+
+### 58. Tích hợp Hệ thống Kiểm duyệt Ngôn từ & Chính sách Cấm 2 lần cho Chatbot (AI Moderation & Two-Strike Enforcement Policy)
+- **Kiểm duyệt ngôn từ thô tục / công kích (Abusive Language Moderation):**
+  - Tích hợp cơ chế kiểm duyệt nội dung kết hợp Regex blacklist tiếng Việt và Gemini API để phát hiện ngôn từ công kích, xúc phạm hoặc thô tục.
+  - Phân loại câu chat thành hai nhãn trạng thái chính: `TOXIC` và `CLEAN`.
+- **Chính sách xử phạt 2 cấp độ (Two-Strike Policy):**
+  - **Vi phạm lần 1 (Cảnh báo):** Ghi nhận cờ cảnh báo vi phạm vào session, chatbot gửi phản hồi cảnh báo lịch sự, yêu cầu khách hàng sử dụng ngôn từ văn minh.
+  - **Vi phạm lần 2 (Cấm 30 ngày):** Nếu người dùng tiếp tục gửi tin nhắn toxic lần thứ hai, hệ thống sẽ tự động cập nhật trường `chatbot_banned_until = now()->addDays(30)` vào cơ sở dữ liệu để khóa quyền sử dụng Chatbot trong 30 ngày, ghi log cảnh báo và chặn bằng phản hồi 403.
+- **Tối ưu hóa Mock API trong môi trường testing (Robust API Mocking Layer):**
+  - Xây dựng cơ chế Mock phản hồi ngay trong phương thức `callGeminiApi()` khi chạy ở môi trường `testing`, giúp tránh hoàn toàn các lỗi quota/rate-limit của Gemini API ngoài thực tế.
+  - Cải tiến bộ trích xuất thông tin của Mock sử dụng biểu thức chính quy chính xác để tách biệt tin nhắn người dùng khỏi prompt hướng dẫn (sử dụng regex `/Và câu chat mới nhất của khách hàng:\s*"([^"]+)"/u`) và trích xuất đúng block JSON đầu tiên (sử dụng regex `/\{[^\}]*\}/`). Điều này ngăn chặn việc nhận diện sai lệch hoặc trùng khớp các ví dụ trong prompt hướng dẫn của AI.
+- **Kiểm thử tự động hoàn hảo:**
+  - Bổ sung 2 ca kiểm thử quan trọng `test_abusive_language_warning_on_first_offense` và `test_abusive_language_ban_on_second_offense` vào bộ test `tests/Feature/ChatbotSecurityTest.php`.
+  - Khắc phục triệt để các lỗi timing, session state và assertion, đưa tỷ lệ chạy thành công đạt **11/11 test cases (50 assertions) vượt qua trọn vẹn (100% Green)**.
+
+### 59. Tự động xóa cache Chatbot khi đổi tài khoản & Nâng cấp giao diện thông báo SweetAlert2
+- **Xóa cache khi đổi tài khoản (Account Switch Cache Clear):**
+  - Trong `initChatSession()` tại `chatbot.blade.php`, bổ sung logic lưu `chatbot_user_id` vào `localStorage` chứa ID tài khoản hiện tại (hoặc `'guest'` nếu chưa đăng nhập).
+  - Khi phát hiện `chatbot_user_id` đã lưu khác với ID người dùng hiện tại (tức là khách hàng đã logout rồi login tài khoản khác), hệ thống tự động xóa toàn bộ lịch sử chat cũ trong `localStorage` (`HISTORY_KEY`), đảm bảo tài khoản mới không thấy nội dung hội thoại của tài khoản cũ.
+- **Nâng cấp giao diện xác nhận làm trống chat (SweetAlert2 Confirm Dialog):**
+  - Thay thế hộp thoại `confirm()` thô sơ của trình duyệt bằng **SweetAlert2** (`Swal.fire`) với thiết kế hiện đại: icon cảnh báo, nút xác nhận màu xanh dương `#0046ab`, nút hủy màu đỏ `#d70018`, bo tròn góc `rounded-2xl` và shadow đẹp.
+  - Tách logic xóa chat thành hàm riêng `performClearChat()` để tái sử dụng cho cả nhánh SweetAlert2 lẫn fallback `confirm()`.
+- **Nâng cấp thông báo lỗi đặt lịch sửa chữa (SweetAlert2 Error Alerts):**
+  - Thay thế toàn bộ `alert()` trong hàm `submitRepairCard()` bằng `Swal.fire` với icon `error` và nút xác nhận thương hiệu.
+  - Giữ fallback `alert()` trong trường hợp SweetAlert2 chưa được tải.
+- **File thay đổi:** `resources/views/partials/chatbot.blade.php`
+>>>>>>> origin/master
+=======
+
+### 54. Triển khai Hệ thống Nhật ký hoạt động nâng cao (Advanced Audit Log)
+- **Hạ tầng & Model & Migrations:**
+  - Hoàn thiện cấu trúc bảng `activity_logs` có tính chất đa hình (`causer`, `subject`), lưu trữ JSON (`old_values`, `new_values`), và bảo vệ chuỗi log bằng mật mã băm progressive `hash_chain`.
+  - Định nghĩa mối quan hệ đa hình `causer()` và `subject()` trong [ActivityLog.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/ActivityLog.php). Bổ sung accessor tương thích ngược `action` và quan hệ `user()` giúp các Blade view cũ hiển thị không bị lỗi.
+  - Cập nhật quan hệ `activityLogs()` trong [User.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/User.php) thành `morphMany`.
+- **Cơ chế băm & Che giấu thông tin & Lắng nghe sự kiện:**
+  - Viết [AuditHasher.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Services/AuditHasher.php) thực hiện băm progressive HMAC-SHA256 kết nối lũy tiến với dòng log trước đó dựa trên deterministic JSON sorting.
+  - Viết [AuditMasker.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Services/AuditMasker.php) lọc đệ quy che giấu thông tin nhạy cảm (`password`, `password_hash`, `otp_code`...).
+  - Thiết kế trait [HasAuditLog.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Traits/HasAuditLog.php) tự động đăng ký sự kiện `created`, `updated`, `deleted` của các Eloquent models (`Product`, `Order`, `User`) để gửi Job bất đồng bộ qua Queue.
+  - Hỗ trợ thêm phương thức tĩnh `logManualEvent()` ghi nhận các sự kiện tùy chỉnh (như xuất file báo cáo, đăng nhập).
+- **Hàng đợi & Cảnh báo bảo mật:**
+  - Viết [LogAuditEventJob.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Jobs/LogAuditEventJob.php) xử lý ghi nhận log với pessimistic locking dòng cuối để tránh race condition, đồng thời tự động đánh giá quy tắc gửi tin cảnh báo bảo mật nếu xuất báo cáo nhân sự/khách hàng quá 3 lần/giờ.
+- **Tích hợp & Đồng bộ:**
+  - Tích hợp ghi log khi nhân viên xuất file Excel/PDF trong [EmployeeController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/EmployeeController.php).
+  - Tích hợp ghi log khi khách hàng đăng nhập trong [AppServiceProvider.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Providers/AppServiceProvider.php).
+  - Thay thế toàn bộ mã `ActivityLog::create` cũ và lỗi thời trong [CustomerController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/CustomerController.php) sang cơ chế `logManualEvent` và auto Eloquent hooks của Trait, đồng thời đồng bộ hóa truy vấn log khách hàng.
+  - Tải và cài đặt trang quản trị nhật ký hoạt động có **Visual Diff Viewer (GitHub style)** màu sắc phân biệt đỏ/xanh tại [index.blade.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/activity-logs/index.blade.php).
+- **Kiểm thử:**
+  - Viết unit test hoàn chỉnh [AuditLogTest.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/tests/Feature/AuditLogTest.php) bao phủ: data masking, deterministic sorting, Eloquent hooks, and cryptographic hash chain verification / tamper detection.
+
+>>>>>>> xuanhoa/Nhat_ky_hoat_dong

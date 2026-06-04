@@ -84,24 +84,24 @@ const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate, userRol
 
     return (
         <>
-            <header className="h-28 bg-white/90 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-12 z-10 shrink-0 sticky top-0 shadow-sm transition-all duration-300">
+            <header className="h-20 md:h-28 bg-white/90 backdrop-blur-xl border-b border-slate-200/50 flex items-center justify-between px-4 md:px-12 z-10 shrink-0 sticky top-0 shadow-sm transition-all duration-300">
             {/* Nhóm trái: Tiêu đề trang & Nút đóng mở Sidebar */}
-            <div className="flex items-center gap-8 w-1/4">
+            <div className="flex items-center gap-3 md:gap-8 w-auto md:w-1/4 flex-1 min-w-0">
                 <button 
                     onClick={() => window.dispatchEvent(new CustomEvent('admin-sidebar-toggle'))} 
-                    className="w-12 h-12 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-2xl flex items-center justify-center transition-all duration-300 shadow-sm border border-indigo-100 group shrink-0" 
+                    className="w-10 h-10 md:w-12 md:h-12 bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-300 shadow-sm border border-indigo-100 group shrink-0" 
                     title={t("Thu gọn/Mở rộng Menu", "Collapse/Expand Menu")}
                 >
                     <i className="fa-solid fa-bars-staggered transition-transform group-hover:rotate-12"></i>
                 </button>
 
-                <div className="flex flex-col shrink-0">
-                    <h2 className="text-lg font-black text-slate-800 tracking-tighter uppercase leading-none mb-1.5">
+                <div className="flex flex-col min-w-0">
+                    <h2 className="text-sm md:text-lg font-black text-slate-800 tracking-tighter uppercase leading-none mb-1 md:mb-1.5 truncate">
                         {pageTitle}
                     </h2>
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-sm shadow-emerald-500/50"></div>
-                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.15em] leading-none">System Stable</p>
+                        <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase tracking-[0.15em] leading-none">System Stable</p>
                     </div>
                 </div>
             </div>
@@ -129,18 +129,18 @@ const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate, userRol
             </div>
 
             {/* Nhóm phải: Thanh điều khiển chứa Dropdown quả địa cầu chọn ngôn ngữ & Fullscreen */}
-            <div className="flex items-center justify-end gap-5 w-1/4">
-                <div className="flex items-center gap-1.5 bg-slate-50/50 p-1.5 rounded-2xl border border-slate-100">
+            <div className="flex items-center justify-end gap-2 md:gap-5 w-auto md:w-1/4 shrink-0">
+                <div className="flex items-center gap-1 bg-slate-50/50 p-1 md:p-1.5 rounded-2xl border border-slate-100">
                     {/* Trình chọn Dropdown ngôn ngữ */}
                     <div className="relative shrink-0" ref={langDropdownRef}>
                         <button 
                             onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                            className="w-16 h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl flex items-center justify-center gap-1.5 transition-all group"
+                            className="w-12 h-8 md:w-16 md:h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg md:rounded-xl flex items-center justify-center gap-1 md:gap-1.5 transition-all group"
                             title={t("Ngôn ngữ", "Language")}
                         >
                             <i className="fa-solid fa-globe text-sm"></i>
                             {/* Hiển thị nhãn ngôn ngữ hiện tại (VI/EN) dưới dạng Badge nhãn nhỏ */}
-                            <span className="bg-indigo-50 text-indigo-600 font-black px-1.5 py-0.5 rounded-lg uppercase tracking-wider text-[9px] group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-200">
+                            <span className="bg-indigo-50 text-indigo-600 font-black px-1 md:px-1.5 py-0.5 rounded-md md:rounded-lg uppercase tracking-wider text-[8px] md:text-[9px] group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-200">
                                 {currentLang.label}
                             </span>
                         </button>
@@ -170,7 +170,7 @@ const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate, userRol
                     {/* Nút phóng to / thu nhỏ toàn màn hình */}
                     <button 
                         onClick={toggleFullscreen}
-                        className="w-10 h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl flex items-center justify-center transition-all group"
+                        className="hidden md:flex w-10 h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl items-center justify-center transition-all group"
                         title={t("Toàn màn hình", "Fullscreen")}
                     >
                         <i className={`fa-solid ${isFullscreen ? 'fa-compress' : 'fa-expand'} text-sm`}></i>
@@ -180,7 +180,7 @@ const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate, userRol
                     {(userRoleId === 1 || userRoleId === 2) && (
                         <button 
                             onClick={() => setIsHubOpen(true)}
-                            className="relative group w-10 h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl flex items-center justify-center transition-all"
+                            className="relative group w-8 h-8 md:w-10 md:h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg md:rounded-xl flex items-center justify-center transition-all"
                             title={t("Trung tâm liên lạc", "Communication Hub")}
                         >
                             <i className="fa-solid fa-comment-dots text-sm"></i>
@@ -193,14 +193,14 @@ const AdminTopbar: React.FC<AdminTopbarProps> = ({ pageTitle, todayDate, userRol
                     )}
 
                     {/* Nút thông báo */}
-                    <div className="relative group cursor-pointer w-10 h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-xl flex items-center justify-center transition-all">
+                    <div className="relative group cursor-pointer w-8 h-8 md:w-10 md:h-10 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg md:rounded-xl flex items-center justify-center transition-all">
                         <i className="fa-solid fa-bell text-sm"></i>
-                        <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 border-2 border-white rounded-full shadow-sm shadow-rose-500/50"></span>
+                        <span className="absolute top-2 right-2 md:top-2.5 md:right-2.5 w-2 h-2 bg-rose-500 border-2 border-white rounded-full shadow-sm shadow-rose-500/50"></span>
                     </div>
                 </div>
 
                 {/* Nút tạo mới nhanh */}
-                <button className="w-12 h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-600/20 transition-all hover:-translate-y-1 active:translate-y-0 group">
+                <button className="hidden sm:flex w-12 h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl items-center justify-center shadow-xl shadow-indigo-600/20 transition-all hover:-translate-y-1 active:translate-y-0 group">
                     <i className="fa-solid fa-plus text-lg transition-transform group-hover:rotate-90"></i>
                 </button>
             </div>

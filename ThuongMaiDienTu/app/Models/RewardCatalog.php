@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasAuditLog;
 
 /**
  * Model RewardCatalog - Quản lý Danh mục phần thưởng và Quà tặng vòng quay may mắn.
@@ -17,6 +18,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class RewardCatalog extends Model
 {
+    use HasAuditLog;
+
     // Tên bảng liên kết trong database
     protected $table = 'reward_catalog';
 

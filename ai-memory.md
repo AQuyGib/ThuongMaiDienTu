@@ -1,6 +1,17 @@
 # Project Memory
 
 ## Current State & Focus
+- **Nâng cấp Nhật ký hoạt động chi tiết (Security Audit Logs Upgrade):**
+  - Mở rộng trait `\App\Traits\HasAuditLog` lên **22 model nghiệp vụ chính** (thêm 5 model: `PurchaseOrder`, `Setting`, `Warranty`, `Installment`, `RewardCatalog`).
+  - Chuyển đổi kiểu dữ liệu cột `subject_id` trong database sang kiểu chuỗi (`string`) để hỗ trợ đồng thời khóa chính dạng số (như sản phẩm) và dạng chữ (như `'theme_color'` của Setting) không bị lỗi trong MySQL strict mode, đồng thời cập nhật cơ chế băm của `AuditHasher` tương thích với khóa dạng chuỗi.
+  - Cập nhật tự động dịch nghĩa các model này sang tiếng Việt trong class `ActivityLog.php` (`getActionAttribute`).
+  - Thiết lập cột **"Hành động / Thực thể"** trên giao diện chính hiển thị trực quan mô tả hành động (ví dụ: "Thêm mới sản phẩm (ID: #12)") thay vì tên model thô.
+  - Tích hợp từ điển dịch nghĩa **`keyMap`** tiếng Việt trong JavaScript tại giao diện để dịch toàn bộ khóa thuộc tính tiếng Anh (như `base_price` thành `Giá gốc`, `is_approved` thành `Trạng thái duyệt`) trong Diff Viewer, hiển thị song song khóa thô nhỏ phía dưới làm tài liệu tham khảo.
+  - Thiết lập Job `LogAuditEventJob` chạy đồng bộ (`sync`) bằng cách gán `$this->connection = 'sync'` trực tiếp trong hàm khởi tạo (`__construct`) để tránh lỗi xung đột thuộc tính (Trait Property Conflict) với `Queueable` trên các môi trường chạy PHP 8.x.
+  - Chuyển đổi các câu lệnh xóa trực tiếp bằng Query Builder sang Eloquent instance deletes để kích hoạt sự kiện Eloquent `deleted` đầy đủ.
+  - Bổ sung seeder **`ActivityLogSeeder`** giúp sinh dữ liệu nhật ký hoạt động mẫu cực kỳ đa dạng, thực tế và tự động tính toán liên kết chuỗi mã băm bảo mật giúp trang xác minh toàn vẹn hoạt động thành công 100%.
+  - Giải phóng thành công 702 job kẹt cũ, đưa toàn bộ lịch sử hoạt động hiển thị đầy đủ trên trang quản trị.
+>>>>>>> xuanhoa/Nhat_ky_hoat_dong
 - **Tích hợp dữ liệu thật cho Kênh nhắn tin (Communication Hub):**
   - **Kết nối API & Database:** Thay thế toàn bộ dữ liệu mock trong component React `CommunicationHub.tsx` bằng các request `axios` live gọi đến hệ thống REST backend.
   - **Artisan Migrate Tự Động:** Tích hợp gọi Artisan migrate tự động ngay trong hàm `init()` của `ChatController.php` để tự động tạo các bảng cơ sở dữ liệu `chat_rooms`, `chat_room_members`, `chat_messages` nếu chưa được migrate, hạn chế việc phải chạy thủ công từ terminal.
@@ -18,6 +29,42 @@
   - Làm phẳng cấu trúc dữ liệu phân trang trả về trong `EmployeeController.php` để đưa các trường `current_page`, `last_page`, `per_page`, `total`, `from`, `to`, `links` ra ngoài cùng cấp với `data`.
   - Khắc phục triệt để lỗi React component (`EmployeeManager.tsx` & `EmployeeTable.tsx`) không đọc được các trường metadata bị lồng trong cấu trúc `meta` mặc định của Laravel API Resource.
   - Đảm bảo các chỉ số số trang, thanh trượt hiển thị chính xác range `Hiển thị X - Y trong tổng số Z` hoạt động vô cùng trơn tru và trực quan.
+=======
+- **Tối ưu giao diện Flash Sale & Nút mua ngay / Thêm giỏ hàng ở Trang chủ (Ngày 04/06/2026):**
+  - **Khắc phục:**
+    - Cải thiện độ tương phản và căn giữa văn bản tiến trình Flash Sale (`.fs-progress-text`) và biểu tượng lửa (`.fs-fire-icon`) trên thanh tiến trình bằng cách thay đổi màu nền wrapper sang `#fca5a5`, thêm flex alignment, thiết lập `position: absolute; top: 50%; transform: translateY(-50%);` và đặt màu sắc rực rỡ `#ffeb3b` cho biểu tượng lửa.
+    - Đổi cấu trúc thẻ sản phẩm Flash Sale từ dạng thẻ link `<a>` bao bọc toàn bộ thành thẻ `div.product-card` chứa liên kết ảnh/thông tin ở trên và nhóm nút chức năng "Mua ngay" (nút có màu gradient đỏ rực rỡ), "Thêm vào giỏ" ở dưới cùng.
+    - Cập nhật file partial `partials/product_grid_items.blade.php` cho các sản phẩm thông thường ở trang chủ: đưa nhóm nút "Mua ngay" (màu xanh dương thương hiệu) và "Thêm vào giỏ" cố định ở phía dưới cùng thẻ sản phẩm thay vì nút lơ lửng khi hover.
+    - Bổ sung hàm `buyNow()` bằng AJAX trong Javascript block của `home.blade.php` để xử lý thêm sản phẩm và tự động chuyển hướng người dùng trực tiếp tới trang giỏ hàng (`cart.index`).
+- **Sửa lỗi thêm sản phẩm vào Flash Sale ở Trang quản trị Admin (Ngày 04/06/2026):**
+  - **Vấn đề:** Khi thêm một sản phẩm vào chiến dịch Flash Sale bằng AJAX ở Admin, hệ thống báo lỗi SweetAlert: `"Missing required parameter for [Route: admin.flash-sales.products.destroy] ... [Missing parameter: flash_sale_product]"`. Nguyên nhân do trong hàm `store` của `FlashSaleProductController.php` khi tạo link `delete_url` cho dữ liệu trả về đã gọi đến thuộc tính `$flashSaleProduct->id`. Tuy nhiên khóa chính của bảng `flash_sale_products` là `flash_sale_product_id` nên thuộc tính `id` trả về `null`, dẫn đến hàm sinh URL `route()` bị thiếu tham số bắt buộc.
+  - **Khắc phục:** Sửa đổi `$flashSaleProduct->id` thành `$flashSaleProduct->flash_sale_product_id` trong phương thức `store()` của `FlashSaleProductController.php`. Hệ thống hoạt động hoàn hảo và không còn báo lỗi khi gán sản phẩm vào Flash Sale thông qua AJAX.
+- **Đồng bộ nhánh tối ưu hóa (Merge master into AnhQuy/ToiUu) - Ngày 04/06/2026:**
+  - Thực hiện merge thành công phiên bản mới nhất của nhánh `master` (remote `origin/master`) vào nhánh hiện tại `AnhQuy/ToiUu` (fast-forward hoàn toàn sạch sẽ không phát sinh xung đột).
+  - Đồng bộ hóa toàn bộ các nâng cấp mới nhất của hệ thống thông báo đa kênh (Notification System), mô-đun trả góp tích hợp AI (Installment), quản lý thu chi (Cashbook), và các tính năng giao diện, danh mục mới.
+- **Sửa lỗi Unit Test của dịch vụ Trả góp AI (InstallmentAIService):**
+  - **Vấn đề:** Ca kiểm thử `test_low_risk_assessment` thất bại do hàm `env('GEMINI_API_KEY')` trong `InstallmentAIService` không bị xóa bởi `putenv('GEMINI_API_KEY=')` trong Laravel test environment, dẫn đến việc service vẫn gọi thật đến API Gemini thay vì chạy logic Heuristic Fallback giả lập.
+  - **Khắc phục:**
+    - Chuyển logic lấy API key trong `InstallmentAIService.php` từ `env('GEMINI_API_KEY') ?: config('services.gemini.api_key')` thành gọi duy nhất `config('services.gemini.api_key')` để tuân thủ Laravel best practice (không gọi trực tiếp `env()` ngoài file cấu hình, tránh lỗi khi cấu hình được cache).
+    - Cập nhật phương thức `setUp()` trong `InstallmentAIServiceTest.php` để thiết lập config `services.gemini.api_key` thành `null`. Nhờ đó, việc giả lập Fallback chạy chính xác và 100% test suite vượt qua thành công (`Tests: 56 passed`).
+- **Nâng cấp Hệ thống Thông báo Toàn diện (System-Wide Notification System):**
+  - Thiết kế và tích hợp luồng thông báo tự động qua `NotificationService` vào các dịch vụ & controller nghiệp vụ cốt lõi:
+    - **Rewards & Lucky Wheel (`RewardsService`):** Tự động gửi thông báo `rewards.redeemed` khi đổi điểm thưởng thành công (kèm mã voucher & hạn dùng 30 ngày) và `lucky_wheel.won` khi quay trúng thưởng (kèm mã trúng giải & hạn nhận quà 7 ngày).
+    - **Repair Ticket Management (`RepairTicketInvoiceController`):** Tự động gửi thông báo tiếp nhận thiết bị `repair_ticket.created` và cập nhật tiến trình `repair_ticket.status_updated` bằng tiếng Việt thân thiện dựa trên IMEI & trạng thái phiếu sửa chữa cho khách hàng liên kết.
+    - **Service Invoice Processing (`ServiceInvoiceController` & `RepairTicketInvoiceController`):** Tự động gửi thông báo `service_invoice.created` khi xuất hóa đơn dịch vụ mới và `service_invoice.paid` khi hóa đơn được chuyển sang trạng thái đã thanh toán (`paid`).
+    - **Installment Transactions (`Admin\InstallmentController`):** Tự động gửi thông báo `installment.payment_success` xác nhận đóng tiền trả góp hàng tháng định kỳ cho từng kỳ thanh toán (term number) cụ thể.
+  - **Cơ chế xử lý thông báo thông minh khi dùng số điện thoại khác / không khớp tài khoản:**
+    - Hệ thống ưu tiên truy vấn theo `user_id` liên kết trực tiếp (nếu có) để gửi thông báo hệ thống vào tài khoản khách hàng, tránh việc nhập số điện thoại liên hệ khác làm gián đoạn thông báo.
+    - Khi không tìm thấy theo số điện thoại, hệ thống tự động đối chiếu thông tin qua Email (`customer_email`) của khách hàng để tìm tài khoản khớp.
+    - Trong trường hợp khách hàng hoàn toàn không có tài khoản (hoặc thông tin hoàn toàn mới), hệ thống sẽ tự động kích hoạt gửi **Email thông báo trực tiếp qua SMTP (Laravel Mail)** tới email khách hàng đã đăng ký trên form sửa chữa/hóa đơn, đảm bảo khách hàng vãng lai vẫn cập nhật được tiến độ.
+  - **Cơ chế điều hướng và tra cứu thông minh khi nhấp vào thông báo:**
+    - Đối với thông báo liên quan đến đổi thưởng/quay số (`rewards.redeemed`, `lucky_wheel.won`), `action_url` được gán đến trang lịch sử phần thưởng `/rewards/history`.
+    - Đối với thông báo liên quan đến đơn hàng (`order.created`, `order.status_updated`), `action_url` tự động đính kèm tham số mã đơn hàng dưới dạng `/orders?code=[order_code]`.
+    - Trang tra cứu hành trình đơn hàng (`ordertracking.blade.php`) được tích hợp script lắng nghe sự kiện `DOMContentLoaded` tự động lấy mã `code` từ URL, điền vào ô tìm kiếm và kích hoạt submit form tra cứu tự động bằng AJAX để hiển thị ngay tiến trình đơn hàng.
+  - **Tối ưu hóa UI/UX hòm thư thông báo (`notifications.index.blade.php`):**
+    - Bổ sung toàn bộ các phân loại thông báo mới vào bộ lọc tìm kiếm và mảng cấu hình giao diện.
+    - Thiết kế hệ thống icon động (`fa-clover`, `fa-gift`, `fa-wrench`, `fa-file-invoice`, etc.) và phối màu CSS phong phú, hài hòa (Rich Aesthetics) mang lại trải nghiệm Premium trực quan cho người dùng.
+>>>>>>> origin/master
 - **Tích hợp nhánh AI & Hoàn tất Merge (Merge Branch AnhQuy/TichHopAI into master):**
   - Thực hiện merge thành công nhánh `AnhQuy/TichHopAI` vào nhánh `master` và giải quyết xung đột thủ công trong file `ThuongMaiDienTu/ai-memory.md` bằng cách hợp nhất lịch sử phát triển của cả hai nhánh một cách khoa học.
   - Đồng bộ và cài đặt toàn bộ dependencies mới của dự án bằng lệnh `composer install --ignore-platform-reqs`, giúp tải đầy đủ các thư viện hỗ trợ AI và API Sanctum.
@@ -48,6 +95,9 @@
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
   - Merged `master` into branch `Vinhem/Tinhphivanchuyen` successfully to sync the latest project developments.
+=======
+  - Merged `master` into branch `AnhQuy/ThongBao` successfully.
+>>>>>>> origin/master
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
   - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
@@ -218,6 +268,8 @@
   - Added `min_rank` constraint to each lucky wheel configuration (None, Bronze, Silver, Gold, Diamond), allowing rank restrictions for custom wheels.
   - Implemented Client-side and Backend member tier validation checking before allowing a user to spin a wheel.
 - **Merge Activities:**
+  - Thực hiện merge thành công nhánh `AnhQuy/ToiUu` vào nhánh `master` (03/06/2026). Giải quyết xung đột thủ công trong file `ThuongMaiDienTu/app/Http/Controllers/RewardsController.php` liên quan đến validate loại vòng quay `wheel_type` (đã giữ lại cấu trúc validate chi tiết 4 tầng vòng quay standard, silver, gold, diamond của nhánh AnhQuy/ToiUu). Chạy thành công toàn bộ suite kiểm thử và đẩy các thay đổi lên remote.
+  - Đã thực hiện merge nhánh `master` (remote `origin/master`) vào nhánh hiện tại `AnhQuy/ToiUu` thành công mà không xảy ra xung đột (03/06/2026). Toàn bộ các cập nhật giao diện, Live Theme Customizer, logic giỏ hàng/thanh toán và cải tiến trong `start.bat` từ master đã được đồng bộ hóa.
   - Merged `master` into branch `Vinhem/ThanhToan` successfully, implemented checkout page validation, and merged `Vinhem/ThanhToan` back into `master`.
   - Checked and confirmed that branch `master` is already fully merged into branch `AnhQuy/Chatbot` (both local branches point to the same commit `40882a8b`).
 - **Articles & Lifestyle CRUD (`AnhQuy/Crud-baiviet`):**
@@ -230,6 +282,39 @@
   - Service-based backend filtering via `ProductFilterService`.
 
 ## Files Changed
+- **Security Audit Logs Expansion:**
+  - `ThuongMaiDienTu/app/Jobs/LogAuditEventJob.php`
+  - `ThuongMaiDienTu/app/Models/User.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/CommentManagementController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/CustomerController.php`
+  - `ThuongMaiDienTu/app/Models/ActivityLog.php`
+  - `ThuongMaiDienTu/app/Models/Article.php`
+  - `ThuongMaiDienTu/app/Models/Category.php`
+  - `ThuongMaiDienTu/app/Models/Supplier.php`
+  - `ThuongMaiDienTu/app/Models/Attribute.php`
+  - `ThuongMaiDienTu/app/Models/Page.php`
+  - `ThuongMaiDienTu/app/Models/FlashSale.php`
+  - `ThuongMaiDienTu/app/Models/CouponFlashSale.php`
+  - `ThuongMaiDienTu/app/Models/WarehouseTransfer.php`
+  - `ThuongMaiDienTu/app/Models/InventoryAudit.php`
+  - `ThuongMaiDienTu/app/Models/Cashbook.php`
+  - `ThuongMaiDienTu/app/Models/HomeSection.php`
+  - `ThuongMaiDienTu/app/Models/ServiceInvoice.php`
+  - `ThuongMaiDienTu/app/Models/RepairTicket.php`
+  - `ThuongMaiDienTu/app/Models/Video.php`
+  - `ThuongMaiDienTu/app/Models/Review.php`
+  - `ThuongMaiDienTu/app/Models/VideoComment.php`
+  - `ThuongMaiDienTu/app/Models/Role.php`
+  - `ThuongMaiDienTu/app/Models/PurchaseOrder.php`
+  - `ThuongMaiDienTu/app/Models/Setting.php`
+  - `ThuongMaiDienTu/app/Models/Warranty.php`
+  - `ThuongMaiDienTu/app/Models/Installment.php`
+  - `ThuongMaiDienTu/app/Models/RewardCatalog.php`
+  - `ThuongMaiDienTu/resources/views/admin/activity-logs/index.blade.php`
+  - `ThuongMaiDienTu/database/seeders/ActivityLogSeeder.php`
+  - `ThuongMaiDienTu/database/seeders/DatabaseSeeder.php`
+  - `ThuongMaiDienTu/database/migrations/2026_01_01_000010_create_activity_logs_table.php`
+  - `ThuongMaiDienTu/app/Services/AuditHasher.php`
 - **Checkout / Payment Validation:**
   - `ThuongMaiDienTu/resources/views/frontend/cart/pay.blade.php`
 - **Articles:**
@@ -285,6 +370,12 @@
   - `ThuongMaiDienTu/resources/views/frontend/cart/apply-discount-code.blade.php`
 
 ## Important Logic & Behavior Changes
+- **Đồng bộ hóa (Sync) Job ghi nhật ký hoạt động:**
+  - Cấu hình `public $connection = 'sync';` cho `LogAuditEventJob.php` để lưu vết lịch sử trực tiếp vào database trong cùng request. Tránh lỗi kẹt queue jobs khi dev local không chạy queue worker.
+- **Kích hoạt Eloquent Deletion Events:**
+  - Chuyển đổi các thao tác xóa mềm/xóa cứng hàng loạt (batch deletes) và xóa các bình luận/đánh giá con liên đới từ Query Builder sang Eloquent instance deletes (`get()->each->delete()`) trong `CommentManagementController.php` và `CustomerController.php` để đảm bảo model event `deleted` luôn được kích hoạt.
+- **Log cập nhật thông tin User Optimistic Update:**
+  - Tích hợp gọi hàm `dispatchAuditJob` thủ công vào phương thức `optimisticUpdate` của Model `User` (Khách hàng và Nhân viên), giúp ghi nhận chính xác vết thay đổi thông tin của quản trị viên bất chấp query-builder bypass Eloquent events.
 - **Lucky Wheel Rank-Restrictions:**
   - Added a `min_rank` column in the Admin Quick Manager Modal. The dropdown options map to database tier names (`Dong`, `Bac`, `Vang`, `KimCuong`) and "none".
   - Created a client-side rank verification dictionary (`rankOrder`) in JavaScript to check and alert user if their active tier (`member_tier`) is insufficient for the selected wheel before triggering the spin API.
@@ -321,6 +412,9 @@
   - Xác nhận tất cả các phân hệ frontend chính như so sánh sản phẩm (`compare`), giỏ hàng & tính phí vận chuyển (`cart`), trang cá nhân (`profile`), và tích điểm đổi quà/vòng quay may mắn (`rewards`) đều đã có đầy đủ comment tiếng Việt chuyên sâu hỗ trợ phát triển lâu dài.
 
 ## TODOs & Follow-up Work
+- **Environment & System Setup / Audit Logs Restart:**
+  - ** restart server yêu cầu:** Sau khi thay đổi cấu hình connection của Job sang `sync`, người dùng cần restart PHP dev server (tắt terminal chạy `.\start` và bật lại) để PHP Server giải phóng bộ nhớ đệm Opcache/RAM và nạp cấu hình mới.
+  - **Giải phóng 702 jobs kẹt cũ:** Người dùng có thể chạy lệnh `php artisan queue:work --queue=audit_logs,default --once` thủ công trên terminal để xử lý nốt các jobs cũ bị kẹt trong DB trước đó sang bảng `activity_logs`.
 - **Lucky Wheel & Rewards:**
   - Check database translations for reward model attributes if multi-language data-level localization becomes necessary.
   - Test custom sound effects triggering on spin start and stop if requested by the user.
@@ -334,6 +428,31 @@
   - Verify the new detail-page compare button visually against the existing product action buttons.
   - Consider extracting compare button styles into reusable Blade components to reduce duplication.
   - Verify and apply the new migration against the actual database engine.(`RewardSeeder.php`, `RewardHistorySeeder.php`).
+- **QA & Security Audit & Remediation (Khắc phục hoàn toàn các lỗi bảo mật & logic):**
+  - Thực hiện vá lỗi thành công 100% các lỗ hổng phát hiện trong QA Audit:
+    - **DOM-based XSS ở Chatbot**: Tích hợp `DOMPurify` làm sạch HTML tin nhắn AI trước khi chèn vào DOM.
+    - **F12 bypass số tin nhắn chatbot**: Di chuyển cơ chế đếm từ client sang Session (`chatbot_message_count`) và thực hiện phát hành coupon ở backend tin cậy.
+    - **Spam gửi chatbot / Double submit**: Vô hiệu hóa input/button khi đang chờ AI phản hồi.
+    - **Trừ tồn kho quà tặng (`RewardsService@spinWheel`)**: Sử dụng giao dịch DB kèm `lockForUpdate()` và `decrement('stock')` đảm bảo trừ kho atomic, không phát sinh quà tặng quá giới hạn tồn kho.
+    - **Validation wheel_type**: Xác thực đầu vào `wheel_type` nghiêm ngặt tại `RewardsController@spin`.
+    - **Sửa lỗi cú pháp index.blade.php**: Xóa bỏ thuộc tính không hợp lệ `style.styleDisplay` và khôi phục biến `ok` trong JS lọc quà tặng.
+    - **Chống F12 bypass chẩn đoán sửa chữa AI (`storeRepairTicket`)**: Sử dụng cơ chế token đối soát Session (`ai_diagnose_token`) thay vì tin cậy dữ liệu ẩn client gửi lên.
+    - **Đồng bộ hóa lỗi AJAX Flash Sale**: Trả về mã lỗi JSON 422 thay vì HTTP 302 Redirect khi lỗi giá bán Flash Sale lớn hơn hoặc bằng giá gốc trong `FlashSaleProductController@store`.
+    - **Giới hạn cứng danh sách so sánh**: Áp dụng `array_slice` với `MAX_ITEMS` trong `CompareController@data` và `searchCompare` để ngăn chặn DoS qua mảng ID khổng lồ.
+
+## Files Changed
+- **QA & Security Audit Report:**
+  - `C:\Users\ANH QUY\.gemini\antigravity\brain\270e51ca-65ed-4380-a631-d02340a0a674\security_qa_defect_report.md`
+- **Security Hotfixes:**
+  - `ThuongMaiDienTu/app/Http/Controllers/ChatbotController.php`
+  - `ThuongMaiDienTu/resources/views/partials/chatbot.blade.php`
+  - `ThuongMaiDienTu/app/Services/RewardsService.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/RewardsController.php`
+  - `ThuongMaiDienTu/resources/views/frontend/rewards/index.blade.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ProfileController.php`
+  - `ThuongMaiDienTu/resources/views/frontend/profile.blade.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/Admin/FlashSaleProductController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/CompareController.php`
 
 ## TODOs & Follow-up Work
 - **Lucky Wheel & Rewards:**
@@ -370,6 +489,11 @@
   - **Sửa lỗi cú pháp HTML vỡ khung top-bar:** Tái cấu trúc khối lệnh điều kiện `@if` ẩn hiện Topbar thông báo trong `header.blade.php`. Chuyển dịch vị trí đóng thẻ `@endif` xuống bao trọn toàn bộ cấu trúc `.top-bar` thay vì cắt ngang giữa chừng. Lỗi này trước đây khiến trình duyệt render dư thừa các thẻ `</div>` khi thanh thông báo bị ẩn (`announcement_show` = 0), gây vỡ toàn bộ cấu trúc layout DOM của trang web.
   - **Dọn dẹp cache hệ thống:** Đã thực hiện xóa cache cấu hình và view (`optimize:clear`) để hệ thống nạp lại lớp service provider mới nhất và áp dụng tức thì.
   - **Sắp xếp phân hệ Tùy biến Header & Footer trực quan:** Tái cấu trúc bộ chọn tab (`activeTab`) trong component `ThemeSettings.tsx` từ dạng hàng ngang (flex row) thành dạng cột đứng (flex column). Nhờ đó, tùy chọn "Tùy biến Header (Đầu trang)" luôn nằm ở **phía trên** và "Tùy biến Footer (Chân trang)" luôn nằm ở **phía dưới**, tương ứng 100% với vị trí thực tế của các phần tử này trên bố cục một website. Tối ưu hóa thêm độ trễ `setTimeout` when cuộn mượt (smooth scroll) xem trước để bảo đảm trình duyệt tính toán và dịch chuyển tiêu điểm chính xác tuyệt đối.
+=======
+- Kiểm thử tích hợp toàn diện hệ thống để đảm bảo tính ổn định sau đợt vá bảo mật.
+- Theo dõi log lỗi của `RepairAIService` và chatbot để tối ưu hóa phản hồi của AI.
+
+>>>>>>> origin/master
 
 - **Merge Master vào xuanhoa/CRUD_NhanVien & Giải quyết Xung đột:**
   - **AppServiceProvider.php:** Giải quyết xung đột bằng cách gộp thành công định nghĩa `Gate::policy` cho `EmployeePolicy` (từ nhánh CRUD_NhanVien) vào trong hàm `boot()` chung với các hàm hạ tầng khác của `master` (`bootInfrastructure`, `bootLoginHistory`, và `bootObservers`).
@@ -446,3 +570,37 @@
 - **Sửa lỗi Integrity Constraint Violation (role_id foreign key check failed):**
   - Khắc phục lỗi khi đăng ký/đăng nhập Google, hệ thống cố gắng lưu user mới với `role_id = 3` nhưng bảng `roles` bị trống dẫn đến vi phạm ràng buộc khóa ngoại `users_role_id_foreign`.
   - Tích hợp cơ chế tự động điền (self-healing roles seeder) trong `AppServiceProvider@bootInfrastructure`. Nếu bảng `roles` rỗng, hệ thống sẽ tự động chèn 4 vai trò cốt lõi (`Admin`, `Quản lý`, `Khách hàng`, `Nhân viên`) vào database để đảm bảo toàn bộ luồng đăng ký/đăng nhập qua Google hay qua email diễn ra trơn tru.
+- **Hoàn thiện & Xác minh Hệ thống Nhật ký hoạt động (Security Audit Logs Completion):**
+  - **Bổ sung keyMap tiếng Việt**: Thêm đầy đủ bản dịch thuộc tính tiếng Việt cho các model mới tích hợp như `Warranty` và `RewardCatalog` trong từ điển JavaScript `keyMap` tại tệp `index.blade.php`.
+  - **Xác minh E2E bằng Browser Agent**: Chạy kịch bản tự động hóa kiểm thử giao diện để xác minh luồng đăng nhập, bộ lọc, xem chi tiết thay đổi dữ liệu (Diff Modal) và nút kiểm tra toàn vẹn chuỗi log bảo mật. Toàn bộ hệ thống kiểm tra mật mã băm lũy tiến hoạt động hoàn hảo và báo cáo toàn vẹn dữ liệu tuyệt đối an toàn.
+  - **Sửa lỗi load trang lần đầu trên SPA (Soft Navigation Fix)**: 
+    - Khắc phục lỗi script JS của Nhật ký hoạt động không khởi tạo khi click từ sidebar (do wrapper lắng nghe sự kiện `DOMContentLoaded` vốn đã xảy ra trước đó). Cập nhật điều kiện khởi tạo tự động dựa trên `document.readyState`.
+    - Thêm `/admin/activity-logs` vào danh sách loại trừ điều hướng mềm trong `app.tsx` để đồng bộ hành vi nạp lại trang sạch sẽ (full reload) như các phân hệ quản trị lớn khác.
+  - **Tích hợp Hoạt động liên tục (Live Feed Polling)**:
+    - Bổ sung nút toggle "Hoạt động liên tục: Bật/Tắt" với chấm tín hiệu màu xanh lá nhấp nháy chuyển động.
+    - Cấu hình hàm chạy ngầm `pollNewLogs` cứ mỗi 5 giây gửi request ngầm lấy dữ liệu mới nhất (vẫn giữ nguyên các filter tìm kiếm hiện tại của trang).
+    - Tự động so sánh ID và chèn thêm các bản ghi hoạt động mới lên đầu bảng, hiển thị hiệu ứng nền xanh lá nhạt nổi bật rồi phai màu mượt mà trong 3 giây.
+    - Tự động giới hạn số dòng tối đa là 15 bản ghi trên trang và cập nhật lại số thứ tự (STT) trực quan.
+    - Chuyển đổi phương thức lắng nghe sự kiện click mở Diff Modal sang mô hình **Event Delegation** trên `document` giúp hỗ trợ gán sự kiện hoàn hảo cho cả các dòng log mới được chèn động vào DOM.
+
+## Update: June 04, 2026
+- **Sửa lỗi nhãn nhật ký hoạt động cho Nhân viên:**
+  - Khắc phục lỗi hiển thị nhãn "khách hàng" trong nhật ký hoạt động khi thực hiện các hành động Thêm mới / Cập nhật / Xóa / Khôi phục nhân viên (do cả hai đối tượng này đều chia sẻ chung model `User`).
+  - Cập nhật hàm `getActionAttribute()` trong [ActivityLog.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/ActivityLog.php) để tự động phát hiện `role_id` (trích xuất từ `old_values`, `new_values` hoặc truy vấn trực tiếp từ CSDL qua `withTrashed()`) và hiển thị chính xác là "nhân viên" cho các tài khoản có vai trò thuộc nhóm quản trị/nhân sự (role_id: 1, 2, 4).
+  - Tích hợp thêm trường `export_type` vào sự kiện `logManualEvent` khi xuất báo cáo trong [EmployeeController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/EmployeeController.php) và [CustomerController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/CustomerController.php) để phân biệt và ghi nhận chính xác loại báo cáo "nhân sự" và "khách hàng" trong logs.
+  - **Tối ưu hóa hiển thị Responsive:** Thiết kế giao diện trang nhật ký hoạt động và bảng so sánh thay đổi (Diff Modal) tương thích 100% với mọi loại thiết bị (Mobile, Tablet, Desktop). Sử dụng kỹ thuật ẩn cột thứ yếu (`hidden md:table-cell`, `hidden lg:table-cell`), cấu trúc lưới lọc linh hoạt (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-6`), thanh cuộn mượt ngang cho bảng diff (`min-w-[600px] overflow-x-auto`), và các thẻ thông tin (badges) bo tròn tự động xuống dòng giúp tối ưu hóa không gian hiển thị trên màn hình nhỏ.
+  - **Đại trùng tu Hệ thống Menu & Thanh tiêu đề Admin (Sidebar & Topbar Responsive):**
+    - Cập nhật [AdminSidebar.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/AdminSidebar.tsx) hỗ trợ cơ chế trượt (sliding drawer overlay) hoàn toàn mới trên thiết bị di động (dưới `1024px`) với trạng thái `mobileOpen`. Khi mở, sidebar trượt ra đè lên màn hình; khi bấm ra ngoài (backdrop overlay), sidebar tự động trượt ẩn đi.
+    - Cập nhật [AdminTopbar.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/AdminTopbar.tsx) giảm chiều cao trên mobile (`h-20` thay vì `h-28`), giảm padding (`px-4` thay vì `px-12`), tự động ẩn các chức năng phụ như nút Toàn màn hình và nút Tạo mới nhanh (plus button) trên mobile để tăng diện tích hiển thị. Thêm thuộc tính `truncate` và `min-w-0` giúp tiêu đề trang tự co giãn không đè lên các nút điều khiển.
+    - Tích hợp hàm `toggleSidebar` vào tệp [master.blade.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/layouts/master.blade.php) để kết nối trơn tru sự kiện click của backdrop overlay với sự kiện React giúp đóng menu hoàn hảo.
+  - **Phân trang Nhật ký hoạt động:**
+    - Cập nhật [ActivityLogController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/ActivityLogController.php) thay đổi số bản ghi phân trang từ 15 thành **20 bản ghi/trang** (`paginate(20)`).
+    - Cập nhật cấu hình JavaScript tự động cập nhật Live Feed Polling trong [index.blade.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/activity-logs/index.blade.php) để kiểm soát cắt bớt các dòng dư thừa ở cuối khi vượt quá 20 dòng thay vì 15 dòng như cũ.
+- **Sửa lỗi mã thoát (Exit Code) của start.bat:**
+  - Khắc phục lỗi kịch bản khởi chạy `start.bat` trả về mã thoát lỗi (exit code 1) khi người dùng chọn thoát khỏi menu hoặc khi kịch bản kết thúc và dọn dẹp các tiến trình ngầm (Node/PHP) bằng lệnh `taskkill` (thất bại do không tìm thấy tiến trình đang chạy).
+  - Thêm nhãn `:EXIT_CLEAN` ở cuối tệp kịch bản thực hiện reset mã lỗi `errorlevel` về 0 (`cmd /c "exit /b 0"`) và thoát kịch bản sạch sẽ (`exit /b 0`), chuyển đổi các lệnh thoát menu và tắt servers hướng về nhãn này.
+- **Viết chú thích (Comments) Tiếng Việt dễ hiểu:**
+  - Đã bổ sung chú thích Tiếng Việt chi tiết giải thích logic cho đoạn mã phân định vai trò động (role detection & fallback) tại [ActivityLog.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/ActivityLog.php).
+  - Đã bổ sung chú thích Tiếng Việt chi tiết cho luồng reset mã lỗi thoát an toàn `:EXIT_CLEAN` tại [start.bat](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/start.bat).
+  - **Xử lý dọn dẹp file `[OK]`:** Đã thực hiện quét toàn diện và xác nhận xóa sạch hoàn toàn file rác `[OK]` do lệnh echo redirection cũ trong `start.bat` tạo ra, đảm bảo thư mục workspace sạch sẽ 100%.
+  - **Viết tiếng Việt cho comment Nhật ký hoạt động:** Đã dịch hóa toàn bộ comment tiếng Anh còn lại sang tiếng Việt dễ hiểu trong các tệp liên quan đến Nhật ký hoạt động bao gồm Job xử lý (`LogAuditEventJob.php`), tệp cơ sở dữ liệu (`2026_01_01_000010_create_activity_logs_table.php`) và giao diện hiển thị (`index.blade.php`).

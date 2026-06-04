@@ -94,12 +94,42 @@ const getActiveIconColor = (label: string): string => {
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logoutRoute, csrfToken }) => {
     const [collapsed, setCollapsed] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
 
     useEffect(() => {
-        const handleToggle = () => setCollapsed(prev => !prev);
+        const handleToggle = () => {
+            if (window.innerWidth < 1024) {
+                setMobileOpen(prev => !prev);
+            } else {
+                setCollapsed(prev => !prev);
+            }
+        };
         window.addEventListener('admin-sidebar-toggle', handleToggle);
         return () => window.removeEventListener('admin-sidebar-toggle', handleToggle);
     }, []);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth >= 1024) {
+                setMobileOpen(false);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        const overlay = document.getElementById('sidebarOverlay');
+        if (overlay) {
+            if (mobileOpen) {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('block');
+            } else {
+                overlay.classList.remove('block');
+                overlay.classList.add('hidden');
+            }
+        }
+    }, [mobileOpen]);
 
     useEffect(() => {
         const navEl = document.getElementById('admin-sidebar-nav');
@@ -126,10 +156,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ user, menu, homeRoute, logo
 
     return (
         <aside
-            className={`bg-slate-900 text-white h-full flex flex-col border-r-4 border-indigo-600 transition-all duration-300 ${collapsed ? 'w-20' : 'w-72'}`}
+            className={`bg-slate-900 text-white h-full flex flex-col border-r-4 border-indigo-600 transition-all duration-300 
+                lg:static lg:translate-x-0 
+                fixed top-0 bottom-0 left-0 z-40 
+                ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} 
+                ${collapsed ? 'lg:w-20 w-72' : 'w-72'}`}
             style={{ minHeight: '100vh' }}
         >
-            <div className={`h-28 flex items-center border-b border-slate-800/50 transition-all ${collapsed ? 'justify-center px-0' : 'px-8'}`}>
+            <div className={`h-20 md:h-28 flex items-center border-b border-slate-800/50 transition-all ${collapsed ? 'justify-center px-0' : 'px-8'}`}>
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 rotate-3 shrink-0">
                         <i className="fa-solid fa-bolt-lightning text-white text-lg"></i>

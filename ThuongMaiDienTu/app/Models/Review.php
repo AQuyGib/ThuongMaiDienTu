@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Review extends Model
 {
+    use \App\Traits\HasAuditLog;
+
     protected $fillable = ['product_id', 'user_id', 'author_name', 'parent_id', 'rating', 'content', 'media', 'is_approved', 'report_count'];
 
     protected $casts = [

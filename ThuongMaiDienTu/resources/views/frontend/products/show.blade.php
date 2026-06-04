@@ -578,11 +578,11 @@
                     <option>JCB</option>
                 </select>
                 <div style="margin-bottom:10px;">3. Chọn số tiền và kỳ hạn trả góp</div>
-                <select style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px; outline:none;">
-                    <option>3 tháng - 0% lãi suất</option>
-                    <option>6 tháng - 0% lãi suất</option>
-                    <option>9 tháng - 1% lãi suất</option>
-                    <option>12 tháng - 1% lãi suất</option>
+                <select id="instCreditCardPeriod" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px; outline:none;">
+                    <option value="3">3 tháng - 0% lãi suất</option>
+                    <option value="6">6 tháng - 0% lãi suất</option>
+                    <option value="9">9 tháng - 1% lãi suất</option>
+                    <option value="12">12 tháng - 1% lãi suất</option>
                 </select>
             </div>
 
@@ -593,12 +593,58 @@
                     <div style="background:#f26b21; color:#fff; font-weight:bold; padding:5px 10px; border-radius:4px;">Kredivo</div>
                     <strong>Trả góp qua Kredivo</strong>
                 </div>
-                <p style="font-size:13px; color:#555;">Kredivo là giải pháp mua trước trả sau tiện lợi. Hạn mức lên đến 50 triệu đồng. Quy trình phê duyệt nhanh chóng, không cần thẻ tín dụng.</p>
+                <p style="font-size:13px; color:#555; margin-bottom:15px;">Kredivo là giải pháp mua trước trả sau tiện lợi. Hạn mức lên đến 50 triệu đồng. Quy trình phê duyệt nhanh chóng, không cần thẻ tín dụng.</p>
+                <div style="margin-bottom:10px;">Chọn kỳ hạn Kredivo</div>
+                <select id="instKredivoPeriod" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-bottom:15px; outline:none;">
+                    <option value="3">3 tháng - 0% lãi suất (Phí dịch vụ 0đ)</option>
+                    <option value="6">6 tháng - 2.5% lãi suất (Phí bảo hiểm + Phí thu hộ)</option>
+                    <option value="12">12 tháng - 2.5% lãi suất (Phí bảo hiểm + Phí thu hộ)</option>
+                </select>
             </div>
             
             <div id="instTradeInArea" style="margin-top:20px; display:flex; gap:10px; align-items:center;">
                 <input type="checkbox" id="tradeInCheck" style="width:18px; height:18px; cursor:pointer;">
                 <label for="tradeInCheck" style="font-size:14px; cursor:pointer; font-weight:600; color:#0046ab;">Bạn có muốn đăng ký thu cũ lên đời? (Trợ giá lên đến 2 triệu)</label>
+            </div>
+
+            <!-- Customer Information Section -->
+            <div id="instCustomerInfo" style="margin-top:20px; border-top:1px dashed #ddd; padding-top:20px;">
+                <h4 style="margin-bottom:15px; font-size:14px; color:#333;"><i class="fa-solid fa-user-pen" style="color:#0046ab"></i> Thông tin người đăng ký</h4>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                    <div>
+                        <label style="display:block; font-size:12px; margin-bottom:5px; color:#555;">Họ và tên <span style="color:#d70018;">*</span></label>
+                        <input type="text" id="instCustomerName" value="{{ auth()->user()->full_name ?? '' }}" placeholder="Nhập họ và tên" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; outline:none; font-size:13px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:12px; margin-bottom:5px; color:#555;">Số điện thoại <span style="color:#d70018;">*</span></label>
+                        <input type="text" id="instCustomerPhone" value="{{ auth()->user()->phone_number ?? '' }}" placeholder="Nhập số điện thoại" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; outline:none; font-size:13px;">
+                    </div>
+                </div>
+                <div id="instCccdArea" style="margin-bottom:15px;">
+                    <label style="display:block; font-size:12px; margin-bottom:5px; color:#555;">Số CCCD (12 chữ số) <span style="color:#d70018;">*</span></label>
+                    <input type="text" id="instCustomerIdCard" placeholder="Nhập 12 số CCCD" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; outline:none; font-size:13px;">
+                </div>
+                
+                <!-- Shipping Method Selection -->
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; font-size:12px; margin-bottom:8px; color:#555; font-weight:600;">Phương thức nhận hàng <span style="color:#d70018;">*</span></label>
+                    <div style="display:flex; gap:15px;">
+                        <label style="flex:1; display:flex; align-items:center; gap:8px; padding:10px 15px; border:1px solid #0046ab; border-radius:8px; cursor:pointer; font-size:13px; background:#eef2ff;" id="lblShipStore">
+                            <input type="radio" name="shipping_method" value="store" checked onchange="toggleShippingAddress(false)" style="cursor:pointer;">
+                            <span>Nhận tại cửa hàng</span>
+                        </label>
+                        <label style="flex:1; display:flex; align-items:center; gap:8px; padding:10px 15px; border:1px solid #ccc; border-radius:8px; cursor:pointer; font-size:13px; background:#fff;" id="lblShipHome">
+                            <input type="radio" name="shipping_method" value="home" onchange="toggleShippingAddress(true)" style="cursor:pointer;">
+                            <span>Giao hàng tận nhà</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Shipping Address Input -->
+                <div id="instAddressArea" style="margin-bottom:15px; display:none;">
+                    <label style="display:block; font-size:12px; margin-bottom:5px; color:#555;">Địa chỉ nhận hàng tại nhà <span style="color:#d70018;">*</span></label>
+                    <input type="text" id="instShippingAddress" value="{{ auth()->user()->address ?? '' }}" placeholder="Nhập địa chỉ cụ thể (Số nhà, đường, phường/xã, quận/huyện...)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; outline:none; font-size:13px;">
+                </div>
             </div>
             
             <div id="instActionArea" style="display:flex; gap:10px; margin-top:20px;">
@@ -707,6 +753,7 @@ const oldPrice = {{ $oldPrice ?? 0 }};
 const variants = {!! $variantsJson !!}; // Nhận mảng đối tượng variants từ PHP sang
 
 let currentExtraPrice = 0; // Giá trị chênh lệch (cộng thêm) của biến thể đang chọn
+let selectedVariantId = null;
 
 function formatCurrency(num) {
     return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "đ";
@@ -816,7 +863,9 @@ function calculateVariantPrice() {
 
     if(matchedVariant) {
         currentExtraPrice = parseInt(matchedVariant.extra_price) || 0;
+        selectedVariantId = matchedVariant.variant_id;
     } else {
+        selectedVariantId = null;
         // Fallback: Lấy giá chênh lệch của tùy chọn ROM nếu không tìm thấy tổ hợp chính xác
         const fallbackRom = variants.find(v => v.rom === romVal);
         currentExtraPrice = fallbackRom ? (parseInt(fallbackRom.extra_price) || 0) : 0;
@@ -981,6 +1030,7 @@ function toggleWishlist() {
 let instCurrentBasePrice = basePrice;
 let instSelectedCompany = 'Shinhan Finance';
 let instSelectedMonth = 6;
+let instSelectedMethod = 'financial_company';
 
 function checkAuthAndOpenInstallment() {
     @auth
@@ -996,12 +1046,47 @@ function checkAuthAndOpenInstallment() {
 function openInstallmentModal() {
     document.getElementById('installmentModal').classList.add('active');
     document.getElementById('instSuccessMsg').style.display = 'none';
+    
+    const radioStore = document.querySelector('input[name="shipping_method"][value="store"]');
+    if (radioStore) {
+        radioStore.checked = true;
+    }
+    toggleShippingAddress(false);
+
     switchInstTab(0);
     updateInstallmentTable();
 }
 
 function closeInstallmentModal() {
     document.getElementById('installmentModal').classList.remove('active');
+}
+
+function toggleShippingAddress(isHome) {
+    const addressArea = document.getElementById('instAddressArea');
+    const lblStore = document.getElementById('lblShipStore');
+    const lblHome = document.getElementById('lblShipHome');
+    
+    if (isHome) {
+        if (addressArea) addressArea.style.display = 'block';
+        if (lblHome) {
+            lblHome.style.borderColor = '#0046ab';
+            lblHome.style.background = '#eef2ff';
+        }
+        if (lblStore) {
+            lblStore.style.borderColor = '#ccc';
+            lblStore.style.background = '#fff';
+        }
+    } else {
+        if (addressArea) addressArea.style.display = 'none';
+        if (lblStore) {
+            lblStore.style.borderColor = '#0046ab';
+            lblStore.style.background = '#eef2ff';
+        }
+        if (lblHome) {
+            lblHome.style.borderColor = '#ccc';
+            lblHome.style.background = '#fff';
+        }
+    }
 }
 
 function switchInstTab(idx) {
@@ -1012,12 +1097,126 @@ function switchInstTab(idx) {
     document.querySelectorAll('.inst-tab-content').forEach((el, i) => {
         el.style.display = (i === idx) ? 'block' : 'none';
     });
+
+    const cccdArea = document.getElementById('instCccdArea');
+    if (idx === 0) {
+        instSelectedMethod = 'financial_company';
+        if (cccdArea) cccdArea.style.display = 'block';
+    } else if (idx === 1) {
+        instSelectedMethod = 'credit_card';
+        if (cccdArea) cccdArea.style.display = 'none';
+    } else {
+        instSelectedMethod = 'kredivo';
+        if (cccdArea) cccdArea.style.display = 'none';
+    }
 }
 
 function confirmInstallment() {
-    const msg = document.getElementById('instSuccessMsg');
-    msg.style.display = 'block';
-    msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const nameInput = document.getElementById('instCustomerName');
+    const phoneInput = document.getElementById('instCustomerPhone');
+    const cccdInput = document.getElementById('instCustomerIdCard');
+    const tradeInInput = document.getElementById('tradeInCheck');
+
+    const name = nameInput ? nameInput.value.trim() : '';
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+    const idCard = cccdInput ? cccdInput.value.trim() : '';
+    const tradeIn = tradeInInput ? tradeInInput.checked : false;
+
+    if (!name) {
+        showToast('Vui lòng nhập họ và tên.', 'error');
+        return;
+    }
+    if (!phone.match(/^0[0-9]{8,9}$/)) {
+        showToast('Số điện thoại không hợp lệ (phải bắt đầu bằng số 0 và có 9-10 chữ số).', 'error');
+        return;
+    }
+    if (instSelectedMethod === 'financial_company') {
+        if (!idCard.match(/^[0-9]{12}$/)) {
+            showToast('Số CCCD không hợp lệ (phải đủ 12 chữ số).', 'error');
+            return;
+        }
+    }
+
+    let partner = '';
+    let period = 6;
+
+    if (instSelectedMethod === 'financial_company') {
+        partner = instSelectedCompany;
+        period = instSelectedMonth;
+    } else if (instSelectedMethod === 'credit_card') {
+        const bankSelect = document.querySelector('#instTabContent1 select:nth-of-type(1)');
+        const bank = bankSelect ? bankSelect.value : 'Vietcombank';
+        partner = bank + ' Credit Card';
+        const periodSelect = document.getElementById('instCreditCardPeriod');
+        period = periodSelect ? parseInt(periodSelect.value) : 6;
+    } else if (instSelectedMethod === 'kredivo') {
+        partner = 'Kredivo';
+        const periodSelect = document.getElementById('instKredivoPeriod');
+        period = periodSelect ? parseInt(periodSelect.value) : 3;
+    }
+
+    let shippingAddress = 'Nhận tại cửa hàng';
+    const shipMethod = document.querySelector('input[name="shipping_method"]:checked')?.value;
+    if (shipMethod === 'home') {
+        const addressInput = document.getElementById('instShippingAddress');
+        shippingAddress = addressInput ? addressInput.value.trim() : '';
+        if (!shippingAddress) {
+            showToast('Vui lòng nhập địa chỉ nhận hàng tại nhà.', 'error');
+            return;
+        }
+    }
+
+    const submitBtn = document.querySelector('#instActionArea button:nth-of-type(2)');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerText = 'ĐANG XỬ LÝ...';
+    }
+
+    fetch('{{ route("installments.register") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            product_id: '{{ $product->product_id }}',
+            variant_id: selectedVariantId,
+            method: instSelectedMethod,
+            partner: partner,
+            period: period,
+            customer_name: name,
+            customer_phone: phone,
+            customer_id_card: idCard,
+            trade_in: tradeIn,
+            shipping_address: shippingAddress
+        })
+    })
+    .then(response => response.json())
+    .then(res => {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'XÁC NHẬN TRẢ GÓP';
+        }
+        if (res.status === 'success') {
+            document.getElementById('instSuccessMsg').style.display = 'block';
+            document.getElementById('instSuccessMsg').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (cccdInput) cccdInput.value = '';
+            showToast('Đăng ký trả góp thành công!');
+            setTimeout(() => {
+                closeInstallmentModal();
+            }, 3000);
+        } else {
+            showToast(res.message || 'Có lỗi xảy ra', 'error');
+        }
+    })
+    .catch(error => {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = 'XÁC NHẬN TRẢ GÓP';
+        }
+        console.error('Error:', error);
+        showToast('Đã xảy ra lỗi hệ thống khi đăng ký trả góp!', 'error');
+    });
 }
 
 // Đóng modal khi nhấn ra ngoài vùng nội dung modal

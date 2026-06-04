@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Http\Controllers; // giữ nguyên namespace cũ nếu cần, hoặc namespace đúng của file là App\Http\Controllers\Admin
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -445,6 +447,9 @@ class NotificationCampaignController extends Controller
 
     /**
      * API JSON trả về số lượng thông báo chưa đọc của Admin đang đăng nhập.
+=======
+     * API JSON trả về số lượng thông báo chưa đọc của admin hiện tại.
+>>>>>>> origin/master
      */
     public function unreadCount(Request $request)
     {

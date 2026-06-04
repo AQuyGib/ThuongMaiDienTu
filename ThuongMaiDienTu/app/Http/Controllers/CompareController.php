@@ -62,6 +62,9 @@ class CompareController extends Controller
             $ids = $this->getCompareIds();
         }
 
+        // Giới hạn số lượng ID tối đa để tránh lỗi tràn bộ nhớ hoặc DoS database
+        $ids = array_slice($ids, 0, self::MAX_ITEMS);
+
         // Nếu không có sản phẩm nào để so sánh, trả về mảng rỗng ngay lập tức
         if (empty($ids)) {
             return response()->json(['products' => [], 'comparison_data' => []]);
@@ -120,8 +123,8 @@ class CompareController extends Controller
     public function searchCompare(Request $request)
     {
         $keyword = $request->get('keyword', '');
-        // Danh sách các ID sản phẩm cần loại trừ (vì đã có trên bảng so sánh rồi)
-        $excludeIds = $this->normalizeIds($request->get('exclude', []));
+        // Danh sách các ID sản phẩm cần loại trừ (vì đã có trên bảng so sánh rồi, tối đa MAX_ITEMS)
+        $excludeIds = array_slice($this->normalizeIds($request->get('exclude', [])), 0, self::MAX_ITEMS);
 
         // Xây dựng câu truy vấn tìm kiếm nhanh
         $query = Product::query()

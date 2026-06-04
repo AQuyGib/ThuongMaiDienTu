@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             ProductComboSeeder::class,
             HomeSectionSeeder::class,
             OrderSeeder::class,
+            WarrantySeeder::class,
+            WarrantyClaimSeeder::class,
             InventoryMovementSeeder::class,
             InventoryAuditSeeder::class,
             CommentSeeder::class,
@@ -32,10 +34,12 @@ class DatabaseSeeder extends Seeder
             RepairTicketSeeder::class,
             ArticleSeeder::class,
             AITestArticleSeeder::class,
-            CashbookSeeder::class,
             FlashSaleSeeder::class,
             LargeProductSeeder::class,
             WishlistRecentlyViewedSeeder::class,
+            InstallmentSeeder::class,
+            CashbookSeeder::class,
+            ActivityLogSeeder::class,
         ]);
     }
 }

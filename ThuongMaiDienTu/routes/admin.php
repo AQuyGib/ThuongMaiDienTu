@@ -85,6 +85,7 @@ Route::post('/employees/batch-action', [\App\Http\Controllers\Admin\EmployeeCont
 Route::get('permissions/{id}/sessions', [UserController::class, 'showSessions'])->name('users.sessions');
 Route::delete('permissions/sessions/{sessionId}', [UserController::class, 'deleteSession'])->name('users.sessions.destroy');
 Route::post('permissions/{id}/revoke-sessions', [UserController::class, 'revokeSessions'])->name('users.revoke');
+Route::post('permissions/{id}/unban-chatbot', [UserController::class, 'unbanChatbot'])->name('users.unban-chatbot');
 
 // Quản lý Vai trò (Roles)
 Route::resource('roles', RoleController::class)->names([
@@ -207,4 +208,10 @@ Route::delete('/chat/rooms/{room_id}/members/{user_id}', [ChatController::class,
 Route::post('/chat/rooms/{room_id}/role', [ChatController::class, 'updateRole'])->name('chat.rooms.role.update');
 Route::post('/chat/messages', [ChatController::class, 'sendMessage'])->name('chat.messages.send');
 Route::post('/chat/messages/{message_id}/react', [ChatController::class, 'toggleReaction'])->name('chat.messages.react');
+
+// ===== Activity Logs (Audit System) =====
+use App\Http\Controllers\Admin\ActivityLogController;
+Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+Route::post('/activity-logs/verify', [ActivityLogController::class, 'verify'])->name('activity-logs.verify');
+
 

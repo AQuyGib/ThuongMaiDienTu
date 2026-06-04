@@ -136,6 +136,16 @@ class ServiceInvoiceController extends Controller
             'created_by' => auth()->id(),
         ]);
 
+        if ($invoice->status === 'paid') {
+            \App\Models\Cashbook::create([
+                'type' => 'Income',
+                'amount' => $invoice->total_amount,
+                'description' => 'Thanh toán hóa đơn dịch vụ #' . $invoice->invoice_no . ' - Khách hàng: ' . $invoice->customer_name,
+                'reference_id' => $invoice->id,
+                'reference_type' => 'service_invoice',
+            ]);
+        }
+
         // 5. Nếu hóa đơn được xuất từ một phiếu sửa chữa, tự động lưu ngược thông tin hóa đơn vào phiếu sửa chữa đó
         if ($request->filled('repair_ticket_id')) {
             $repairTicket = \App\Models\RepairTicket::find($request->integer('repair_ticket_id'));
@@ -144,6 +154,68 @@ class ServiceInvoiceController extends Controller
                     'invoice_no' => $invoice->invoice_no,
                     'invoiced_at' => now(),
                 ]);
+            }
+        }
+
+        // Gửi thông báo cho khách hàng
+        $user = null;
+        if ($request->filled('repair_ticket_id')) {
+            $repairTicket = \App\Models\RepairTicket::find($request->integer('repair_ticket_id'));
+            if ($repairTicket) {
+                if ($repairTicket->user_id) {
+                    $user = \App\Models\User::find($repairTicket->user_id);
+                } elseif ($repairTicket->customer_phone) {
+                    $user = \App\Models\User::where('phone_number', $repairTicket->customer_phone)->first();
+                }
+            }
+        }
+
+        if (!$user && $invoice->customer_phone) {
+            $user = \App\Models\User::where('phone_number', $invoice->customer_phone)->first();
+        }
+
+        if (!$user && $invoice->customer_email) {
+            $user = \App\Models\User::where('email', $invoice->customer_email)->first();
+        }
+
+        $statusMap = [
+            'draft' => 'Bản nháp',
+            'issued' => 'Đã phát hành',
+            'paid' => 'Đã thanh toán',
+            'cancelled' => 'Đã hủy',
+        ];
+        $statusText = $statusMap[$invoice->status] ?? $invoice->status;
+        $formattedAmount = number_format($invoice->total_amount);
+
+        if ($user) {
+            try {
+                app(\App\Services\NotificationService::class)->createForUser($user, [
+                    'type' => 'service_invoice.created',
+                    'title' => 'Hóa đơn dịch vụ mới được xuất',
+                    'content' => "Hóa đơn dịch vụ #{$invoice->invoice_no} trị giá {$formattedAmount}đ cho dịch vụ '{$invoice->service_name}' đã được tạo ở trạng thái: {$statusText}.",
+                    'action_url' => url('/profile'),
+                    'data' => [
+                        'invoice_id' => $invoice->id,
+                        'invoice_no' => $invoice->invoice_no,
+                        'total_amount' => $invoice->total_amount,
+                        'status' => $invoice->status,
+                    ]
+                ]);
+            } catch (\Throwable $ne) {}
+        } else {
+            // Gửi email trực tiếp cho khách hàng vãng lai
+            if ($invoice->customer_email) {
+                try {
+                    \Illuminate\Support\Facades\Mail::raw(
+                        "Kính gửi quý khách {$invoice->customer_name},\n\nHóa đơn dịch vụ #{$invoice->invoice_no} trị giá {$formattedAmount}đ cho dịch vụ '{$invoice->service_name}' đã được tạo thành công.\nTrạng thái hiện tại: {$statusText}.\n\nCảm ơn quý khách đã tin tưởng và sử dụng dịch vụ của chúng tôi!",
+                        function ($message) use ($invoice) {
+                            $message->to($invoice->customer_email)
+                                    ->subject("[Hệ thống] Hóa đơn dịch vụ mới #{$invoice->invoice_no}");
+                        }
+                    );
+                } catch (\Throwable $me) {
+                    \Illuminate\Support\Facades\Log::error("Lỗi gửi email hóa đơn vãng lai: " . $me->getMessage());
+                }
             }
         }
 
@@ -302,7 +374,64 @@ class ServiceInvoiceController extends Controller
             $updateData['issued_date'] = now()->toDateString();
         }
 
+        $oldStatus = $serviceInvoice->status;
         $serviceInvoice->update($updateData);
+
+        if ($serviceInvoice->status === 'paid' && $oldStatus !== 'paid') {
+            $exists = \App\Models\Cashbook::where('reference_id', $serviceInvoice->id)
+                ->where('reference_type', 'service_invoice')
+                ->exists();
+            if (!$exists) {
+                \App\Models\Cashbook::create([
+                    'type' => 'Income',
+                    'amount' => $serviceInvoice->total_amount,
+                    'description' => 'Thanh toán hóa đơn dịch vụ #' . $serviceInvoice->invoice_no . ' - Khách hàng: ' . $serviceInvoice->customer_name,
+                    'reference_id' => $serviceInvoice->id,
+                    'reference_type' => 'service_invoice',
+                ]);
+            }
+
+            // Gửi thông báo thanh toán thành công
+            $user = null;
+            if ($serviceInvoice->customer_phone) {
+                $user = \App\Models\User::where('phone_number', $serviceInvoice->customer_phone)->first();
+            }
+            if (!$user && $serviceInvoice->customer_email) {
+                $user = \App\Models\User::where('email', $serviceInvoice->customer_email)->first();
+            }
+
+            if ($user) {
+                try {
+                    $formattedAmount = number_format($serviceInvoice->total_amount);
+                    app(\App\Services\NotificationService::class)->createForUser($user, [
+                        'type' => 'service_invoice.paid',
+                        'title' => 'Thanh toán hóa đơn dịch vụ thành công',
+                        'content' => "Hóa đơn dịch vụ #{$serviceInvoice->invoice_no} trị giá {$formattedAmount}đ cho dịch vụ '{$serviceInvoice->service_name}' đã được thanh toán thành công. Cảm ơn quý khách!",
+                        'action_url' => url('/profile'),
+                        'data' => [
+                            'invoice_id' => $serviceInvoice->id,
+                            'invoice_no' => $serviceInvoice->invoice_no,
+                            'total_amount' => $serviceInvoice->total_amount,
+                        ]
+                    ]);
+                } catch (\Throwable $ne) {}
+            } else {
+                if ($serviceInvoice->customer_email) {
+                    try {
+                        $formattedAmount = number_format($serviceInvoice->total_amount);
+                        \Illuminate\Support\Facades\Mail::raw(
+                            "Kính gửi quý khách {$serviceInvoice->customer_name},\n\nHóa đơn dịch vụ #{$serviceInvoice->invoice_no} trị giá {$formattedAmount}đ cho dịch vụ '{$serviceInvoice->service_name}' đã được thanh toán thành công.\n\nCảm ơn quý khách đã tin tưởng sử dụng dịch vụ của chúng tôi!",
+                            function ($message) use ($serviceInvoice) {
+                                $message->to($serviceInvoice->customer_email)
+                                        ->subject("[Hệ thống] Xác nhận thanh toán hóa đơn #{$serviceInvoice->invoice_no}");
+                            }
+                        );
+                    } catch (\Throwable $me) {
+                        \Illuminate\Support\Facades\Log::error("Lỗi gửi email xác nhận thanh toán vãng lai: " . $me->getMessage());
+                    }
+                }
+            }
+        }
 
         return redirect()->route('admin.service-invoices.index')->with('success', 'Cập nhật hóa đơn dịch vụ thành công.');
     }

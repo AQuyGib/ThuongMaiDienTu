@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class RepairTicket extends Model
 {
-    use HasFactory;
+    use HasFactory, \App\Traits\HasAuditLog;
 
     protected $primaryKey = 'ticket_id';
     public $timestamps = false;
