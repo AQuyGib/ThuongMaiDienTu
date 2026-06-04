@@ -3,6 +3,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model {
+    use \App\Traits\HasAuditLog;
+
     protected $primaryKey = 'role_id';
     public $timestamps = false;
     protected $guarded = [];

@@ -77,6 +77,10 @@
     {{-- SCRIPT chung --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function toggleSidebar() {
+            window.dispatchEvent(new CustomEvent('admin-sidebar-toggle'));
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             @if(session('success'))
                 Swal.fire({

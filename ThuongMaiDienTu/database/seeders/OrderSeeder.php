@@ -136,6 +136,144 @@ class OrderSeeder extends Seeder
             }
         }
 
+        // Đảm bảo Quản trị viên (email: admin@dienmaypro.com.vn) có lịch sử đơn hàng phong phú
+        $adminUser = User::where('role_id', 1)->first();
+        if ($adminUser) {
+            $adminOrderScenarios = [
+                [
+                    'status' => 'Delivered',
+                    'payment_method' => 'VNPAY',
+                    'payment_status' => 'paid',
+                    'note' => 'Đơn hàng mua năm 2024, bảo hành chính hãng đã hết hạn.',
+                    'days_ago' => 730
+                ],
+                [
+                    'status' => 'Delivered',
+                    'payment_method' => 'COD',
+                    'payment_status' => 'paid',
+                    'note' => 'Giao hàng tận nơi, đã nhận hàng và thanh toán đủ.',
+                    'days_ago' => 365
+                ],
+                [
+                    'status' => 'Delivered',
+                    'payment_method' => 'MoMo',
+                    'payment_status' => 'paid',
+                    'note' => 'Đã kích hoạt bảo hành điện tử thành công.',
+                    'days_ago' => 180
+                ],
+                [
+                    'status' => 'Delivered',
+                    'payment_method' => 'VNPAY',
+                    'payment_status' => 'paid',
+                    'note' => 'Đơn hàng mua dịp khuyến mãi cuối năm.',
+                    'days_ago' => 45
+                ],
+                [
+                    'status' => 'Delivered',
+                    'payment_method' => 'COD',
+                    'payment_status' => 'paid',
+                    'note' => 'Giao hàng ngoài giờ hành chính.',
+                    'days_ago' => 5
+                ],
+                [
+                    'status' => 'Shipping',
+                    'payment_method' => 'COD',
+                    'payment_status' => 'pending',
+                    'note' => 'Giao nhanh trước 5h chiều.',
+                    'days_ago' => 2
+                ],
+                [
+                    'status' => 'Pending',
+                    'payment_method' => 'MoMo',
+                    'payment_status' => 'paid',
+                    'note' => 'Đơn hàng chờ xác nhận thanh toán qua MoMo.',
+                    'days_ago' => 1
+                ],
+                [
+                    'status' => 'Cancelled',
+                    'payment_method' => 'COD',
+                    'payment_status' => 'pending',
+                    'note' => 'Hủy đơn do đổi ý không mua nữa.',
+                    'days_ago' => 10
+                ],
+                [
+                    'status' => 'Pending',
+                    'payment_method' => 'COD',
+                    'payment_status' => 'pending',
+                    'note' => 'Đơn hàng mới tạo hôm nay.',
+                    'days_ago' => 0
+                ]
+            ];
+
+            foreach ($adminOrderScenarios as $scenario) {
+                // Lấy 1-2 sản phẩm ngẫu nhiên còn In_Stock để tránh hết hàng
+                $items = InventoryItem::with('variant.product')
+                    ->where('status', 'In_Stock')
+                    ->inRandomOrder()
+                    ->take(rand(1, 2))
+                    ->get();
+
+                if ($items->isEmpty()) {
+                    continue;
+                }
+
+                $totalAmount = 0;
+                $orderItems = [];
+                foreach ($items as $item) {
+                    $variant = $item->variant;
+                    $product = $variant ? $variant->product : null;
+                    $price = ($variant && $variant->price > 0)
+                        ? $variant->price
+                        : ($product ? $product->base_price : rand(1, 5) * 1000000);
+
+                    $totalAmount += $price;
+                    $orderItems[] = [
+                        'item_id' => $item->item_id,
+                        'price' => $price,
+                        'product_name' => $product->name ?? 'Sản phẩm',
+                    ];
+                }
+
+                $shippingFee = 30000;
+                $finalAmount = $totalAmount + $shippingFee;
+                $createdAt = Carbon::now()->subDays($scenario['days_ago'])->subHours(rand(1, 10));
+                $orderCode = str_pad(rand(10000000, 99999999), 8, '0', STR_PAD_LEFT);
+
+                // Tạo đơn hàng
+                $order = Order::create([
+                    'order_code' => $orderCode,
+                    'user_id' => $adminUser->user_id,
+                    'customer_name' => $adminUser->full_name,
+                    'customer_phone' => $adminUser->phone_number ?: '0905123456',
+                    'shipping_address' => '123 Đường Admin, TP. Hồ Chí Minh',
+                    'note' => $scenario['note'],
+                    'order_type' => 'Online',
+                    'total_amount' => $totalAmount,
+                    'shipping_fee' => $shippingFee,
+                    'discount_amount' => 0,
+                    'final_amount' => $finalAmount,
+                    'payment_method' => $scenario['payment_method'],
+                    'payment_status' => $scenario['payment_status'],
+                    'status' => $scenario['status'],
+                    'delivered_at' => $scenario['status'] === 'Delivered' ? $createdAt->copy()->addDays(2) : null,
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
+                ]);
+
+                foreach ($orderItems as $oi) {
+                    OrderDetail::create([
+                        'order_id' => $order->order_id,
+                        'item_id' => $oi['item_id'],
+                        'price' => $oi['price'],
+                        'product_name' => $oi['product_name'],
+                    ]);
+
+                    // Đánh dấu sản phẩm đã bán
+                    InventoryItem::where('item_id', $oi['item_id'])->update(['status' => 'Sold']);
+                }
+            }
+        }
+
         $this->command->info("OrderSeeder created {$orderCount} sample orders.");
     }
 }

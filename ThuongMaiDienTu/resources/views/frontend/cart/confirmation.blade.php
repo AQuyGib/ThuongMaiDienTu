@@ -60,7 +60,10 @@
                   <!-- Thông tin chi tiết: Tên sản phẩm, số lượng, đơn giá -->
                   <div class="flex-1 min-w-0">
                     <p class="font-semibold text-gray-800 truncate">{{ $detail->product_name ?? ('Mã sản phẩm #' . $detail->item_id) }}</p>
-                    <p class="text-gray-500 text-sm">Số lượng: {{ $detail->quantity ?? 1 }}</p>
+                    @if($detail->inventoryItem && $detail->inventoryItem->imei_serial)
+                      <p class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block font-mono mt-1">IMEI/Serial: {{ $detail->inventoryItem->imei_serial }}</p>
+                    @endif
+                    <p class="text-gray-500 text-sm mt-1">Số lượng: {{ $detail->quantity ?? 1 }}</p>
                     <p class="text-gray-500 text-sm">Đơn giá: {{ number_format($detail->unit_price ?? $detail->price) }}đ</p>
                   </div>
                   <!-- Thành tiền của dòng hàng -->

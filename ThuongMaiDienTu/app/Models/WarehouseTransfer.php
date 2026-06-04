@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class WarehouseTransfer extends Model
 {
+    use \App\Traits\HasAuditLog;
+
     protected $primaryKey = 'transfer_id';
     
     protected $guarded = [];

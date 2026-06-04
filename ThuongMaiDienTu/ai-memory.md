@@ -3,6 +3,16 @@
 ## Tiến độ và Ngữ cảnh hiện tại
 Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/CMS chuyên nghiệp. Đang phát triển các phân hệ: Articles & Lifestyle, Storefront (So sánh & Bộ lọc), Phiếu sửa chữa & Dịch vụ (Repair Tickets & Customer Portal), và Phân hệ Quản lý & Phát Video (Videos Management).
 
+- **Sửa lỗi hiển thị di động & Việt hóa chú thích CommunicationHub:**
+  - Khắc phục triệt để lỗi hiển thị đồng thời cả danh sách phòng (Cột 1) và khung chat bị bóp méo (Cột 2) trên các thiết bị di động bằng cách sử dụng React conditional rendering: chỉ render duy nhất Cột 1 hoặc Cột 2 vào DOM tùy thuộc vào trạng thái `mobileView` (`'rooms'` hoặc `'chat'`) khi ở màn hình điện thoại, giải quyết triệt để vấn đề xung đột CSS.
+  - Sử dụng hook lắng nghe sự kiện window resize để xác định trạng thái `isDesktop` (width >= 768px) nhằm tự động hiển thị side-by-side đầy đủ cả hai cột trên máy tính mà không cần tải lại trang.
+  - Dịch toàn bộ chú thích (comments) trong file `CommunicationHub.tsx` (Trung tâm giao tiếp) từ tiếng Anh sang tiếng Việt rõ ràng, dễ hiểu (giữ nguyên chú thích tiếng Anh cho các file khác theo đúng yêu cầu).
+  - **Khắc phục lỗi vị trí hiển thị (CSS Position drawer):** Loại bỏ class `relative` bị trùng lặp với `fixed` tại thẻ container ngoài cùng của component `CommunicationHub.tsx` (dòng 644). Lỗi này làm drawer bị ghi đè thuộc tính CSS position sang relative, dẫn đến hiện tượng trôi lơ lửng và đè bẹp lên giao diện Admin Dashboard thay vì bám cố định vào mép phải của viewport.
+  - **Giải quyết xung đột Git trong app.tsx:** Loại bỏ triệt để các marker xung đột Git (`<<<<<<< HEAD`, `=======`, `>>>>>>> origin/master`) ở hàm chặn chuyển trang admin (dòng 206) trong file `resources/js/app.tsx`. Đã giữ lại cấu trúc kiểm tra thông minh để chỉ force-reload các module phức tạp (sản phẩm, nhân viên, phiếu sửa chữa, activity-logs, bình luận) và duy trì SPA soft-navigation cho các trang admin đơn giản còn lại.
+  - **Việt hóa chú thích trong app.tsx:** Dịch toàn bộ chú thích (comments) trong file `app.tsx` sang tiếng Việt rõ ràng, chi tiết, giải thích rõ cơ chế điều hướng mềm (soft-navigation), gắn component React động, xử lý unmount/re-mount sạch sẽ để hỗ trợ lập trình viên.
+  - **Tích hợp thông báo lỗi Đăng nhập/Đăng ký dạng Toast nổi:** Loại bỏ hoàn toàn khối hiển thị lỗi tĩnh (`alert-danger` và `$errors->any()`) trong HTML của `login_register.blade.php`. Thay vào đó, tích hợp mã Blade biên dịch sang JavaScript để tự động kích hoạt hiển thị thông báo lỗi bằng hệ thống Toast nổi Premium ở góc phải màn hình khi tải trang. Giải pháp này giúp giữ nguyên bố cục (layout) của form không bị đẩy trượt hay che khuất thông tin.
+  - **Tích hợp Modal Điều khoản dịch vụ & Chính sách bảo mật:** Thiết kế và xây dựng Modal popup cao cấp (Premium Blur overlay + scale spring transition) trực tiếp tại trang đăng ký. Khi người dùng nhấp vào link "Điều khoản dịch vụ" hoặc "Chính sách bảo mật", Modal sẽ tự động hiển thị nội dung chi tiết tương ứng dựa trên ngôn ngữ hiện tại (tiếng Việt hoặc tiếng Anh) mà không cần chuyển hướng sang trang khác. Đã loại bỏ wrapper sự kiện `DOMContentLoaded` và di chuyển mã HTML của Modal lên phía trước thẻ `<script>` để đảm bảo cấu trúc DOM đã sẵn sàng trước khi JavaScript thực thi việc tìm kiếm phần tử và gán sự kiện click.
+
 ## Các file đã tạo / chỉnh sửa & Công việc hoàn thành
 
 ### 23. Tính năng Tra cứu hành trình Đơn hàng (Order Tracking System)
@@ -826,6 +836,185 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 
 ### 52. Tổng hợp toàn bộ các tính năng AI trong dự án
 - **Tài liệu hóa:** Tạo file `tong_hop_tich_hop_ai.md` tại thư mục gốc của dự án, tổng hợp đầy đủ 5 phân hệ tích hợp AI bao gồm: (1) Quét rủi ro đơn hàng tự động, (2) Gợi ý bán chéo cá nhân hóa, (3) Đăng & Kiểm duyệt bài viết UGC kèm tối ưu SEO và tặng điểm thưởng, (4) Chẩn đoán lỗi thiết bị & gợi ý phân công kỹ thuật viên tự động, (5) Chatbot hỗ trợ khách hàng nâng cao.
+- **Bỏ trợ lý AI PRO & Thêm/Xóa phòng chat & Thêm/Xóa thành viên & Chức năng Trưởng/Phó nhóm (Latest Updates):**
+  - **Loại bỏ Trợ lý AI PRO**: Xóa thành công cấu hình bot ảo 'Trợ lý AI PRO' khỏi danh sách thành viên (`ALL_MEMBERS`), danh sách phòng chat mặc định (`rooms`), lịch sử tin nhắn ban đầu (`messages`), và logic xử lý gửi tin nhắn (`handleSendMessage`) trong [CommunicationHub.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx).
+  - **Chức năng thêm phòng chat mới (`Thêm box chat`)**: Bổ sung nút bấm `Plus` (+) bên cạnh tiêu đề danh sách kênh, kích hoạt Modal Overlay premium nhập tên phòng, mô tả và chọn loại phòng (Công khai/Nhóm hoặc Riêng tư). Khi tạo xong, phòng mới chỉ chứa người tạo và sẵn sàng thêm các thành viên khác.
+  - **Chức năng xóa phòng chat (`Xóa box chat`)**: Thêm icon `Trash2` màu đỏ hiện trên hover bên cạnh mỗi phòng tùy chỉnh, tích hợp hộp thoại xác nhận (`confirm`) trước khi xóa. Tự động bảo vệ các kênh hệ thống cốt lõi (`💬 Kênh Nhân viên` / `staff` và `📢 Thông báo & Tin tức` / `announcement`) không cho phép xóa.
+  - **Quản lý thành viên & Bổ nhiệm chức vụ (Phiên bản Hoàn hảo)**:
+    - **Cấu hình động theo tài khoản đăng nhập**: Nhận diện tài khoản Admin (Nguyễn Văn An) hay Manager (Trần Thị Bình) dựa trên `userRoleId` để tự động gán nhãn "Bạn" (You) trên giao diện thành viên, hiển thị avatar tương ứng và đặt tên người gửi tin nhắn, tin nhắn hệ thống chính xác.
+    - **Thêm thành viên**: Tích hợp nút "Thêm thành viên" trong thanh trượt danh sách thành viên. Khi bấm sẽ hiện danh sách lọc động các thành viên hệ thống chưa tham gia phòng chat. Click chọn sẽ add ngay lập tức vào phòng kèm ghi nhận thông báo hệ thống tự động căn giữa tin nhắn (`📢 [Tên Bạn] đã thêm ... vào phòng chat.`).
+    - **Xóa thành viên (Mời rời khỏi phòng)**: Bổ sung tùy chọn "Xóa khỏi phòng" vào menu dropdown hành động. Chỉ khả dụng cho thành viên khác (chặn tự xóa bản thân). Khi xóa, hệ thống sẽ gửi một thông báo căn giữa (`📢 [Tên Bạn] đã mời ... rời khỏi phòng chat.`).
+    - **Phân quyền vai trò theo phòng (Leader / Co-leader / Member)**:
+      - **Trưởng nhóm (Leader)**: Toàn quyền bổ nhiệm/hạ chức vụ và xóa mọi thành viên trong phòng chat.
+      - **Phó nhóm (Co-leader)**: Chỉ có quyền bổ nhiệm/xóa các **Thành viên (Member)** thông thường; không thể quản trị Trưởng nhóm hay các Phó nhóm khác.
+      - **Thành viên (Member)**: Bị ẩn nút ba chấm hành động, không có quyền quản trị.
+      - *Phân quyền đặc cách*: Tài khoản global Admin (`userRoleId === 1`) luôn có toàn quyền quản trị cao nhất trên mọi phòng.
+      - Khi bổ nhiệm, hệ thống ghi nhận thông báo tự động: `📢 [Tên Bạn] đã bổ nhiệm ... làm [Trưởng nhóm/Phó nhóm/Thành viên] của phòng chat.`.
+  - **Phân quyền và bảo mật nâng cao**: Cấu hình prop `userRoleId` từ [AdminTopbar.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/AdminTopbar.tsx) xuống [CommunicationHub.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx). Bổ sung khối kiểm tra bảo vệ nghiêm ngặt: nếu `userRoleId !== 1 && userRoleId !== 2` (không phải Admin hoặc Manager) thì component `CommunicationHub` lập tức trả về `null` (chặn sử dụng triệt để).
+  - **Đồng bộ hóa & Nâng cấp Giao diện Thông báo Hỏi (Latest Alert/Confirm Dialog):**
+    - Đại tu hoàn chỉnh hệ thống thông báo hỏi (custom alert & confirm dialogs) bên trong [CommunicationHub.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx).
+    - Áp dụng phong cách thiết kế Glassmorphic Backdrop Blur (`bg-slate-950/40 backdrop-blur-md`) cùng thẻ card bo tròn mềm mại (`rounded-[2.5rem]`) với đường viền siêu mỏng phản chiếu ánh sáng (`border-white/20`).
+    - Nâng cấp Icon cảnh báo/thông báo lớn (`w-16 h-16`), định cấu hình màu HSL gradient tương thích với ngữ cảnh hành động (Rose/Crimson cho các thao tác hủy bỏ/xóa và Indigo/Blue cho thông tin chung).
+    - Chuyển đổi cấu trúc nút bấm thành dạng xếp chồng chiều dọc (`flex-col w-full`) sang trọng theo chuẩn thiết kế macOS/iOS mới, đi kèm các nút gradient phủ bóng mờ và phản hồi nhấn phím (`active:scale-95`).
+    - Khắc phục lỗi biên dịch `Expected ")" but found "{"` bằng cách bổ sung cú pháp đóng ngoặc `)}` bị thiếu ở cuối khối điều kiện JSX Modal tạo phòng mới (`isAddRoomOpen`).
 
 
+### 53. Tích hợp dữ liệu thật cho Kênh nhắn tin (Communication Hub)
+- **Hạ tầng & API (ChatController.php & admin.php & migration):**
+  - Đăng ký các REST API routes phục vụ CRUD phòng chat (`/chat/rooms`), thành viên (`/chat/rooms/{room_id}/members`), chức vụ/vai trò (`/chat/rooms/{room_id}/role`), gửi tin nhắn có đính kèm file (`/chat/messages`), và tương tác cảm xúc emoji (`/chat/messages/{message_id}/react`) trong `routes/admin.php`.
+  - Tích hợp kiểm tra bảng tự động trong `ChatController@init`: Tự động gọi `Artisan::call('migrate')` lập tức nếu bất kỳ bảng nào trong 3 bảng chat bị thiếu (`chat_rooms`, `chat_room_members`, `chat_messages`), bảo đảm hệ thống tự động migrate không cần chạy lệnh thủ công.
+  - **Sửa lỗi MySQL Foreign Key Constraint Mismatch (errno: 150):** Khắc phục lỗi kiểu dữ liệu cột `user_id` và `sender_id` trong migration (`2026_06_03_184100_create_chat_tables.php`) từ `unsignedBigInteger` thành `unsignedInteger` để khớp hoàn toàn với kiểu dữ liệu của cột `user_id` trong bảng `users` (`$table->increments(...)`).
+  - **Cơ chế drop tồn tại:** Thêm `Schema::dropIfExists` cho 3 bảng chat ở đầu `up()` để ngăn chặn lỗi xung đột "Table already exists" nếu migration trước bị gián đoạn giữa chừng.
+  - Xây dựng logic Eloquent toàn diện lưu trữ tin nhắn, phòng chat và danh sách thành viên thực tế từ các bảng `chat_rooms`, `chat_room_members`, `chat_messages` liên kết chặt chẽ với bảng `users`.
+- **Giao diện Client (CommunicationHub.tsx):**
+  - Tích hợp fetch API `/admin/chat/init` ngay khi mở panel để load danh sách phòng, tin nhắn cũ và danh sách nhân viên thực tế.
+  - Loại bỏ hoàn toàn mảng mock tĩnh `ALL_MEMBERS` và thay bằng trạng thái `allEmployees` đồng bộ trực tiếp từ database.
+  - Thay đổi toàn bộ các hàm handler sự kiện (gửi tin nhắn, tải file đính kèm thực tế, reaction emoji, thêm/xóa thành viên, đổi chức vụ thành viên, xóa phòng chat) từ mô phỏng giả lập sang gọi Axios trực tiếp tới REST backend, đảm bảo tính đồng bộ dữ liệu thời gian thực.
+- **Sửa lỗi Integrity Constraint Violation (role_id foreign key check failed):**
+  - Tích hợp cơ chế tự động điền (self-healing roles seeder) trong `AppServiceProvider@bootInfrastructure`. Nếu bảng `roles` rỗng, hệ thống sẽ tự động chèn 4 vai trò cốt lõi (`Admin`, `Quản lý`, `Khách hàng`, `Nhân viên`) vào database để đảm bảo toàn bộ luồng đăng ký/đăng nhập qua Google hay qua email diễn ra trơn tru.
 
+=======
+### 53. Tách biệt Chatbot AI tư vấn và Chatbot đặt lịch sửa chữa (Hybrid Intent Router & Card UI)
+- **Hạ tầng & Backend (ChatbotController.php & routes/web.php):**
+  - Triển khai **Hybrid Intent Router** để phân tách rõ ràng luồng tư vấn bán hàng RAG và luồng đặt lịch sửa chữa.
+  - Khi nhận yêu cầu chat, hệ thống sử dụng `detectIntent()` để phân loại ý định qua bộ lọc từ khóa nhanh `hasRepairKeywords()` kết hợp gọi Gemini API phân loại cực nhanh để trả về ý định `REPAIR` hoặc `CONSULT`.
+  - Nếu ý định là `REPAIR`, hệ thống lập tức ngắt luồng RAG và trả về phản hồi JSON có cờ `is_repair_form: true` cùng dữ liệu thông tin người dùng được pre-fill sẵn (tên, email, số điện thoại từ Auth session).
+  - Loại bỏ hoàn toàn cơ chế trích xuất thẻ JSON tự động cũ (`[[CREATE_REPAIR_TICKET:...]]`) để tránh lỗi AI ảo giác dữ liệu và tăng bảo mật.
+  - Xây dựng phương thức `createTicketFromChat` tiếp nhận dữ liệu từ Form trực quan, validate chặt chẽ các trường bắt buộc và tạo bản ghi phiếu sửa chữa `RepairTicket` mới.
+  - Đăng ký route POST `/chatbot/create-ticket` trong `routes/web.php`.
+- **Giao diện Frontend (chatbot.blade.php):**
+  - Cập nhật `callBackend` trả về toàn bộ đối tượng JSON response để lấy thông tin cờ điều khiển và dữ liệu pre-fill.
+  - Cập nhật `window.chatbotSend` nhận diện cờ `is_repair_form` để gọi hàm helper `appendRepairCard(defaultData)`.
+  - Hàm `appendRepairCard` chèn trực tiếp Form đặt lịch sửa chữa trực quan (Card UI) thiết kế hiện đại, đầy đủ input, màu sắc nổi bật vào khung chat (bỏ qua DOMPurify để bảo toàn form).
+  - Viết hàm xử lý gửi AJAX `window.submitRepairCard(event, cardId)` để gửi dữ liệu form tới máy chủ. Khi tạo phiếu thành công, form tự động chuyển sang giao diện thông báo màu xanh lá (success theme) hiển thị mã phiếu đặt lịch và ngày giờ hẹn.
+  - Tích hợp **Nút làm trống hộp thoại chat** (icon thùng rác `fa-trash-can`) trên Header của khung chat. Khi click, hệ thống hiển thị hộp thoại xác nhận đa ngôn ngữ (`chatbot_clear_confirm`), tiến hành xóa sạch nội dung hội thoại, reset bộ lưu trữ `localStorage` và tự động gửi lại lời chào đầu tiên của robot.
+
+### 54. Nâng cấp Bảo mật và Trải nghiệm Người dùng cho AI Chatbot (Chống Spam, Bắt buộc Đăng nhập, và Lọc mô tả Sửa chữa)
+- **Database & Model (Migration & User.php):**
+  - Tạo và chạy migration `2026_06_04_000301_add_chatbot_banned_until_to_users_table` bổ sung cột `chatbot_banned_until` kiểu timestamp (nullable) vào bảng `users`.
+  - Cập nhật `$casts` trong model `User.php` để tự động cast `chatbot_banned_until` và `comment_banned_until` thành kiểu `datetime`.
+- **Hạn chế Quyền truy cập (Auth & Ban Control):**
+  - **Backend (`ChatbotController.php`):** Thêm kiểm tra `auth()->check()` trong phương thức `chat()`. Khách vãng lai sẽ bị chặn bằng response 401. Đồng thời kiểm tra nếu người dùng bị ban (`chatbot_banned_until > now()`) thì trả về lỗi 403.
+  - **Frontend (`chatbot.blade.php`):** 
+    - Nếu là khách chưa đăng nhập (`@guest`), hiển thị màn hình yêu cầu đăng nhập bằng card thủy tinh sang trọng với nút chuyển hướng đến trang `/login`.
+    - Nếu là tài khoản bị ban chat (`chatbot_banned_until > now()`), hiển thị card thông báo khóa tính năng kèm mốc thời gian mở khóa chi tiết.
+    - Cập nhật mã nguồn Javascript kiểm tra và phòng tránh các lỗi `null reference` đối với các phần tử DOM chat khi khách chưa đăng nhập hoặc bị khóa tài khoản.
+- **Hệ thống Phát hiện Spam Tự động (Spam Detection System):**
+  - Lưu trữ và phân tích lịch sử thao tác của người dùng trong Session Laravel:
+    - **Velocity Check:** Giới hạn tối đa 6 tin nhắn trong vòng 20 giây.
+    - **Repetition Check:** Phát hiện người dùng gửi liên tiếp cùng một nội dung 4 lần.
+    - **Keyboard Smash Check:** Kiểm tra sự xuất hiện của từ bất thường có độ dài vượt quá 30 ký tự không dấu cách.
+  - Khi phát hiện hành vi spam, hệ thống tự động cập nhật `chatbot_banned_until = now()->addDays(30)` vào database để cấm người dùng chat 30 ngày, log cảnh báo vào hệ thống, và trả về lỗi 403.
+  - Trên Frontend, nếu nhận được mã lỗi ban hoặc yêu cầu đăng nhập khi đang chat, hệ thống tự động reload trang sau 2 giây để hiển thị giao diện khóa/đăng nhập tương ứng.
+- **AI Intent Validation (Bộ lọc Mô tả Sửa chữa):**
+  - Khi Hybrid Router phát hiện ý định `REPAIR`, hệ thống sẽ gọi Gemini kiểm tra xem mô tả lỗi của khách hàng đã ĐỦ thông tin thiết bị và mô tả lỗi cụ thể chưa.
+  - Nếu AI đánh giá là `INCOMPLETE`, thay vì hiển thị Card UI Đặt lịch, AI sẽ phản hồi bằng một câu chat thông thường lịch sự và nhẹ nhàng yêu cầu khách hàng cung cấp chi tiết thiết bị và lỗi (ví dụ: tên máy, hiện tượng hỏng hóc cụ thể).
+  - Chỉ khi mô tả đã `COMPLETE`, Card UI Đặt lịch sửa chữa mới được render, giúp hạn chế rác dữ liệu và nâng cao chất lượng dịch vụ.
+- **Kiểm thử:**
+  - Viết và chạy thành công file test `tests/Feature/ChatbotSecurityTest.php` kiểm thử toàn bộ các kịch bản: chặn khách vãng lai (401), chặn tài khoản bị ban (403), và cơ chế tự động cấm chat khi phát hiện spam tin nhắn liên tục (banned 30 ngày). 100% assertions hoạt động chính xác.
+
+### 55. Tích hợp Tính năng Quản trị Mở khóa cấm Chatbot cho Admin (Admin Unban Chatbot)
+- **Hạ tầng & Route (`routes/admin.php`):**
+  - Khai báo route POST `/permissions/{id}/unban-chatbot` ánh xạ tới `UserController@unbanChatbot` phục vụ yêu cầu AJAX từ bảng quản trị tài khoản.
+- **Backend Controller (`UserController.php`):**
+  - Thêm phương thức `unbanChatbot($id)` tìm kiếm người dùng, set trường `chatbot_banned_until` về `null`, lưu cơ sở dữ liệu và trả về JSON phản hồi thành công (xử lý tốt cả AJAX và request thường).
+- **Giao diện React Admin (`UserManagement.tsx`):**
+  - Cập nhật định nghĩa kiểu dữ liệu `User` bổ sung trường `chatbot_banned_until`.
+  - Hiển thị badge màu đỏ **"Cấm Chatbot"** kèm biểu tượng `ShieldAlert` và tooltip ghi rõ thời hạn cấm trong cột trạng thái của bảng danh sách người dùng.
+  - Tích hợp thêm nút hành động nhanh **"Mở khóa Chatbot"** (biểu tượng `ShieldCheck` màu xanh lá) trực tiếp tại mỗi dòng của người dùng đang bị cấm. Khi nhấn sẽ gọi hộp thoại xác nhận `Swal` và gửi AJAX mở khóa.
+  - Thiết kế thêm khối thông báo khóa Chatbot nổi bật màu đỏ kèm nút hành động **"Mở khóa"** nhanh bên trong **Modal chỉnh sửa thông tin người dùng** (`UserModal`), cho phép quản trị viên hủy cấm chat của tài khoản trực tiếp khi đang edit.
+- **Kiểm thử & Biên dịch:**
+  - Viết bổ sung test case `test_admin_can_unban_chatbot_user` trong `tests/Feature/ChatbotSecurityTest.php` mô phỏng tài khoản admin thực hiện mở khóa cho người dùng bị cấm chat chatbot qua AJAX. Test chạy thành công tuyệt đối (Green).
+  - Biên dịch toàn bộ tài nguyên frontend React bằng `npm run build` thành công, không gặp bất kỳ lỗi cú pháp hoặc cảnh báo kiểu dữ liệu TypeScript nào.
+
+### 56. Tích hợp Hệ thống Phòng chống Spam cho toàn bộ tính năng Hỗ trợ AI của Khách hàng
+- **Hệ thống hóa Chính sách Cấm (Ban & Spam Detection System):**
+  - Đồng bộ hóa lệnh cấm sử dụng cột `chatbot_banned_until` trong cơ sở dữ liệu trên tất cả các dịch vụ hỗ trợ AI công khai dành cho khách hàng.
+- **Áp dụng cho Phân tích & Chẩn đoán lỗi bằng AI (`ProfileController@aiDiagnoseRepairTicket`):**
+  - Chèn kiểm tra cấm tài khoản ở đầu phương thức. Nếu người dùng bị ban thì từ chối xử lý bằng mã HTTP 403.
+  - Tích hợp bộ kiểm duyệt spam nâng cao dựa trên lịch sử gửi yêu cầu lưu trong session:
+    - **Velocity Check:** Phát hiện gửi quá 6 yêu cầu chẩn đoán trong 20 giây.
+    - **Repetition Check:** Phát hiện gửi trùng nội dung mô tả lỗi liên tiếp 4 lần.
+    - **Keyboard Smash:** Phát hiện các từ khóa dài bất thường (> 30 ký tự) không chứa khoảng trắng.
+  - Khi phát hiện vi phạm, tài khoản lập tức bị cấm sử dụng các tính năng AI trong 30 ngày (`chatbot_banned_until = now()->addDays(30)`) và trả về 403 kèm thông báo chi tiết.
+- **Áp dụng cho Trợ lý SEO & Chấm điểm bài viết AI (`ArticleFrontendController@aiAssist`):**
+  - Tích hợp cơ chế kiểm tra trạng thái cấm và bộ lọc spam tương tự dựa trên tiêu đề và nội dung bài viết gửi lên phân tích thông qua AJAX.
+- **Kiểm thử tự động:**
+  - Bổ sung 4 kịch bản kiểm thử vào `tests/Feature/ChatbotSecurityTest.php` bao gồm:
+    1. `test_ai_diagnose_rejects_banned_user` (Chặn chẩn đoán lỗi đối với tài khoản đã bị cấm).
+    2. `test_ai_diagnose_spam_detection` (Phát hiện spam chẩn đoán lỗi và tự động cấm).
+    3. `test_ai_assist_rejects_banned_user` (Chặn chấm điểm bài viết đối với tài khoản đã bị cấm).
+    4. `test_ai_assist_spam_detection` (Phát hiện spam chấm điểm bài viết và tự động cấm).
+  - Kết quả chạy PHPUnit đạt **8/8 test cases thành công tuyệt đối (Green)**.
+
+### 57. Tối ưu Quy trình Đặt lịch Sửa chữa Có trạng thái (Stateful Repair Booking Flow) & Khóa Tư vấn
+- **Khóa luồng Đặt lịch (Booking Flow Lock):**
+  - Sử dụng cờ session `repair_booking_in_progress` để khóa người dùng vào tiến trình đặt lịch khi họ bắt đầu gửi yêu cầu sửa chữa. Khi cờ này có giá trị `true`, chatbot sẽ bỏ qua việc phân loại lại ý định thông thường (giúp tránh việc hệ thống nhảy sang tư vấn bán hàng khi khách gửi thông tin dòng máy hoặc IMEI không chứa từ khóa sửa chữa).
+- **Tích lũy & Hợp nhất Dữ liệu (State Accumulation):**
+  - Sử dụng mảng session `repair_booking_data` lưu trữ các thông tin đã thu thập (`device_model`, `issue_desc`, `imei_serial`).
+  - Mỗi khi khách hàng gửi câu chat tiếp theo trong tiến trình đặt lịch, hệ thống sẽ chuyển dữ liệu cũ đã tích lũy cùng câu chat mới cho Gemini API phân tích và hợp nhất một cách thông minh (giữ nguyên dữ liệu cũ nếu câu chat mới không thay đổi hoặc không cung cấp thông tin đó).
+- **Tiêu chuẩn Hoàn tất Tối thiểu (Minimum Info Requirements):**
+  - Chỉ yêu cầu tối thiểu thông tin dòng máy (`device_model`) và lỗi cụ thể (`issue_desc`) để tạo form đặt lịch, tránh bắt buộc quá khắt khe các ký tự/mô tả dài gây phiền hà cho người dùng.
+- **Hủy Tiến trình Đặt lịch:**
+  - Cho phép người dùng gõ lệnh "hủy", "hủy đặt lịch", hoặc "cancel" để tự do thoát khỏi luồng đặt lịch sửa chữa bất cứ lúc nào, dọn dẹp các session liên quan và quay về tư vấn sản phẩm thông thường.
+- **Kiểm thử Tự động:**
+  - Bổ sung kịch bản kiểm thử `test_stateful_repair_booking_flow` trong `tests/Feature/ChatbotSecurityTest.php` mô phỏng đầy đủ quy trình 3 bước gửi tin nhắn không đủ thông tin, bổ sung dòng máy, bổ sung mô tả lỗi, tự động kiểm tra lưu trữ session và xác thực Form Card được render đúng dữ liệu mặc định.
+  - Chạy PHPUnit thành công **9/9 test cases (43 assertions) đạt Green tuyệt đối**.
+
+### 58. Tích hợp Hệ thống Kiểm duyệt Ngôn từ & Chính sách Cấm 2 lần cho Chatbot (AI Moderation & Two-Strike Enforcement Policy)
+- **Kiểm duyệt ngôn từ thô tục / công kích (Abusive Language Moderation):**
+  - Tích hợp cơ chế kiểm duyệt nội dung kết hợp Regex blacklist tiếng Việt và Gemini API để phát hiện ngôn từ công kích, xúc phạm hoặc thô tục.
+  - Phân loại câu chat thành hai nhãn trạng thái chính: `TOXIC` và `CLEAN`.
+- **Chính sách xử phạt 2 cấp độ (Two-Strike Policy):**
+  - **Vi phạm lần 1 (Cảnh báo):** Ghi nhận cờ cảnh báo vi phạm vào session, chatbot gửi phản hồi cảnh báo lịch sự, yêu cầu khách hàng sử dụng ngôn từ văn minh.
+  - **Vi phạm lần 2 (Cấm 30 ngày):** Nếu người dùng tiếp tục gửi tin nhắn toxic lần thứ hai, hệ thống sẽ tự động cập nhật trường `chatbot_banned_until = now()->addDays(30)` vào cơ sở dữ liệu để khóa quyền sử dụng Chatbot trong 30 ngày, ghi log cảnh báo và chặn bằng phản hồi 403.
+- **Tối ưu hóa Mock API trong môi trường testing (Robust API Mocking Layer):**
+  - Xây dựng cơ chế Mock phản hồi ngay trong phương thức `callGeminiApi()` khi chạy ở môi trường `testing`, giúp tránh hoàn toàn các lỗi quota/rate-limit của Gemini API ngoài thực tế.
+  - Cải tiến bộ trích xuất thông tin của Mock sử dụng biểu thức chính quy chính xác để tách biệt tin nhắn người dùng khỏi prompt hướng dẫn (sử dụng regex `/Và câu chat mới nhất của khách hàng:\s*"([^"]+)"/u`) và trích xuất đúng block JSON đầu tiên (sử dụng regex `/\{[^\}]*\}/`). Điều này ngăn chặn việc nhận diện sai lệch hoặc trùng khớp các ví dụ trong prompt hướng dẫn của AI.
+- **Kiểm thử tự động hoàn hảo:**
+  - Bổ sung 2 ca kiểm thử quan trọng `test_abusive_language_warning_on_first_offense` và `test_abusive_language_ban_on_second_offense` vào bộ test `tests/Feature/ChatbotSecurityTest.php`.
+  - Khắc phục triệt để các lỗi timing, session state và assertion, đưa tỷ lệ chạy thành công đạt **11/11 test cases (50 assertions) vượt qua trọn vẹn (100% Green)**.
+
+### 59. Tự động xóa cache Chatbot khi đổi tài khoản & Nâng cấp giao diện thông báo SweetAlert2
+- **Xóa cache khi đổi tài khoản (Account Switch Cache Clear):**
+  - Trong `initChatSession()` tại `chatbot.blade.php`, bổ sung logic lưu `chatbot_user_id` vào `localStorage` chứa ID tài khoản hiện tại (hoặc `'guest'` nếu chưa đăng nhập).
+  - Khi phát hiện `chatbot_user_id` đã lưu khác với ID người dùng hiện tại (tức là khách hàng đã logout rồi login tài khoản khác), hệ thống tự động xóa toàn bộ lịch sử chat cũ trong `localStorage` (`HISTORY_KEY`), đảm bảo tài khoản mới không thấy nội dung hội thoại của tài khoản cũ.
+- **Nâng cấp giao diện xác nhận làm trống chat (SweetAlert2 Confirm Dialog):**
+  - Thay thế hộp thoại `confirm()` thô sơ của trình duyệt bằng **SweetAlert2** (`Swal.fire`) với thiết kế hiện đại: icon cảnh báo, nút xác nhận màu xanh dương `#0046ab`, nút hủy màu đỏ `#d70018`, bo tròn góc `rounded-2xl` và shadow đẹp.
+  - Tách logic xóa chat thành hàm riêng `performClearChat()` để tái sử dụng cho cả nhánh SweetAlert2 lẫn fallback `confirm()`.
+- **Nâng cấp thông báo lỗi đặt lịch sửa chữa (SweetAlert2 Error Alerts):**
+  - Thay thế toàn bộ `alert()` trong hàm `submitRepairCard()` bằng `Swal.fire` với icon `error` và nút xác nhận thương hiệu.
+  - Giữ fallback `alert()` trong trường hợp SweetAlert2 chưa được tải.
+- **File thay đổi:** `resources/views/partials/chatbot.blade.php`
+### 54. Triển khai Hệ thống Nhật ký hoạt động nâng cao (Advanced Audit Log)
+- **Hạ tầng & Model & Migrations:**
+  - Hoàn thiện cấu trúc bảng `activity_logs` có tính chất đa hình (`causer`, `subject`), lưu trữ JSON (`old_values`, `new_values`), và bảo vệ chuỗi log bằng mật mã băm progressive `hash_chain`.
+  - Định nghĩa mối quan hệ đa hình `causer()` và `subject()` trong [ActivityLog.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/ActivityLog.php). Bổ sung accessor tương thích ngược `action` và quan hệ `user()` giúp các Blade view cũ hiển thị không bị lỗi.
+  - Cập nhật quan hệ `activityLogs()` trong [User.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/User.php) thành `morphMany`.
+- **Cơ chế băm & Che giấu thông tin & Lắng nghe sự kiện:**
+  - Viết [AuditHasher.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Services/AuditHasher.php) thực hiện băm progressive HMAC-SHA256 kết nối lũy tiến với dòng log trước đó dựa trên deterministic JSON sorting.
+  - Viết [AuditMasker.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Services/AuditMasker.php) lọc đệ quy che giấu thông tin nhạy cảm (`password`, `password_hash`, `otp_code`...).
+  - Thiết kế trait [HasAuditLog.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Traits/HasAuditLog.php) tự động đăng ký sự kiện `created`, `updated`, `deleted` của các Eloquent models (`Product`, `Order`, `User`) để gửi Job bất đồng bộ qua Queue.
+  - Hỗ trợ thêm phương thức tĩnh `logManualEvent()` ghi nhận các sự kiện tùy chỉnh (như xuất file báo cáo, đăng nhập).
+- **Hàng đợi & Cảnh báo bảo mật:**
+  - Viết [LogAuditEventJob.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Jobs/LogAuditEventJob.php) xử lý ghi nhận log với pessimistic locking dòng cuối để tránh race condition, đồng thời tự động đánh giá quy tắc gửi tin cảnh báo bảo mật nếu xuất báo cáo nhân sự/khách hàng quá 3 lần/giờ.
+- **Tích hợp & Đồng bộ:**
+  - Tích hợp ghi log khi nhân viên xuất file Excel/PDF trong [EmployeeController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/EmployeeController.php).
+  - Tích hợp ghi log khi khách hàng đăng nhập trong [AppServiceProvider.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Providers/AppServiceProvider.php).
+  - Thay thế toàn bộ mã `ActivityLog::create` cũ và lỗi thời trong [CustomerController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/CustomerController.php) sang cơ chế `logManualEvent` và auto Eloquent hooks của Trait, đồng thời đồng bộ hóa truy vấn log khách hàng.
+  - Tải và cài đặt trang quản trị nhật ký hoạt động có **Visual Diff Viewer (GitHub style)** màu sắc phân biệt đỏ/xanh tại [index.blade.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/activity-logs/index.blade.php).
+- **Kiểm thử:**
+  - Viết unit test hoàn chỉnh [AuditLogTest.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/tests/Feature/AuditLogTest.php) bao phủ: data masking, deterministic sorting, Eloquent hooks, and cryptographic hash chain verification / tamper detection.
+
+### 60. Nâng cấp hộp thoại xóa Reward từ confirm() sang SweetAlert2 Premium
+- **Thay thế hộp thoại xóa mặc định:**
+  - Loại bỏ `onsubmit="return confirm(...)"` thô sơ của trình duyệt trên form xóa reward trong `resources/views/admin/rewards/index.blade.php`.
+  - Chuyển button submit thành `type="button"` gọi hàm JS `confirmDeleteReward(rewardId, rewardName)`.
+  - Gán `id="delete-reward-{{ $item->reward_id }}"` cho mỗi form xóa để JS submit chính xác form tương ứng.
+- **Hộp thoại SweetAlert2 đẹp mắt:**
+  - Icon cảnh báo (`warning`), hiển thị tên reward in đậm màu đỏ trong nội dung HTML.
+  - Nút xác nhận đỏ (`#e11d48`) kèm icon thùng rác, nút hủy xám (`#64748b`).
+  - Hỗ trợ đa ngôn ngữ (VI/EN), `focusCancel: true` và `reverseButtons: true` để tránh xóa nhầm.
+  - Bo tròn góc popup `rounded-2xl` và nút `rounded-xl` cho giao diện premium.
+- **Merge:** Đã merge nhánh `AnhQuy/ToiUu` vào `master` và push lên remote thành công.
+- **File thay đổi:** `resources/views/admin/rewards/index.blade.php`

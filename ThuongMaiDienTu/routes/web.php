@@ -28,7 +28,7 @@ Route::get('/login-register', [AuthController::class, 'index'])->name('login_reg
 Route::get('/login', [AuthController::class, 'index'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Password Reset
 Route::get('/forgot-password', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showForgotForm'])->name('password.request');
@@ -68,6 +68,7 @@ Route::get('/', function () {
 });
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+Route::put('/reviews/{id}', [ReviewController::class, 'update'])->name('reviews.update')->middleware('auth');
 Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
 Route::post('/reviews/{id}/report', [ReviewController::class, 'report'])->name('reviews.report')->middleware('auth');
 
@@ -215,6 +216,17 @@ Route::prefix('admin')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]
     Route::post('installments/{id}/reject', [\App\Http\Controllers\Admin\InstallmentController::class, 'reject'])->name('admin.installments.reject');
     Route::get('installments/{id}/invoice', [\App\Http\Controllers\Admin\InstallmentController::class, 'printInvoice'])->name('admin.installments.invoice');
     Route::post('installments/payments/{id}/pay', [\App\Http\Controllers\Admin\InstallmentController::class, 'payMonth'])->name('admin.installments.pay-month');
+
+    // Warranty Claim Management
+    Route::get('warranty-claims', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'index'])->name('admin.warranty-claims.index');
+    Route::get('warranty-claims/create', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'create'])->name('admin.warranty-claims.create');
+    Route::post('warranty-claims', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'store'])->name('admin.warranty-claims.store');
+    Route::get('warranty-claims/{id}/edit', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'edit'])->name('admin.warranty-claims.edit');
+    Route::put('warranty-claims/{id}', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'update'])->name('admin.warranty-claims.update');
+    Route::delete('warranty-claims/{id}', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'destroy'])->name('admin.warranty-claims.destroy');
+    Route::post('warranty-claims/{id}/approve', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'approve'])->name('admin.warranty-claims.approve');
+    Route::post('warranty-claims/{id}/reject', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'reject'])->name('admin.warranty-claims.reject');
+    Route::get('warranty-claims/{id}/invoice', [\App\Http\Controllers\Admin\WarrantyClaimController::class, 'printInvoice'])->name('admin.warranty-claims.invoice');
 });
 
 Route::middleware('auth')->group(function () {
@@ -245,10 +257,15 @@ Route::get('/api/category-products/{id}', [SearchController::class, 'getProducts
 use App\Http\Controllers\Frontend\WarrantyController;
 use App\Http\Controllers\PolicyController;
 
-Route::get('/chinh-sach-bao-hanh', [PolicyController::class, 'warranty'])->name('policy.warranty');
-Route::get('/chinh-sach-doi-tra', [PolicyController::class, 'returnPolicy'])->name('policy.return');
+Route::get('/warranty-policy', [PolicyController::class, 'warranty'])->name('policy.warranty');
+Route::get('/return-policy-info', [PolicyController::class, 'returnPolicy'])->name('policy.return');
+
+// Redirect cũ → mới (giữ SEO / bookmark cũ không bị 404)
+Route::redirect('/chinh-sach-bao-hanh', '/warranty-policy', 301);
+Route::redirect('/chinh-sach-doi-tra', '/return-policy-info', 301);
 Route::get('/warranty', [WarrantyController::class, 'index'])->name('warranty.index');
 Route::post('/warranty/lookup', [WarrantyController::class, 'lookup'])->name('warranty.lookup');
+Route::post('/warranty/claim', [WarrantyController::class, 'storeClaim'])->name('warranty.claim.store');
 Route::get('/return-policy', [WarrantyController::class, 'returnPolicy'])->name('warranty.return');
 
 // Product Compare
@@ -262,5 +279,38 @@ use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\InstallmentController;
 
 Route::post('/chatbot', [ChatbotController::class, 'chat'])->name('chatbot.chat');
+Route::post('/chatbot/create-ticket', [ChatbotController::class, 'createTicketFromChat'])->name('chatbot.create-ticket');
 Route::post('/installments/register', [InstallmentController::class, 'register'])->name('installments.register')->middleware('auth');
+
+
+Route::get('/debug-queue', function() {
+    $queue = config('queue.default');
+    $jobsCount = \Schema::hasTable('jobs') ? \DB::table('jobs')->count() : 'Table not found';
+    $failedCount = \Schema::hasTable('failed_jobs') ? \DB::table('failed_jobs')->count() : 'Table not found';
+    $logsCount = \Schema::hasTable('activity_logs') ? \DB::table('activity_logs')->count() : 'Table not found';
+    $latestLogs = \Schema::hasTable('activity_logs') ? \DB::table('activity_logs')->orderBy('log_id', 'desc')->take(5)->get() : [];
+    
+    return response()->json([
+        'queue_driver' => $queue,
+        'jobs_count' => $jobsCount,
+        'failed_jobs_count' => $failedCount,
+        'logs_count' => $logsCount,
+        'latest_logs' => $latestLogs
+    ]);
+});
+
+Route::get('/auto-seed', function() {
+    try {
+        \Artisan::call('migrate:fresh', ['--seed' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Database migrated and seeded successfully!'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 200);
+    }
+});
 

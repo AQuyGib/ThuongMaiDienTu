@@ -148,7 +148,7 @@ class CommentManagementController extends Controller
         }
 
         // Xóa các câu trả lời (reply) con liên kết với đánh giá cha này trước
-        Review::where('parent_id', $review->id)->delete();
+        Review::where('parent_id', $review->id)->get()->each->delete();
         
         // Xóa bản ghi đánh giá cha
         $review->delete();
@@ -228,7 +228,7 @@ class CommentManagementController extends Controller
         }
 
         // Xóa các bình luận (reply) con liên kết với bình luận cha này trước
-        VideoComment::where('parent_id', $comment->id)->delete();
+        VideoComment::where('parent_id', $comment->id)->get()->each->delete();
 
         // Xóa bản ghi bình luận cha
         $comment->delete();
@@ -326,8 +326,8 @@ class CommentManagementController extends Controller
         }
 
         // Xóa replies trước, rồi xóa cha
-        Review::whereIn('parent_id', $ids)->delete();
-        Review::whereIn('id', $ids)->delete();
+        Review::whereIn('parent_id', $ids)->get()->each->delete();
+        Review::whereIn('id', $ids)->get()->each->delete();
 
         return back()->with('success', 'Đã xóa ' . count($ids) . ' đánh giá thành công.');
     }
@@ -339,8 +339,8 @@ class CommentManagementController extends Controller
             return back()->with('success', 'Chưa chọn bình luận nào để xóa.');
         }
 
-        VideoComment::whereIn('parent_id', $ids)->delete();
-        VideoComment::whereIn('id', $ids)->delete();
+        VideoComment::whereIn('parent_id', $ids)->get()->each->delete();
+        VideoComment::whereIn('id', $ids)->get()->each->delete();
 
         return back()->with('success', 'Đã xóa ' . count($ids) . ' bình luận thành công.');
     }

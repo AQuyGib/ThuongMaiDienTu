@@ -23,6 +23,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Gate::policy(
+            \App\Models\User::class,
+            \App\Policies\EmployeePolicy::class
+        );
+
         $this->bootInfrastructure();
         $this->bootObservers();
         $this->bootLoginHistory();
@@ -35,6 +40,41 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Schema::defaultStringLength(191);
+
+        // Auto-run migrations if critical tables are missing or schema is outdated
+        try {
+            $needsMigration = false;
+            
+            if (!Schema::hasTable('activity_logs') || !Schema::hasColumn('activity_logs', 'hash_chain')) {
+                $needsMigration = true;
+            }
+            
+            if (!Schema::hasTable('jobs') || !Schema::hasTable('failed_jobs')) {
+                $needsMigration = true;
+            }
+            
+            if ($needsMigration) {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            }
+        } catch (\Exception $e) {
+            // Ignore database connection issues on initial install
+        }
+
+        // Auto-seed default roles if table is empty
+        try {
+            if (Schema::hasTable('roles')) {
+                foreach ([
+                    ['role_id' => 1, 'name' => 'Admin',      'description' => 'Quản trị viên hệ thống - toàn quyền'],
+                    ['role_id' => 2, 'name' => 'Quản lý',    'description' => 'Quản lý cửa hàng - xử lý đơn hàng, sản phẩm'],
+                    ['role_id' => 3, 'name' => 'Khách hàng', 'description' => 'Người dùng mua hàng trên website'],
+                    ['role_id' => 4, 'name' => 'Nhân viên',  'description' => 'Nhân viên bán hàng'],
+                ] as $role) {
+                    \Illuminate\Support\Facades\DB::table('roles')->updateOrInsert(['role_id' => $role['role_id']], $role);
+                }
+            }
+        } catch (\Exception $e) {
+            // Ignore database connection issues on initial install
+        }
     }
 
     protected function bootLoginHistory(): void
@@ -48,6 +88,13 @@ class AppServiceProvider extends ServiceProvider
                     'user_agent' => request()->userAgent(),
                     'login_at' => now(),
                 ]);
+
+                // Ghi nhận nhật ký bảo mật cho hành động đăng nhập
+                try {
+                    \App\Traits\HasAuditLog::logManualEvent('login', get_class($event->user), $event->user->user_id, null, null);
+                } catch (\Exception $e) {
+                    // Do not block login process if logging fails
+                }
             }
         );
     }

@@ -87,7 +87,7 @@ class ThemeSettingController extends Controller
      */
     public function reset()
     {
-        Setting::truncate();
+        Setting::all()->each->delete();
         return redirect()->back()->with('success', 'Đã khôi phục cài đặt mặc định thành công!');
     }
 }

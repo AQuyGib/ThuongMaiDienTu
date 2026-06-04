@@ -84,13 +84,14 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'full_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email',
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email', 'regex:/^[a-zA-Z0-9._%+-]+@gmail\.com$/i'],
             'password' => 'required|string|min:8|confirmed',
         ], [
             'full_name.required' => __('ui.error_fullname_required'),
             'email.required' => __('ui.error_email_required'),
             'email.email' => __('ui.error_email_required'),
             'email.unique' => __('ui.error_email_unique'),
+            'email.regex' => __('ui.error_email_gmail_only'),
             'password.required' => __('ui.error_password_min'),
             'password.min' => __('ui.error_password_min'),
             'password.confirmed' => __('ui.error_password_confirmed'),

@@ -444,5 +444,18 @@ class NotificationCampaignController extends Controller
 
         return back()->with('success', 'Đã kiểm tra tồn kho thấp cho ' . $count . ' biến thể.');
     }
+
+    /**
+     * API JSON trả về số lượng thông báo chưa đọc của Admin đang đăng nhập.
+=======
+     * API JSON trả về số lượng thông báo chưa đọc của admin hiện tại.
+>>>>>>> origin/master
+     */
+    public function unreadCount(Request $request)
+    {
+        return response()->json([
+            'unread_count' => $this->notificationService->unreadCountForUser($request->user()),
+        ]);
+    }
 }
 

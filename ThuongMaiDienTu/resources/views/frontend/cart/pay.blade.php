@@ -296,10 +296,12 @@
           </div>
         </div>
         <div class="mt-4">
-          <label class="block text-sm font-semibold text-gray-700 mb-1">Tỉnh/Thành phố *</label>
-          <select id="inp-province" name="province" required
-            class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white transition text-sm cursor-pointer mb-3">
-            <option value="" disabled {{ $prefilledProvince ? '' : 'selected' }}>-- Chọn Tỉnh/Thành phố --</option>
+          {{-- Ẩn Tỉnh/Thành phố theo yêu cầu --}}
+          <div style="display: none;">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Tỉnh/Thành phố *</label>
+            <select id="inp-province" name="province"
+              class="w-full p-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white transition text-sm cursor-pointer mb-3">
+              <option value="" disabled {{ $prefilledProvince ? '' : 'selected' }}>-- Chọn Tỉnh/Thành phố --</option>
 
             {{-- Nhóm 1: Nội thành (< 30 km) --}}
             <optgroup label="🏙️ Nội thành — Phí 20.000đ (Miễn phí từ 10tr)">
@@ -357,6 +359,7 @@
                 <option value="other" data-fee="100000" data-threshold="10000000" {{ $prefilledProvince === 'other' ? 'selected' : '' }}>Tỉnh thành khác / Hải đảo</option>
             </optgroup>
           </select>
+          </div>
 
           @if(Auth::check() && isset($addresses) && $addresses->isNotEmpty())
             <div class="mb-4 flex items-center justify-between gap-3">
@@ -834,7 +837,7 @@ function applyDiscount() {
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': '{{ csrf_token() }}'
       },
-      body: JSON.stringify({ code: code })
+      body: JSON.stringify({ code: code, subtotal: subtotalVal })
     })
     .then(async (response) => {
       const payload = await response.json();
@@ -1000,11 +1003,11 @@ function checkFormValidity() {
   }
 
   const provSel = document.getElementById('inp-province');
-  const provValid = provSel && provSel.value !== '';
+  const provValid = true; // Bỏ qua validate province vì đã ẩn
 
   const btn = document.getElementById('btn-order');
   if (btn) {
-    btn.disabled = !(nameValid && phoneValid && addrValid && noteValid && provValid);
+    btn.disabled = !(nameValid && phoneValid && addrValid && noteValid);
   }
 }
 
@@ -1034,9 +1037,8 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
   const isPhoneInvalid = /[a-zA-Z]/.test(phone) || !/^0[0-9]{8,9}$/.test(phone);
   const isAddrInvalid = addr.length < 10 || addr.length > 150 || /[!@#$%^&*()_+=\[\]{}|\\:;"'<>?~`]/.test(addr);
   const isNoteInvalid = note.length > 250;
-  const isProvinceInvalid = province === '';
 
-  if (isNameInvalid || isPhoneInvalid || isAddrInvalid || isNoteInvalid || isProvinceInvalid) {
+  if (isNameInvalid || isPhoneInvalid || isAddrInvalid || isNoteInvalid) {
     alert('Vui lòng kiểm tra lại thông tin nhập vào hợp lệ!');
     return;
   }
@@ -1061,6 +1063,7 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       'X-CSRF-TOKEN': '{{ csrf_token() }}'
     },
     body: JSON.stringify(data)
@@ -1084,7 +1087,9 @@ document.getElementById('checkout-form')?.addEventListener('submit', function (e
         document.getElementById('success-overlay').classList.remove('hidden');
       }
     } else {
-      alert(res.message || 'Đã xảy ra lỗi khi đặt hàng!');
+      // Hiện lỗi cụ thể từ server (validation errors hoặc logic errors)
+      const msg = res.message || (res.errors ? Object.values(res.errors).flat().join('\n') : 'Đã xảy ra lỗi khi đặt hàng!');
+      alert(msg);
       btn.innerHTML = '<i class="fa-solid fa-lock mr-2 text-sm"></i>XÁC NHẬN ĐẶT HÀNG';
       btn.disabled = false;
     }

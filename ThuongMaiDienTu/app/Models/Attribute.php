@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Attribute extends Model
 {
-    use BaseTranslationTrait;
+    use BaseTranslationTrait, \App\Traits\HasAuditLog;
 
     protected $primaryKey = 'attribute_id';
     public $timestamps = false;

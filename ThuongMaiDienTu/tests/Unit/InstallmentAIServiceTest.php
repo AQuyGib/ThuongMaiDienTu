@@ -24,6 +24,7 @@ class InstallmentAIServiceTest extends TestCase
     {
         parent::setUp();
         $this->aiService = new TestableInstallmentAIService();
+        config(['services.gemini.api_key' => null]);
     }
 
     /**

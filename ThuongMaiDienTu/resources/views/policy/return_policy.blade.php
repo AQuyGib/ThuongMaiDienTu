@@ -413,17 +413,26 @@
 
 @push('scripts')
 <script>
-// Smooth scroll & Active state highlight for return policy nav
+// =========================================================================
+// SCRIPT CUỘN MƯỢT MÀ & ĐỔI TRẠNG THÁI HIỂN THỊ CỦA THANH MENU ĐIỀU HƯỚNG
+// Tự động cuộn đến phần nội dung tương ứng khi click vào link chính sách
+// =========================================================================
 document.querySelectorAll('.return-nav a').forEach(link => {
     link.addEventListener('click', function(e) {
         const href = this.getAttribute('href');
+        // Chỉ xử lý các liên kết dạng ID trỏ tới các phần trong trang (bắt đầu bằng dấu #)
         if (href.startsWith('#')) {
-            e.preventDefault();
+            e.preventDefault(); // Ngăn hành động chuyển trang mặc định của trình duyệt
+            
+            // Xóa class 'active' (đang được chọn) khỏi toàn bộ các nút điều hướng khác
             document.querySelectorAll('.return-nav a').forEach(a => a.classList.remove('active'));
+            // Thêm class 'active' vào nút vừa bấm để làm nổi bật lên
             this.classList.add('active');
             
+            // Tìm phần tử HTML đích dựa vào ID
             const target = document.querySelector(href);
             if (target) {
+                // Thực hiện hiệu ứng cuộn mượt mà (smooth scroll) đến phần tử đích
                 target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }

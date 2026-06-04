@@ -19,7 +19,7 @@ class ProfileController extends Controller
         $user = Auth::user();
         
         // Lấy tất cả đơn hàng
-        $orders = $user->orders()->orderBy('order_id', 'desc')->get();
+        $orders = $user->orders()->with('details.inventoryItem.variant.product')->orderBy('order_id', 'desc')->get();
         
         // Thống kê thành viên
         $totalOrders = $orders->count();
@@ -453,6 +453,16 @@ class ProfileController extends Controller
             return response()->json(['error' => 'Vui lòng đăng nhập'], 401);
         }
 
+        $user = Auth::user();
+        if ($user->chatbot_banned_until && $user->chatbot_banned_until > now()) {
+            $formattedTime = \Carbon\Carbon::parse($user->chatbot_banned_until)->format('d/m/Y H:i');
+            return response()->json([
+                'success' => false,
+                'message' => "Tài khoản của bạn đã bị cấm sử dụng các tính năng hỗ trợ AI đến {$formattedTime} do phát hiện hành vi spam.",
+                'is_banned' => true
+            ], 403);
+        }
+
         $request->validate([
             'issue_desc' => ['required', 'string', 'min:10', 'max:500'],
             'device_image' => ['nullable', 'image', 'max:5120'], // Max 5MB
@@ -463,6 +473,72 @@ class ProfileController extends Controller
             'device_image.image' => 'File tải lên phải là hình ảnh.',
             'device_image.max' => 'Dung lượng ảnh tối đa 5MB.',
         ]);
+
+        // PHÒNG CHỐNG SPAM TỰ ĐỘNG (SPAM DETECTION SYSTEM)
+        $prompt = trim($request->input('issue_desc', ''));
+        $isSpamming = false;
+        $spamReason = '';
+
+        // 1. Kiểm tra lặp lại tin nhắn liên tục
+        $lastPrompt = session()->get('ai_diagnose_last_prompt', '');
+        $repeatCount = session()->get('ai_diagnose_repeat_count', 0);
+        if ($prompt === $lastPrompt) {
+            $repeatCount++;
+        } else {
+            $repeatCount = 1;
+        }
+        session()->put('ai_diagnose_last_prompt', $prompt);
+        session()->put('ai_diagnose_repeat_count', $repeatCount);
+
+        // 2. Kiểm tra tần suất gửi tin nhắn quá nhanh (Rate limiting)
+        $timestamps = session()->get('ai_diagnose_timestamps', []);
+        $nowTime = time();
+        $timestamps = array_filter($timestamps, function($t) use ($nowTime) {
+            return ($nowTime - $t) < 20;
+        });
+        $timestamps[] = $nowTime;
+        session()->put('ai_diagnose_timestamps', $timestamps);
+
+        // 3. Kiểm tra spam bàn phím (Keyboard smash)
+        $hasSmashWord = false;
+        $cleanPrompt = strip_tags($prompt);
+        $cleanPrompt = preg_replace('/https?:\/\/\S+/i', '', $cleanPrompt);
+        $cleanPrompt = preg_replace('/data:\S+/i', '', $cleanPrompt);
+        $words = explode(' ', $cleanPrompt);
+        foreach ($words as $word) {
+            if (mb_strlen($word, 'UTF-8') > 50) {
+                $hasSmashWord = true;
+                break;
+            }
+        }
+
+        if ($repeatCount >= 4) {
+            $isSpamming = true;
+            $spamReason = 'Gửi liên tiếp một nội dung nhiều lần.';
+        } elseif (count($timestamps) > 6) {
+            $isSpamming = true;
+            $spamReason = 'Gửi quá nhiều yêu cầu liên tục trong thời gian ngắn.';
+        } elseif ($hasSmashWord) {
+            $isSpamming = true;
+            $spamReason = 'Nội dung chứa từ khóa dài bất thường (nghi vấn spam bàn phím).';
+        }
+
+        if ($isSpamming) {
+            $banDuration = now()->addDays(30);
+            $user->update(['chatbot_banned_until' => $banDuration]);
+            
+            // Xóa session liên quan để dọn dẹp
+            session()->forget(['ai_diagnose_last_prompt', 'ai_diagnose_repeat_count', 'ai_diagnose_timestamps']);
+            
+            \Illuminate\Support\Facades\Log::warning("User ID {$user->user_id} bị cấm sử dụng AI tự động do hành vi spam chẩn đoán lỗi: {$spamReason}");
+            
+            $formattedTime = $banDuration->format('d/m/Y H:i');
+            return response()->json([
+                'success' => false,
+                'message' => "Hành vi spam bị phát hiện: {$spamReason} Tài khoản của bạn đã bị cấm sử dụng các tính năng hỗ trợ AI đến {$formattedTime}.",
+                'is_banned' => true
+            ], 403);
+        }
 
         $tempImagePath = null;
         if ($request->hasFile('device_image')) {
@@ -483,6 +559,11 @@ class ProfileController extends Controller
             }
         }
         $result['technician_name'] = $techName;
+
+        // Sinh token bảo mật ngẫu nhiên và lưu kết quả chẩn đoán vào session để đối chiếu khi submit form
+        $diagnoseToken = \Illuminate\Support\Str::uuid()->toString();
+        session()->put('ai_diagnose_' . $diagnoseToken, $result);
+        $result['diagnose_token'] = $diagnoseToken;
 
         return response()->json($result);
     }
@@ -552,27 +633,32 @@ class ProfileController extends Controller
             }
         }
 
-        // Xử lý dữ liệu chẩn đoán AI
-        $aiDiagnosed = $request->boolean('ai_diagnosed', false);
+        // Xử lý dữ liệu chẩn đoán AI bảo mật từ Session thay vì hidden input
+        $aiDiagnoseToken = $request->input('ai_diagnose_token');
+        $sessionKey = 'ai_diagnose_' . $aiDiagnoseToken;
+        $aiDiagnosed = false;
         $aiData = [];
 
-        if ($aiDiagnosed) {
+        if ($aiDiagnoseToken && session()->has($sessionKey)) {
+            $diagResult = session()->get($sessionKey);
+            $aiDiagnosed = true;
             $aiData = [
                 'ai_diagnosed' => true,
-                'ai_fault_type' => $request->ai_fault_type,
-                'ai_probable_causes' => json_decode($request->ai_probable_causes, true) ?: [],
-                'ai_risk_warnings' => json_decode($request->ai_risk_warnings, true) ?: [],
-                'ai_replacement_parts' => $request->ai_replacement_parts,
-                'ai_estimated_cost_min' => $request->filled('ai_estimated_cost_min') ? (int) $request->ai_estimated_cost_min : null,
-                'ai_estimated_cost_max' => $request->filled('ai_estimated_cost_max') ? (int) $request->ai_estimated_cost_max : null,
-                'ai_complexity_level' => $request->ai_complexity_level,
-                'ai_recommended_skills' => json_decode($request->ai_recommended_skills, true) ?: [],
-                'ai_dispatch_reason' => $request->ai_dispatch_reason,
-                'technician_id' => $request->filled('assigned_technician_id') ? $request->integer('assigned_technician_id') : null,
-                'ai_diagnosed_at' => now(),
+                'ai_fault_type' => $diagResult['ai_fault_type'] ?? null,
+                'ai_probable_causes' => $diagResult['ai_probable_causes'] ?? [],
+                'ai_risk_warnings' => $diagResult['ai_risk_warnings'] ?? [],
+                'ai_replacement_parts' => $diagResult['ai_replacement_parts'] ?? null,
+                'ai_estimated_cost_min' => $diagResult['ai_estimated_cost_min'] ?? null,
+                'ai_estimated_cost_max' => $diagResult['ai_estimated_cost_max'] ?? null,
+                'ai_complexity_level' => $diagResult['ai_complexity_level'] ?? null,
+                'ai_recommended_skills' => $diagResult['ai_recommended_skills'] ?? [],
+                'ai_dispatch_reason' => $diagResult['ai_dispatch_reason'] ?? null,
+                'technician_id' => $diagResult['assigned_technician_id'] ?? null,
+                'ai_diagnosed_at' => $diagResult['ai_diagnosed_at'] ?? now(),
             ];
+            session()->forget($sessionKey); // Xóa token khỏi session sau khi dùng để tránh replay attack
         } else {
-            // Tự động chẩn đoán ở backend nếu client không gọi trước
+            // Tự động chẩn đoán ở backend nếu client không gọi trước hoặc token hết hạn/không hợp lệ
             try {
                 $aiService = app(\App\Services\RepairAIService::class);
                 $diagResult = $aiService->diagnoseFault($request->issue_desc, $imagePath ? public_path($imagePath) : null);
@@ -636,7 +722,9 @@ class ProfileController extends Controller
             'ai_diagnosed_at' => $aiData['ai_diagnosed_at'] ?? null,
         ]);
 
+
+
         // Bước 4: Điều hướng phản hồi về trang cá nhân của khách hàng
-        return redirect()->route('profile.index', ['tab' => 'repair-tab'])->with('repair_success', 'Đã đăng ký lịch hẹn sửa chữa trực tuyến thành công!');
+        return redirect()->route('profile.index')->with('repair_success', 'Đã đăng ký lịch hẹn sửa chữa trực tuyến thành công!');
     }
 }

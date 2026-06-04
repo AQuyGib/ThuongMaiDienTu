@@ -27,6 +27,19 @@
             </div>
 
             <div class="p-6 flex-grow">
+                <!-- Chọn địa chỉ đã lưu (Nếu có) -->
+                @if(Auth::check() && isset($addresses) && $addresses->isNotEmpty())
+                    <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 border border-blue-100 bg-blue-50/50 rounded-xl">
+                        <div>
+                            <div class="text-sm font-semibold text-gray-700">Chọn địa chỉ đã lưu</div>
+                            <p class="text-xs text-gray-500 mt-1">Tự động chọn tỉnh/thành dựa trên địa chỉ của bạn.</p>
+                        </div>
+                        <button type="button" onclick="openSavedAddressModal()" class="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition w-full sm:w-auto">
+                            <i class="fa-solid fa-map-marker-alt"></i> Chọn địa chỉ
+                        </button>
+                    </div>
+                @endif
+
                 <!-- Dropdown chọn Tỉnh/Thành phố -->
                 <div class="mb-6">
                     <label for="province" class="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Địa điểm giao hàng:</label>
@@ -129,8 +142,125 @@
     </div>
 </div>
 
+@if(Auth::check() && isset($addresses) && $addresses->isNotEmpty())
+    <div id="saved-address-modal" class="fixed inset-0 z-[99999] hidden flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-2xl rounded-3xl bg-white shadow-2xl overflow-hidden border border-gray-100" style="max-height:90vh; overflow:auto;">
+        <div class="flex items-start justify-between gap-4 p-6 border-b border-gray-200">
+        <div>
+            <h3 class="text-base font-bold text-gray-900">Chọn địa chỉ nhận hàng</h3>
+            <p class="text-sm text-gray-500 mt-1">Nhấn vào địa chỉ để tự động chọn tỉnh/thành phố tương ứng.</p>
+        </div>
+        <button type="button" onclick="closeSavedAddressModal()" class="text-gray-400 hover:text-gray-700">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        </div>
+        <div class="max-h-[420px] overflow-y-auto p-6 space-y-3">
+        @foreach($addresses as $address)
+            @php
+            $savedAddressLabel = trim($address->name ?: ($address->type ?: 'Địa chỉ'));
+            $savedAddressFull = trim(implode(', ', array_filter([$address->street, $address->ward, $address->district, $address->city])));
+            @endphp
+            <button type="button" onclick="selectSavedAddress(this)"
+            class="saved-address-card w-full text-left p-4 border rounded-3xl transition shadow-sm hover:border-blue-500 flex items-start justify-between gap-3 border-gray-200 bg-white"
+            data-city="{{ e($address->city) }}">
+            <div class="min-w-0">
+                <div class="font-semibold text-sm text-gray-900">{{ $savedAddressLabel }}</div>
+                <div class="text-xs text-gray-500 mt-1 break-words">{{ $savedAddressFull }}</div>
+            </div>
+            <div class="text-right">
+                @if($address->is_default)
+                <span class="inline-flex px-3 py-1 text-[11px] font-semibold uppercase tracking-wider bg-blue-100 text-blue-700 rounded-full">Mặc định</span>
+                @endif
+            </div>
+            </button>
+        @endforeach
+        </div>
+        <div class="flex items-center justify-between gap-3 p-5 border-t border-gray-200">
+        <a href="{{ route('profile.index') }}" class="text-sm text-blue-600 hover:underline">Thêm / sửa địa chỉ</a>
+        <button type="button" onclick="closeSavedAddressModal()" class="px-5 py-2 rounded-xl bg-gray-100 text-gray-700 hover:bg-gray-200 transition">Đóng</button>
+        </div>
+    </div>
+    </div>
+@endif
+
+
 @push('scripts')
     <script>
+        // Các hàm hỗ trợ cho Modal chọn địa chỉ
+        function openSavedAddressModal() {
+            const modal = document.getElementById('saved-address-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeSavedAddressModal() {
+            const modal = document.getElementById('saved-address-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function findProvinceCodeFromCity(city) {
+            if (!city) return '';
+            const text = city.toLowerCase();
+            if (text.includes('hồ chí minh') || text.includes('hcm')) return 'hcm';
+            if (text.includes('hà nội') || text.includes('hn')) return 'hn';
+            if (text.includes('bình dương')) return 'bd';
+            if (text.includes('đồng nai')) return 'dnai';
+            if (text.includes('long an')) return 'la';
+            if (text.includes('tiền giang')) return 'tg';
+            if (text.includes('vũng tàu') || text.includes('bà rịa')) return 'vt';
+            if (text.includes('bắc ninh')) return 'bn';
+            if (text.includes('hưng yên')) return 'hy';
+            if (text.includes('hà nam')) return 'hnam';
+            if (text.includes('vĩnh phúc')) return 'vp';
+            if (text.includes('hải phòng')) return 'hp';
+            if (text.includes('cần thơ')) return 'ct';
+            if (text.includes('hòa bình')) return 'hb';
+            if (text.includes('nam định') || text.includes('ninh bình')) return 'nb';
+            if (text.includes('an giang')) return 'ag';
+            if (text.includes('kiên giang')) return 'kg';
+            if (text.includes('đồng tháp')) return 'dt';
+            if (text.includes('trà vinh') || text.includes('vĩnh long')) return 'tv';
+            if (text.includes('bến tre') || text.includes('sóc trăng')) return 'bte';
+            if (text.includes('đà nẵng')) return 'dn';
+            if (text.includes('quảng nam') || text.includes('quảng ngãi')) return 'qng';
+            if (text.includes('bình định') || text.includes('phú yên')) return 'bdinh';
+            if (text.includes('khánh hòa') || text.includes('nha trang')) return 'nth';
+            if (text.includes('thanh hóa') || text.includes('nghệ an')) return 'th';
+            if (text.includes('quảng bình') || text.includes('quảng trị')) return 'qbi';
+            if (text.includes('thừa thiên') || text.includes('huế')) return 'hue';
+            if (text.includes('gia lai') || text.includes('kon tum')) return 'gl';
+            if (text.includes('đắk lắk') || text.includes('đắk nông')) return 'dkl';
+            if (text.includes('lào cai') || text.includes('yên bái')) return 'lc';
+            if (text.includes('điện biên') || text.includes('lai châu')) return 'dbi';
+            if (text.includes('sơn la')) return 'ss';
+            if (text.includes('cao bằng') || text.includes('bắc kạn')) return 'cb';
+            if (text.includes('lạng sơn') || text.includes('hà giang')) return 'ls';
+            if (text.includes('cà mau') || text.includes('bạc liêu')) return 'cm';
+            return 'other';
+        }
+
+        function selectSavedAddress(button) {
+            const city = button.dataset.city || '';
+            const provinceCode = findProvinceCodeFromCity(city);
+            const provinceSelect = document.getElementById('province');
+            if (provinceSelect && provinceCode) {
+                // Đảm bảo option tồn tại trước khi set value
+                if (Array.from(provinceSelect.options).some(opt => opt.value === provinceCode)) {
+                    provinceSelect.value = provinceCode;
+                    calculateShipping();
+                } else {
+                    provinceSelect.value = 'other';
+                    calculateShipping();
+                }
+            }
+            closeSavedAddressModal();
+        }
+
         // Mảng toàn cục lưu danh sách sản phẩm đồng bộ từ backend
         window.cartData = [];
 

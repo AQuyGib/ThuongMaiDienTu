@@ -2,7 +2,8 @@
     $rawTitle = $__env->getSections()['page-title'] ?? ($__env->getSections()['title'] ?? 'Dashboard');
     $props = [
         'pageTitle' => html_entity_decode($rawTitle, ENT_QUOTES, 'UTF-8'),
-        'todayDate' => now()->format('d/m/Y')
+        'todayDate' => now()->format('d/m/Y'),
+        'userRoleId' => auth()->user()->role_id ?? 4
     ];
     $adminUnreadCount = \App\Models\Notification::where('user_id', auth()->id())->unread()->count();
 @endphp

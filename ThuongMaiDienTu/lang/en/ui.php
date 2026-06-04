@@ -81,6 +81,8 @@ return [
     'chatbot_quick_laptop_query'=> 'Which laptop is suitable for students?',
     'chatbot_quick_promo_btn'   => '🔥 Promotions',
     'chatbot_quick_promo_query' => 'Which products are currently on promotion?',
+    'chatbot_clear_tooltip'     => 'Clear conversation',
+    'chatbot_clear_confirm'     => 'Are you sure you want to clear the conversation history?',
 
     // ===== REPAIR TRACKING =====
     'repair_title'                  => 'Details of repair progress #RT-:id',
@@ -140,6 +142,7 @@ return [
     'error_password_confirmed'      => 'The password confirmation does not match.',
     'error_fullname_required'       => 'Full name is required.',
     'error_email_required'          => 'Email is required and must be a valid email.',
+    'error_email_gmail_only'        => 'Registration requires a valid Gmail address (@gmail.com).',
     'error_password_min'            => 'Password must be at least 8 characters.',
 
     // ===== REMEMBER & TERMS =====

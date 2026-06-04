@@ -33,7 +33,8 @@
             'errorMsg' => $errors->first('otp') ?: $errors->first('login_error'),
             'successMsg' => session('success'),
             'resendUrl' => route('2fa.send'),
-            'resendMethod' => 'POST'
+            'resendMethod' => 'POST',
+            'type' => '2fa'
         ];
     @endphp
 

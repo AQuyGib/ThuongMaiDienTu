@@ -20,7 +20,7 @@
     .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
 
     /* Modal Glassmorphism & Animations */
-    .modal-backdrop {
+    .custom-modal-backdrop {
         transition: all 0.3s ease-in-out;
     }
     .modal-content-anim {
@@ -60,8 +60,9 @@
 
 @section('content')
 
-{{-- Toast Notifications Container --}}
+{{-- THÙNG CHỨA CÁC HỘP THÔNG BÁO TOAST (PHẢN HỒI KẾT QUẢ TỪ SERVER) --}}
 <div id="toast-container" class="fixed top-24 right-8 z-[200] flex flex-col gap-3 pointer-events-none">
+    {{-- Hiển thị Toast thông báo Thành công khi Session có biến 'success' --}}
     @if(session('success'))
         <div class="bg-white border-l-4 border-emerald-500 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-xl p-4 flex items-center gap-4 animate-slide-left toast-item transition-all duration-300 w-80">
             <div class="w-10 h-10 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0">
@@ -74,6 +75,7 @@
         </div>
     @endif
 
+    {{-- Hiển thị Toast thông báo Thất bại khi Session có biến 'error' --}}
     @if(session('error'))
         <div class="bg-white border-l-4 border-rose-500 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-xl p-4 flex items-center gap-4 animate-slide-left toast-item transition-all duration-300 w-80">
             <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
@@ -86,19 +88,23 @@
         </div>
     @endif
 </div>
+
+{{-- BỐ CỤC CHÍNH CỦA TRANG QUẢN LÝ SỔ QUỸ --}}
 <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
 
-    {{-- Top Action Bar --}}
+    {{-- THANH TIÊU ĐỀ TRÊN CÙNG (TOP ACTION BAR) --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Quản lý Dòng tiền</h1>
             <p class="text-sm text-slate-500 font-medium">Theo dõi, kiểm soát thu chi và tối ưu hóa tài chính cửa hàng.</p>
         </div>
         <div class="flex items-center gap-3">
+            {{-- Hiển thị ngày giờ hiện tại theo định dạng tiếng Việt trên thiết bị lớn --}}
             <div class="hidden sm:flex bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm items-center gap-2">
                 <i class="fa-solid fa-calendar-day text-indigo-500"></i>
                 <span class="text-xs font-bold text-slate-600">{{ now('Asia/Ho_Chi_Minh')->locale('vi')->isoFormat('dddd, D/MM/YYYY') }}</span>
             </div>
+            {{-- Nút nhấn mở Modal thêm mới giao dịch --}}
             <button onclick="openModal('modal-add')"
                     class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-95">
                 <i class="fa-solid fa-plus"></i> Thêm giao dịch
@@ -106,9 +112,10 @@
         </div>
     </div>
 
-    {{-- Stats & Chart Row --}}
+    {{-- KHU VỰC THỐNG KÊ (STATS CARDS) & BIỂU ĐỒ XU HƯỚNG --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="space-y-4">
+            {{-- Thẻ Thống Kê Tổng Thu Nhập --}}
             <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center justify-between group hover:border-emerald-200 transition-all hover:shadow-emerald-100/50 hover:shadow-xl">
                 <div class="space-y-1">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Tổng thu nhập</p>
@@ -118,6 +125,8 @@
                     <i class="fa-solid fa-arrow-trend-up text-2xl"></i>
                 </div>
             </div>
+            
+            {{-- Thẻ Thống Kê Tổng Chi Phí --}}
             <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center justify-between group hover:border-rose-200 transition-all hover:shadow-rose-100/50 hover:shadow-xl">
                 <div class="space-y-1">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Tổng chi phí</p>
@@ -127,6 +136,8 @@
                     <i class="fa-solid fa-arrow-trend-down text-2xl"></i>
                 </div>
             </div>
+            
+            {{-- Thẻ Thống Kê Số Dư Hiện Tại (Màu sắc thay đổi động theo giá trị âm/dương) --}}
             <div class="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex items-center justify-between group {{ $balance >= 0 ? 'hover:border-blue-200 hover:shadow-indigo-100/50' : 'hover:border-rose-200 hover:shadow-rose-100/50' }} transition-all hover:shadow-xl">
                 <div class="space-y-1">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Số dư hiện tại</p>
@@ -139,6 +150,8 @@
                 </div>
             </div>
         </div>
+        
+        {{-- THÙNG CHỨA BIỂU ĐỒ XU HƯỚNG TÀI CHÍNH 7 NGÀY GẦN NHẤT --}}
         <div class="lg:col-span-2 bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden">
             <div class="flex items-center justify-between mb-8">
                 <div>
@@ -223,6 +236,9 @@
         {{-- Table Content --}}
         <form id="bulk-delete-form" action="{{ route('admin.cashbooks.bulkDestroy') }}" method="POST">
             @csrf
+            <input type="hidden" name="select_all_matching" id="select-all-matching" value="0">
+            <input type="hidden" name="search" value="{{ request('search') }}">
+            <input type="hidden" name="type" value="{{ request('type') }}">
             <div class="overflow-x-auto custom-scrollbar">
                 @if($cashbooks->isEmpty())
                     <div class="py-32 text-center">
@@ -245,80 +261,146 @@
                         @endif
                     </div>
                 @else
-                    <table class="w-full text-left min-w-[900px]">
+                    <table class="w-full text-left min-w-[768px]">
                         <thead>
                             <tr class="text-slate-400 text-[10px] uppercase font-black tracking-[0.2em] bg-white border-b border-slate-100">
-                                <th class="px-8 py-6 w-14">
+                                <th class="px-4 py-4 w-12">
                                     <div class="flex items-center justify-center">
                                         <input type="checkbox" id="select-all" class="w-5 h-5 rounded-lg border-2 border-slate-200 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-all">
                                     </div>
                                 </th>
-                                <th class="px-6 py-6">Mã GD</th>
-                                <th class="px-4 py-6">Thời gian</th>
-                                <th class="px-6 py-6">Phân loại</th>
-                                <th class="px-6 py-6">Nội dung chi tiết</th>
-                                <th class="px-8 py-6 text-right">Số tiền</th>
-                                <th class="px-8 py-6 text-center">Thao tác</th>
+                                <th class="px-4 py-4">Mã GD</th>
+                                <th class="px-4 py-4">Thời gian</th>
+                                <th class="px-4 py-4">Phân loại</th>
+                                <th class="px-4 py-4">Nội dung chi tiết</th>
+                                <th class="px-4 py-4 text-right">Số tiền</th>
+                                <th class="px-4 py-4 text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-50">
                             @foreach($cashbooks as $cb)
                             <tr class="hover:bg-indigo-50/20 transition-all group {{ request('highlight') == $cb->cashbook_id ? 'bg-indigo-50/50 animate-pulse' : '' }}">
-                                <td class="px-8 py-6">
+                                <td class="px-4 py-4">
                                     <div class="flex items-center justify-center">
                                         <input type="checkbox" name="ids[]" value="{{ $cb->cashbook_id }}" class="item-checkbox w-5 h-5 rounded-lg border-2 border-slate-200 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-all">
                                     </div>
                                 </td>
-                                <td class="px-6 py-6">
+                                <td class="px-4 py-4">
                                     @if($cb->reference_id)
-                                        <div class="inline-flex items-center px-4 py-2 rounded-lg bg-white text-slate-900 text-sm font-black font-mono uppercase tracking-widest border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] ring-1 ring-slate-900/5" title="Mã giao dịch">
-                                            #{{ $cb->reference_id }}
-                                        </div>
+                                        @php
+                                            $link = '#';
+                                            $title = 'Mã giao dịch';
+                                            $colorClass = 'hover:bg-slate-100 hover:text-slate-700';
+                                            $icon = '<i class="fa-solid fa-hashtag mr-1.5 text-xs text-slate-400"></i>';
+                                            $code = '#' . $cb->reference_id;
+                                            $exists = false;
+                                            
+                                            $refType = $cb->reference_type;
+                                            if (!$refType) {
+                                                if (str_contains(strtolower($cb->description), 'đơn hàng')) {
+                                                    $refType = 'order';
+                                                } elseif (str_contains(strtolower($cb->description), 'dịch vụ')) {
+                                                    $refType = 'service_invoice';
+                                                } elseif (str_contains(strtolower($cb->description), 'nhập hàng')) {
+                                                    $refType = 'purchase_order';
+                                                } elseif (str_contains(strtolower($cb->description), 'trả góp')) {
+                                                    $refType = 'installment';
+                                                }
+                                            }
+
+                                            if ($refType === 'order') {
+                                                $title = 'Đơn hàng';
+                                                $colorClass = 'hover:bg-indigo-50/80 hover:text-indigo-600';
+                                                $icon = '<i class="fa-solid fa-cart-shopping mr-1.5 text-xs text-indigo-500"></i>';
+                                                $exists = isset($existingRefs['order'][$cb->reference_id]);
+                                                if ($exists) {
+                                                    $link = route('admin.orders.show', $cb->reference_id);
+                                                    $code = $existingRefs['order'][$cb->reference_id];
+                                                }
+                                            } elseif ($refType === 'service_invoice') {
+                                                $title = 'Hóa đơn dịch vụ';
+                                                $colorClass = 'hover:bg-emerald-50/80 hover:text-emerald-700';
+                                                $icon = '<i class="fa-solid fa-wrench mr-1.5 text-xs text-emerald-500"></i>';
+                                                $exists = isset($existingRefs['service_invoice'][$cb->reference_id]);
+                                                if ($exists) {
+                                                    $link = route('admin.service-invoices.show', $cb->reference_id);
+                                                    $code = $existingRefs['service_invoice'][$cb->reference_id];
+                                                }
+                                            } elseif ($refType === 'purchase_order') {
+                                                $title = 'Phiếu nhập kho';
+                                                $colorClass = 'hover:bg-amber-50/80 hover:text-amber-700';
+                                                $icon = '<i class="fa-solid fa-truck mr-1.5 text-xs text-amber-500"></i>';
+                                                $exists = isset($existingRefs['purchase_order'][$cb->reference_id]);
+                                                if ($exists) {
+                                                    $link = route('admin.purchase-orders.show', $cb->reference_id);
+                                                    $code = $existingRefs['purchase_order'][$cb->reference_id];
+                                                }
+                                            } elseif ($refType === 'installment') {
+                                                $title = 'Hợp đồng trả góp';
+                                                $colorClass = 'hover:bg-violet-50/80 hover:text-violet-700';
+                                                $icon = '<i class="fa-solid fa-credit-card mr-1.5 text-xs text-violet-500"></i>';
+                                                $exists = isset($existingRefs['installment'][$cb->reference_id]);
+                                                if ($exists) {
+                                                    $link = route('admin.installments.show', $cb->reference_id);
+                                                    $code = $existingRefs['installment'][$cb->reference_id];
+                                                }
+                                            }
+                                        @endphp
+                                        @if($link !== '#')
+                                            <a href="{{ $link }}" class="inline-flex items-center px-4 py-2 rounded-lg bg-white text-slate-900 text-sm font-black font-mono uppercase tracking-widest border border-slate-200 shadow-[0_2px_8px_rgba(0,0,0,0.04)] ring-1 ring-slate-900/5 transition-all {{ $colorClass }}" title="Xem chi tiết {{ $title }}">
+                                                {!! $icon !!}{{ $code }}
+                                            </a>
+                                        @else
+                                            <div class="inline-flex items-center px-4 py-2 rounded-lg bg-slate-50 text-slate-400 text-sm font-black font-mono uppercase tracking-widest border border-slate-200 shadow-sm cursor-not-allowed select-none" title="Không có tài liệu {{ $title }} thực tế (Dữ liệu Seeder mẫu)">
+                                                {!! $icon !!}{{ $code }}
+                                            </div>
+                                        @endif
                                     @else
                                         <span class="text-[12px] text-slate-300 font-bold uppercase tracking-widest pl-4">---</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-6">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center {{ $cb->type === 'Income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600' }}">
-                                            <i class="fa-solid {{ $cb->type === 'Income' ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i>
+                                <td class="px-4 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 {{ $cb->type === 'Income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600' }}">
+                                            <i class="fa-solid {{ $cb->type === 'Income' ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }} text-xs"></i>
                                         </div>
                                         <div>
-                                            <div class="font-black text-slate-900 text-sm tracking-tight">{{ $cb->created_at->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y') }}</div>
-                                            <div class="text-[10px] text-slate-400 font-bold uppercase mt-0.5 tracking-wider">{{ $cb->created_at->timezone('Asia/Ho_Chi_Minh')->format('H:i') }}</div>
+                                            <div class="font-black text-slate-900 text-xs tracking-tight">{{ $cb->created_at->timezone('Asia/Ho_Chi_Minh')->format('d/m/Y') }}</div>
+                                            <div class="text-[9px] text-slate-400 font-bold uppercase mt-0.5 tracking-wider">{{ $cb->created_at->timezone('Asia/Ho_Chi_Minh')->format('H:i') }}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td class="px-6 py-6">
+                                <td class="px-4 py-4">
                                     @if($cb->type === 'Income')
-                                        <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm shadow-emerald-100">Khoản Thu</span>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm">Khoản Thu</span>
                                     @else
-                                        <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest border border-rose-100 shadow-sm shadow-rose-100">Khoản Chi</span>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-[9px] font-black uppercase tracking-widest border border-rose-100 shadow-sm">Khoản Chi</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-6">
-                                    <p class="text-sm font-bold text-slate-700 max-w-[300px] truncate leading-relaxed">{{ $cb->description ?? 'Chưa có mô tả' }}</p>
+                                <td class="px-4 py-4">
+                                    <p class="text-xs font-bold text-slate-700 max-w-[200px] truncate leading-relaxed" title="{{ $cb->description ?? '' }}">{{ $cb->description ?? 'Chưa có mô tả' }}</p>
                                 </td>
-                                <td class="px-8 py-6 text-right">
-                                    <div class="font-black text-lg tabular-nums {{ $cb->type === 'Income' ? 'text-emerald-600' : 'text-rose-500' }}">
+                                <td class="px-4 py-4 text-right">
+                                    <div class="font-black text-sm tabular-nums {{ $cb->type === 'Income' ? 'text-emerald-600' : 'text-rose-500' }}">
                                         {{ $cb->type === 'Income' ? '+' : '-' }}{{ number_format($cb->amount) }}đ
                                     </div>
                                 </td>
-                                <td class="px-8 py-6">
-                                    <div class="flex items-center justify-center gap-3">
+                                <td class="px-4 py-4">
+                                    <div class="flex items-center justify-center gap-2">
                                         <button type="button" onclick="openEditModal(this)"
                                            data-id="{{ $cb->cashbook_id }}"
                                            data-type="{{ $cb->type }}"
                                            data-amount="{{ $cb->amount }}"
                                            data-desc="{{ $cb->description }}"
-                                           data-ref="{{ $cb->reference_id }}"
+                                           data-ref="{{ ltrim($code, '#') }}"
+                                           data-ref-type="{{ $cb->reference_type }}"
                                            data-date="{{ $cb->created_at->timezone('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i') }}"
-                                           class="group w-10 h-10 flex items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all duration-300 active:scale-90 shadow-sm" title="Chỉnh sửa">
-                                            <i class="fa-solid fa-pen-to-square text-sm group-hover:scale-110 transition-transform"></i>
+                                           class="group w-8 h-8 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all duration-300 active:scale-90 shadow-sm" title="Chỉnh sửa">
+                                             <i class="fa-solid fa-pen-to-square text-xs group-hover:scale-110 transition-transform"></i>
                                         </button>
                                         <button type="button" onclick="deleteItem({{ $cb->cashbook_id }})"
-                                                class="group w-10 h-10 flex items-center justify-center rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all duration-300 active:scale-90 shadow-sm" title="Xóa">
-                                            <i class="fa-solid fa-trash-alt text-sm group-hover:scale-110 transition-transform"></i>
+                                                class="group w-8 h-8 flex items-center justify-center rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all duration-300 active:scale-90 shadow-sm" title="Xóa">
+                                            <i class="fa-solid fa-trash-alt text-xs group-hover:scale-110 transition-transform"></i>
                                         </button>
                                      </div>
                                 </td>
@@ -347,76 +429,92 @@
 </div>
 
 {{-- MODAL THÊM GIAO DỊCH --}}
-<div id="modal-add" class="hidden fixed inset-0 z-[100] items-center justify-center p-4 modal-backdrop">
-    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
-    <div class="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] w-full max-w-lg overflow-hidden modal-content-anim relative z-10">
+<div id="modal-add" class="hidden fixed inset-0 z-[100] items-center justify-center p-4 custom-modal-backdrop">
+    <div class="absolute inset-0 bg-slate-900/40 transition-opacity duration-300"></div>
+    <div class="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] w-full max-w-md overflow-hidden modal-content-anim relative z-10">
         {{-- Close Button --}}
-        <button onclick="closeModal('modal-add')" class="absolute top-6 right-6 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-400 transition-all z-20 active:scale-90">
-            <i class="fa-solid fa-xmark text-lg"></i>
+        <button onclick="closeModal('modal-add')" class="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-400 transition-all z-20 active:scale-90">
+            <i class="fa-solid fa-xmark text-base"></i>
         </button>
 
-        <div class="px-10 pt-10 pb-2">
-            <h3 class="text-2xl font-black text-slate-900 tracking-tight">Thêm Giao Dịch</h3>
-            <p class="text-slate-400 text-sm font-medium mt-1">Lưu trữ thông tin thu chi mới vào hệ thống</p>
+        <div class="px-6 pt-6 pb-2">
+            <h3 class="text-xl font-black text-slate-900 tracking-tight">Thêm Giao Dịch</h3>
+            <p class="text-slate-400 text-xs font-semibold mt-0.5">Lưu trữ thông tin thu chi mới vào hệ thống</p>
         </div>
 
-
-        
-        <form id="form-add" action="{{ route('admin.cashbooks.store') }}" method="POST" class="p-8 space-y-5">
+        <form id="form-add" action="{{ route('admin.cashbooks.store') }}" method="POST" class="p-6 space-y-4">
             @csrf
             <div>
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2.5">Loại giao dịch <span class="text-rose-500">*</span></label>
-                <div class="grid grid-cols-2 gap-4">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.12em] mb-2">Loại giao dịch <span class="text-rose-500">*</span></label>
+                <div class="grid grid-cols-2 gap-3">
                     <label class="relative cursor-pointer group">
                         <input type="radio" name="type" value="Income" class="sr-only peer" required>
-                        <div class="flex items-center justify-center gap-3 border-2 border-slate-200 rounded-xl p-4 text-slate-500 font-bold transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 hover:border-slate-300 text-sm">
-                            <i class="fa-solid fa-arrow-trend-up text-xl"></i>
+                        <div class="flex items-center justify-center gap-2 border-2 border-slate-200 rounded-xl p-3 text-slate-500 font-bold transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 hover:border-slate-300 text-xs">
+                            <i class="fa-solid fa-arrow-trend-up text-lg"></i>
                             Thu tiền
                         </div>
                     </label>
                     <label class="relative cursor-pointer group">
                         <input type="radio" name="type" value="Expense" class="sr-only peer">
-                        <div class="flex items-center justify-center gap-3 border-2 border-slate-200 rounded-xl p-4 text-slate-500 font-bold transition-all peer-checked:border-rose-500 peer-checked:bg-rose-50 peer-checked:text-rose-700 hover:border-slate-300 text-sm">
-                            <i class="fa-solid fa-arrow-trend-down text-xl"></i>
+                        <div class="flex items-center justify-center gap-2 border-2 border-slate-200 rounded-xl p-3 text-slate-500 font-bold transition-all peer-checked:border-rose-500 peer-checked:bg-rose-50 peer-checked:text-rose-700 hover:border-slate-300 text-xs">
+                            <i class="fa-solid fa-arrow-trend-down text-lg"></i>
                             Chi tiền
                         </div>
                     </label>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div class="space-y-2">
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Số tiền <span class="text-rose-500">*</span></label>
-                    <div class="relative group">
-                        <input type="number" name="amount" min="1000" step="1000" placeholder="0" style="padding-left: 1.5rem; padding-right: 3rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3.5 text-lg font-black text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm" required>
-                        <span class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-base">đ</span>
-                    </div>
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.12em]">Số tiền <span class="text-rose-500">*</span></label>
+                <div class="relative group">
+                    <input type="number" name="amount" min="1000" step="1000" placeholder="0" style="padding-left: 1.25rem; padding-right: 2.5rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 text-base font-black text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm" required>
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-sm">đ</span>
                 </div>
-                <div class="space-y-2">
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Mã giao dịch</label>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {{-- Hỗ trợ nhập mã tài liệu thực tế (VD: PO-00001, HD0001, TGO...) thay vì ID thô --}}
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.12em]">Mã tài liệu liên kết</label>
                     <div class="relative group">
                         <i class="fa-solid fa-hashtag absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="number" name="reference_id" placeholder="VD: 9999" style="padding-left: 2.5rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl pr-5 py-3.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm">
+                        <input type="text" name="reference_id" placeholder="VD: PO-00001, POS..., hoặc ID số" style="padding-left: 2.25rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl pr-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm">
+                    </div>
+                </div>
+                {{-- Hỗ trợ nhập mã tài liệu thực tế (VD: PO-00001, HD0001, TGO...) thay vì ID thô --}}
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.12em]">Loại liên kết</label>
+                    <div class="relative group">
+                        <select name="reference_type" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm appearance-none" style="padding-left: 1rem; padding-right: 2rem;">
+                            <option value="">Không có liên kết</option>
+                            <option value="order">Đơn hàng (Order)</option>
+                            <option value="service_invoice">Hóa đơn dịch vụ (Service Invoice)</option>
+                            <option value="purchase_order">Phiếu nhập kho (Purchase PO)</option>
+                            <option value="installment">Trả góp (Installment)</option>
+                        </select>
+                        <div style="position: absolute; top: 50%; right: 1rem; transform: translateY(-50%); pointer-events: none; color: #94a3b8;">
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="space-y-2">
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Thời gian ghi nhận</label>
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.12em]">Thời gian ghi nhận</label>
                 <div class="relative group">
                     <i class="fa-solid fa-calendar-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                    <input type="datetime-local" name="created_at" value="{{ now('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i') }}" style="padding-left: 2.5rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl pr-5 py-3.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm">
+                    <input type="datetime-local" name="created_at" value="{{ now('Asia/Ho_Chi_Minh')->format('Y-m-d\TH:i') }}" style="padding-left: 2.25rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl pr-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm">
                 </div>
             </div>
 
-            <div class="space-y-2">
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Mô tả giao dịch <span class="text-rose-500">*</span></label>
-                <textarea name="description" rows="2" maxlength="500" placeholder="Nhập nội dung chi tiết..." class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-6 py-4 text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all resize-none shadow-sm" required></textarea>
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.12em]">Mô tả giao dịch <span class="text-rose-500">*</span></label>
+                <textarea name="description" rows="2" maxlength="500" placeholder="Nhập nội dung chi tiết..." class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all resize-none shadow-sm" required></textarea>
             </div>
 
-            <div class="flex gap-4 pt-4">
-                <button type="button" onclick="closeModal('modal-add')" class="flex-1 bg-slate-100 text-slate-600 py-4 rounded-xl font-black text-sm hover:bg-slate-200 transition-all active:scale-95">Hủy bỏ</button>
-                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-black text-sm transition-all shadow-xl shadow-indigo-100 active:scale-95">Xác nhận Lưu</button>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeModal('modal-add')" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black text-xs hover:bg-slate-200 transition-all active:scale-95">Hủy bỏ</button>
+                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-black text-xs transition-all shadow-xl shadow-indigo-100 active:scale-95">Xác nhận Lưu</button>
             </div>
         </form>
     </div>
@@ -424,85 +522,101 @@
 
 
 {{-- MODAL SỬA GIAO DỊCH --}}
-<div id="modal-edit" class="hidden fixed inset-0 z-[100] items-center justify-center p-4 modal-backdrop">
-    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300"></div>
-    <div class="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] w-full max-w-lg overflow-hidden modal-content-anim relative z-10">
+<div id="modal-edit" class="hidden fixed inset-0 z-[100] items-center justify-center p-4 custom-modal-backdrop">
+    <div class="absolute inset-0 bg-slate-900/40 transition-opacity duration-300"></div>
+    <div class="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] w-full max-w-md overflow-hidden modal-content-anim relative z-10">
         {{-- Close Button --}}
-        <button onclick="closeModal('modal-edit')" class="absolute top-6 right-6 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-400 transition-all z-20 active:scale-90">
-            <i class="fa-solid fa-xmark text-lg"></i>
+        <button onclick="closeModal('modal-edit')" class="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-rose-500 hover:text-white text-slate-400 transition-all z-20 active:scale-90">
+            <i class="fa-solid fa-xmark text-base"></i>
         </button>
 
-        <div class="px-10 pt-10 pb-2">
-            <h3 class="text-2xl font-black text-slate-900 tracking-tight">Cập Nhật</h3>
-            <p class="text-slate-400 text-sm font-medium mt-1">Chỉnh sửa giao dịch #<span id="edit-id-label"></span></p>
+        <div class="px-6 pt-6 pb-2">
+            <h3 class="text-xl font-black text-slate-900 tracking-tight">Cập Nhật</h3>
+            <p class="text-slate-400 text-xs font-semibold mt-0.5">Cập nhật thông tin thu chi cửa hàng</p>
+            <span id="edit-id-label" class="hidden"></span>
         </div>
 
-
-        
-        <form id="form-edit" method="POST" class="p-8 space-y-5">
+        <form id="form-edit" method="POST" class="p-6 space-y-4">
             @csrf
             @method('PUT')
             <div>
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em] mb-2.5">Phân loại</label>
-                <div class="grid grid-cols-2 gap-4">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.12em] mb-2">Phân loại</label>
+                <div class="grid grid-cols-2 gap-3">
                     <label class="relative cursor-pointer group">
                         <input type="radio" name="type" id="edit-type-income" value="Income" class="sr-only peer" required>
-                        <div class="flex items-center justify-center gap-3 border-2 border-slate-200 rounded-xl p-4 text-slate-500 font-bold transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 hover:border-slate-300 text-sm">
-                            <i class="fa-solid fa-arrow-trend-up text-xl"></i>
+                        <div class="flex items-center justify-center gap-2 border-2 border-slate-200 rounded-xl p-3 text-slate-500 font-bold transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 hover:border-slate-300 text-xs">
+                            <i class="fa-solid fa-arrow-trend-up text-lg"></i>
                             Khoản thu
                         </div>
                     </label>
                     <label class="relative cursor-pointer group">
                         <input type="radio" name="type" id="edit-type-expense" value="Expense" class="sr-only peer">
-                        <div class="flex items-center justify-center gap-3 border-2 border-slate-200 rounded-xl p-4 text-slate-500 font-bold transition-all peer-checked:border-rose-500 peer-checked:bg-rose-50 peer-checked:text-rose-700 hover:border-slate-300 text-sm">
-                            <i class="fa-solid fa-arrow-trend-down text-xl"></i>
+                        <div class="flex items-center justify-center gap-2 border-2 border-slate-200 rounded-xl p-3 text-slate-500 font-bold transition-all peer-checked:border-rose-500 peer-checked:bg-rose-50 peer-checked:text-rose-700 hover:border-slate-300 text-xs">
+                            <i class="fa-solid fa-arrow-trend-down text-lg"></i>
                             Khoản chi
                         </div>
                     </label>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div class="space-y-2">
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Số tiền (VNĐ) <span class="text-rose-500">*</span></label>
-                    <div class="relative group">
-                        <input type="number" name="amount" id="edit-amount" min="1000" step="1000" style="padding-left: 1.5rem; padding-right: 3rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3.5 text-lg font-black text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm" required>
-                        <span class="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 font-black text-base">đ</span>
-                    </div>
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.12em]">Số tiền (VNĐ) <span class="text-rose-500">*</span></label>
+                <div class="relative group">
+                    <input type="number" name="amount" id="edit-amount" min="1000" step="1000" style="padding-left: 1.25rem; padding-right: 2.5rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 text-base font-black text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm" required>
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-black text-sm">đ</span>
                 </div>
-                <div class="space-y-2">
-                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Mã giao dịch</label>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {{-- Khóa sửa thông tin liên kết tài liệu trong Form Sửa để đảm bảo tính toàn vẹn của sổ quỹ --}}
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.12em]">Mã tài liệu liên kết <i class="fa-solid fa-lock ml-1 text-slate-400/60"></i></label>
                     <div class="relative group">
                         <i class="fa-solid fa-hashtag absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="number" name="reference_id" id="edit-ref" style="padding-left: 2.5rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl pr-5 py-3.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm">
+                        <input type="text" name="reference_id" id="edit-ref" placeholder="Không có liên kết" style="padding-left: 2.25rem;" class="w-full bg-slate-100/80 border-2 border-slate-200/60 rounded-xl pr-4 py-2.5 text-xs font-bold text-slate-400 cursor-not-allowed select-none outline-none focus:outline-none" readonly>
+                    </div>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.12em]">Loại liên kết <i class="fa-solid fa-lock ml-1 text-slate-400/60"></i></label>
+                    <div class="relative group">
+                        <select name="reference_type" id="edit-ref-type" class="w-full bg-slate-100/80 border-2 border-slate-200/60 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-400 cursor-not-allowed select-none appearance-none outline-none focus:outline-none pointer-events-none" style="padding-left: 1rem; padding-right: 2rem;" disabled>
+                            <option value="">Không có liên kết</option>
+                            <option value="order">Đơn hàng (Order)</option>
+                            <option value="service_invoice">Hóa đơn dịch vụ (Service Invoice)</option>
+                            <option value="purchase_order">Phiếu nhập kho (Purchase PO)</option>
+                            <option value="installment">Trả góp (Installment)</option>
+                        </select>
+                        <div style="position: absolute; top: 50%; right: 1rem; transform: translateY(-50%); pointer-events: none; color: #cbd5e1;">
+                            <i class="fa-solid fa-lock text-[10px]"></i>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="space-y-2">
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Thời gian ghi nhận</label>
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.12em]">Thời gian ghi nhận</label>
                 <div class="relative group">
                     <i class="fa-solid fa-calendar-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                    <input type="datetime-local" name="created_at" id="edit-date" style="padding-left: 2.5rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl pr-5 py-3.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm">
+                    <input type="datetime-local" name="created_at" id="edit-date" style="padding-left: 2.25rem;" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl pr-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all shadow-sm">
                 </div>
             </div>
 
-            <div class="space-y-2">
-                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.15em]">Mô tả chi tiết <span class="text-rose-500">*</span></label>
-                <textarea name="description" id="edit-description" rows="2" maxlength="500" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-6 py-4 text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all resize-none shadow-sm" required></textarea>
+            <div class="space-y-1.5">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-[0.12em]">Mô tả chi tiết <span class="text-rose-500">*</span></label>
+                <textarea name="description" id="edit-description" rows="2" maxlength="500" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all resize-none shadow-sm" required></textarea>
             </div>
 
-            <div class="flex gap-4 pt-4">
-                <button type="button" onclick="closeModal('modal-edit')" class="flex-1 bg-slate-100 text-slate-600 py-4 rounded-xl font-black text-sm hover:bg-slate-200 transition-all active:scale-95">Hủy bỏ</button>
-                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-black text-sm transition-all shadow-xl shadow-indigo-100 active:scale-95">Lưu Thay Đổi</button>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="closeModal('modal-edit')" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black text-xs hover:bg-slate-200 transition-all active:scale-95">Hủy bỏ</button>
+                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-black text-xs transition-all shadow-xl shadow-indigo-100 active:scale-95">Lưu Thay Đổi</button>
             </div>
         </form>
     </div>
 </div>
 
 {{-- MODAL XÓA GIAO DỊCH (ĐƠN) --}}
-<div id="modal-delete" class="hidden fixed inset-0 z-[100] items-center justify-center p-4 modal-backdrop">
-    <div class="absolute inset-0 backdrop-blur-sm transition-opacity duration-300" style="background-color: rgba(15, 23, 42, 0.6);"></div>
+<div id="modal-delete" class="hidden fixed inset-0 z-[100] items-center justify-center p-4 custom-modal-backdrop">
+    <div class="absolute inset-0 transition-opacity duration-300" style="background-color: rgba(15, 23, 42, 0.4);"></div>
     <div class="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] w-full max-w-sm overflow-hidden modal-content-anim relative z-10 text-center p-8">
         <div class="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-5 text-rose-500 shadow-inner">
             <i class="fa-solid fa-trash-alt text-3xl"></i>
@@ -518,8 +632,8 @@
 </div>
 
 {{-- MODAL XÓA GIAO DỊCH (NHIỀU) --}}
-<div id="modal-bulk-delete" class="hidden fixed inset-0 z-[100] items-center justify-center p-4 modal-backdrop">
-    <div class="absolute inset-0 backdrop-blur-sm transition-opacity duration-300" style="background-color: rgba(15, 23, 42, 0.6);"></div>
+<div id="modal-bulk-delete" class="hidden fixed inset-0 z-[100] items-center justify-center p-4 custom-modal-backdrop">
+    <div class="absolute inset-0 transition-opacity duration-300" style="background-color: rgba(15, 23, 42, 0.4);"></div>
     <div class="bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] w-full max-w-sm overflow-hidden modal-content-anim relative z-10 text-center p-8">
         <div class="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-5 text-rose-500 shadow-inner">
             <i class="fa-solid fa-exclamation-triangle text-3xl"></i>
@@ -535,15 +649,25 @@
 </div>
 
 {{-- BULK ACTION BAR (FLOATING PILL AT BOTTOM) --}}
-<div id="bulk-action-bar" class="px-6 py-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.2)] animate-slide-up" style="display: none; align-items: center; gap: 1.5rem; background-color: white; border: 1px solid #e2e8f0; width: max-content; position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 9999;">
-    <div class="flex items-center gap-3">
-        <span class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-black text-xs" id="selected-count">0</span>
-        <span class="font-bold text-slate-800 text-sm">giao dịch đã chọn</span>
+<div id="bulk-action-bar" class="px-4 py-3 md:px-6 md:py-4 rounded-2xl md:rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-slide-up flex flex-wrap md:flex-nowrap items-center justify-center gap-3 md:gap-4 bg-white/95 backdrop-blur border border-slate-200 z-[9999]" style="display: none; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 800px;">
+    <div class="flex items-center gap-2 shrink-0">
+        <span class="w-auto px-2 h-7 bg-indigo-600 text-white rounded-lg flex items-center justify-center font-black text-xs" id="selected-count">0</span>
+        <span class="font-bold text-slate-800 text-xs md:text-sm">đã chọn</span>
     </div>
-    <div style="width: 1px; height: 24px; background-color: #e2e8f0;"></div>
-    <div class="flex items-center gap-2">
-        <button type="button" onclick="cancelSelection()" class="px-4 py-2 rounded-xl text-slate-500 font-bold text-sm hover:bg-slate-100 transition-all">Hủy</button>
-        <button type="button" onclick="bulkDelete()" class="px-5 py-2 rounded-xl text-white font-black text-sm transition-all shadow-md" style="background-color: #e11d48;" onmouseover="this.style.backgroundColor='#be123c'" onmouseout="this.style.backgroundColor='#e11d48'">Xóa tất cả</button>
+    
+    @if ($cashbooks->total() > $cashbooks->count())
+    <div style="width: 1px; height: 20px; background-color: #e2e8f0;" class="hidden md:block bulk-divider shrink-0"></div>
+    <div id="bulk-select-all-matching-container" style="display: none;" class="items-center gap-1.5 text-xs font-bold shrink-0 flex-wrap justify-center">
+        <span class="text-slate-500" id="bulk-matching-text">Đã chọn {{ $cashbooks->count() }} dòng.</span>
+        <button type="button" onclick="selectAllMatching()" id="btn-select-all-matching" class="text-indigo-600 hover:text-indigo-800 underline transition-all">Chọn tất cả {{ $cashbooks->total() }}</button>
+        <button type="button" onclick="clearSelectAllMatching()" id="btn-clear-select-all-matching" style="display: none;" class="text-rose-600 hover:text-rose-800 underline transition-all">Bỏ chọn</button>
+    </div>
+    @endif
+
+    <div style="width: 1px; height: 20px; background-color: #e2e8f0;" class="hidden md:block shrink-0"></div>
+    <div class="flex items-center gap-2 shrink-0">
+        <button type="button" onclick="cancelSelection()" class="px-3.5 py-1.5 rounded-lg text-slate-500 font-bold text-xs hover:bg-slate-100 transition-all">Hủy</button>
+        <button type="button" onclick="bulkDelete()" class="px-4 py-1.5 rounded-lg text-white font-black text-xs transition-all shadow-md" style="background-color: #e11d48;" onmouseover="this.style.backgroundColor='#be123c'" onmouseout="this.style.backgroundColor='#e11d48'">Xóa tất cả</button>
     </div>
 </div>
 
@@ -553,62 +677,75 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // ══════════════════════════════════════════════════════════
-    // QUẢN LÝ MODAL (CUSTOM)
+    // QUẢN LÝ MODAL (HIỂN THỊ HỘP THOẠI POPUP)
     // ══════════════════════════════════════════════════════════
+    
+    // Hàm mở modal popup bằng ID phần tử html
     function openModal(id) {
+        // Tìm element modal trong DOM qua ID
         const modal = document.getElementById(id);
+        // Thêm class hiển thị modal (thường là display: flex)
         modal.classList.add('modal-active');
-        // Cho một chút delay để trigger animation CSS
+        // Trì hoãn 10ms trước khi thêm opacity để tạo hiệu ứng chuyển động mượt mà
         setTimeout(() => {
             modal.classList.add('opacity-100');
         }, 10);
     }
 
+    // Hàm đóng modal popup bằng ID phần tử html
     function closeModal(id) {
+        // Tìm element modal trong DOM qua ID
         const modal = document.getElementById(id);
+        // Gỡ bỏ opacity để kích hoạt hiệu ứng fade-out ẩn dần
         modal.classList.remove('opacity-100');
-        // Đợi animation kết thúc rồi mới ẩn hoàn toàn
+        // Đợi 300ms cho hiệu ứng CSS kết thúc rồi mới tắt hoàn toàn display
         setTimeout(() => {
             modal.classList.remove('modal-active');
         }, 300);
     }
 
-    // Đóng modal khi click ra ngoài
+    // Lắng nghe sự kiện click trên cửa sổ trình duyệt
     window.onclick = function(event) {
-        if (event.target.classList.contains('modal-backdrop')) {
+        // Nếu người dùng click vào vùng làm mờ xung quanh modal (backdrop)
+        if (event.target.classList.contains('custom-modal-backdrop')) {
+            // Tự động đóng modal tương ứng
             closeModal(event.target.id);
         }
     }
 
     // ══════════════════════════════════════════════════════════
-    // BIỂU ĐỒ (CHART)
+    // VẼ BIỂU ĐỒ THU CHI BẰNG CHART.JS
     // ══════════════════════════════════════════════════════════
+    
+    // Lấy ngữ cảnh vẽ 2D trên thẻ canvas biểu đồ
     const ctx = document.getElementById('cashflowChart').getContext('2d');
+    // Khởi tạo một đối tượng biểu đồ đường (Line Chart)
     new Chart(ctx, {
-        type: 'line',
+        type: 'line', // Kiểu vẽ dạng đường nối các điểm dữ liệu
         data: {
+            // Danh sách ngày hiển thị trên trục hoành (X) nhận từ biến PHP $chartData['labels']
             labels: @json($chartData['labels']),
             datasets: [
                 {
-                    label: 'Thu',
-                    data: @json($chartData['income']),
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 4,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#10b981',
-                    pointBorderWidth: 2,
+                    label: 'Thu', // Tên nhãn của đường biểu diễn khoản thu
+                    data: @json($chartData['income']), // Mảng số liệu doanh thu từ PHP
+                    borderColor: '#10b981', // Màu viền xanh lá của đường thu
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)', // Màu tô mờ nhẹ vùng dưới đường thu
+                    fill: true, // Cho phép tô màu phủ vùng dưới đường
+                    tension: 0.4, // Độ cong mượt của các đường nối điểm (0.4 là tối ưu)
+                    borderWidth: 4, // Độ dày của đường vẽ
+                    pointRadius: 4, // Bán kính nút tròn hiển thị điểm mốc dữ liệu
+                    pointBackgroundColor: '#fff', // Màu nền nút tròn trắng
+                    pointBorderColor: '#10b981', // Viền nút tròn màu xanh
+                    pointBorderWidth: 2, // Độ dày viền nút tròn
                 },
                 {
-                    label: 'Chi',
-                    data: @json($chartData['expense']),
-                    borderColor: '#f43f5e',
-                    backgroundColor: 'rgba(244, 63, 94, 0.1)',
-                    fill: true,
-                    tension: 0.4,
+                    label: 'Chi', // Tên nhãn của đường biểu diễn khoản chi
+                    data: @json($chartData['expense']), // Mảng số liệu chi phí từ PHP
+                    borderColor: '#f43f5e', // Màu viền đỏ hồng của đường chi
+                    backgroundColor: 'rgba(244, 63, 94, 0.1)', // Màu tô mờ hồng nhẹ vùng dưới đường chi
+                    fill: true, // Cho phép tô phủ vùng
+                    tension: 0.4, // Độ cong của đường chi
                     borderWidth: 4,
                     pointRadius: 4,
                     pointBackgroundColor: '#fff',
@@ -618,84 +755,168 @@
             ]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, // Tự động co giãn biểu đồ theo độ rộng của màn hình thiết bị
+            maintainAspectRatio: false, // Không giữ nguyên tỷ lệ cũ để lấp đầy thẻ div cha
             plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#1e293b',
-                    padding: 12,
-                    usePointStyle: true,
+                legend: { display: false }, // Ẩn thanh chú giải mặc định ở trên đầu biểu đồ
+                tooltip: { // Cấu hình hộp thoại hiển thị số liệu khi di chuột vào điểm mốc
+                    backgroundColor: '#1e293b', // Màu nền xám tối sang trọng
+                    padding: 12, // Khoảng cách đệm bên trong tooltip
+                    usePointStyle: true, // Sử dụng kiểu nút tròn đại diện màu sắc bên trong tooltip
                     callbacks: {
+                        // Hàm định dạng hiển thị số tiền có dấu phân tách hàng nghìn và đuôi đ
                         label: (ctx) => `${ctx.dataset.label}: ${new Intl.NumberFormat('vi-VN').format(ctx.parsed.y)}đ`
                     }
                 }
             },
             scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
-                x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#94a3b8' } }
+                // Trục đứng Y hiển thị số tiền
+                y: { 
+                    beginAtZero: true, // Luôn bắt đầu đồ thị từ mốc số 0
+                    grid: { color: 'rgba(0,0,0,0.03)' }, // Đường lưới mờ nhạt ngang qua màn hình
+                    ticks: { font: { size: 10 }, color: '#94a3b8' } // Cỡ chữ và màu sắc nhãn trục Y
+                },
+                // Trục ngang X hiển thị ngày tháng
+                x: { 
+                    grid: { display: false }, // Ẩn đường lưới trục X để tránh gây rối mắt
+                    ticks: { font: { size: 10 }, color: '#94a3b8' } // Cỡ chữ nhãn trục X
+                }
             }
         }
     });
 
     // ══════════════════════════════════════════════════════════
-    // CHỨC NĂNG CHỌN NHIỀU (BULK SELECTION)
+    // CHỨC NĂNG XỬ LÝ HÀNG LOẠT (BULK SELECTION)
     // ══════════════════════════════════════════════════════════
+    
+    // Nút checkbox chính dùng để tích chọn tất cả các dòng
     const selectAll = document.getElementById('select-all');
+    // Danh sách tất cả các nút checkbox đơn của từng giao dịch
     const checkboxes = document.querySelectorAll('.item-checkbox');
+    // Thanh công cụ nổi phía dưới hiển thị khi có dòng được chọn
     const bulkBar = document.getElementById('bulk-action-bar');
+    // Thẻ span hiển thị số lượng giao dịch đã được tích chọn
     const selectedCount = document.getElementById('selected-count');
 
+    // Hàm cập nhật trạng thái hiển thị của thanh bulk action bar
     function updateBulkBar() {
+        // Đếm tổng số lượng checkbox đang được chọn
         const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+        const matchingContainer = document.getElementById('bulk-select-all-matching-container');
+        // Nếu số lượng chọn lớn hơn 0, hiển thị thanh công cụ
         if (checkedCount > 0) {
-            bulkBar.style.display = 'flex';
-            selectedCount.innerText = checkedCount;
+            bulkBar.style.display = 'flex'; // Đặt kiểu hiển thị là flex để căn ngang
+            
+            // Nếu đang chọn toàn bộ trên tất cả các trang
+            if (document.getElementById('select-all-matching').value === '1') {
+                selectedCount.innerText = 'Tất cả {{ $cashbooks->total() }}';
+                if (matchingContainer) {
+                    matchingContainer.style.display = 'flex';
+                    document.getElementById('bulk-matching-text').innerText = 'Đang chọn tất cả {{ $cashbooks->total() }} giao dịch.';
+                    document.getElementById('btn-select-all-matching').style.display = 'none';
+                    document.getElementById('btn-clear-select-all-matching').style.display = 'inline-block';
+                }
+            } else {
+                selectedCount.innerText = checkedCount; // Ghi đè số lượng lên nhãn
+                if (matchingContainer) {
+                    // Nếu chọn tất cả dòng của trang này và tổng số bản ghi lớn hơn số lượng dòng hiện tại
+                    if (checkedCount === checkboxes.length && {{ $cashbooks->total() }} > checkedCount) {
+                        matchingContainer.style.display = 'flex';
+                        document.getElementById('bulk-matching-text').innerText = `Đã chọn ${checkedCount} giao dịch trên trang này.`;
+                        document.getElementById('btn-select-all-matching').style.display = 'inline-block';
+                        document.getElementById('btn-clear-select-all-matching').style.display = 'none';
+                    } else {
+                        matchingContainer.style.display = 'none';
+                    }
+                }
+            }
         } else {
-            bulkBar.style.display = 'none';
+            bulkBar.style.display = 'none'; // Ẩn thanh công cụ đi khi không có giao dịch nào được chọn
+            if (matchingContainer) {
+                matchingContainer.style.display = 'none';
+            }
+            document.getElementById('select-all-matching').value = '0';
         }
     }
 
+    // Chọn tất cả các bản ghi khớp bộ lọc trên mọi trang
+    function selectAllMatching() {
+        document.getElementById('select-all-matching').value = '1';
+        updateBulkBar();
+    }
+
+    // Quay lại chỉ chọn các bản ghi trên trang hiện tại
+    function clearSelectAllMatching() {
+        document.getElementById('select-all-matching').value = '0';
+        updateBulkBar();
+    }
+
+    // Lắng nghe thay đổi của nút checkbox tổng (chọn tất cả)
     selectAll.addEventListener('change', () => {
+        // Đặt thuộc tính checked của tất cả checkbox con bằng trạng thái của checkbox tổng
         checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        if (!selectAll.checked) {
+            document.getElementById('select-all-matching').value = '0';
+        }
+        // Cập nhật lại thanh công cụ bulk bar
         updateBulkBar();
     });
 
+    // Lắng nghe thay đổi của từng checkbox con
     checkboxes.forEach(cb => {
         cb.addEventListener('change', () => {
+            // Kiểm tra xem tất cả checkbox con đã được tích chọn hết chưa để tự động tích nút tổng
             selectAll.checked = [...checkboxes].every(c => c.checked);
+            // Nếu uncheck bất kỳ con nào, hủy bỏ chọn tất cả trang
+            if (!cb.checked) {
+                document.getElementById('select-all-matching').value = '0';
+            }
+            // Cập nhật lại thanh công cụ bulk bar
             updateBulkBar();
         });
     });
 
+    // Hàm hủy bỏ toàn bộ các tích chọn hiện có
     function cancelSelection() {
+        // Duyệt và bỏ tích tất cả checkbox con
         checkboxes.forEach(cb => cb.checked = false);
+        // Bỏ tích checkbox tổng
         selectAll.checked = false;
+        document.getElementById('select-all-matching').value = '0';
+        // Cập nhật lại ẩn thanh công cụ bulk bar
         updateBulkBar();
     }
 
+    // Hàm kích hoạt mở modal xác nhận xóa hàng loạt
     function bulkDelete() {
         openModal('modal-bulk-delete');
     }
 
+    // Hàm xác nhận gửi biểu mẫu xóa hàng loạt lên server
     function confirmBulkDelete() {
         document.getElementById('bulk-delete-form').submit();
     }
 
     // ══════════════════════════════════════════════════════════
-    // CHỨC NĂNG XÓA ĐƠN
+    // CHỨC NĂNG XÓA ĐƠN LẺ GIAO DỊCH
     // ══════════════════════════════════════════════════════════
+    
+    // Biến toàn cục lưu giữ ID của giao dịch đơn lẻ chuẩn bị xóa
     let deleteIdToSubmit = null;
+    
+    // Hàm chuẩn bị xóa giao dịch
     function deleteItem(id) {
-        deleteIdToSubmit = id;
-        openModal('modal-delete');
+        deleteIdToSubmit = id; // Lưu ID vào biến toàn cục
+        openModal('modal-delete'); // Mở hộp thoại xác nhận xóa đơn lẻ
     }
 
+    // Hàm gửi yêu cầu xóa lên server sau khi nhấn xác nhận
     function confirmDelete() {
         if(deleteIdToSubmit) {
+            // Lấy biểu mẫu form ẩn tương ứng với ID giao dịch
             const form = document.getElementById(`delete-form-${deleteIdToSubmit}`);
             if (form) {
-                form.submit();
+                form.submit(); // Thực hiện submit form xóa
             } else {
                 alert('Không tìm thấy dữ liệu để xóa. Vui lòng tải lại trang.');
             }
@@ -703,44 +924,64 @@
     }
 
     // ══════════════════════════════════════════════════════════
-    // MODAL EDIT
+    // CHỨC NĂNG SỬA GIAO DỊCH (ĐỒNG BỘ FORM CHỈNH SỬA)
     // ══════════════════════════════════════════════════════════
+    
+    // Hàm mở form sửa và nạp dữ liệu hiện tại của dòng vào các trường nhập liệu
     function openEditModal(btn) {
+        // Lấy ID giao dịch được gắn trong nút nhấn sửa
         const id = btn.getAttribute('data-id');
+        // Thiết lập địa chỉ URL hành động gửi form sửa của thẻ form khớp với ID giao dịch
         document.getElementById('form-edit').action = `{{ route('admin.cashbooks.index') }}/${id}`;
+        // Gán ID cho nhãn ẩn trong DOM
         document.getElementById('edit-id-label').innerText = id;
+        // Nạp số tiền giao dịch hiện tại vào ô nhập tiền
         document.getElementById('edit-amount').value = btn.getAttribute('data-amount');
+        // Nạp nội dung mô tả hiện tại vào ô mô tả
         document.getElementById('edit-description').value = btn.getAttribute('data-desc');
+        // Điền mã tài liệu dạng chữ (đã làm sạch ký tự #) để hiển thị trong Form Sửa chỉ đọc
         document.getElementById('edit-ref').value = btn.getAttribute('data-ref') || '';
+        // Nạp loại tài liệu vào dropdown loại liên kết (đã bị vô hiệu hóa)
+        document.getElementById('edit-ref-type').value = btn.getAttribute('data-ref-type') || '';
+        // Nạp ngày ghi nhận vào ô datetime-local
         document.getElementById('edit-date').value = btn.getAttribute('data-date');
         
+        // Tự động tích chọn phân loại khoản thu hoặc chi khớp với giá trị dòng
         if(btn.getAttribute('data-type') === 'Income') {
             document.getElementById('edit-type-income').checked = true;
         } else {
             document.getElementById('edit-type-expense').checked = true;
         }
 
+        // Mở hộp thoại sửa sau khi đã nạp đầy đủ dữ liệu
         openModal('modal-edit');
     }
 
+    // Nếu server trả về lỗi validate, tự động bật lại modal thêm mới để hiển thị lỗi cho người dùng
     @if($errors->any()) openModal('modal-add'); @endif
 
+    // Hàm xác thực đầu vào bộ lọc tìm kiếm nâng cao ở đầu trang
     function validateFilter(form) {
-        const search = form.search.value.trim();
-        const type = form.type.value;
+        const search = form.search.value.trim(); // Nhận từ khóa tìm kiếm
+        const type = form.type.value; // Nhận loại giao dịch cần tìm
+        // Nếu người dùng không nhập gì cả mà nhấn tìm kiếm
         if (!search && !type) {
-            showErrorToast('Vui lòng nhập nội dung hoặc chọn loại giao dịch cần tìm.');
-            return false;
+            showErrorToast('Vui lòng nhập nội dung hoặc chọn loại giao dịch cần tìm.'); // Hiển thị cảnh báo lỗi
+            return false; // Ngăn chặn gửi form tìm kiếm trống
         }
-        return true;
+        return true; // Cho phép gửi form
     }
 
+    // Hàm tạo và hiển thị thông báo nhắc nhở dạng Toast trượt từ bên phải màn hình
     function showErrorToast(message) {
+        // Lấy thẻ div thùng chứa các thông báo toast ở góc màn hình
         const container = document.getElementById('toast-container');
         if (!container) return;
         
+        // Khởi tạo thẻ div mới đại diện cho 1 toast thông báo
         const toast = document.createElement('div');
         toast.className = 'bg-white border-l-4 border-rose-500 shadow-[0_10px_40px_rgba(0,0,0,0.1)] rounded-xl p-4 flex items-center gap-4 animate-slide-left toast-item transition-all duration-300 w-80';
+        // Cấu trúc HTML nội dung thông báo
         toast.innerHTML = `
             <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
                 <i class="fa-solid fa-triangle-exclamation text-lg"></i>
@@ -751,20 +992,21 @@
             </div>
         `;
         
+        // Thêm toast mới vào trong thùng chứa thông báo
         container.appendChild(toast);
         
-        // Auto remove
+        // Tự động đóng và biến mất thông báo sau 3 giây hiển thị
         setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 400);
+            toast.style.opacity = '0'; // Hiệu ứng làm mờ
+            setTimeout(() => toast.remove(), 400); // Gỡ bỏ thẻ html khỏi DOM
         }, 3000);
     }
 
-    // Tự động ẩn Toast Notifications (Server-side) sau 3 giây
+    // Tự động ẩn Toast thông báo phản hồi từ server (ví dụ: Thêm thành công, cập nhật thành công) sau 3 giây
     setTimeout(() => {
         document.querySelectorAll('.toast-item').forEach(toast => {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 400); // Đợi animation CSS kết thúc
+            toast.style.opacity = '0'; // Thực hiện mờ đi
+            setTimeout(() => toast.remove(), 400); // Gỡ khỏi giao diện sau khi mờ hoàn toàn
         });
     }, 3000);
 

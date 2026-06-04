@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class FlashSale extends Model
 {
+    use \App\Traits\HasAuditLog;
+
     // Tên khóa chính của bảng (Laravel mặc định là id, ở đây dùng flash_sale_id)
     protected $primaryKey = 'flash_sale_id';
     

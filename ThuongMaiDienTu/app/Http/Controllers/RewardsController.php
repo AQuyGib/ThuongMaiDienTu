@@ -99,12 +99,20 @@ class RewardsController extends Controller
             return response()->json(['success' => false, 'message' => 'Vui lòng đăng nhập.'], 401);
         }
 
-        // Xác thực loại vòng quay để tránh F12 hack
-        $data = $request->validate([
-            'wheel_type' => ['required', 'string', 'in:standard,silver,gold'],
+        // Validate tham số wheel_type để ngăn chặn tấn công/lỗi nghiệp vụ
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'wheel_type' => ['nullable', 'string', 'in:standard,silver,gold,diamond']
         ]);
 
-        $wheelType = $data['wheel_type'];
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Loại vòng quay không hợp lệ.'
+            ], 422);
+        }
+
+        // Lấy loại vòng quay (Mặc định là vòng thường - standard)
+        $wheelType = $request->input('wheel_type', 'standard');
 
         try {
             // Chạy thuật toán quay thưởng và trừ điểm tương ứng
