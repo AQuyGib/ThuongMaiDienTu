@@ -18,7 +18,7 @@ class LogAuditEventJob implements ShouldQueue
     protected array $payload;
 
     /**
-     * Create a new job instance.
+     * Khởi tạo đối tượng job mới.
      */
     public function __construct(array $payload)
     {
@@ -27,7 +27,7 @@ class LogAuditEventJob implements ShouldQueue
     }
 
     /**
-     * Execute the job.
+     * Thực thi job xử lý ghi nhật ký hoạt động bảo mật.
      */
     public function handle(): void
     {

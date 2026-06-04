@@ -10,31 +10,31 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        // Drop if exists to cleanly migrate
+        // Xóa bảng nếu đã tồn tại để tránh xung đột khi chạy lại migration
         Schema::dropIfExists('activity_logs');
 
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->increments('log_id');
             $table->string('event', 50); // created, updated, deleted, restored, login, export
 
-            // Causer polymorphic fields (e.g., Admin, User, API, System)
+            // Các trường đa hình của Causer (Người thực hiện: Admin, User, API, System)
             $table->string('causer_type', 100);
             $table->unsignedInteger('causer_id');
             $table->string('causer_name', 150)->nullable();
 
-            // Subject polymorphic fields (e.g., Product, Order, User, Setting)
+            // Các trường đa hình của Subject (Thực thể chịu tác động: Product, Order, User, Setting,...)
             $table->string('subject_type', 100)->nullable();
             $table->string('subject_id', 100)->nullable();
 
-            // State changes
+            // Lưu trữ thay đổi trạng thái dữ liệu (trước và sau)
             $table->json('old_values')->nullable();
             $table->json('new_values')->nullable();
 
-            // Metadata
+            // Dữ liệu siêu dữ liệu (Metadata)
             $table->string('ip_address', 45)->nullable();
             $table->string('user_agent', 255)->nullable();
 
-            // Anti-tamper Hash Chain (SHA-256 Hash)
+            // Chuỗi băm Progressive chống giả mạo (SHA-256 Hash Chain)
             $table->char('hash_chain', 64);
 
             $table->timestamp('created_at')->useCurrent();
@@ -42,7 +42,7 @@ return new class extends Migration {
     }
 
     /**
-     * Reverse the migrations.
+     * Hoàn tác các thay đổi của migration.
      */
     public function down(): void
     {

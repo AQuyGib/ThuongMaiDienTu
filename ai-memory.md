@@ -524,4 +524,11 @@
   - **Phân trang Nhật ký hoạt động:**
     - Cập nhật [ActivityLogController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/ActivityLogController.php) thay đổi số bản ghi phân trang từ 15 thành **20 bản ghi/trang** (`paginate(20)`).
     - Cập nhật cấu hình JavaScript tự động cập nhật Live Feed Polling trong [index.blade.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/activity-logs/index.blade.php) để kiểm soát cắt bớt các dòng dư thừa ở cuối khi vượt quá 20 dòng thay vì 15 dòng như cũ.
-
+- **Sửa lỗi mã thoát (Exit Code) của start.bat:**
+  - Khắc phục lỗi kịch bản khởi chạy `start.bat` trả về mã thoát lỗi (exit code 1) khi người dùng chọn thoát khỏi menu hoặc khi kịch bản kết thúc và dọn dẹp các tiến trình ngầm (Node/PHP) bằng lệnh `taskkill` (thất bại do không tìm thấy tiến trình đang chạy).
+  - Thêm nhãn `:EXIT_CLEAN` ở cuối tệp kịch bản thực hiện reset mã lỗi `errorlevel` về 0 (`cmd /c "exit /b 0"`) và thoát kịch bản sạch sẽ (`exit /b 0`), chuyển đổi các lệnh thoát menu và tắt servers hướng về nhãn này.
+- **Viết chú thích (Comments) Tiếng Việt dễ hiểu:**
+  - Đã bổ sung chú thích Tiếng Việt chi tiết giải thích logic cho đoạn mã phân định vai trò động (role detection & fallback) tại [ActivityLog.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/ActivityLog.php).
+  - Đã bổ sung chú thích Tiếng Việt chi tiết cho luồng reset mã lỗi thoát an toàn `:EXIT_CLEAN` tại [start.bat](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/start.bat).
+  - **Xử lý dọn dẹp file `[OK]`:** Đã thực hiện quét toàn diện và xác nhận xóa sạch hoàn toàn file rác `[OK]` do lệnh echo redirection cũ trong `start.bat` tạo ra, đảm bảo thư mục workspace sạch sẽ 100%.
+  - **Viết tiếng Việt cho comment Nhật ký hoạt động:** Đã dịch hóa toàn bộ comment tiếng Anh còn lại sang tiếng Việt dễ hiểu trong các tệp liên quan đến Nhật ký hoạt động bao gồm Job xử lý (`LogAuditEventJob.php`), tệp cơ sở dữ liệu (`2026_01_01_000010_create_activity_logs_table.php`) và giao diện hiển thị (`index.blade.php`).

@@ -11,7 +11,7 @@
             <p class="text-slate-500 text-xs mt-0.5">Giám sát các thao tác nghiệp vụ, bảo mật liên kết chuỗi mật mã chống giả mạo.</p>
         </div>
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-            {{-- Toggle Live Feed --}}
+            {{-- Nút Bật/Tắt chế độ cập nhật log tự động thời gian thực (Live Feed) --}}
             <button id="btn-toggle-live" class="w-full sm:w-auto px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 border border-slate-200 shadow-sm">
                 <span class="relative flex h-2 w-2">
                     <span id="live-indicator-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -165,10 +165,10 @@
     </div>
 </div>
 
-{{-- ═══ MODAL DIFF VIEWER (GITHUB STYLE) ═══ --}}
+{{-- ═══ MODAL SO SÁNH SỰ KHÁC BIỆT DỮ LIỆU (PHONG CÁCH GITHUB) ═══ --}}
 <div id="modal-diff-viewer" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4 animate-in fade-in duration-200">
     <div class="bg-white rounded-2xl w-full max-w-3xl shadow-2xl border border-slate-100 flex flex-col max-h-[85vh] scale-in duration-300">
-        {{-- Header Modal --}}
+        {{-- Phần đầu của Modal (Tiêu đề & nút tắt Modal) --}}
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div>
                 <h3 class="font-extrabold text-slate-900 text-sm">Chi tiết thay đổi dữ liệu</h3>
@@ -179,7 +179,7 @@
             </button>
         </div>
 
-        {{-- Body Content --}}
+        {{-- Phần thân chứa dữ liệu so sánh cũ - mới --}}
         <div class="p-6 overflow-y-auto flex-1 space-y-4">
             <div id="diff-empty-state" class="text-center text-slate-400 text-xs py-8 hidden">
                 Không phát hiện thay đổi thuộc tính nào (Dữ liệu không đổi).
@@ -367,7 +367,7 @@ function initActivityLogs() {
                     }
                     tr.appendChild(tdKey);
 
-                    // Cột Old (Red)
+                    // Cột Trạng thái Cũ (Màu đỏ - biểu thị dữ liệu bị xóa hoặc thay đổi)
                     const tdOld = document.createElement('td');
                     tdOld.className = 'px-4 py-3 text-rose-600 bg-rose-50/20 border-r border-slate-100';
                     if (oldText !== undefined) {
@@ -377,7 +377,7 @@ function initActivityLogs() {
                     }
                     tr.appendChild(tdOld);
 
-                    // Cột New (Green)
+                    // Cột Trạng thái Mới (Màu xanh - biểu thị dữ liệu mới cập nhật)
                     const tdNew = document.createElement('td');
                     tdNew.className = 'px-4 py-3 text-emerald-600 bg-emerald-50/20';
                     if (newText !== undefined) {
