@@ -450,6 +450,16 @@
             sessionStorage.removeItem('checkoutItems');
             sessionStorage.removeItem('paymentTotal');
             localStorage.removeItem('pending_payment_order_id');
+
+            // Redirect sang trang đơn hàng sau 1.5 giây để user thấy đơn vừa đặt
+            setTimeout(() => {
+                const order = {!! isset($order) ? json_encode(['order_id' => $order->order_id ?? null]) : 'null' !!};
+                const orderId = order ? order.order_id : null;
+                const url = orderId
+                    ? `{{ url('/orders') }}?new_order=${orderId}`
+                    : `{{ url('/orders') }}`;
+                window.location.href = url;
+            }, 1500);
         }, 4500);
     }
 

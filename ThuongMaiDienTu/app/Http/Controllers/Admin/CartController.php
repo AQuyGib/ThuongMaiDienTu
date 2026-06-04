@@ -725,9 +725,80 @@ class CartController extends Controller
         return view('frontend.cart.maQR', compact('order'));
     }
 
-    public function tracking()
+    public function tracking(Request $request)
     {
-        return view('frontend.cart.ordertracking');
+        $orders = collect();
+
+        if (Auth::check()) {
+            $statusFilter = $request->query('status');
+            $query = Order::with(['details.inventoryItem.variant.product'])
+                ->where('user_id', Auth::id())
+                ->orderBy('created_at', 'desc');
+
+            if ($statusFilter && $statusFilter !== 'all') {
+                $query->where('status', $statusFilter);
+            }
+
+            $orders = $query->get()->map(function ($order) {
+                // Gom nhóm sản phẩm từ details
+                $items = $order->details->map(function ($detail) {
+                    $variant = $detail->inventoryItem->variant ?? null;
+                    $product = $variant?->product ?? null;
+
+                    $image = null;
+                    if ($product) {
+                        $thumb = $product->thumbnail;
+                        if ($thumb && \Illuminate\Support\Str::startsWith($thumb, 'http')) {
+                            $image = $thumb;
+                        } else {
+                            $rawImages = $product->images;
+                            if ($rawImages) {
+                                $arr = is_string($rawImages) ? json_decode($rawImages, true) : $rawImages;
+                                $first = is_array($arr) && count($arr) > 0 ? $arr[0] : null;
+                                if ($first && \Illuminate\Support\Str::startsWith($first, 'http')) {
+                                    $image = $first;
+                                } elseif ($first) {
+                                    $image = asset('storage/' . ltrim($first, '/'));
+                                }
+                            }
+                            if (!$image && $thumb) {
+                                $image = asset('uploads/products/' . $thumb);
+                            }
+                        }
+                    }
+
+                    return [
+                        'product_name' => $detail->product_name ?? ($product?->name ?? 'Sản phẩm không xác định'),
+                        'image'        => $image,
+                        'price'        => (int) $detail->price,
+                    ];
+                });
+
+                // Gom nhóm theo tên + giá
+                $groupedItems = $items->groupBy(fn($i) => $i['product_name'] . '_' . $i['price'])
+                    ->map(fn($g) => [
+                        'product_name' => $g->first()['product_name'],
+                        'image'        => $g->first()['image'],
+                        'quantity'     => $g->count(),
+                        'price'        => $g->first()['price'],
+                    ])->values();
+
+                return [
+                    'order_id'        => $order->order_id,
+                    'order_code'      => $order->order_code,
+                    'status'          => $order->status,
+                    'payment_method'  => $order->payment_method,
+                    'customer_name'   => $order->customer_name,
+                    'customer_phone'  => $order->customer_phone,
+                    'shipping_address'=> $order->shipping_address,
+                    'final_amount'    => (int) $order->final_amount,
+                    'created_at'      => $order->created_at,
+                    'items'           => $groupedItems,
+                ];
+            });
+        }
+
+        return view('frontend.cart.ordertracking', compact('orders'));
     }
 
     public function print()

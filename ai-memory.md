@@ -1,6 +1,12 @@
 # Project Memory
 
 ## Current State & Focus
+- **Tích hợp luồng thanh toán QR & Tra cứu Đơn hàng (Ngày 04/06/2026):**
+  - **Cải tiến:**
+    - Cập nhật file `maQR.blade.php`: Sau khi hoàn tất hiệu ứng xử lý đối soát và phê duyệt đơn hàng thành công (4.5s), tự động redirect người dùng sang `/orders?new_order={order_id}` sau 1.5s để xem ngay thông tin đơn hàng vừa đặt.
+    - Cấu trúc lại `ordertracking.blade.php`: Di chuyển ô tìm kiếm bằng mã đơn hàng (search-wrap) và khu vực kết quả (search-result) ra ngoài điều kiện `Auth::check()` để cả khách vãng lai và thành viên đều dùng chung được ô tìm kiếm.
+    - Gán `id="order-card-{{ $order['order_id'] }}"` cho mỗi thẻ đơn hàng trong danh sách.
+    - Bổ sung logic JavaScript tự động kiểm tra query parameter `new_order` và `code` trên URL. Nếu tìm thấy thẻ đơn hàng tương ứng trong danh sách (đối với thành viên đã đăng nhập), hệ thống sẽ highlight viền xanh lá nhấp nháy (`new-order-highlight`) và cuộn mượt mà đưa đơn hàng đó vào giữa màn hình. Nếu không có trong DOM (đối với khách chưa đăng nhập hoặc đang lọc ở tab khác), hệ thống tự động điền mã vào ô tìm kiếm và gọi hàm `doSearchCode()` bằng AJAX để hiển thị chi tiết đơn hàng đó lên đầu trang.
 - **Tối ưu giao diện Flash Sale & Nút mua ngay / Thêm giỏ hàng ở Trang chủ (Ngày 04/06/2026):**
   - **Khắc phục:**
     - Cải thiện độ tương phản và căn giữa văn bản tiến trình Flash Sale (`.fs-progress-text`) và biểu tượng lửa (`.fs-fire-icon`) trên thanh tiến trình bằng cách thay đổi màu nền wrapper sang `#fca5a5`, thêm flex alignment, thiết lập `position: absolute; top: 50%; transform: translateY(-50%);` và đặt màu sắc rực rỡ `#ffeb3b` cho biểu tượng lửa.
