@@ -1,0 +1,752 @@
+=== FUNCTION 7.1: ĐĂNG NHẬP / ĐĂNG KÝ ĐA KÊNH
+
+### 7.1.1. Tổng quan (Overview)
+Chức năng cho phép người dùng xác thực và đăng nhập vào hệ thống HAE1. Hệ thống hỗ trợ hai hình thức đăng nhập song song: Đăng nhập truyền thống bằng email và mật khẩu được mã hóa bảo mật, hoặc đăng nhập nhanh thông qua liên kết ủy quyền một chạm với tài khoản Google (SSO OAuth 2.0). Client-side tích hợp công cụ đo độ mạnh mật khẩu và custom toast thông báo trạng thái theo thời gian thực. ===
+*   **Trang Login/Register:** Thiết kế giao diện kép đối xứng (Dual Panel) chuyển đổi mượt mà bằng hiệu ứng Sliding Card.
+    *   **Bên trái (Đăng nhập):** Gồm ô nhập Email, ô nhập Mật khẩu (có icon mắt đóng/mở ẩn hiện mật khẩu), liên kết "Quên mật khẩu" và nút bấm "Đăng nhập".
+    *   **Bên phải (Đăng ký):** Gồm ô nhập Họ tên, Email, Số điện thoại, Mật khẩu, ô Xác nhận mật khẩu. Dưới ô Mật khẩu có một thanh đo độ mạnh (Password Strength Meter) chuyển màu động (Đỏ: Yếu, Vàng: Trung bình, Xanh lá: Mạnh).
+    *   **Nút SSO Google:** Nổi bật ở chân form với logo Google tiêu chuẩn.
+
+=== FUNCTION 7.2: XÁC THỰC 2 LỚP BẢO MẬT (TWO-FACTOR AUTHENTICATION - 2FA)
+
+### 7.2.1. Tổng quan (Overview)
+Xác thực 2 lớp (2FA) là giải pháp bảo mật nâng cao nhằm bảo vệ tài khoản người dùng (đặc biệt là tài khoản Admin và Nhân viên) trước nguy cơ bị đánh cắp mật khẩu. Khi đăng nhập từ một địa chỉ IP lạ chưa từng được ghi nhận trong lịch sử, hoặc tài khoản đã chủ động bật 2FA, hệ thống sẽ yêu cầu thêm một mã xác thực OTP dùng một lần gồm 6 chữ số được gửi trực tiếp qua Email đã đăng ký. ===
+*   **Trang nhập mã OTP (User Side):**
+    *   Thiết kế tối giản, tập trung vào ô nhập liệu.
+    *   **Khung nhập OTP:** Gồm 6 ô vuông nhập số riêng biệt được căn giữa màn hình. Khi nhập xong một số, con trỏ tự động nhảy sang ô vuông tiếp theo (Auto-tab).
+    *   **Thông báo lỗi:** Dưới các ô nhập số hiển thị dòng chữ thông báo lỗi màu đỏ nếu mã OTP nhập vào không đúng hoặc đã hết hạn.
+    *   **Bộ đếm thời gian và gửi lại mã:** Một dòng chữ nhỏ hiển thị đếm ngược 10 phút. Nút "Gửi lại mã OTP" sẽ bị làm mờ (Disabled) và chỉ sáng lên khi bộ đếm ngược về 0.
+
+=== FUNCTION 7.6: 6. Bảng kịch bản hoạt động (Workflows)
+
+#### Kịch bản 1: Xác thực 2FA thành công khi đăng nhập từ IP lạ (Happy Case)
+| Bước | Tác nhân (Actor) | Hành động của Tác nhân | Phản hồi của Hệ thống (System Response) |
+| :--- | :--- | :--- | :--- |
+| 1 | User | Đăng nhập tài khoản Admin bằng đúng mật khẩu trên trình duyệt lạ từ địa điểm khác. | Phát hiện IP lạ, chặn truy cập và chuyển hướng sang màn hình nhập OTP. Gửi mã OTP 6 số qua Email. |
+| 2 | User | Kiểm tra hòm thư Email lấy mã OTP (Ví dụ: `738192`). | Nhập mã OTP vào 6 ô trống trên màn hình trước 10 phút. |
+| 3 | System | Kiểm tra mã OTP khớp và còn hiệu lực. | Cho phép đăng nhập thành công, chuyển hướng vào Dashboard Admin, lưu IP này vào danh sách IP quen thuộc. |
+
+#### Kịch bản 2: Khóa phiên đăng nhập do nhập sai OTP quá 5 lần (Exception Case)
+| Bước | Tác nhân (Actor) | Hành động của Tác nhân | Phản hồi của Hệ thống (System Response) |
+| :--- | :--- | :--- | :--- |
+| 1 | Attacker | Cố tình đoán mã OTP trên giao diện xác thực và nhập sai liên tiếp đến lần thứ 5. | Mỗi lần nhập sai hệ thống ghi nhận số lần thử sai vào Cache của Session. |
+| 2 | System | Nhận diện lần nhập sai thứ 5 liên tiếp của Session này. | - Trả về SweetAlert thông báo lỗi nguy hiểm: **"Bạn đã nhập sai OTP quá 5 lần. Tài khoản bị khóa 15 phút"**. <br>- Hủy bỏ toàn bộ session hiện tại, khóa quyền xác thực của IP/Tài khoản trong 15 phút. |
+
+### 7.2.7. Quy tắc nghiệp vụ ngầm (Business Rules)
+1. **Thời gian sống của OTP:** Mã OTP được tạo ra chỉ có thời gian sử dụng tối đa là 10 phút (`OTP_LIFETIME = 600`). Quá 10 phút mã tự động bị vô hiệu hóa.
+2. **Rate Limiting chặn brute-force:** Cơ chế giới hạn tối đa 5 lần nhập sai liên tiếp cho cả mật khẩu và mã OTP để ngăn chặn hacker dò mã.
+3. **Làm mờ địa chỉ IP lưu trữ:** Địa chỉ IP ghi nhận tại bảng nhật ký sẽ được làm mờ 3 chữ số cuối (VD: `192.168.1.xxx`) trước khi hiển thị cho nhân viên để tuân thủ quy định GDPR về bảo mật dữ liệu.
+
+### 7.2.8. Đặc tả màn hình giao diện (Screen Descriptions)
+
+#### Màn hình Nhập mã OTP 2FA (User Side)
+| No | Field name | Control type | Constraint / Validation Rule (Quy tắc ràng buộc) | Required | Default value |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | Ô nhập số OTP | 6-Digit Inputs Grid | Chỉ nhận ký tự số. Tự động nhảy sang ô tiếp theo sau khi gõ. | Yes | Trống |
+| 2 | Đồng hồ đếm ngược | Timer Label | Định dạng hiển thị MM:SS. Chạy lùi từ 10:00 về 0. | Yes | 10:00 |
+| 3 | Nút gửi lại mã | Link / Button | Chỉ cho phép click sau khi đồng hồ đếm ngược kết thúc. | Yes | Disabled |
+
+---
+
+## 7.3. KHÔI PHỤC MẬT KHẨU
+
+### 7.3.1. Tổng quan (Overview)
+Chức năng cho phép người dùng tự lấy lại mật khẩu đăng nhập khi bị quên thông qua hòm thư điện tử (Email) đã đăng ký. Hệ thống sẽ phát một token bảo mật có chữ ký số mã hóa và gửi đường dẫn thay đổi mật khẩu duy nhất kèm hạn dùng 10 phút tới email của người dùng nhằm đảm bảo tính chính chủ và an toàn.
+
+### 7.3.2. Bố cục giao diện (UI Layout)
+*   **Trang Yêu cầu khôi phục:** Gồm ô nhập địa chỉ Email và nút bấm "Gửi yêu cầu".
+*   **Trang Đặt lại mật khẩu (Reset Password Page):** Chỉ mở được khi người dùng click vào link nhận được trong email. Gồm ô nhập Mật khẩu mới, ô Xác nhận mật khẩu mới, thanh hiển thị độ mạnh mật khẩu và nút bấm "Cập nhật mật khẩu".
+
+### 7.3.3. Các tác nhân tương tác (Actors) & Giới hạn quyền hạn
+*   **Guest / User:** Nhập email khôi phục, truy cập email để nhận link, nhập mật khẩu mới để đặt lại.
+*   **System (Mail Service):** Xác thực email có trong hệ thống, sinh token mã hóa tạm thời, gửi email và cập nhật mật khẩu mới khi token khớp.
+
+### 7.3.4. Sơ đồ Use-case (Mermaid)
+```mermaid
+usecaseDiagram
+    actor Guest as "Người dùng quên mật khẩu"
+    actor System as "Hệ thống tự động"
+    
+    Guest --> (Yêu cầu gửi mail khôi phục)
+    Guest --> (Truy cập link trong email để reset)
+    
+    System --> (Tạo và lưu trữ Token khôi phục)
+    System --> (Gửi email chứa link reset)
+```
+
+![Sơ đồ Use-case chức năng](images/use_case_3.png)
+
+
+### 7.3.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
+```mermaid
+flowchart TD
+    Start([Người dùng yêu cầu khôi phục]) --> InputEmail[Nhập địa chỉ Email]
+    InputEmail --> CheckEmail{Email tồn tại trong hệ thống?}
+    CheckEmail -- Không --> ShowToastError[Hiển thị Toast cảnh báo Email không tồn tại]
+    CheckEmail -- Có --> GenToken[Tạo Token khôi phục + Lưu hạn dùng 10 phút]
+    GenToken --> SendMail[Gửi Email chứa Link đổi mật khẩu]
+    SendMail --> ClickLink[Người dùng click Link trong Email]
+    ClickLink --> CheckToken{Token khớp và chưa quá 10 phút?}
+    CheckToken -- Không / Hết hạn --> ShowExpiredPage[Hiển thị trang báo lỗi Link hết hạn] --> End([Kết thúc])
+    CheckToken -- Hợp lệ --> ShowResetForm[Hiển thị form nhập Mật khẩu mới]
+    ShowResetForm --> InputNewPass[Nhập Mật khẩu mới & Xác nhận]
+    InputNewPass --> UpdateDB[Cập nhật mật khẩu mới băm Bcrypt + Hủy Token]
+    UpdateDB --> ShowToastSuccess[Thông báo đổi mật khẩu thành công] --> End
+```
+
+![Sơ đồ hoạt động](images/activity_3.png)
+
+
+### 7.3.6. Bảng kịch bản hoạt động (Workflows)
+
+#### Kịch bản 1: Khôi phục mật khẩu thành công (Happy Case)
+| Bước | Tác nhân (Actor) | Hành động của Tác nhân | Phản hồi của Hệ thống (System Response) |
+| :--- | :--- | :--- | :--- |
+| 1 | Guest | Nhập email `user@gmail.com` tại trang Quên mật khẩu, bấm "Gửi yêu cầu". | Hệ thống kiểm tra trùng khớp, sinh token lưu trong bảng `password_resets`, gửi mail chứa link khôi phục. |
+| 2 | Guest | Mở hộp thư đến email, click vào đường dẫn `hae1.com/password/reset/{token}`. | Chuyển hướng đến trang Đặt lại mật khẩu (Reset Form). |
+| 3 | Guest | Nhập mật khẩu mới là `Hae1Customer@2026`, xác nhận và nhấn "Cập nhật mật khẩu". | Backend kiểm tra tính hợp lệ của mật khẩu, cập nhật DB, vô hiệu hóa token và hiển thị Toast thành công. |
+
+#### Kịch bản 2: Token khôi phục bị hết hạn sử dụng (Exception Case)
+| Bước | Tác nhân (Actor) | Hành động của Tác nhân | Phản hồi của Hệ thống (System Response) |
+| :--- | :--- | :--- | :--- |
+| 1 | Guest | Nhấp gửi yêu cầu khôi phục mật khẩu nhưng 1 tiếng sau mới mở mail để click vào link. | Chuyển hướng người dùng về trang web. |
+| 2 | System | Kiểm tra timestamp của token thấy đã quá thời gian hiệu lực 10 phút. | Từ chối hiển thị form đặt mật khẩu, chuyển hướng về trang yêu cầu cũ kèm thông báo: **"Đường dẫn khôi phục mật khẩu đã hết hạn. Vui lòng gửi lại yêu cầu mới"**. |
+
+### 7.3.7. Quy tắc nghiệp vụ ngầm (Business Rules)
+1. **Hạn sử dụng Token:** Token khôi phục mật khẩu bắt buộc phải hết hiệu lực sau đúng 10 phút (`PASSWORD_RESET_EXPIRE = 600`) kể từ thời điểm phát hành.
+2. **Khóa sử dụng lại:** Sau khi mật khẩu được cập nhật thành công, token đó phải bị xóa ngay lập tức khỏi bảng `password_resets` để ngăn chặn việc sử dụng lại token cũ.
+
+### 7.3.8. Đặc tả màn hình giao diện (Screen Descriptions)
+
+#### Màn hình Đặt lại mật khẩu (User Side)
+| No | Field name | Control type | Constraint / Validation Rule (Quy tắc ràng buộc) | Required | Default value |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | Mật khẩu mới | Textbox | Ẩn ký tự. Tối thiểu 8 ký tự, phải có chữ hoa, thường, số. | Yes | Trống |
+| 2 | Xác nhận mật khẩu mới | Textbox | Ẩn ký tự. Phải trùng khớp hoàn toàn với Mật khẩu mới. | Yes | Trống |
+| 3 | Nút cập nhật mật khẩu | Button | Bấm để gửi dữ liệu cập nhật. | Yes | N/A |
+
+---
+
+## 7.4. LỊCH SỬ ĐĂNG NHẬP BẢO MẬT (LOGIN HISTORY)
+
+### 7.4.1. Tổng quan (Overview)
+Chức năng tự động ghi lại toàn bộ hoạt động truy cập tài khoản của người dùng. Hệ thống sẽ ghi nhận địa chỉ IP, User-Agent trình duyệt, hệ điều hành và thời gian thực hiện đăng nhập. Giao diện tích hợp cảnh báo bằng cờ đỏ nếu phát hiện tài khoản đăng nhập từ một địa chỉ IP lạ so với lịch sử đăng nhập thông thường, giúp bảo mật và phòng ngừa hacker.
+
+### 7.4.2. Bố cục giao diện (UI Layout)
+*   **Trang Nhật ký đăng nhập (Admin & Customer Side):**
+    *   Thiết kế dạng bảng dữ liệu lưới (Data Table).
+    *   Các cột thông tin gồm: Địa chỉ IP (làm mờ octet cuối), Loại thiết bị, Trình duyệt sử dụng, Thời gian đăng nhập, và Trạng thái.
+    *   Dòng đăng nhập từ IP lạ sẽ hiển thị một nhãn đỏ nhấp nháy (`Cảnh báo IP lạ`) để người dùng dễ nhận biết.
+
+### 7.4.3. Các tác nhân tương tác (Actors) & Giới hạn quyền hạn
+*   **User / Admin:** Truy cập trang lịch sử đăng nhập để xem danh sách các phiên truy cập của bản thân hoặc toàn hệ thống.
+*   **System (Logger):** Tự động bắt địa chỉ IP, thiết bị khi người dùng đăng nhập thành công và lưu vào bảng `login_logs`.
+
+### 7.4.4. Sơ đồ Use-case (Mermaid)
+```mermaid
+usecaseDiagram
+    actor User as "Người dùng / Admin"
+    actor System as "Hệ thống Logger"
+
+    User --> (Xem lịch sử đăng nhập)
+    System --> (Tự động ghi nhận thông tin đăng nhập)
+```
+
+![Sơ đồ Use-case chức năng](images/use_case_4.png)
+
+
+### 7.4.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
+```mermaid
+flowchart TD
+    Start([Người dùng đăng nhập]) --> CaptureIP[Trích xuất IP & User-Agent]
+    CaptureIP --> AnonymizeIP[Làm mờ 3 số cuối của địa chỉ IP]
+    AnonymizeIP --> QueryHistory[Kiểm tra lịch sử IP đăng nhập của user này]
+    QueryHistory --> CheckAnomaly{Phát hiện IP hoặc thiết bị lạ?}
+    CheckAnomaly -- Có --> SetFlag[Đánh dấu Unusual + Gửi mail cảnh báo cho user] --> SaveLog[Lưu bản ghi vào bảng login_logs]
+    CheckAnomaly -- Không --> SaveLog
+    SaveLog --> DisplayTable[Hiển thị danh sách nhật ký trên giao diện] --> End([Kết thúc])
+```
+
+![Sơ đồ hoạt động](images/activity_4.png)
+
+
+### 7.4.6. Bảng kịch bản hoạt động (Workflows)
+
+#### Kịch bản 1: Ghi nhận và hiển thị lịch sử đăng nhập bình thường (Happy Case)
+| Bước | Tác nhân (Actor) | Hành động của Tác nhân | Phản hồi của Hệ thống (System Response) |
+| :--- | :--- | :--- | :--- |
+| 1 | User | Đăng nhập tài khoản thành công từ máy tính cá nhân ở nhà. | Trích xuất IP `27.72.93.12` và thiết bị `Chrome/Windows 10`. |
+| 2 | System | Mã hóa làm mờ thành `27.72.93.xxx`, lưu vào bảng `login_logs` ở trạng thái bình thường. | Cho phép truy cập vào trang web. |
+| 3 | User | Truy cập mục "Lịch sử đăng nhập" trong Profile cá nhân. | Hiển thị bảng nhật ký đăng nhập, dòng đầu tiên khớp thông tin thiết bị và IP của User với màu nền xanh lá an toàn. |
+
+#### Kịch bản 2: Ghi nhận đăng nhập bất thường và cảnh báo người dùng (Exception Case)
+| Bước | Tác nhân (Actor) | Hành động của Tác nhân | Phản hồi của Hệ thống (System Response) |
+| :--- | :--- | :--- | :--- |
+| 1 | Attacker | Đăng nhập thành công vào tài khoản Admin bằng mật khẩu lấy cắp từ một địa chỉ IP lạ. | Trích xuất thông tin IP lạ chưa từng đăng nhập trước đây. |
+| 2 | System | Ghi nhận cờ `is_unusual = 1` trong log đăng nhập, làm mờ IP lưu trữ. | - Hiển thị nhãn đỏ `Cảnh báo IP lạ` trên trang nhật ký. <br>- Tự động gửi Email cảnh báo đăng nhập bất thường yêu cầu Admin đổi mật khẩu hoặc xác thực 2FA. |
+
+### 7.4.7. Quy tắc nghiệp vụ ngầm (Business Rules)
+1. **Bảo mật thông tin IP:** Địa chỉ IP hiển thị trên giao diện của nhân viên và người dùng bắt buộc phải làm mờ octet cuối cùng (Ví dụ: `192.168.1.xxx`) để tuân thủ luật bảo mật thông tin cá nhân.
+2. **Quy tắc dọn dẹp:** Hệ thống tự động chạy lệnh dọn dẹp hàng tháng để xóa bỏ các bản ghi lịch sử đăng nhập cũ quá 90 ngày nhằm giải phóng dung lượng DB.
+
+### 7.4.8. Đặc tả màn hình giao diện (Screen Descriptions)
+
+#### Màn hình Nhật ký đăng nhập (User/Admin Side)
+| No | Field name | Control type | Constraint / Validation Rule (Quy tắc ràng buộc) | Required | Default value |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | Địa chỉ IP | Label | Hiển thị dạng IPv4 làm mờ 3 số cuối (Ví dụ: `113.161.42.xxx`). | Yes | N/A |
+| 2 | Thiết bị sử dụng | Label | Hiển thị tên thiết bị và Hệ điều hành (Ví dụ: `Windows PC`, `iPhone`). | Yes | N/A |
+| 3 | Trình duyệt | Label | Hiển thị tên trình duyệt (Ví dụ: `Chrome 124.0`, `Safari`). | Yes | N/A |
+| 4 | Cờ cảnh báo IP lạ | Badge | Hiển thị nhãn đỏ `IP Lạ` nếu cờ cảnh báo bất thường được kích hoạt. | Yes | N/A |
+
+---
+
+## 7.5. PHÂN QUYỀN NHÂN VIÊN (RBAC)
+
+### 7.5.1. Tổng quan (Overview)
+Chức năng Quản lý phân quyền dựa trên vai trò (Role-Based Access Control - RBAC) giúp quản trị viên tối cao (Super Admin) phân định rõ ràng quyền hạn của từng nhân viên trong hệ thống Mini-ERP. Hệ thống định nghĩa các vai trò cụ thể như Admin, Nhân viên bán hàng (Staff), Thủ kho (Warehouse Manager), Kỹ thuật viên (Technician) và gán quyền thao tác chi tiết trên từng URL route của hệ thống.
+
+### 7.5.2. Bố cục giao diện (UI Layout)
+*   **Trang Quản lý Vai trò (Roles Manager - Admin Side):**
+    *   Bảng danh sách các vai trò trong hệ thống kèm cột chức năng "Phân quyền".
+*   **Màn hình Phân quyền (Permissions Grid):**
+    *   Bố cục dạng bảng lưới ma trận (Checkbox Grid). 
+    *   Các cột biểu thị các hành động (Xem, Thêm, Sửa, Xóa).
+    *   Các dòng biểu thị các module chức năng (Sản phẩm, Đơn hàng, Kho bãi, Sổ quỹ, Sửa chữa).
+    *   Super Admin có thể click tích chọn/bỏ chọn từng ô để cấp/hủy quyền tương ứng cho vai trò đó.
+
+### 7.5.3. Các tác nhân tương tác (Actors) & Giới hạn quyền hạn
+*   **Super Admin:** Có toàn quyền chỉnh sửa vai trò, bật/tắt các quyền hạn cụ thể của nhân viên.
+*   **Nhân viên (Staff/Warehouse/Technician):** Chịu sự quản lý của RBAC Middleware. Chỉ được truy cập vào các menu và tính năng đã được cấp quyền, nếu truy cập trái phép sẽ bị chặn.
+
+### 7.5.4. Sơ đồ Use-case (Mermaid)
+```mermaid
+usecaseDiagram
+    actor Admin as "Super Admin"
+    actor Staff as "Nhân viên (Staff)"
+
+    Admin --> (Tạo/Sửa vai trò mới)
+    Admin --> (Gán danh sách Quyền cho Vai trò)
+    Admin --> (Gán vai trò cho Tài khoản nhân viên)
+    
+    Staff --> (Truy cập tính năng hệ thống)
+```
+
+![Sơ đồ Use-case chức năng](images/use_case_5.png)
+
+
+### 7.5.5. Sơ đồ hoạt động (Activity Diagram - Mermaid)
+```mermaid
+flowchart TD
+    Start([Nhân viên yêu cầu truy cập route trong hệ thống]) --> CheckLogin{Đã đăng nhập tài khoản?}
+    CheckLogin -- Chưa --> RedirectLogin[Chuyển hướng về trang đăng nhập] --> End([Kết thúc])
+    CheckLogin -- Rồi --> GetUserRole[Trích xuất Vai trò và danh sách Quyền của User]
+    GetUserRole --> CheckRoutePermission{Route này có yêu cầu quyền cụ thể?}
+    CheckRoutePermission -- Không --> AllowAccess[Cho phép truy cập và thực thi chức năng] --> End
+    CheckRoutePermission -- Có --> MatchPermission{User có quyền đó không?}
+    MatchPermission -- Có --> AllowAccess
+    MatchPermission -- Không --> DenyAccess[Chặn truy cập + Hiển thị lỗi HTTP 403 Forbidden] --> End
+```
+
+![Sơ đồ hoạt động](images/activity_5.png)
+
+
+### 7.5.6. Bảng kịch bản hoạt động (Workflows)
+
+#### Kịch bản 1: Super Admin thực hiện phân quyền cho Thủ kho (Happy Case)
+| Bước | Tác nhân (Actor) | Hành động của Tác nhân | Phản hồi của Hệ thống (System Response) |
+| :--- | :--- | :--- | :--- |
+| 1 | Super Admin | Vào trang quản lý Phân quyền, chọn vai trò "Thủ kho" (Warehouse Manager). | Hiển thị bảng ma trận quyền của Thủ kho. |
+| 2 | Super Admin | Tích chọn quyền "Xem kho", "Nhập kho PO", bỏ tích quyền "Xem sổ quỹ tài chính" và nhấn "Lưu". | Cập nhật các bản ghi trong bảng trung gian `role_has_permissions`, lưu cấu hình vào DB và xóa cache phân quyền cũ. |
+| 3 | System | Thủ kho đăng nhập, Middleware tự động load danh sách quyền mới được gán từ cache/DB. | Menu "Sổ quỹ" tự động ẩn đi trên giao diện sidebar của Thủ kho. |
+
+#### Kịch bản 2: Nhân viên cố tình truy cập trái phép vào tính năng bị cấm (Exception Case)
+| Bước | Tác nhân (Actor) | Hành động của Tác nhân | Phản hồi của Hệ thống (System Response) |
+| :--- | :--- | :--- | :--- |
+| 1 | Staff (Bán hàng) | Cố tình gõ trực tiếp URL `hae1.com/admin/finance/cashbook` (Trang sổ quỹ) trên thanh địa chỉ trình duyệt. | Gửi request truy cập trang sổ quỹ lên Backend. |
+| 2 | System | Route đi qua `CheckPermission` Middleware, đối soát vai trò Bán hàng không có quyền `view_cashbook`. | Chặn xử lý của Controller, ném ra ngoại lệ và hiển thị giao diện báo lỗi **"403 Forbidden - Bạn không có quyền truy cập chức năng này"**. |
+
+### 7.5.7. Quy tắc nghiệp vụ ngầm (Business Rules)
+1. **Khóa vai trò Super Admin:** Vai trò "Super Admin" là vai trò mặc định tối cao của hệ thống, không được phép chỉnh sửa quyền hoặc xóa vai trò này để tránh lỗi hệ thống mất quyền kiểm soát.
+2. **Cơ chế Cache phân quyền:** Để tránh truy vấn cơ sở dữ liệu liên tục mỗi khi chuyển trang, danh sách quyền của người dùng được lưu trữ trong `Redis Cache`/`Laravel Cache` và sẽ tự động được xóa đi/cập nhật lại khi có bất kỳ thay đổi nào từ trang quản lý phân quyền.
+
+### 7.5.8. Đặc tả màn hình giao diện (Screen Descriptions)
+
+#### Màn hình Ma trận Phân quyền (Super Admin Side)
+| No | Field name | Control type | Constraint / Validation Rule (Quy tắc ràng buộc) | Required | Default value |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | Tên vai trò | Textbox | Chỉ chứa chữ và số. Không trùng lặp. Tối đa 50 ký tự. | Yes | Trống |
+| 2 | Checkbox Quyền hạn | Checkbox | Danh sách các checkbox tương ứng với các quyền cụ thể. | No | Chưa chọn |
+| 3 | Nút cập nhật quyền | Button | Lưu thay đổi phân quyền vào DB. | Yes | N/A |
+
+---
+
+## 7.6. QUẢN LÝ NHÂN VIÊN & KPI
+
+### 7.6.1. Tổng quan (Overview)
+Chức năng hỗ trợ doanh nghiệp quản lý thông tin nhân sự và thiết lập, theo dõi chỉ tiêu hiệu suất công việc (KPI) cho từng nhân viên trong hệ thống Mini-ERP. Quản lý có thể tạo tài khoản nhân sự mới, phân vai trò hoạt động và gán chỉ tiêu KPI theo tháng (ví dụ: chỉ tiêu doanh số cho nhân viên bán hàng, số ca sửa chữa cho kỹ thuật viên) và hệ thống tự động tính phần trăm tiến độ hoàn thành dựa trên kết quả bán hàng/sửa chữa thực tế. ===
+*   **Trang danh sách Nhân viên (Admin Side):**
+    *   Bảng thông tin cơ bản: Mã nhân viên, Họ tên, Email, Vai trò, KPI tháng hiện tại.
+*   **Màn hình Thiết lập KPI (Modal/Page):**
+    *   Form nhập chỉ tiêu: Chọn nhân viên, chọn tháng/năm, chọn loại KPI (Doanh số bán hàng hoặc Số lượng sửa chữa), nhập số tiền/số ca chỉ tiêu cần đạt.
+*   **Thanh tiến trình hiệu suất (Progress Bar):**
+    *   Hiển thị dạng cột thanh tiến trình phần trăm (%) tự động tô màu động (Đỏ: <50%, Vàng: 50% - 99%, Xanh lá: Đạt 100% chỉ tiêu) giúp trực quan hóa hiệu suất của từng nhân viên.
+
+=== FUNCTION 7.7: ACTIVITY LOGS (NHẬT KÝ HOẠT ĐỘNG HỆ THỐNG)
+
+### 7.7.1. Tổng quan (Overview)
+Activity Logs là chức năng ghi nhật ký kiểm toán (Audit Trail) tối quan trọng dành cho ban quản trị. Hệ thống tự động ghi nhận lại toàn bộ thao tác làm thay đổi cơ sở dữ liệu (tạo mới, cập nhật, xóa mềm/xóa vĩnh viễn) của các tài khoản quản trị viên và nhân viên. Nhật ký ghi chi tiết: ai thực hiện, thời gian, tên bảng dữ liệu, và đặc biệt là sự thay đổi chi tiết giữa giá trị dữ liệu cũ và dữ liệu mới. ===
+*   **Trang danh sách Nhật ký hoạt động (Admin Side):**
+    *   Bảng dữ liệu lưới rộng rãi hiển thị: Mã log, Quản trị viên, Hành động (Create/Update/Delete), Tên bảng dữ liệu, Địa chỉ IP, Thời gian thao tác.
+    *   Cột hành động có nút "Xem chi tiết". Khi click vào, hiển thị một Modal chứa hai khung mã nguồn (JSON Code Viewer) so sánh:
+        *   **Khung bên trái (Dữ liệu cũ - Old Value):** Chứa các trường dữ liệu trước khi thay đổi (chữ màu đỏ).
+        *   **Khung bên phải (Dữ liệu mới - New Value):** Chứa dữ liệu sau khi cập nhật thành công (chữ màu xanh lá).
+
+=== FUNCTION 7.8: CRUD DANH MỤC ĐA CẤP
+
+### 7.8.1. Tổng quan (Overview)
+Chức năng cho phép quản trị viên xây dựng và quản trị cây danh mục sản phẩm của hệ thống theo cấu trúc đa cấp (Parent-Child). Ví dụ: Danh mục cha là *Điện máy* chứa danh mục con là *Tủ lạnh*, bên trong *Tủ lạnh* có danh mục cháu là *Tủ lạnh Side-by-Side*. Tính năng hỗ trợ cấu hình động các thông số thuộc tính lọc cho từng danh mục để phục vụ bộ lọc tìm kiếm nâng cao ở trang mua sắm. ===
+*   **Trang quản lý Danh mục (Admin Side):**
+    *   **Cây danh mục (Nested Tree View):** Hiển thị danh mục theo sơ đồ phân nhánh dạng thư mục thụt đầu dòng, hỗ trợ kéo thả kéo thả (Drag and Drop) để thay đổi nhanh cấp bậc cha-con.
+    *   **Form thêm/sửa danh mục:** 
+        *   Ô nhập Tên danh mục, ô nhập Slug (được tự động sinh từ tên bằng JS), dropdown chọn danh mục cha (Parent Category).
+        *   Khu vực thiết lập thuộc tính lọc: Cho phép nhấn nút "+" để add thêm các thuộc tính kỹ thuật cần lọc tương ứng (Ví dụ: Danh mục tủ lạnh có lọc theo dung tích, danh mục máy giặt có lọc theo khối lượng giặt).
+
+=== FUNCTION 7.9: CRUD SẢN PHẨM & BIẾN THỂ
+
+### 7.9.1. Tổng quan (Overview)
+Chức năng cho phép quản trị viên quản lý toàn bộ danh sách sản phẩm và các biến thể kinh doanh của sản phẩm đó. Do đặc thù đồ điện máy giá trị cao, một sản phẩm có thể có nhiều biến thể khác nhau về màu sắc, dung lượng hoặc thông số kỹ thuật (Ví dụ: điện thoại iPhone 15 bản 128GB màu Đen có giá bán và tồn kho khác biệt so với bản 256GB màu Gold). Tính năng hỗ trợ cập nhật thông số kỹ thuật chi tiết và tải lên album ảnh/video mô tả. ===
+*   **Trang danh sách Sản phẩm (Admin Side):** Bảng hiển thị thông tin sản phẩm: Ảnh, Tên sản phẩm, Mã SKU gốc, Danh mục, Trạng thái hoạt động, và nút Quản lý biến thể.
+*   **Màn hình Thêm mới/Chỉnh sửa Sản phẩm:**
+    *   **Tab Thông tin chung:** Tên sản phẩm, mô tả chi tiết (Rich Text Editor), album ảnh kéo thả.
+    *   **Tab Thông số kỹ thuật:** Các ô nhập thông số động tương ứng với cấu hình của danh mục sản phẩm đó.
+    *   **Tab Biến thể (Variants Manager):** Khu vực tạo biến thể. Khi click chọn các thuộc tính (Màu sắc, Dung lượng), hệ thống tự động sinh ra bảng ma trận biến thể. Mỗi biến thể có ô nhập SKU riêng biệt, Giá bán, Giá khuyến mãi và Tồn kho an toàn.
+
+=== FUNCTION 7.10: IMPORT / EXPORT EXCEL
+
+### 7.10.1. Tổng quan (Overview)
+Chức năng Import/Export Excel giúp thủ kho và nhà quản lý xử lý nhanh chóng khối lượng dữ liệu hàng hóa khổng lồ của kho điện máy Mini-ERP HAE1. Thủ kho có thể tải xuống file Excel chứa toàn bộ danh sách sản phẩm hiện tại để đối soát, hoặc sử dụng tệp Excel mẫu điền sẵn thông tin hàng nghìn sản phẩm mới để tải lên hệ thống (Import) nhằm tiết kiệm thời gian nhập liệu thủ công. ===
+*   **Trang quản lý sản phẩm (Admin Side):**
+    *   **Nút Export:** Một nút bấm màu xanh lá biểu tượng Excel nằm ở góc trên bên phải bảng sản phẩm để tải file về lập tức.
+    *   **Khung Import dữ liệu:** Một hộp kéo thả file (Drag and Drop Zone) viền nét đứt màu xám. Khi thủ kho kéo thả file Excel vào, hiển thị tên file và dung lượng kèm nút "Tải lên và xử lý".
+    *   **Nút tải file mẫu:** Một liên kết "Tải file Excel mẫu tại đây" ngay dưới hộp kéo thả để thủ kho tải file đúng cấu trúc cột quy định.
+
+=== FUNCTION 7.11: GIỎ HÀNG AJAX
+
+### 7.11.1. Tổng quan (Overview)
+Chức năng Giỏ hàng AJAX cung cấp trải nghiệm mua sắm mượt mà không bị ngắt quãng. Khách hàng có thể thực hiện thêm sản phẩm vào giỏ, điều chỉnh số lượng hoặc xóa sản phẩm khỏi giỏ trực tiếp từ trang danh sách hoặc trang chi tiết sản phẩm. Mọi thao tác này đều được xử lý bất đồng bộ thông qua các request AJAX, tự động cập nhật lại tổng số tiền và số lượng trên biểu tượng giỏ hàng ở Header mà không cần tải lại toàn bộ trang web. ===
+*   **Mini Cart (Biểu tượng Header):** Một icon giỏ hàng ở thanh menu trên cùng. Khi di chuột qua (Hover), tự động thả xuống một khung nhỏ hiển thị nhanh 3 sản phẩm vừa thêm và nút "Đi đến giỏ hàng".
+*   **Trang Giỏ hàng chính (Cart Page):** 
+    *   Bảng danh sách sản phẩm trong giỏ: Ảnh sản phẩm, Tên sản phẩm, Giá bán, Cụm tăng giảm số lượng (nút "-" và "+" bao quanh ô nhập số lượng), Thành tiền, và biểu tượng thùng rác để xóa.
+    *   Khu vực bên phải: Tóm tắt đơn hàng (Tạm tính, Giảm giá, Tổng tiền thanh toán) và nút "Tiến hành thanh toán" màu đỏ cam nổi bật.
+
+=== FUNCTION 7.12: BỘ LỌC SẢN PHẨM NÂNG CAO (FACETED FILTER)
+
+### 7.12.1. Tổng quan (Overview)
+Bộ lọc sản phẩm nâng cao giúp khách hàng dễ dàng thu hẹp phạm vi tìm kiếm thiết bị điện máy phù hợp giữa hàng nghìn mẫu mã khác nhau. Chức năng cho phép người dùng lọc sản phẩm đồng thời theo nhiều tiêu chí bao gồm thương hiệu, khoảng giá thông qua thanh kéo chọn hai đầu trực quan, và các thuộc tính kỹ thuật chuyên ngành tương ứng với từng danh mục sản phẩm (như lọc máy lạnh theo công nghệ Inverter, lọc tủ lạnh theo dung tích, lọc tivi theo độ phân giải). ===
+*   **Thanh bộ lọc bên sườn (Sticky Sidebar):** Nằm cố định ở phía bên trái trang danh sách sản phẩm.
+    *   **Bộ lọc Khoảng giá:** Gồm thanh kéo chọn hai đầu (Dual Range Slider) và hai ô nhập giá trị nhỏ nhất/lớn nhất tự động cập nhật số tiền Việt Nam Đồng.
+    *   **Bộ lọc Thương hiệu & Thuộc tính:** Thiết kế dạng danh sách hộp kiểm (Checkbox List) có thể đóng mở thu gọn được bằng hiệu ứng Accordion mượt mà.
+    *   **Nút thao tác:** Nút "Lọc sản phẩm" màu xanh dương nổi bật và liên kết "Thiết lập lại" ở dưới cùng để xóa nhanh mọi tiêu chí đã chọn.
+
+=== FUNCTION 7.13: SO SÁNH SẢN PHẨM
+
+### 7.13.1. Tổng quan (Overview)
+Chức năng cho phép khách hàng đưa tối đa 4 sản phẩm cùng loại vào bảng so sánh chi tiết. Hệ thống sẽ kết xuất bảng đối chiếu trực quan song song các thuộc tính thông số kỹ thuật, giá bán và đánh giá của các sản phẩm đã chọn. Giao diện tích hợp bộ lọc "Chỉ hiển thị điểm khác biệt" (Highlight Differences) để khách hàng dễ dàng đưa ra quyết định mua hàng tối ưu. ===
+*   **Trang bảng so sánh (Customer Side):**
+    *   Thiết kế dạng bảng lưới cột (Grid Table). Mỗi sản phẩm được so sánh chiếm 1 cột dọc (tối đa 4 cột). Cột đầu tiên hiển thị danh sách các thuộc tính thông số kỹ thuật.
+    *   **Header bảng:** Chứa ảnh nhỏ sản phẩm, tên sản phẩm, giá bán, nút "Thêm vào giỏ" và nút "Xóa khỏi bảng so sánh" (biểu tượng chữ X đỏ).
+    *   **Bộ lọc Highlight:** Một nút chuyển đổi (Toggle Switch) "Chỉ hiển thị điểm khác biệt" ở góc trên cùng của bảng. Khi bật lên, hệ thống sẽ ẩn các hàng thông số giống nhau và tô màu vàng nhẹ cho các thông số khác nhau.
+
+=== FUNCTION 7.14: GỢI Ý BÁN CHÉO & COMBO GIÁ ĐỘNG (FBT SUGGESTION)
+
+### 7.14.1. Tổng quan (Overview)
+Chức năng nhằm gia tăng doanh thu trên mỗi đơn hàng (AOV) bằng cách gợi ý cho khách hàng các sản phẩm phụ kiện mua kèm thường đi cùng nhau (Frequently Bought Together - FBT). Điểm đặc sắc là hệ thống tự động tính toán mức giá chiết khấu ưu đãi động (Dynamic Bundle Price) khi khách mua trọn bộ combo và áp dụng cơ chế validate chặt chẽ ở Server-side để ngăn chặn việc người dùng can thiệp sửa đổi giá bundle trước khi thanh toán. ===
+*   **Khung mua kèm ưu đãi (FBT Widget):** Nằm ngay dưới phần thông tin sản phẩm chính tại trang chi tiết.
+    *   Hiển thị sơ đồ liên kết ngang: `[Sản phẩm chính]` + `[Phụ kiện gợi ý 1]` + `[Phụ kiện gợi ý 2]`. Giữa các thẻ sản phẩm có dấu cộng (+).
+    *   Mỗi thẻ sản phẩm có một checkbox đã tích sẵn để người dùng có thể bỏ tích nếu không muốn mua phụ kiện đó.
+    *   Phía bên phải hiển thị: "Tổng giá combo: [Giá gạch ngang] [Giá đỏ ưu đãi]" và nút "Mua trọn bộ Combo".
+
+=== FUNCTION 7.15: THANH TOÁN QR ĐỘNG (PAYOS)
+
+### 7.15.1. Tổng quan (Overview)
+Chức năng tích hợp cổng thanh toán trực tuyến PayOS giúp khách hàng thanh toán đơn hàng nhanh chóng qua mã QR Code động chuẩn VietQR. Khi khách hàng bấm đặt hàng, hệ thống sẽ gọi API của PayOS để khởi tạo link thanh toán và mã QR chứa đúng số tiền của đơn hàng và nội dung chuyển khoản mã hóa. Khi khách quét mã và chuyển tiền thành công, PayOS sẽ gửi tín hiệu Webhook tức thời về Server HAE1 để tự động cập nhật trạng thái đơn hàng thành đã thanh toán. ===
+*   **Trang cổng thanh toán (Customer Side):**
+    *   **Khu vực trung tâm:** Hiển thị mã QR Code lớn, sắc nét, tự sinh từ API VietQR.
+    *   **Bên cạnh mã QR:** Hộp thông tin chi tiết (Số tài khoản thụ hưởng, tên ngân hàng MB, chủ tài khoản, số tiền khớp đơn hàng) kèm các nút bấm "Copy số tiền" và "Copy nội dung chuyển khoản".
+    *   **Đồng hồ đếm ngược:** Đèn flash nhấp nháy hiển thị thời gian hiệu lực 15 phút.
+    *   **Nút tương tác giả lập:** Nút "Tôi đã chuyển khoản" để kích hoạt tiến trình mô phỏng đối soát ngân hàng.
+
+=== FUNCTION 7.16: TỰ ĐỘNG TÍNH PHÍ VẬN CHUYỂN
+
+### 7.16.1. Tổng quan (Overview)
+Chức năng tự động tính toán phí giao hàng (Shipping Fee) dựa trên khoảng cách thực tế giữa vị trí kho hàng và địa chỉ nhận hàng của khách. Hệ thống sử dụng API bản đồ để đo khoảng cách theo đường đi thực tế, tự động cộng thêm phụ phí đối với hàng hóa cồng kềnh (tủ lạnh, máy giặt, tivi lớn) nằm ngoài phạm vi miễn phí 15km để đảm bảo tính toán chi phí vận hành chính xác cho doanh nghiệp. ===
+*   **Trang thanh toán (Checkout Page - Customer Side):**
+    *   **Form nhập địa chỉ:** Chọn Tỉnh/Thành, Quận/Huyện, Phường/Xã và ô nhập Địa chỉ chi tiết.
+    *   **Khung hiển thị phí vận chuyển:** Một dòng thông báo nhỏ hiển thị khoảng cách ước tính (Ví dụ: `Khoảng cách: 18.5 km`) và Phí vận chuyển tương ứng tự động hiển thị ngay dưới ô địa chỉ.
+    *   Nếu đơn hàng có sản phẩm cồng kềnh và khoảng cách > 15km, nhãn hiển thị `Phụ phí hàng cồng kềnh: 150.000đ` sẽ xuất hiện kế bên.
+
+=== FUNCTION 7.17: ĐÁNH GIÁ & BÌNH LUẬN ĐỆ QUY
+
+### 7.17.1. Tổng quan (Overview)
+Chức năng cho phép khách hàng viết đánh giá (Rating từ 1 đến 5 sao) kèm hình ảnh thực tế sản phẩm, đồng thời hỗ trợ bình luận thảo luận đệ quy nhiều cấp dưới dạng cây hội thoại (Nested Comments). Hệ thống tích hợp bộ lọc kiểm duyệt nội dung của quản trị viên (Admin Moderation) trước khi bình luận chính thức được xuất bản công khai. ===
+*   **Khu vực đánh giá (Trang chi tiết sản phẩm):**
+    *   **Bộ lọc đánh giá:** Hiển thị điểm trung bình (Ví dụ: `4.8/5 ★`) và các tab lọc theo số sao (5 sao, 4 sao, có hình ảnh).
+    *   **Khung viết đánh giá:** Chọn số sao bằng click vào icon Ngôi sao, ô nhập bình luận, nút upload ảnh và nút "Gửi đánh giá".
+    *   **Danh sách bình luận đệ quy:** Bố cục hình bậc thang thụt đầu dòng (Indented Thread). Dưới mỗi bình luận có nút "Trả lời". Khi click vào sẽ mở ra ô nhập text nhỏ ngay bên dưới.
+
+=== FUNCTION 7.18: DANH SÁCH YÊU THÍCH (WISHLIST)
+
+### 7.18.1. Tổng quan (Overview)
+Wishlist là chức năng cho phép người dùng lưu trữ danh sách các sản phẩm ưa thích hoặc dự định mua trong tương lai mà chưa quyết định bỏ vào giỏ hàng. Để tối ưu hóa trải nghiệm người dùng vãng lai, hệ thống hỗ trợ lưu danh sách yêu thích vào bộ nhớ trình duyệt (Local Storage) của khách hàng chưa đăng nhập và tự động gộp (sync) danh sách này vào cơ sở dữ liệu trên máy chủ khi họ thực hiện đăng nhập. ===
+*   **Nút yêu thích trên Card sản phẩm:** Một biểu tượng hình trái tim (Heart Icon) nhỏ nằm ở góc trên của hình ảnh sản phẩm tại trang chủ và trang danh mục.
+    *   Nếu sản phẩm chưa nằm trong danh sách yêu thích, hình trái tim có viền xám rỗng.
+    *   Khi click vào, hình trái tim tự động đổi màu đỏ rực rỡ kèm hiệu ứng nảy nhẹ (Pulse animation).
+*   **Trang danh sách yêu thích (Wishlist Page):**
+    *   Hiển thị danh sách sản phẩm đã thích dưới dạng lưới (Grid).
+    *   Mỗi thẻ sản phẩm có nút "Thêm vào giỏ hàng" nhanh ở dưới cùng và nút "Gỡ khỏi danh sách yêu thích" (Icon thùng rác).
+
+=== FUNCTION 7.19: SẢN PHẨM ĐÃ XEM GẦN ĐÂY
+
+### 7.19.1. Tổng quan (Overview)
+Chức năng tự động ghi nhận và lưu trữ danh sách các sản phẩm mà người dùng vừa truy cập chi tiết trong phiên duyệt web. Danh sách này được trình bày dưới dạng thanh trượt (Carousel) ở chân trang chi tiết sản phẩm, giúp khách hàng dễ dàng chuyển hướng quay lại các sản phẩm quan tâm trước đó để cân nhắc chọn mua mà không cần mất công tìm kiếm lại. ===
+*   **Thanh trượt Carousel (recently-viewed):** Nằm cố định sát chân trang chi tiết sản phẩm.
+    *   Bố cục dạng thẻ card thu nhỏ chạy ngang có nút bấm trượt trái/phải.
+    *   Mỗi card hiển thị ảnh sản phẩm nhỏ, tên, giá bán và nhãn chiết khấu.
+    *   Góc trên thanh trượt có một phím chức năng "Xóa lịch sử xem" màu xám nhạt để người dùng chủ động xóa dữ liệu duyệt web khi cần thiết.
+
+=== FUNCTION 7.20: TRA CỨU BẢO HÀNH ĐIỆN TỬ
+
+### 7.20.1. Tổng quan (Overview)
+Chức năng cho phép khách hàng chủ động tra cứu thời hạn và lịch sử bảo hành của các thiết bị điện máy đã mua tại hệ thống HAE1. Khách hàng chỉ cần nhập số điện thoại mua hàng hoặc mã định danh duy nhất của thiết bị (mã IMEI/Serial) để truy vấn thông tin chi tiết mà không cần giữ thẻ bảo hành giấy truyền thống. ===
+*   **Trang tra cứu bảo hành (Warranty Lookup - Customer Side):**
+    *   **Khung nhập liệu:** Nằm chính giữa trang, gồm một ô nhập text lớn để điền Số điện thoại hoặc mã IMEI/Serial, nút bấm "Tra cứu".
+    *   **Bảng kết quả tra cứu:** Xuất hiện ngay phía dưới sau khi có kết quả.
+        *   **Thông tin thiết bị:** Tên sản phẩm, số IMEI, Ngày mua hàng, Ngày kích hoạt bảo hành, Ngày hết hạn bảo hành.
+        *   **Thanh chỉ số thời hạn:** Một vạch tiến trình (Progress Bar) chạy từ ngày bắt đầu đến ngày kết thúc bảo hành, hiển thị số ngày còn lại (Ví dụ: `Còn lại 180 ngày bảo hành`) và đổi màu xám nếu đã hết hạn.
+
+=== FUNCTION 7.21: ĐẶT LỊCH SỬA CHỮA TRỰC TUYẾN (CUSTOMER PORTAL)
+
+### 7.21.1. Tổng quan (Overview)
+Chức năng cho phép khách hàng đăng ký lịch dịch vụ bảo dưỡng hoặc sửa chữa thiết bị điện máy hỏng hóc trực tuyến thông qua cổng thông tin khách hàng (Customer Portal). Khách hàng điền thông tin mô tả sự cố, số IMEI thiết bị, chọn ngày giờ hẹn mang máy đến trung tâm và hệ thống sẽ tự động gán kỹ thuật viên chịu trách nhiệm xử lý theo thuật toán phân công tự động. ===
+*   **Trang đặt lịch sửa chữa (Customer Portal Side):**
+    *   Thiết kế dạng biểu mẫu từng bước (Step-by-step Form Wizard).
+    *   **Bước 1 (Thông tin thiết bị):** Nhập số IMEI thiết bị và ô nhập mô tả tình trạng lỗi của máy.
+    *   **Bước 2 (Lịch hẹn):** Một bảng lịch tháng (Calendar View) trực quan để khách hàng bấm chọn Ngày hẹn mang máy đến và chọn Khung giờ hẹn (Ca sáng: 08h-12h, Ca chiều: 13h-17h).
+    *   **Bước 3 (Liên hệ):** Nhập Họ tên, Số điện thoại người mang máy. Bấm nút "Xác nhận đặt lịch".
+
+=== FUNCTION 7.22: AI CHẨN ĐOÁN LỖI (GEMINI VISION)
+
+### 7.22.1. Tổng quan (Overview)
+Chức năng đột phá sử dụng công nghệ AI thị giác máy tính (Computer Vision) tích hợp mô hình Gemini 1.5 Flash. Khi khách hàng đặt lịch sửa chữa và tải lên hình ảnh chụp lỗi thiết bị (Ví dụ: ảnh chụp màn hình tivi bị sọc, bo mạch máy lạnh bị cháy tụ, lồng máy giặt bị lệch trục), AI sẽ tự động phân tích hình ảnh lỗi, đưa ra chẩn đoán nguyên nhân, dự báo linh kiện cần thay thế, gợi ý khoảng giá sửa chữa ước tính và đưa ra cảnh báo an toàn. ===
+*   **Khu vực Tải ảnh AI Vision (Trang đặt lịch sửa chữa):**
+    *   Một hộp nét đứt lớn có nút "Chọn ảnh chụp thiết bị hỏng".
+    *   Sau khi tải ảnh lên, giao diện hiển thị ảnh thu nhỏ (Thumbnail) và nút bấm "Bắt đầu chẩn đoán bằng AI".
+    *   **Khung kết quả phân tích (AI Diagnosis Panel):** Thiết kế dạng kính mờ (Glassmorphism) xuất hiện mượt mà bằng hiệu ứng Slide-down.
+        *   **Xác suất lỗi:** Biểu đồ phần trăm (%) độ tin cậy của chẩn đoán (Ví dụ: `Cháy IC nguồn - Độ tin cậy: 88%`).
+        *   **Giá dự kiến:** Hiển thị khoảng giá sửa và thay linh kiện (Ví dụ: `500.000 VNĐ - 700.000 VNĐ`).
+        *   **Cảnh báo an toàn:** Dòng chữ đỏ nhấp nháy: **"Cảnh báo: Rút phích cắm điện ngay lập tức để tránh cháy nổ"**.
+
+=== FUNCTION 7.23: QUẢN LÝ PHIẾU SỬ CHỮA (REPAIR TICKETS)
+
+### 7.23.1. Tổng quan (Overview)
+Chức năng cho phép nhân viên kỹ thuật và điều phối viên quản trị tiến trình sửa chữa thiết bị hỏng hóc của khách hàng. Nhân viên cập nhật trạng thái phiếu sửa chữa qua 4 giai đoạn nghiêm ngặt, ghi chú nguyên nhân thực tế, lựa chọn linh kiện thay thế từ kho và tính toán chi phí công thợ, giúp chuẩn hóa quy trình dịch vụ hậu mãi Mini-ERP. ===
+*   **Trang Danh sách Phiếu sửa chữa (Technician Dashboard - Admin Side):**
+    *   Bảng lưới lọc phiếu theo các trạng thái: `Received` (Tiếp nhận), `Checking` (Kiểm tra), `Under_Repair` (Đang sửa), `Waiting_Parts` (Chờ linh kiện), `Done` (Hoàn tất).
+*   **Màn hình Cập nhật Chi tiết Phiếu sửa chữa:**
+    *   **Phần thông tin:** Xem thông tin khách hàng, số IMEI máy, lịch sử chẩn đoán AI gửi kèm.
+    *   **Phần tác vụ:** Dropdown chuyển trạng thái phiếu, ô nhập mô tả kết quả kiểm tra thực tế, nút "Thêm linh kiện thay thế" (mở modal tìm kiếm linh kiện trong kho để chọn xuất kho).
+    *   **Nút "Hoàn thành và tính tiền"** màu xanh lá.
+
+=== FUNCTION 7.24: LIVE TRACKING STEPPER
+
+### 7.24.1. Tổng quan (Overview)
+Live Tracking Stepper là tính năng mang lại trải nghiệm minh bạch cho dịch vụ hậu mãi. Khách hàng có thể truy cập cổng thông tin cá nhân (Profile) hoặc nhập mã phiếu sửa chữa để theo dõi thời gian thực tiến độ xử lý thiết bị hỏng hóc của mình thông qua một thanh tiến trình các bước trực quan từ khâu tiếp nhận đến khi sửa xong bàn giao. ===
+*   **Trang Theo dõi tiến độ sửa chữa (Customer Side):**
+    *   **Thanh tiến trình Stepper (Horizontal Stepper):** Nằm ở phần đầu trang, gồm 4 nút tròn liên kết bằng các vạch ngang:
+        *   `Bước 1 (Tiếp nhận - Received)`
+        *   `Bước 2 (Kiểm tra & Báo giá - Checking)`
+        *   `Bước 3 (Đang sửa chữa - Under Repair / Waiting Parts)`
+        *   `Bước 4 (Hoàn thành - Done)`
+    *   **Màu sắc động:** Các bước đã hoàn thành hiển thị màu xanh lá kèm dấu tích ($\checkmark$), bước hiện tại hiển thị nhấp nháy xanh dương, bước chưa tới hiển thị màu xám mờ.
+    *   **Khung chi tiết lịch sử (Activity Log Timeline):** Danh sách xếp dọc bên dưới hiển thị ngày giờ cụ thể và ghi chú của kỹ thuật viên ở từng bước cập nhật.
+
+=== FUNCTION 7.25: XUẤT HÓA ĐƠN DỊCH VỤ SỬ CHỮA
+
+### 7.25.1. Tổng quan (Overview)
+Chức năng hỗ trợ bộ phận kế toán và kỹ thuật viên xuất hóa đơn dịch vụ sửa chữa (Service Invoice) cho khách hàng ngay sau khi thiết bị được sửa xong. Hệ thống tự động truy vấn giá các linh kiện đã thay, cộng với tiền công thợ, tự động áp thuế VAT 10% để tính tổng giá trị thanh toán, lưu trữ thông tin giao dịch tài chính và hỗ trợ kết xuất bản in hóa đơn chuẩn PDF để gửi khách hàng. ===
+*   **Trang Danh sách Hóa đơn dịch vụ (Admin Side):** Bảng hiển thị các hóa đơn: Số hóa đơn, Mã phiếu sửa chữa, Tên khách hàng, Số tiền, Trạng thái thanh toán (Chờ thanh toán / Đã thanh toán), Ngày xuất.
+*   **Màn hình xem trước hóa đơn và in ấn:**
+    *   Thiết kế giao diện giả lập khổ giấy A4 màu trắng sang trọng.
+    *   **Header:** Logo HAE1, địa chỉ cửa hàng, mã số thuế doanh nghiệp.
+    *   **Body:** Bảng kê chi tiết gồm cột: Tên linh kiện/dịch vụ sửa, Số lượng, Đơn giá, Thành tiền.
+    *   **Footer:** Dòng tạm tính, Thuế VAT 10%, Tổng cộng cuối cùng, chữ ký của thủ quỹ và kỹ thuật viên.
+    *   Nút bấm "In hóa đơn (PDF)" màu xanh dương nổi bật ở thanh tác vụ trên cùng.
+
+=== FUNCTION 7.26: GIAO DIỆN THU NGÂN POS
+
+### 7.26.1. Tổng quan (Overview)
+Giao diện thu ngân POS (Point of Sale) là công cụ chuyên biệt tối giản hóa quy trình bán hàng trực tiếp tại quầy của cửa hàng HAE1. Chức năng hỗ trợ tải nhanh danh sách sản phẩm, tự động tính tổng tiền giỏ hàng, cho phép tìm kiếm nhanh sản phẩm bằng cách quét mã vạch (Barcode Scanner) và hỗ trợ in hóa đơn bán lẻ tức thì. ===
+*   **Màn hình POS (Admin Side):**
+    *   **Bên trái (Tìm kiếm & Chọn sản phẩm):**
+        *   Ô nhập quét mã vạch (Barcode Input Focus): Luôn được focus tự động bằng JS để nhận tín hiệu từ máy quét tia laser.
+        *   Lưới danh sách sản phẩm thu nhỏ (Grid View) hiển thị ảnh, tên, giá bán và số lượng tồn kho khả dụng để thu ngân click chọn nhanh.
+    *   **Bên phải (Giỏ hàng thanh toán POS):**
+        *   Danh sách các sản phẩm thu ngân đã chọn mua kèm phím tăng giảm số lượng nhanh.
+        *   Form thông tin khách hàng thành viên (nhập SĐT để tích điểm loyalty).
+        *   Khu vực tính tiền: Tạm tính, Mã giảm giá, Thuế VAT, Tổng tiền thanh toán.
+        *   Nút bấm thanh toán nổi bật: "Xác nhận và In hóa đơn".
+
+=== FUNCTION 7.27: SPLIT PAYMENT (THANH TOÁN CHIA PHẦN)
+
+### 7.27.1. Tổng quan (Overview)
+Split Payment là chức năng thanh toán nâng cao tích hợp trong màn hình bán hàng tại quầy POS. Chức năng cho phép giải quyết nhu cầu thực tế của khách hàng khi muốn thanh toán một đơn hàng giá trị cao bằng nhiều hình thức kết hợp đồng thời (Ví dụ: Trả trước một phần bằng tiền mặt có sẵn trong ví, và phần còn lại thực hiện quét mã QR chuyển khoản ngân hàng). ===
+*   **Khung Thanh toán Chia phần (Nằm trong Modal Thanh toán POS):**
+    *   Hiển thị hộp lựa chọn phương thức thanh toán: "Thanh toán hỗn hợp (Split Payment)".
+    *   **Khung nhập số tiền chia:**
+        *   Ô nhập "Số tiền mặt thanh toán" (Cash Amount).
+        *   Ô nhập "Số tiền chuyển khoản thanh toán" (Bank Amount).
+    *   **Logic tự động khớp:** Khi thu ngân nhập số tiền vào ô Tiền mặt, ô Chuyển khoản sẽ tự động tính số tiền còn lại bằng công thức: `Tiền chuyển khoản = Tổng tiền đơn - Tiền mặt` và ngược lại.
+    *   Bên cạnh hiển thị mã QR Code tự động thay đổi giá trị theo số tiền của ô "Số tiền chuyển khoản".
+
+=== FUNCTION 7.28: IN HÓA ĐƠN NHIỆT (THERMAL PRINTER FORMAT 80MM)
+
+### 7.28.1. Tổng quan (Overview)
+Chức năng cho phép thu ngân in nhanh hóa đơn thanh toán trực tiếp tại quầy POS ra máy in nhiệt khổ giấy 80mm (K80) tiêu chuẩn của cửa hàng. Giao diện được tối ưu hóa bằng CSS `@media print` chuyên biệt để loại bỏ hoàn toàn các khung menu điều hướng, nút bấm, tự động căn chỉnh lề, cỡ chữ và độ tương phản giúp hóa đơn in ra sắc nét và tiết kiệm giấy nhiệt. ===
+*   **Bản in Hóa đơn nhiệt (Khổ giấy 80mm):**
+    *   Bố cục dọc thu gọn (chỉ hiển thị nội dung chính).
+    *   **Header:** Logo HAE1 (dạng đơn sắc độ phân giải cao), số điện thoại hotline, địa chỉ cửa hàng và mã hóa đơn dạng Barcode nhỏ.
+    *   **Body:** Danh sách sản phẩm dạng bảng rút gọn không có viền ngăn cách (chỉ hiển thị Tên sản phẩm viết tắt, số lượng, thành tiền).
+    *   **Footer:** Tổng tiền, Điểm tích lũy mới của khách hàng, lời cảm ơn và mã QR Code liên kết với chính sách đổi trả trực tuyến.
+
+=== FUNCTION 7.29: QUẢN LÝ NHÀ CUNG CẤP
+
+### 7.29.1. Tổng quan (Overview)
+Chức năng cho phép bộ phận mua hàng quản trị danh sách thông tin các Nhà cung cấp (Suppliers) thiết bị điện máy và linh kiện bảo hành cho chuỗi ERP HAE1. Thông tin lưu trữ chi tiết bao gồm tên doanh nghiệp, mã số thuế, số điện thoại liên hệ, địa chỉ văn phòng, và theo dõi công nợ nhà cung cấp khi nhập hàng. ===
+*   **Trang Danh sách Nhà cung cấp (Admin Side):** Bảng hiển thị thông tin: Mã NCC, Tên nhà cung cấp, Người đại diện, Số điện thoại, Địa chỉ, Trạng thái hợp tác (Active / Inactive).
+*   **Màn hình Thêm mới/Sửa Nhà cung cấp:**
+    *   Form nhập thông tin: Tên nhà cung cấp, Mã số thuế (10 hoặc 13 số), Số điện thoại, Email, Địa chỉ chi tiết, Tài khoản ngân hàng giao dịch của NCC.
+    *   Ô nhập Ghi chú/Thỏa thuận chiết khấu hợp đồng.
+
+=== FUNCTION 7.30: PHIẾU NHẬP KHO & QUẢN LÝ IMEI
+
+### 7.30.1. Tổng quan (Overview)
+Chức năng phục vụ quy trình nhập kho PO (Purchase Order) của chuỗi cung ứng ERP HAE1. Khi thủ kho nhận hàng hóa điện máy từ nhà cung cấp, hệ thống bắt buộc thủ kho phải nhập/quét mã IMEI/Serial định danh duy nhất cho từng máy tương ứng với số lượng nhập của phiếu PO, đảm bảo tính chặt chẽ trong quản lý và kích hoạt lịch sử bảo hành điện tử sau này. ===
+*   **Trang Lập phiếu Nhập kho (Admin Side):**
+    *   **Phần chung:** Chọn Nhà cung cấp, chọn Kho nhập, ngày nhập, người lập.
+    *   **Bảng chọn sản phẩm nhập:** Chọn sản phẩm, số lượng nhập.
+    *   **Hộp thoại Nhập IMEI (Modal):** Khi thủ kho nhập số lượng 5 chiếc điện thoại iPhone, một nút "Nhập mã IMEI (5)" sẽ sáng lên. Click vào sẽ mở ra modal gồm 5 ô nhập text xếp dọc để thủ kho sử dụng máy quét mã vạch quét liên tiếp 5 số IMEI của 5 máy thực tế.
+    *   Nút bấm "Hoàn tất nhập kho" màu xanh dương nổi bật.
+
+=== FUNCTION 7.31: ĐỒNG BỘ TỒN KHO ĐA KÊNH
+
+### 7.31.1. Tổng quan (Overview)
+Chức năng đồng bộ tồn kho đa kênh (Multi-channel Inventory Synchronization) tự động cập nhật số lượng tồn kho vật lý khả dụng thời gian thực trên tất cả các kênh bán hàng (Website mua sắm trực tuyến của khách và giao diện thu ngân POS tại quầy). Hệ thống sử dụng cơ chế khóa bi quan (Pessimistic Locking - `lockForUpdate`) trong database để giải quyết triệt để lỗi tranh chấp tài nguyên (Race Condition) khi có nhiều khách hàng mua cùng một sản phẩm tại cùng một thời điểm. ===
+*   **Trang Chi tiết sản phẩm (Admin Side):**
+    *   **Tab Tồn kho chi tiết (Inventory Tab):** Hiển thị bảng phân chia số lượng:
+        *   `Tồn kho thực tế (Physical Stock)`: Tổng số lượng trong kho vật lý.
+        *   `Đang giữ chỗ (Hold Stock)`: Số lượng nằm trong các giỏ hàng online hoặc hóa đơn nháp chưa thanh toán.
+        *   `Khả dụng bán (Available Stock)`: Bằng `Tồn thực tế - Đang giữ chỗ`.
+    *   **Bảng đồng bộ kênh:** Các dòng trạng thái kết nối và thời gian đồng bộ cuối cùng của kênh Online và POS.
+
+=== FUNCTION 7.32: CẢNH BÁO TỒN KHO AN TOÀN (SAFE STOCK ALERT)
+
+### 7.32.1. Tổng quan (Overview)
+Chức năng tự động giám sát số lượng tồn kho khả dụng của từng sản phẩm trong hệ thống. Khi số lượng tồn kho của một biến thể sản phẩm giảm xuống dưới ngưỡng an toàn (Safe Stock Threshold) do quản lý định nghĩa, hệ thống sẽ tự động gửi email cảnh báo cho bộ phận mua hàng và hiển thị biểu tượng cảnh báo màu đỏ trên dashboard quản trị để kịp thời lập kế hoạch nhập hàng mới. ===
+*   **Trang Danh sách sản phẩm (Admin Side):**
+    *   **Cột Tồn kho:** Nếu số lượng tồn kho lớn hơn ngưỡng an toàn, hiển thị màu xanh lá. Nếu bằng hoặc nhỏ hơn ngưỡng an toàn, hiển thị màu đỏ kèm biểu tượng Cảnh báo (Icon chấm than tam giác nhấp nháy).
+*   **Trang cấu hình sản phẩm (Admin Side):**
+    *   Thêm một ô nhập liệu có nhãn "Ngưỡng tồn kho an toàn" (Safe Stock Limit) nằm ngay cạnh ô nhập số lượng tồn kho ban đầu.
+
+=== FUNCTION 7.33: ĐIỀU CHUYỂN KHO NỘI BỘ
+
+### 7.33.1. Tổng quan (Overview)
+Chức năng quản lý việc luân chuyển hàng hóa giữa các kho hàng vật lý trong chuỗi chi nhánh của HAE1 (Ví dụ: điều động hàng từ Kho tổng về cửa hàng bán lẻ Quận 1). Chức năng này giúp thủ kho lập phiếu điều chuyển, theo dõi trạng thái vận chuyển và tự động cập nhật giảm tồn kho tại kho xuất đồng thời tăng tồn kho tương ứng tại kho nhập sau khi phiếu được duyệt hoàn thành. ===
+*   **Trang Lập phiếu Điều chuyển (Inventory Transfer - Admin Side):**
+    *   **Thông tin chung:** Chọn Kho xuất (Source Warehouse Dropdown), Chọn Kho nhập (Destination Warehouse Dropdown), Người lập, Ghi chú lý do.
+    *   **Bảng chọn sản phẩm:** Lưới chọn sản phẩm, biến thể, hiển thị số tồn kho hiện tại ở kho xuất, và ô nhập "Số lượng điều chuyển".
+    *   Nếu sản phẩm quản lý bằng IMEI, hiển thị nút "Chọn IMEI điều chuyển" để mở modal tích chọn các IMEI cụ thể sẽ chuyển đi.
+    *   Nút bấm "Yêu cầu điều chuyển" gửi duyệt lên cấp quản lý.
+
+=== FUNCTION 7.34: KIỂM KÊ & CÂN BẰNG KHO (INVENTORY AUDIT)
+
+### 7.34.1. Tổng quan (Overview)
+Chức năng Kiểm kê & Cân bằng kho (Inventory Audit & Adjustment) hỗ trợ doanh nghiệp đối soát số liệu chênh lệch giữa tồn kho thực tế đếm được và tồn kho lý thuyết trên hệ thống máy tính. Khi hoàn thành kiểm kho, quản lý duyệt phiếu kiểm để hệ thống tự động chạy tác vụ cân bằng (tăng hoặc giảm tồn kho ảo trên phần mềm) để khớp hoàn toàn với số liệu kiểm kho thực tế. ===
+*   **Trang Phiếu Kiểm kê kho (Inventory Audit - Admin Side):**
+    *   **Header:** Chọn Kho cần kiểm kê, ngày kiểm kê, nhân viên thực hiện kiểm.
+    *   **Bảng chi tiết kiểm kê:**
+        *   Cột Sản phẩm / Biến thể.
+        *   Cột `Tồn hệ thống`: Số lượng hiển thị trên máy tính (Read-only).
+        *   Cột `Tồn thực tế`: Ô nhập số lượng đếm được thực tế tại kho.
+        *   Cột `Chênh lệch`: Số lượng chênh lệch tự động tính toán (Thực tế - Hệ thống). Hiển thị màu xanh nếu dương (thừa hàng), màu đỏ nếu âm (thiếu hụt).
+        *   Cột `Lý do chênh lệch`: Dropdown chọn lý do (Hao hụt tự nhiên, Hỏng hóc, Sai sót số liệu).
+    *   Nút bấm "Hoàn tất và Cân bằng kho" màu xanh lá.
+
+=== FUNCTION 7.35: LỊCH SỬ BIẾN ĐỘNG KHO (INVENTORY LOGS)
+
+### 7.35.1. Tổng quan (Overview)
+Lịch sử biến động kho (Inventory Transaction Logs) là chức năng ghi nhật ký tự động không thể thiếu của phân hệ ERP. Mọi hành vi làm thay đổi số lượng tồn kho của sản phẩm (Nhập kho PO, Bán hàng POS, Giao hàng online, Điều chuyển kho, Kiểm kê cân bằng, Khách hàng trả hàng lỗi) đều được hệ thống tự động ghi lại vết chi tiết, giúp quản lý dễ dàng tra cứu, kiểm toán dòng hàng hóa và phát hiện nguyên nhân thất thoát. ===
+*   **Trang Lịch sử biến động kho (Inventory Logs - Admin Side):**
+    *   **Bộ lọc tìm kiếm:** Lọc theo Kho hàng, khoảng thời gian (Từ ngày - Đến ngày), Loại biến động (Nhập, Xuất, Cân bằng, Trả hàng), và ô tìm kiếm tên sản phẩm.
+    *   **Bảng danh sách nhật ký:**
+        *   Mã log, Ngày giờ.
+        *   Tên sản phẩm & Biến thể.
+        *   Kho hàng phát sinh biến động.
+        *   Loại giao dịch (Ví dụ: `Nhập kho PO`, `Xuất kho Online`).
+        *   Số lượng thay đổi (Ví dụ: `+10` màu xanh lá, `-2` màu đỏ).
+        *   Tồn kho sau biến động (Số dư tồn kho lũy kế).
+        *   Mã chứng từ tham chiếu (Mã đơn hàng, mã phiếu nhập, click để xem chi tiết chứng từ).
+        *   Tên tài khoản nhân viên thực hiện thao tác.
+
+=== FUNCTION 7.36: HẠNG VIP & TÍCH ĐIỂM LOYALTY
+
+### 7.36.1. Tổng quan (Overview)
+Chức năng Tích điểm & Phân hạng thành viên giúp thúc đẩy lòng trung thành của khách hàng. Mỗi khi đơn hàng mua sắm trực tuyến hoặc tại quầy hoàn thành thành công, hệ thống tự động quy đổi giá trị đơn hàng thành điểm thưởng (Loyalty Points) theo tỷ lệ cấu hình. Số điểm tích lũy lũy kế sẽ quyết định hạng thẻ thành viên của khách hàng (Đồng, Bạc, Vàng, Kim Cương) để hưởng các chính sách chiết khấu và đặc quyền riêng biệt. ===
+*   **Trang cá nhân khách hàng (Profile - Customer Side):**
+    *   **Thẻ thành viên điện tử (Loyalty VIP Card):** Thiết kế hiệu ứng chuyển màu kim loại sang trọng (Đồng nhạt, Bạc sáng, Vàng óng, Kim Cương đen huyền ảo).
+    *   Hiển thị Tên hạng thẻ hiện tại và số Điểm hiện có (Ví dụ: `Hạng Vàng - 1.250 điểm`).
+    *   **Thanh tiến trình nâng hạng (Rank Progress Bar):** Hiển thị số điểm cần đạt để lên hạng tiếp theo (Ví dụ: `Cần thêm 750 điểm để lên hạng Kim Cương`).
+
+=== FUNCTION 7.37: ĐỔI THƯỞNG VOUCHER
+
+### 7.37.1. Tổng quan (Overview)
+Chức năng Đổi thưởng Voucher cho phép khách hàng chủ động sử dụng số điểm tích lũy loyalty của mình để đổi lấy các mã giảm giá mua hàng (Vouchers). Hệ thống trừ điểm tích lũy của khách hàng thời gian thực, tự động sinh mã voucher ngẫu nhiên độc bản và thêm thẳng mã đó vào Ví Voucher của người dùng để áp dụng khi mua các đơn hàng sau. ===
+*   **Trang Cửa hàng Đổi thưởng (Rewards Store - Customer Side):**
+    *   Thiết kế lưới danh sách thẻ quà tặng (Voucher Cards).
+    *   Mỗi thẻ voucher hiển thị: Mệnh giá giảm (Ví dụ: `Voucher 50.000đ`), Điều kiện đơn hàng tối thiểu, Số điểm yêu cầu quy đổi (Ví dụ: `Cần 500 điểm`), Số lượng voucher còn lại trong kho quà.
+    *   **Nút "Đổi ngay":** Nếu tài khoản đủ điểm, nút hiển thị màu xanh lá rực rỡ. Nếu không đủ điểm, nút bị làm mờ (disabled) và hiển thị dòng chữ "Chưa đủ điểm".
+
+=== FUNCTION 7.38: VÒNG QUAY MAY MẮN (LUCKY WHEEL)
+
+### 7.38.1. Tổng quan (Overview)
+Vòng quay may mắn là tính năng game hóa (Gamification) thu hút khách hàng tương tác hằng ngày. Giao diện frontend hiển thị một vòng quay sinh động vẽ bằng công nghệ HTML5 Canvas chia làm các ô giải thưởng (Voucher, điểm thưởng, quà tặng vật lý hoặc ô Chúc may mắn). Hệ thống áp dụng cơ chế xác định giải thưởng theo trọng số (Probability Weights) ở Backend và sử dụng khóa bi quan (Pessimistic Locking - `lockForUpdate`) để trừ kho quà tặng an toàn tuyệt đối. ===
+*   **Trang Vòng quay may mắn (Customer Side):**
+    *   **Khu vực trung tâm:** Vòng quay tròn lớn được tô màu gradient bắt mắt, có mũi tên chỉ hướng ở đỉnh và nút tròn "QUAY" màu đỏ nằm chính giữa tâm.
+    *   **Bên dưới vòng quay:** Hiển thị số lượt quay miễn phí còn lại của khách trong ngày (Ví dụ: `Lượt quay miễn phí hôm nay: 1`) hoặc nút tùy chọn "Quay bằng 100 điểm tích lũy".
+    *   **Bảng vàng vinh danh:** Thanh cuộn hiển thị liên tục tên các khách hàng vừa quay trúng thưởng (Ví dụ: `Nguyễn Văn A vừa trúng Voucher 50k`).
+
+=== FUNCTION 7.39: QUẢN LÝ CHIẾN DỊCH THÔNG BÁO (NOTIFICATION CAMPAIGNS)
+
+### 7.39.1. Tổng quan (Overview)
+Chức năng cho phép quản trị viên thiết lập và gửi hàng loạt thông báo đẩy hệ thống (biểu tượng chuông trên Website) đến các đối tượng khách hàng mục tiêu (Tất cả thành viên, Khách hàng VIP, hoặc một nhóm hạng VIP cụ thể) để phục vụ chiến dịch marketing. Hệ thống sử dụng cơ chế hàng đợi xử lý ngầm (Laravel Queue Background Job) để phân tách nhỏ danh sách gửi đi thành các lô (Chunks), giúp tránh quá tải hoặc nghẽn luồng xử lý chính của Server. ===
+*   **Trang Danh sách Chiến dịch Thông báo (Admin Side):** Bảng hiển thị các chiến dịch: Tiêu đề, Nhóm đối tượng nhận, Trạng thái gửi (Đang chờ / Đang gửi / Hoàn tất), Số lượng đã gửi thành công, Ngày tạo.
+*   **Màn hình Tạo chiến dịch thông báo mới:**
+    *   **Form nhập liệu:**
+        *   Ô nhập "Tiêu đề thông báo" (Tối đa 100 ký tự).
+        *   Ô nhập "Nội dung chi tiết" (Tối đa 250 ký tự).
+        *   Dropdown "Nhóm người nhận": Gồm các tùy chọn: `Tất cả khách hàng`, `Hạng Đồng`, `Hạng Bạc`, `Hạng Vàng`, `Hạng Kim Cương`.
+        *   Ô nhập "Đường dẫn liên kết (Action URL)": URL điều hướng khi khách hàng click vào thông báo (Ví dụ: `/flash-sales`).
+    *   Nút bấm "Kích hoạt chiến dịch" gửi đi.
+
+=== FUNCTION 7.40: AI KIỂM DUYỆT BÀI VIẾT UGC (USER GENERATED CONTENT)
+
+### 7.40.1. Tổng quan (Overview)
+Chức năng hỗ trợ kiểm duyệt tự động các bài viết chia sẻ kinh nghiệm sử dụng thiết bị điện máy do khách hàng tự đăng tải (UGC - User Generated Content) trên cộng đồng HAE1. Tích hợp API Gemini 1.5 Flash, AI sẽ tự động phân tích bài viết để lọc bỏ các nội dung vi phạm pháp luật, tục tĩu, quảng cáo spam. Nếu bài viết đạt chuẩn chất lượng, AI sẽ tự động chấm điểm SEO, phân tích metadata và đề xuất duyệt bài công khai đồng thời tự động cộng điểm thưởng loyalty cho tác giả. ===
+*   **Trang đăng bài viết chia sẻ (Customer Side):**
+    *   Form gồm: Ô nhập Tiêu đề bài viết, Chọn danh mục sản phẩm liên quan, Trình soạn thảo nội dung (Rich Text Editor), upload hình ảnh đại diện bài viết.
+    *   Nút bấm "Đăng bài viết".
+*   **Trang Danh sách bài viết chờ duyệt (Admin Side):**
+    *   Bảng hiển thị các bài viết kèm cột: `Quyết định AI`: hiển thị thẻ màu (Xanh: AI duyệt, Đỏ: AI từ chối vi phạm, Vàng: Bài viết nhạy cảm chờ duyệt thủ công).
+    *   Cột `Điểm chất lượng AI`: Thang điểm 0 - 100 do AI chấm điểm.
+
+=== FUNCTION 7.41: AI DUYỆT ĐƠN HÀNG TỰ ĐỘNG (FRAUD DETECTION)
+
+### 7.41.1. Tổng quan (Overview)
+Chức năng tự động hóa kiểm tra và phê duyệt đơn hàng bằng trí tuệ nhân tạo (AI Auto Order Approval). Khi khách hàng đặt đơn hàng trực tuyến, hệ thống sẽ tự động gọi API của Gemini để phân tích độ rủi ro đơn hàng (Risk Score) dựa trên các tham số: lịch sử mua hàng, tỷ lệ boom hàng, sự rõ ràng của địa chỉ giao hàng và số điện thoại liên hệ. Đơn hàng an toàn sẽ được duyệt tự động chuyển sang khâu đóng gói, giảm thiểu thời gian chờ đợi và tối ưu năng suất nhân sự. ===
+*   **Trang Chi tiết đơn hàng (Admin Side):**
+    *   **Khung Đánh giá Rủi ro AI (AI Fraud Panel):** Nằm ở cột bên phải giao diện chi tiết đơn.
+        *   **Điểm số rủi ro (Risk Score):** Hiển thị dạng đồng hồ đo phần trăm từ 0% đến 100%. Màu xanh lá (< 30%), Màu vàng (30% - 70%), Màu đỏ (> 70%).
+        *   **Lý do phân tích của AI:** Dòng văn bản liệt kê lý do cụ thể (Ví dụ: `Địa chỉ giao hàng "Gầm cầu chữ Y" không có thực`, `Khách hàng này chưa từng có lịch sử bom hàng`).
+        *   **Hành động đề xuất:** Nhãn hiển thị gợi ý (Duyệt tự động / Tạm giữ gọi điện / Từ chối đơn hàng).
+
+=== FUNCTION 7.42: SỔ QUỸ THU CHI (CASHBOOK)
+
+### 7.42.1. Tổng quan (Overview)
+Sổ quỹ thu chi (Cashbook Entries) là chức năng kế toán cốt lõi của Mini-ERP HAE1, cho phép quản lý dòng tiền (Cashflow) thời gian thực của toàn bộ hệ thống cửa hàng. Mọi giao dịch tài chính phát sinh từ việc bán hàng (Thu tiền đơn online, đơn POS quầy, thu tiền đóng trả góp hằng tháng) và chi phí vận hành (Chi tiền nhập hàng PO cho nhà cung cấp, chi tiền mặt hoàn đơn hàng) đều được hệ thống tự động hạch toán ghi sổ quỹ, giúp tính toán số dư tồn quỹ lũy kế chính xác từng giây. ===
+*   **Trang Sổ quỹ thu chi (Cashbook Ledger - Admin Side):**
+    *   **Thống kê số dư quỹ (KPI Balance Cards):** 3 hộp lớn hiển thị: `Tổng thu lũy kế`, `Tổng chi lũy kế`, `Số dư quỹ hiện tại (Balance)` màu xanh lục nổi bật.
+    *   **Bảng nhật ký dòng tiền:**
+        *   Mã phiếu thu/chi, Ngày giờ ghi nhận.
+        *   Loại giao dịch (Thu - `Income` / Chi - `Expense`).
+        *   Số tiền giao dịch.
+        *   Phương thức thanh toán (Tiền mặt, QR chuyển khoản, Thẻ tín dụng).
+        *   Nội dung hạch toán (Ví dụ: `Thu tiền đơn hàng POS #POS-992`, `Chi nhập kho PO #PO-12`).
+        *   Mã chứng từ tham chiếu liên kết (Click để mở popup xem đơn hàng hoặc phiếu nhập liên quan).
+        *   Số dư quỹ lũy kế sau giao dịch (Running Balance).
+
+=== FUNCTION 7.43: VIDEO REVIEW & ĐĂNG TẢI ĐA PHƯƠNG TIỆN
+
+### 7.43.1. Tổng quan (Overview)
+Chức năng Video Review & Đăng tải đa phương tiện hỗ trợ hiển thị video thực tế giới thiệu, đập hộp sản phẩm điện máy do Admin đăng tải. Khách hàng khi xem video có thể dễ dàng bình luận, thảo luận đệ quy và click chọn xem/mua nhanh các sản phẩm được gắn thẻ (tagged products) trực tiếp ngay trên khung trình chiếu của video mà không cần phải thoát ra ngoài tìm kiếm. ===
+*   **Trang Chi tiết Video sản phẩm (Customer Side):**
+    *   **Khu vực bên trái (Trình phát video):** Trình phát video đa phương tiện HTML5 hỗ trợ các phím điều khiển (Play, Pause, Volume, Fullscreen) và hiệu ứng chuyển tiếp mượt mà.
+    *   **Khu vực gắn thẻ sản phẩm (Tagged Products Panel):** Một hộp trượt xếp dọc bên cạnh hoặc nằm dưới video hiển thị các sản phẩm được review trong clip. Mỗi sản phẩm hiển thị ảnh, tên, giá bán và nút "Mua ngay" nhanh.
+    *   **Khu vực bình luận (Comment Thread):** Nằm dưới video, cho phép người dùng viết bình luận và trả lời (reply) đệ quy nhiều cấp bằng AJAX.
+
+=== FUNCTION 7.44: CHẾ ĐỘ ĐA NGÔN NGỮ (LOCALIZATION)
+
+### 7.44.1. Tổng quan (Overview)
+Hệ thống tích hợp chế độ đa ngôn ngữ (Multi-language Localization) hỗ trợ dịch thuật giao diện toàn diện cho các đối tượng khách hàng quốc tế. Hệ thống cho phép người dùng chuyển đổi ngôn ngữ nhanh chóng (Tiếng Việt, Tiếng Anh, Tiếng Nhật). Khi chuyển đổi, toàn bộ nhãn tĩnh (Labels, Buttons, Alerts) và dữ liệu động truy vấn từ DB (Tên sản phẩm, mô tả thuộc tính kỹ thuật) sẽ tự động thay đổi tương ứng theo mã ngôn ngữ được chọn. ===
+*   **Thanh Menu đầu trang (Header - Customer Side):**
+    *   **Nút chọn ngôn ngữ (Language Selector Dropdown):** Thiết kế dạng menu thả xuống tinh tế ở góc trên cùng bên phải.
+    *   Mỗi tùy chọn hiển thị cờ quốc gia thu nhỏ và tên ngôn ngữ (Ví dụ: `🇻🇳 Tiếng Việt`, `🇬🇧 English`, `🇯🇵 日本語`).
+    *   Khi chọn một ngôn ngữ, hiệu ứng reload trang mượt mà diễn ra để tải giao diện mới.
+
+=== FUNCTION 7.45: CHÍNH SÁCH ĐỔI TRẢ & HOÀN TIỀN (RETURNS & REFUNDS)
+
+### 7.45.1. Tổng quan (Overview)
+Chức năng cho phép khách hàng gửi yêu cầu đổi trả hoặc hoàn tiền (Return & Refund Request) trực tuyến đối với các sản phẩm điện máy bị lỗi kỹ thuật do nhà sản xuất trong vòng 7 ngày sau khi nhận hàng. Hệ thống bắt buộc khách hàng phải tải hình ảnh bằng chứng lỗi của sản phẩm. Khi Admin phê duyệt yêu cầu, hệ thống sẽ tự động cộng lại sản phẩm vào kho vật lý (hoàn kho) và sinh một bút toán chi tiền tương ứng trong Sổ quỹ Cashbook. ===
+*   **Trang Lịch sử đơn hàng (Order History - Customer Side):**
+    *   Cạnh nút xem chi tiết của các đơn hàng có trạng thái `Completed` (trong thời hạn 7 ngày) sẽ hiển thị thêm nút "Yêu cầu đổi trả". Click vào sẽ mở ra biểu mẫu.
+    *   **Form yêu cầu đổi trả:** Chọn sản phẩm cần trả, ô nhập "Lý do đổi trả", ô nhập "Số tiền yêu cầu hoàn lại", khu vực tải lên hình ảnh bằng chứng lỗi (tối đa 3 ảnh).
+*   **Trang Danh sách Phiếu Đổi trả (Admin Side):**
+    *   Bảng hiển thị các yêu cầu chờ duyệt, nút xem ảnh lỗi phóng to và 2 nút tác vụ: "Phê duyệt đổi trả", "Từ chối".
+
+=== FUNCTION 7.46: AI CHATBOT HỖ TRỢ KHÁCH HÀNG (GEMINI RAG & BOOKING)
+
+### 7.46.1. Tổng quan (Overview)
+Trợ lý ảo AI hoạt động 24/7 tích hợp Google Gemini API với cơ chế RAG (Retrieval-Augmented Generation). Chatbot không chỉ trả lời câu hỏi tĩnh mà có khả năng: (1) Truy xuất tồn kho thực tế theo biến thể (màu sắc, dung lượng) từ cơ sở dữ liệu để tư vấn chính xác, (2) Tự động phát hành mã giảm giá Dynamic Coupon khi khách tương tác sâu (từ tin nhắn thứ 5 trở đi) nhằm kích thích chuyển đổi, (3) Thu thập thông tin qua hội thoại để đặt lịch sửa chữa tự động bằng cách parse cấu trúc JSON ẩn `[[CREATE_REPAIR_TICKET: {...}]]` tạo phiếu sửa chữa nháp vào DB. ===
+*   **Bong bóng chat nổi (Floating Chat Bubble):** Icon tròn góc phải dưới màn hình, nhấn để mở cửa sổ chat.
+*   **Cửa sổ chat (Chat Panel):** Header hiển thị tên bot và trạng thái online. Khung tin nhắn cuộn dọc hiển thị lịch sử hội thoại. Ô nhập tin nhắn dưới cùng kèm nút gửi.
+*   **Thẻ sản phẩm trong chat:** Khi AI tư vấn sản phẩm, hiển thị dạng thẻ có ảnh thu nhỏ, tên SP, giá và nút "Xem chi tiết" có thể click được.
+*   **Thẻ phiếu sửa chữa:** Khi đặt lịch thành công, hiển thị thẻ xác nhận gồm mã phiếu, ngày hẹn và nút "Xem phiếu".
+
+=== FUNCTION 7.47: FLASH SALE GIỜ VÀNG & CHỐNG BÁN VƯỢT KHO (ANTI-OVERSELLING)
+
+### 7.47.1. Tổng quan (Overview)
+Quản lý và vận hành các chiến dịch Flash Sale giảm giá sâu theo khung giờ vàng. Admin cấu hình thời gian bắt đầu/kết thúc, danh sách sản phẩm tham gia và số lượng giới hạn. Frontend hiển thị đồng hồ đếm ngược Countdown Timer thời gian thực và thanh tiến trình biểu diễn tỷ lệ đã bán/còn lại. Backend áp dụng kỹ thuật Pessimistic Locking (`lockForUpdate`) để triệt tiêu hoàn toàn lỗi bán vượt kho (Overselling) khi hàng ngàn request mua hàng đồng thời. ===
+*   **Trang chủ - Banner Flash Sale:** Hiển thị lưới sản phẩm đang deal kèm đồng hồ đếm ngược, giá gốc gạch ngang, giá Flash Sale nổi bật màu đỏ, badge phần trăm giảm giá và thanh tiến trình lava-style.
+*   **Trang Admin - Quản lý chiến dịch:** Form CRUD chiến dịch (tên, thời gian, trạng thái). Bảng danh sách sản phẩm tham gia Flash Sale kèm cột giá sale, số lượng giới hạn, đã bán.
+*   **Chi tiết sản phẩm:** Nếu SP đang có Flash Sale, hiển thị countdown và giá sale thay cho giá gốc.
+
+=== FUNCTION 7.48: QUẢN LÝ KHÁCH HÀNG (CRM) & HỆ THỐNG XỬ PHẠT (BANNING SYSTEM)
+
+### 7.48.1. Tổng quan (Overview)
+Cổng quản trị khách hàng tập trung (CRM) dạng Single Page App điều hướng mềm không tải lại trang, cho phép Admin quản lý toàn bộ thông tin khách hàng đã đăng ký. Tích hợp hệ thống xử phạt thành viên vi phạm tiêu chuẩn cộng đồng (spam bình luận tục tĩu, đánh giá giả mạo): khi Admin xóa bình luận vi phạm, hệ thống mở popup SweetAlert2 với các mức cấm (1 ngày, 3 ngày, Vĩnh viễn). Người dùng bị cấm sẽ bị cập nhật trường `comment_banned_until` và bị chặn mọi tương tác viết bình luận/đánh giá. ===
+*   **Danh sách khách hàng (DataTable):** Bảng dữ liệu có phân trang, tìm kiếm nhanh, cột: Ảnh, Tên, Email, SĐT, Hạng VIP, Điểm tích lũy, Trạng thái (Active/Banned), Hành động.
+*   **Popup xử phạt (SweetAlert2):** Khi Admin xóa bình luận vi phạm, mở popup lựa chọn: *Chỉ xóa*, *Xóa + Cấm 1 ngày*, *3 ngày*, *Vĩnh viễn*.
+
+=== FUNCTION 7.49: QUẢN LÝ BÀI VIẾT & BLOG CÔNG NGHỆ (CRUD ARTICLES)
+
+### 7.49.1. Tổng quan (Overview)
+Giao diện viết bài, cập nhật blog tin tức công nghệ cho Admin và người dùng. Soạn thảo 2 cột: cột trái Rich Text Editor, cột phải Preview render thời gian thực. Tích hợp AI kiểm duyệt UGC tự động và cộng điểm Loyalty cho bài viết chất lượng (điểm AI ≥ 80). ===
+*   **Danh sách bài viết (Admin):** DataTable: tiêu đề, tác giả, trạng thái (Draft/Pending/Published/Rejected), điểm AI, ngày tạo.
+*   **Form soạn thảo 2 cột:** Cột trái: tiêu đề, Rich Text Editor, danh mục, thẻ tag, ảnh. Cột phải: Preview real-time.
+*   **Nút Bulk Approve:** Nút xanh ngọc quét tất cả bài UGC `pending` đã được AI gắn `approved` điểm ≥ 80 để duyệt hàng loạt.
+
+=== FUNCTION 7.50: TÙY BIẾN GIAO DIỆN HEADER/FOOTER (THEME CUSTOMIZER)
+
+### 7.50.1. Tổng quan (Overview)
+Phân hệ Theme Customizer cao cấp cho phép Admin tùy biến sâu Header/Topbar và Footer/Social links/Copyright của website. Sử dụng kỹ thuật Same-Origin DOM Sync Iframe để can thiệp trực tiếp CSS `:root` và cấu trúc DOM của trang chủ thật nhúng trong Iframe, mang lại Live Preview 100% chính xác thay vì Mockup CSS tĩnh. ===
+*   **Bảng cấu hình React (2 tab):** Tab "Đầu trang" cấu hình màu nền, hotline, logo. Tab "Chân trang" cấu hình liên kết mạng xã hội, copyright, màu sắc.
+*   **Iframe Live Preview:** Nhúng trang chủ thật trong `<iframe>`, JS can thiệp Same-Origin sửa DOM và CSS `:root` real-time.
+*   **Highlight Overlay:** Đường nét đứt đỏ bao quanh khu vực đang chỉnh sửa.
+
+=== FUNCTION 7.51: SMART SETUP WIZARD & CLI ORCHESTRATOR (START.BAT)
+
+### 7.51.1. Tổng quan (Overview)
+Bộ công cụ tự động hóa cấu hình, cài đặt và khởi chạy dự án cho thành viên nhóm và hội đồng chấm thi chỉ với một click. Batch Script tương tác cao cấp hỗ trợ: chọn CSDL SQLite/MySQL, tự tạo `.env`, phát sinh `APP_KEY`, liên kết `storage:link`, cài đặt Composer/NPM dependencies, chạy migration và build Vite. ===
+*   **Menu chính CLI:** Hiển thị danh sách Option số (1-6) trong cửa sổ Terminal/CMD.
+*   **Option [6] INITIALIZE:** Kiểm tra `vendor/`, `node_modules/` đã tồn tại để gợi ý bỏ qua. Chọn SQLite/MySQL. Tự tạo `.env` và `APP_KEY`.
+*   **Option [5] FAST REBUILD & RUN:** Dọn cache, chạy migration, build Vite, khởi động server demo.
+
