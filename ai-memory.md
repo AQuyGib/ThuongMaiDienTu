@@ -1,6 +1,17 @@
 # Project Memory
 
 ## Current State & Focus
+- **Đối soát và bổ sung 6 chức năng thiếu của Nguyễn Anh Quý (Ngày 04/06/2026):**
+  - Cross-check 15 chức năng trong `cn.md` so với 45 CN chính thức. Phát hiện **6 chức năng THIẾU HOÀN TOÀN**: Chatbot AI, Flash Sale, CRM KH, CRUD Bài viết, Theme Customizer, Setup Wizard.
+  - Bổ sung phân hệ IX (CN 46-51) vào Chương 2 của `BaoCao_ChiTiet_DuAn.md`. Tổng số CN nâng từ 45 → **51 chức năng** (9 phân hệ).
+  - Tạo đặc tả SRS đầy đủ 8 phần (Overview, UI, Actors, Use-case Mermaid, Activity Mermaid, Workflows, Business Rules, Screen Descriptions) cho 6 CN mới (7.46-7.51) trong `BaoCao_DacTa_ChiTiet_ChucNang.md`.
+  - Gộp lại `baocaotong.md` (405KB, 5006 dòng) với mục lục cập nhật 51 CN.
+- **Đồng bộ và hoàn thiện tài liệu báo cáo dự án (Ngày 04/06/2026):**
+  - Đồng bộ chi tiết phân bổ nhánh Git thực tế của các thành viên vào mục 1.2 của tệp `BaoCao_ChiTiet_DuAn.md`.
+  - Bổ sung phân hệ thứ VIII (chức năng 42-45) vào báo cáo chính `BaoCao_ChiTiet_DuAn.md` để nâng tổng số chức năng lên đúng 45 chức năng (8 phân hệ) theo đúng tiêu đề.
+  - Chỉnh sửa đặc tả phân hệ thanh toán QR từ PayOS sang VietQR Compact API kèm cơ chế Simulation + Duyệt Admin cho khớp với code.
+  - Điều chỉnh quy tắc nghiệp vụ Flash Sale trong phụ lục đặc tả từ giới hạn 1 sản phẩm/người dùng sang giới hạn theo số lượng tồn kho còn lại của deal (`stock_limit - sold_quantity`) cho chính xác với logic code của `FlashSaleService.php` và `CartController.php`.
+  - Tạo tệp đặc tả chi tiết nâng cao [BaoCao_DacTa_ChiTiet_ChucNang.md](file:///d:/repogist/ThuongMaiDienTu/BaoCao_DacTa_ChiTiet_ChucNang.md) chứa sơ đồ Use-case, Activity, Workflows, và Business Rules chi tiết cho 6 phân hệ cốt lõi. Liên kết phụ lục này trực tiếp vào Chương 4 của báo cáo chính.
 - **Tối ưu giao diện Flash Sale & Nút mua ngay / Thêm giỏ hàng ở Trang chủ (Ngày 04/06/2026):**
   - **Khắc phục:**
     - Cải thiện độ tương phản và căn giữa văn bản tiến trình Flash Sale (`.fs-progress-text`) và biểu tượng lửa (`.fs-fire-icon`) trên thanh tiến trình bằng cách thay đổi màu nền wrapper sang `#fca5a5`, thêm flex alignment, thiết lập `position: absolute; top: 50%; transform: translateY(-50%);` và đặt màu sắc rực rỡ `#ffeb3b` cho biểu tượng lửa.
@@ -349,8 +360,24 @@
     - **Giới hạn cứng danh sách so sánh**: Áp dụng `array_slice` với `MAX_ITEMS` trong `CompareController@data` và `searchCompare` để ngăn chặn DoS qua mảng ID khổng lồ.
 
 ## Files Changed
+- **Documentation (Báo cáo đồ án):**
+  - Đã khởi tạo và hoàn thiện file báo cáo chi tiết đồ án môn học `BaoCao_ChiTiet_DuAn.md` tại thư mục gốc của dự án.
+  - Tài liệu tích hợp cấu trúc 5 chương từ `cau_truc_mau.md` và đặc tả nghiệp vụ chi tiết chuẩn SRS từ `mausrs.md` bao gồm: phân bổ công việc theo thành viên, ánh xạ 45 chức năng đến từng file mã nguồn, đặc tả cơ sở dữ liệu chi tiết của 61 bảng kèm sơ đồ quan hệ ERD (Mermaid), đặc tả giao diện UI/UX với validation và message lỗi chuẩn, cùng bảng message code đồng bộ Backend-Frontend.
+  - Đã chạy script đồng bộ hóa tự động cấu trúc vật lý của 61 bảng thực tế từ MySQL vào Chương 3 của báo cáo chính, đảm bảo kiểu dữ liệu và mô tả cột chính xác 100%.
+  - Cập nhật sơ đồ quan hệ thực thể ERD (Mermaid) khớp hoàn toàn với tên bảng vật lý thực tế của hệ thống.
+  - Đã khởi tạo file báo cáo tích hợp `baocaotong.md` gộp toàn bộ nội dung của báo cáo chính (`BaoCao_ChiTiet_DuAn.md`) và phụ lục đặc tả (`BaoCao_DacTa_ChiTiet_ChucNang.md`). Đã chuẩn hóa lại Mục lục, sơ đồ, các liên kết tham chiếu và hệ thống tiêu đề phân cấp để báo cáo nhất quán 100%.
+  - Cập nhật mục **Mô tả màn hình giao diện (Screen Descriptions)** cho tất cả 6 phân hệ lớn sang cấu trúc bảng quy định chặt chẽ các giới hạn và định dạng dữ liệu (gồm cột: `No`, `Field name`, `Control type`, `Constraint / Validation Rule`, `Required`, `Default value`).
+  - Hoàn thiện việc tái cấu trúc và mở rộng toàn diện **Phụ lục Đặc tả Chi tiết Chức năng (SRS Appendix)** thành **14 chức năng tách biệt** khớp 100% định dạng chi tiết của file mẫu `mausrs.md` (mỗi chức năng gồm: Overview, UI Layout, Actors, Use-case Mermaid, Activity Mermaid, Workflows, Business Rules, Screen Descriptions).
+
+## Files Changed
+- **Tài liệu báo cáo:**
+  - `d:\repogist\ThuongMaiDienTu\BaoCao_ChiTiet_DuAn.md`
+  - `d:\repogist\ThuongMaiDienTu\BaoCao_DacTa_ChiTiet_ChucNang.md`
+  - `d:\repogist\ThuongMaiDienTu\baocaotong.md` (Báo cáo tổng hợp)
 - **QA & Security Audit Report:**
   - `C:\Users\ANH QUY\.gemini\antigravity\brain\270e51ca-65ed-4380-a631-d02340a0a674\security_qa_defect_report.md`
+- **Tài liệu phân tích:**
+  - `C:\Users\ANH QUY\.gemini\antigravity\brain\43dbbf22-b150-4cdd-a986-72848dbfc915\project_structure_analysis.md`
 - **Security Hotfixes:**
   - `ThuongMaiDienTu/app/Http/Controllers/ChatbotController.php`
   - `ThuongMaiDienTu/resources/views/partials/chatbot.blade.php`
@@ -362,10 +389,21 @@
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/FlashSaleProductController.php`
   - `ThuongMaiDienTu/app/Http/Controllers/CompareController.php`
 
+- **Đồng bộ và hoàn thiện tài liệu báo cáo tổng hợp baocaotong.md (Ngày 04/06/2026):**
+  - Tích hợp thành công báo cáo đóng góp cá nhân và phân tích kỹ thuật chuyên sâu của sinh viên Nguyễn Anh Quý (`cn.md`) thành **Chương 6** của tài liệu báo cáo chính `BaoCao_ChiTiet_DuAn.md`, đồng thời dịch chuyển Tài liệu tham khảo thành **Chương 7**.
+  - Chạy script PHP tự động gộp báo cáo chính `BaoCao_ChiTiet_DuAn.md` và phụ lục đặc tả `BaoCao_DacTa_ChiTiet_ChucNang.md` thành `baocaotong.md` hoàn chỉnh (kích thước tăng từ 375KB lên 413KB).
+  - Tự động sinh và cập nhật mục lục (Table of Contents) cho toàn bộ 45 chức năng vào Chương 8 (Phụ lục đặc tả) và 6 phần phân tích kỹ thuật của Chương 6 trong `baocaotong.md`.
+  - Định dạng chuẩn các anchor link của từng chức năng giúp tra cứu nhanh chóng, đảm bảo tính nhất quán và tính học thuật cao nhất trước khi nộp đồ án.
+
+## Files Changed
+- **Tài liệu báo cáo:**
+  - `d:\repogist\ThuongMaiDienTu\BaoCao_ChiTiet_DuAn.md` (Đã tích hợp Chương 6 về đóng góp của Nguyễn Anh Quý)
+  - `d:\repogist\ThuongMaiDienTu\baocaotong.md` (Báo cáo tổng hợp được cập nhật đầy đủ 45 chức năng kèm mục lục hoàn thiện và Chương 6 mới)
+  - `d:\repogist\ThuongMaiDienTu\scratch\insert_chapter.php` (Script PHP tự động chèn cn.md vào báo cáo chính)
+  - `d:\repogist\ThuongMaiDienTu\scratch\merge_reports.php` (Script PHP tự động gộp báo cáo và cập nhật mục lục nâng cấp lên Chapter 8)
+
 ## TODOs & Follow-up Work
-- Kiểm thử tích hợp toàn diện hệ thống để đảm bảo tính ổn định sau đợt vá bảo mật.
-- Theo dõi log lỗi của `RepairAIService` và chatbot để tối ưu hóa phản hồi của AI.
-
-
+- Tiến hành xuất file báo cáo tổng hợp `baocaotong.md` sang định dạng `.docx` theo biểu mẫu quy định của nhà trường.
+- Sẵn sàng demo trực tiếp các chức năng cốt lõi (Chatbot AI, Trả góp AI, Sửa chữa AI, Sổ quỹ dòng tiền, VietQR API).
 
 
