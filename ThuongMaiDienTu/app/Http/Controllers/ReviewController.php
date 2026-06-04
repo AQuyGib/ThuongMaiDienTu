@@ -123,14 +123,65 @@ class ReviewController extends Controller
     }
 
     /**
-     * Remove the specified review from storage.
+     * Cập nhật nội dung đánh giá của chính người dùng.
+     * Chỉ cho phép chỉnh sửa nội dung (content) và số sao (rating).
+     * 
+     * @param Request $request Dữ liệu cập nhật (content, rating)
+     * @param int $id ID của đánh giá cần chỉnh sửa
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(Request $request, $id)
+    {
+        $review = Review::findOrFail($id);
+
+        // Chỉ chủ sở hữu mới được phép chỉnh sửa đánh giá của mình
+        if (!Auth::check() || Auth::id() !== $review->user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn không có quyền chỉnh sửa đánh giá này.'
+            ], 403);
+        }
+
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'content' => 'required|string|max:2000',
+        ], [
+            'rating.required' => 'Vui lòng chọn số sao đánh giá.',
+            'content.required' => 'Nội dung đánh giá không được để trống.',
+            'content.max' => 'Nội dung đánh giá không được vượt quá 2000 ký tự.',
+        ]);
+
+        // Kiểm duyệt nội dung chỉnh sửa
+        $isAdmin = in_array(Auth::user()->role_id, [1, 2]);
+        $isApproved = $review->is_approved;
+        if (!$isAdmin) {
+            $moderator = app(\App\Services\CommentModerationService::class);
+            $isApproved = $moderator->isSafe($request->content) ? 1 : 0;
+        }
+
+        $review->update([
+            'rating' => $request->rating,
+            'content' => $request->content,
+            'is_approved' => $isApproved,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $isApproved ? 'Đã cập nhật đánh giá thành công!' : 'Đánh giá đã được cập nhật và đang chờ kiểm duyệt do chứa từ khóa nhạy cảm.'
+        ]);
+    }
+
+    /**
+     * Xóa đánh giá. Cho phép Admin/Manager hoặc chủ sở hữu đánh giá.
      */
     public function destroy($id)
     {
         $review = Review::findOrFail($id);
 
-        // Chỉ admin hoặc người sở hữu mới được xóa (tùy chính sách, ở đây cho admin/manager)
-        if (Auth::check() && in_array(Auth::user()->role_id, [1, 2])) {
+        $isAdmin = Auth::check() && in_array(Auth::user()->role_id, [1, 2]);
+        $isOwner = Auth::check() && Auth::id() === $review->user_id;
+
+        if ($isAdmin || $isOwner) {
             $review->delete();
             return response()->json([
                 'success' => true,

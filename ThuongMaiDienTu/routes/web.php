@@ -68,6 +68,7 @@ Route::get('/', function () {
 });
 Route::get('/Home', [HomeController::class, 'index'])->name('home');
 Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+Route::put('/reviews/{id}', [ReviewController::class, 'update'])->name('reviews.update')->middleware('auth');
 Route::delete('/reviews/{id}', [ReviewController::class, 'destroy'])->name('reviews.destroy')->middleware('auth');
 Route::post('/reviews/{id}/report', [ReviewController::class, 'report'])->name('reviews.report')->middleware('auth');
 

@@ -105,6 +105,33 @@
 /* Vòng xoay Spinner tải dữ liệu */
 .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== KEBAB MENU (3 chấm dọc) ===== */
+.review-kebab-wrapper { position: relative; margin-left: auto; }
+.kebab-trigger { background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 6px; color: #94a3b8; font-size: 16px; transition: 0.2s; line-height: 1; }
+.kebab-trigger:hover { background: #f1f5f9; color: #475569; }
+.kebab-dropdown { display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: #fff; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); border: 1px solid #e5e7eb; min-width: 160px; z-index: 100; overflow: hidden; animation: kebabFade 0.15s ease; }
+.kebab-dropdown.active { display: block; }
+@keyframes kebabFade { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.kebab-dropdown button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 16px; border: none; background: none; font-size: 13px; font-weight: 500; cursor: pointer; color: #334155; transition: 0.15s; }
+.kebab-dropdown button:hover { background: #f8fafc; }
+.kebab-dropdown button.kebab-delete { color: #ef4444; }
+.kebab-dropdown button.kebab-delete:hover { background: #fef2f2; }
+.kebab-dropdown button i { width: 16px; text-align: center; font-size: 13px; }
+.kebab-dropdown .kebab-divider { height: 1px; background: #f1f5f9; margin: 2px 0; }
+
+/* ===== EDIT REVIEW MODAL ===== */
+.edit-review-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 10002; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+.edit-review-overlay.active { display: flex; }
+.edit-review-modal { background: #fff; width: 92%; max-width: 500px; border-radius: 16px; padding: 28px; animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.edit-review-modal h4 { font-size: 17px; font-weight: 700; margin: 0 0 18px; display: flex; align-items: center; gap: 10px; color: #1e293b; }
+.edit-review-modal h4 i { color: #0046ab; }
+.edit-star-container { display: flex; gap: 8px; font-size: 22px; color: #ccc; cursor: pointer; margin-bottom: 14px; }
+.edit-star-container .fa-star.selected { color: #f59e0b; }
+.edit-review-textarea { width: 100%; height: 110px; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; resize: vertical; outline: none; transition: 0.2s; font-family: inherit; }
+.edit-review-textarea:focus { border-color: #0046ab; box-shadow: 0 0 0 3px rgba(0,70,171,0.1); }
+.edit-review-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+.edit-review-actions button { padding: 10px 22px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; transition: 0.2s; }
 </style>
 @endpush
 
@@ -205,7 +232,7 @@
                         </div>
 
                         <!-- Thông tin tên, nhãn quyền hạn (badge) và ngày giờ viết đánh giá -->
-                        <div class="user-info">
+                        <div class="user-info" style="flex:1;">
                             <div class="user-name">
                                 {{ $displayName }}
                                 @if($isReviewAdmin)
@@ -214,15 +241,28 @@
                                     <span class="user-badge badge-manager">Quản lý</span>
                                 @endif
                                 <span style="color:#94a3b8; font-size:12px; font-weight:400; margin-left:8px;">{{ $r->created_at->format('d/m/Y H:i') }}</span>
-                                
-                                <!-- Hỗ trợ tính năng Xóa trực tiếp dành cho Admin / Manager -->
-                                @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
-                                <button onclick="deleteReview({{ $r->id }})" title="Xóa đánh giá" class="btn-delete-review" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:14px; margin-left:10px;">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                                @endif
                             </div>
                         </div>
+
+                        <!-- Menu 3 chấm dọc (Kebab Menu) cho chủ sở hữu hoặc Admin -->
+                        @if(auth()->check() && (auth()->id() === $r->user_id || in_array(auth()->user()->role_id, [1, 2])))
+                        <div class="review-kebab-wrapper">
+                            <button type="button" class="kebab-trigger" onclick="toggleKebab(this)" title="Tùy chọn">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <div class="kebab-dropdown">
+                                @if(auth()->id() === $r->user_id)
+                                <button type="button" onclick="openEditReview({{ $r->id }}, {{ $r->rating }}, '{{ addslashes($r->content) }}')">
+                                    <i class="fa-solid fa-pen"></i> Chỉnh sửa
+                                </button>
+                                <div class="kebab-divider"></div>
+                                @endif
+                                <button type="button" class="kebab-delete" onclick="deleteReview({{ $r->id }})">
+                                    <i class="fa-solid fa-trash-can"></i> Xóa
+                                </button>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     <!-- Số sao đánh giá -->
                     <div class="review-stars">
@@ -304,7 +344,7 @@
                                         @endif
                                     </div>
 
-                                    <div class="user-info">
+                                    <div class="user-info" style="flex:1;">
                                         <div class="user-name" style="font-size:14px;">
                                             {{ $replyName }}
                                             @if($isReplyAdmin)
@@ -313,14 +353,27 @@
                                                 <span class="user-badge badge-manager">Quản lý</span>
                                             @endif
                                             <span style="color:#94a3b8; font-size:11px; font-weight:400; margin-left:8px;">{{ $reply->created_at->format('d/m/Y H:i') }}</span>
-                                            
-                                            @if(auth()->check() && in_array(auth()->user()->role_id, [1, 2]))
-                                            <button onclick="deleteReview({{ $reply->id }})" class="btn-delete-reply" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:12px; margin-left:8px;">
-                                                <i class="fa-solid fa-trash-can"></i>
-                                            </button>
-                                            @endif
                                         </div>
                                     </div>
+
+                                    @if(auth()->check() && (auth()->id() === $reply->user_id || in_array(auth()->user()->role_id, [1, 2])))
+                                    <div class="review-kebab-wrapper">
+                                        <button type="button" class="kebab-trigger" onclick="toggleKebab(this)" title="Tùy chọn" style="font-size:14px; padding:2px 6px;">
+                                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                                        </button>
+                                        <div class="kebab-dropdown">
+                                            @if(auth()->id() === $reply->user_id)
+                                            <button type="button" onclick="openEditReview({{ $reply->id }}, {{ $reply->rating }}, '{{ addslashes($reply->content) }}')">
+                                                <i class="fa-solid fa-pen"></i> Chỉnh sửa
+                                            </button>
+                                            <div class="kebab-divider"></div>
+                                            @endif
+                                            <button type="button" class="kebab-delete" onclick="deleteReview({{ $reply->id }})">
+                                                <i class="fa-solid fa-trash-can"></i> Xóa
+                                            </button>
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
                                 <div class="review-content-replied" style="margin-left:44px; font-size:14px;">{{ $reply->content }}</div>
                                 
@@ -401,6 +454,26 @@
 <div id="toast-container"></div>
 <div id="toast-center-container"></div>
 
+{{-- Modal chỉnh sửa đánh giá (Edit Review Modal) --}}
+<div class="edit-review-overlay" id="editReviewOverlay">
+    <div class="edit-review-modal">
+        <h4><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa đánh giá</h4>
+        <input type="hidden" id="editReviewId">
+        <div class="edit-star-container" id="editStarContainer">
+            <i class="fa-solid fa-star" data-val="1"></i>
+            <i class="fa-solid fa-star" data-val="2"></i>
+            <i class="fa-solid fa-star" data-val="3"></i>
+            <i class="fa-solid fa-star" data-val="4"></i>
+            <i class="fa-solid fa-star" data-val="5"></i>
+        </div>
+        <textarea id="editReviewContent" class="edit-review-textarea" placeholder="Nhập nội dung đánh giá..."></textarea>
+        <div class="edit-review-actions">
+            <button type="button" class="btn-cancel" onclick="closeEditReview()">Hủy</button>
+            <button type="button" id="btnSaveEdit" style="background:#0046ab; color:#fff;" onclick="saveEditReview()">Lưu thay đổi</button>
+        </div>
+    </div>
+</div>
+
 {{-- Lightbox trình chiếu ảnh/video full màn hình --}}
 <div id="mediaLightbox" onclick="closeMediaLightbox()">
     <i class="fa-solid fa-xmark lightbox-close" onclick="closeMediaLightbox()"></i>
@@ -412,8 +485,120 @@
 <script>
 // Biến toàn cục lưu trữ thông số Rating và File danh sách đăng tải
 let currentRating = 5;
+let editRating = 5;
 let selectedMediaFiles = [];
 let replyMediaFiles = {}; // Phục vụ lưu trữ tệp đính kèm theo từng comment cha riêng biệt
+
+/* ===== KEBAB MENU (3 CHẤM DỌC) ===== */
+function toggleKebab(btn) {
+    const dropdown = btn.nextElementSibling;
+    // Đóng tất cả kebab khác trước
+    document.querySelectorAll('.kebab-dropdown.active').forEach(d => {
+        if (d !== dropdown) d.classList.remove('active');
+    });
+    dropdown.classList.toggle('active');
+    event.stopPropagation();
+}
+
+// Đóng kebab khi click ra ngoài
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.review-kebab-wrapper')) {
+        document.querySelectorAll('.kebab-dropdown.active').forEach(d => d.classList.remove('active'));
+    }
+});
+
+/* ===== EDIT REVIEW MODAL ===== */
+function openEditReview(id, rating, content) {
+    // Đóng kebab menu
+    document.querySelectorAll('.kebab-dropdown.active').forEach(d => d.classList.remove('active'));
+    
+    document.getElementById('editReviewId').value = id;
+    document.getElementById('editReviewContent').value = content;
+    editRating = rating;
+    
+    // Cập nhật sao trong modal edit
+    const stars = document.querySelectorAll('#editStarContainer .fa-star');
+    stars.forEach(s => {
+        s.classList.toggle('selected', s.getAttribute('data-val') <= rating);
+    });
+    
+    document.getElementById('editReviewOverlay').classList.add('active');
+    setTimeout(() => document.getElementById('editReviewContent').focus(), 100);
+}
+
+function closeEditReview() {
+    document.getElementById('editReviewOverlay').classList.remove('active');
+}
+
+// Xử lý click sao trong modal edit
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('#editStarContainer .fa-star').forEach(star => {
+        star.addEventListener('click', function() {
+            editRating = this.getAttribute('data-val');
+            document.querySelectorAll('#editStarContainer .fa-star').forEach(s => {
+                s.classList.toggle('selected', s.getAttribute('data-val') <= editRating);
+            });
+        });
+    });
+});
+
+function saveEditReview() {
+    const id = document.getElementById('editReviewId').value;
+    const content = document.getElementById('editReviewContent').value.trim();
+    
+    if (!content) {
+        showAlert('Thiếu nội dung', 'Vui lòng nhập nội dung đánh giá!');
+        return;
+    }
+    
+    const btn = document.getElementById('btnSaveEdit');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+    
+    fetch(`/reviews/${id}`, {
+        method: 'PUT',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ rating: editRating, content: content })
+    })
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) {
+            const err = new Error(data.message || 'Lỗi hệ thống');
+            err.status = response.status;
+            throw err;
+        }
+        return data;
+    })
+    .then(data => {
+        if (data.success) {
+            sessionStorage.setItem('review_toast', JSON.stringify({
+                msg: data.message,
+                isCenter: true
+            }));
+            sessionStorage.setItem('scroll_to_reviews', 'true');
+            location.reload();
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = 'Lưu thay đổi';
+            showAlert('Lỗi', data.message || 'Không thể cập nhật.');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = 'Lưu thay đổi';
+        const title = err.status === 403 ? 'Không có quyền' : 'Lỗi';
+        showAlert(title, err.message);
+    });
+}
+
+// Đóng edit modal khi click overlay
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'editReviewOverlay') closeEditReview();
+});
 
 document.addEventListener('DOMContentLoaded', function() {
     // 1. Kiểm tra và hiển thị các Toast thông báo lưu trữ tạm trong sessionStorage sau khi reload trang
