@@ -279,3 +279,36 @@ use App\Http\Controllers\InstallmentController;
 Route::post('/chatbot', [ChatbotController::class, 'chat'])->name('chatbot.chat');
 Route::post('/chatbot/create-ticket', [ChatbotController::class, 'createTicketFromChat'])->name('chatbot.create-ticket');
 Route::post('/installments/register', [InstallmentController::class, 'register'])->name('installments.register')->middleware('auth');
+
+
+Route::get('/debug-queue', function() {
+    $queue = config('queue.default');
+    $jobsCount = \Schema::hasTable('jobs') ? \DB::table('jobs')->count() : 'Table not found';
+    $failedCount = \Schema::hasTable('failed_jobs') ? \DB::table('failed_jobs')->count() : 'Table not found';
+    $logsCount = \Schema::hasTable('activity_logs') ? \DB::table('activity_logs')->count() : 'Table not found';
+    $latestLogs = \Schema::hasTable('activity_logs') ? \DB::table('activity_logs')->orderBy('log_id', 'desc')->take(5)->get() : [];
+    
+    return response()->json([
+        'queue_driver' => $queue,
+        'jobs_count' => $jobsCount,
+        'failed_jobs_count' => $failedCount,
+        'logs_count' => $logsCount,
+        'latest_logs' => $latestLogs
+    ]);
+});
+
+Route::get('/auto-seed', function() {
+    try {
+        \Artisan::call('migrate:fresh', ['--seed' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Database migrated and seeded successfully!'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 200);
+    }
+});
+

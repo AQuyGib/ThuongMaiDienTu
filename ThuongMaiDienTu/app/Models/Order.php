@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
+    use \App\Traits\HasAuditLog;
+
     protected $primaryKey = 'order_id';
     protected $guarded = [];
 

@@ -848,7 +848,7 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
     - Chuyển đổi cấu trúc nút bấm thành dạng xếp chồng chiều dọc (`flex-col w-full`) sang trọng theo chuẩn thiết kế macOS/iOS mới, đi kèm các nút gradient phủ bóng mờ và phản hồi nhấn phím (`active:scale-95`).
     - Khắc phục lỗi biên dịch `Expected ")" but found "{"` bằng cách bổ sung cú pháp đóng ngoặc `)}` bị thiếu ở cuối khối điều kiện JSX Modal tạo phòng mới (`isAddRoomOpen`).
 
-<<<<<<< HEAD
+
 ### 53. Tích hợp dữ liệu thật cho Kênh nhắn tin (Communication Hub)
 - **Hạ tầng & API (ChatController.php & admin.php & migration):**
   - Đăng ký các REST API routes phục vụ CRUD phòng chat (`/chat/rooms`), thành viên (`/chat/rooms/{room_id}/members`), chức vụ/vai trò (`/chat/rooms/{room_id}/role`), gửi tin nhắn có đính kèm file (`/chat/messages`), và tương tác cảm xúc emoji (`/chat/messages/{message_id}/react`) trong `routes/admin.php`.
@@ -861,8 +861,8 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Loại bỏ hoàn toàn mảng mock tĩnh `ALL_MEMBERS` và thay bằng trạng thái `allEmployees` đồng bộ trực tiếp từ database.
   - Thay đổi toàn bộ các hàm handler sự kiện (gửi tin nhắn, tải file đính kèm thực tế, reaction emoji, thêm/xóa thành viên, đổi chức vụ thành viên, xóa phòng chat) từ mô phỏng giả lập sang gọi Axios trực tiếp tới REST backend, đảm bảo tính đồng bộ dữ liệu thời gian thực.
 - **Sửa lỗi Integrity Constraint Violation (role_id foreign key check failed):**
-  - Khắc phục lỗi khi đăng ký/đăng nhập Google, hệ thống cố gắng lưu user mới với `role_id = 3` nhưng bảng `roles` bị trống dẫn đến vi phạm ràng buộc khóa ngoại `users_role_id_foreign`.
   - Tích hợp cơ chế tự động điền (self-healing roles seeder) trong `AppServiceProvider@bootInfrastructure`. Nếu bảng `roles` rỗng, hệ thống sẽ tự động chèn 4 vai trò cốt lõi (`Admin`, `Quản lý`, `Khách hàng`, `Nhân viên`) vào database để đảm bảo toàn bộ luồng đăng ký/đăng nhập qua Google hay qua email diễn ra trơn tru.
+
 =======
 ### 53. Tách biệt Chatbot AI tư vấn và Chatbot đặt lịch sửa chữa (Hybrid Intent Router & Card UI)
 - **Hạ tầng & Backend (ChatbotController.php & routes/web.php):**
@@ -977,3 +977,26 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Giữ fallback `alert()` trong trường hợp SweetAlert2 chưa được tải.
 - **File thay đổi:** `resources/views/partials/chatbot.blade.php`
 >>>>>>> origin/master
+=======
+
+### 54. Triển khai Hệ thống Nhật ký hoạt động nâng cao (Advanced Audit Log)
+- **Hạ tầng & Model & Migrations:**
+  - Hoàn thiện cấu trúc bảng `activity_logs` có tính chất đa hình (`causer`, `subject`), lưu trữ JSON (`old_values`, `new_values`), và bảo vệ chuỗi log bằng mật mã băm progressive `hash_chain`.
+  - Định nghĩa mối quan hệ đa hình `causer()` và `subject()` trong [ActivityLog.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/ActivityLog.php). Bổ sung accessor tương thích ngược `action` và quan hệ `user()` giúp các Blade view cũ hiển thị không bị lỗi.
+  - Cập nhật quan hệ `activityLogs()` trong [User.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Models/User.php) thành `morphMany`.
+- **Cơ chế băm & Che giấu thông tin & Lắng nghe sự kiện:**
+  - Viết [AuditHasher.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Services/AuditHasher.php) thực hiện băm progressive HMAC-SHA256 kết nối lũy tiến với dòng log trước đó dựa trên deterministic JSON sorting.
+  - Viết [AuditMasker.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Services/AuditMasker.php) lọc đệ quy che giấu thông tin nhạy cảm (`password`, `password_hash`, `otp_code`...).
+  - Thiết kế trait [HasAuditLog.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Traits/HasAuditLog.php) tự động đăng ký sự kiện `created`, `updated`, `deleted` của các Eloquent models (`Product`, `Order`, `User`) để gửi Job bất đồng bộ qua Queue.
+  - Hỗ trợ thêm phương thức tĩnh `logManualEvent()` ghi nhận các sự kiện tùy chỉnh (như xuất file báo cáo, đăng nhập).
+- **Hàng đợi & Cảnh báo bảo mật:**
+  - Viết [LogAuditEventJob.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Jobs/LogAuditEventJob.php) xử lý ghi nhận log với pessimistic locking dòng cuối để tránh race condition, đồng thời tự động đánh giá quy tắc gửi tin cảnh báo bảo mật nếu xuất báo cáo nhân sự/khách hàng quá 3 lần/giờ.
+- **Tích hợp & Đồng bộ:**
+  - Tích hợp ghi log khi nhân viên xuất file Excel/PDF trong [EmployeeController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/EmployeeController.php).
+  - Tích hợp ghi log khi khách hàng đăng nhập trong [AppServiceProvider.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Providers/AppServiceProvider.php).
+  - Thay thế toàn bộ mã `ActivityLog::create` cũ và lỗi thời trong [CustomerController.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/app/Http/Controllers/Admin/CustomerController.php) sang cơ chế `logManualEvent` và auto Eloquent hooks của Trait, đồng thời đồng bộ hóa truy vấn log khách hàng.
+  - Tải và cài đặt trang quản trị nhật ký hoạt động có **Visual Diff Viewer (GitHub style)** màu sắc phân biệt đỏ/xanh tại [index.blade.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/views/admin/activity-logs/index.blade.php).
+- **Kiểm thử:**
+  - Viết unit test hoàn chỉnh [AuditLogTest.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/tests/Feature/AuditLogTest.php) bao phủ: data masking, deterministic sorting, Eloquent hooks, and cryptographic hash chain verification / tamper detection.
+
+>>>>>>> xuanhoa/Nhat_ky_hoat_dong

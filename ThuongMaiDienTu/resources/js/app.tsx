@@ -214,7 +214,8 @@ document.addEventListener('click', (e) => {
             anchor.href.includes('/admin/videos') ||
             anchor.href.includes('/admin/service-invoices') ||
             anchor.href.includes('/admin/repair-tickets') ||
-            anchor.href.includes('/admin/comments')
+            anchor.href.includes('/admin/comments') ||
+            anchor.href.includes('/admin/activity-logs')
         ) {
             window.location.href = anchor.href;
             return;
