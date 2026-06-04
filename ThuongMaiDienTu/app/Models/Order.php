@@ -37,7 +37,7 @@ class Order extends Model
                     'type' => 'order.created',
                     'title' => 'Đơn hàng đã được tạo',
                     'content' => 'Đơn hàng #' . $order->order_id . ' của bạn đã được ghi nhận và đang chờ xử lý.',
-                    'action_url' => url('/orders'),
+                    'action_url' => url('/orders?code=' . ($order->order_code ?? $order->order_id)),
                     'data' => [
                         'order_id' => $order->order_id,
                         'status' => $order->status,
@@ -79,7 +79,7 @@ class Order extends Model
                 'type' => 'order.status_updated',
                 'title' => 'Cập nhật trạng thái đơn hàng',
                 'content' => 'Đơn hàng #' . $order->order_id . ' hiện ' . $statusLabel . '.',
-                'action_url' => url('/orders'),
+                'action_url' => url('/orders?code=' . ($order->order_code ?? $order->order_id)),
                 'data' => [
                     'order_id' => $order->order_id,
                     'status' => $order->status,
