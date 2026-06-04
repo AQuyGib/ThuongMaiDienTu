@@ -145,20 +145,24 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $roleId = $request->input('role_id');
+        $isCustomer = ($roleId == 3);
+
         $validated = $request->validate([
             'full_name' => 'required|string|max:50',
             'email' => 'required|email|max:100|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,role_id',
-            'member_tier' => 'required|in:Dong,Bac,Vang',
+            'member_tier' => $isCustomer ? 'required|in:Dong,Bac,Vang' : 'nullable|in:Dong,Bac,Vang',
             'status' => 'required|in:Active,Banned',
-            'phone_number' => 'nullable|string|max:20',
+            'phone_number' => 'nullable|string|regex:/^(0|\+84|84)[3|5|7|8|9][0-9]{8}$/',
         ], [
             'full_name.required' => 'Vui lòng nhập họ tên.',
             'email.required' => 'Vui lòng nhập email.',
             'email.unique' => 'Email này đã được sử dụng.',
             'password.required' => 'Vui lòng nhập mật khẩu.',
-            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
+            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
+            'phone_number.regex' => 'Số điện thoại không đúng định dạng Việt Nam (10 chữ số bắt đầu bằng 03, 05, 07, 08, 09).',
         ]);
 
         User::create([
@@ -166,7 +170,7 @@ class UserController extends Controller
             'email' => $validated['email'],
             'password_hash' => Hash::make($validated['password']),
             'role_id' => $validated['role_id'],
-            'member_tier' => $validated['member_tier'],
+            'member_tier' => $validated['member_tier'] ?? 'Dong',
             'status' => $validated['status'],
             'phone_number' => $validated['phone_number'],
         ]);
@@ -190,20 +194,24 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::findOrFail($id);
+        $roleId = $request->input('role_id');
+        $isCustomer = ($roleId == 3);
 
         $validated = $request->validate([
             'full_name' => 'required|string|max:50',
             'email' => ['required', 'email', 'max:100', Rule::unique('users', 'email')->ignore($user->user_id, 'user_id')],
-            'password' => 'nullable|string|min:6|confirmed',
+            'password' => 'nullable|string|min:8|confirmed',
             'role_id' => 'required|exists:roles,role_id',
-            'member_tier' => 'required|in:Dong,Bac,Vang',
+            'member_tier' => $isCustomer ? 'required|in:Dong,Bac,Vang' : 'nullable|in:Dong,Bac,Vang',
             'status' => 'required|in:Active,Banned',
-            'phone_number' => 'nullable|string|max:20',
+            'phone_number' => 'nullable|string|regex:/^(0|\+84|84)[3|5|7|8|9][0-9]{8}$/',
             'version' => 'required|integer', // Optimistic Locking
         ], [
             'full_name.required' => 'Vui lòng nhập họ tên.',
             'email.required' => 'Vui lòng nhập email.',
             'email.unique' => 'Email này đã được sử dụng bởi tài khoản khác.',
+            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
+            'phone_number.regex' => 'Số điện thoại không đúng định dạng Việt Nam (10 chữ số bắt đầu bằng 03, 05, 07, 08, 09).',
             'version.required' => 'Thiếu thông tin phiên bản. Vui lòng tải lại trang.',
         ]);
 
@@ -212,7 +220,7 @@ class UserController extends Controller
             'full_name' => $validated['full_name'],
             'email' => $validated['email'],
             'role_id' => $validated['role_id'],
-            'member_tier' => $validated['member_tier'],
+            'member_tier' => $validated['member_tier'] ?? 'Dong',
             'status' => $validated['status'],
             'phone_number' => $validated['phone_number'],
         ];

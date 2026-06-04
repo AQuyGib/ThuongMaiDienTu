@@ -133,3 +133,9 @@
     transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
+
+/* Hide native browser password eye icons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none !important;
+}
