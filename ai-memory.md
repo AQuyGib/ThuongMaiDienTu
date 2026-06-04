@@ -480,16 +480,17 @@
 ## Files Changed
 - **QA & Security Audit Report:**
   - `C:\Users\ANH QUY\.gemini\antigravity\brain\270e51ca-65ed-4380-a631-d02340a0a674\security_qa_defect_report.md`
-- **Security Hotfixes:**
-  - `ThuongMaiDienTu/app/Http/Controllers/ChatbotController.php`
+- **Security Hotfixes & Logic Fixes:**
+  - `ThuongMaiDienTu/app/Http/Controllers/ChatbotController.php` (Sửa logic keyboard smash check tránh false positive với URLs, HTML tags, base64)
   - `ThuongMaiDienTu/resources/views/partials/chatbot.blade.php`
   - `ThuongMaiDienTu/app/Services/RewardsService.php`
   - `ThuongMaiDienTu/app/Http/Controllers/RewardsController.php`
   - `ThuongMaiDienTu/resources/views/frontend/rewards/index.blade.php`
-  - `ThuongMaiDienTu/app/Http/Controllers/ProfileController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ProfileController.php` (Sửa logic keyboard smash check trong chẩn đoán AI)
   - `ThuongMaiDienTu/resources/views/frontend/profile.blade.php`
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/FlashSaleProductController.php`
   - `ThuongMaiDienTu/app/Http/Controllers/CompareController.php`
+  - `ThuongMaiDienTu/app/Http/Controllers/ArticleFrontendController.php` (Sửa logic keyboard smash check trong Trợ lý SEO & AI và giải phóng user bị khóa)
 
 ## TODOs & Follow-up Work
 - **Lucky Wheel & Rewards:**
@@ -526,11 +527,9 @@
   - **Sửa lỗi cú pháp HTML vỡ khung top-bar:** Tái cấu trúc khối lệnh điều kiện `@if` ẩn hiện Topbar thông báo trong `header.blade.php`. Chuyển dịch vị trí đóng thẻ `@endif` xuống bao trọn toàn bộ cấu trúc `.top-bar` thay vì cắt ngang giữa chừng. Lỗi này trước đây khiến trình duyệt render dư thừa các thẻ `</div>` khi thanh thông báo bị ẩn (`announcement_show` = 0), gây vỡ toàn bộ cấu trúc layout DOM của trang web.
   - **Dọn dẹp cache hệ thống:** Đã thực hiện xóa cache cấu hình và view (`optimize:clear`) để hệ thống nạp lại lớp service provider mới nhất và áp dụng tức thì.
   - **Sắp xếp phân hệ Tùy biến Header & Footer trực quan:** Tái cấu trúc bộ chọn tab (`activeTab`) trong component `ThemeSettings.tsx` từ dạng hàng ngang (flex row) thành dạng cột đứng (flex column). Nhờ đó, tùy chọn "Tùy biến Header (Đầu trang)" luôn nằm ở **phía trên** và "Tùy biến Footer (Chân trang)" luôn nằm ở **phía dưới**, tương ứng 100% với vị trí thực tế của các phần tử này trên bố cục một website. Tối ưu hóa thêm độ trễ `setTimeout` when cuộn mượt (smooth scroll) xem trước để bảo đảm trình duyệt tính toán và dịch chuyển tiêu điểm chính xác tuyệt đối.
-=======
-- Kiểm thử tích hợp toàn diện hệ thống để đảm bảo tính ổn định sau đợt vá bảo mật.
-- Theo dõi log lỗi của `RepairAIService` và chatbot để tối ưu hóa phản hồi của AI.
-
->>>>>>> origin/master
+- **QA & Security Audit & Spam Mitigation:**
+  - Kiểm thử tích hợp toàn diện hệ thống để đảm bảo tính ổn định sau đợt vá bảo mật và sửa lỗi spam AI.
+  - Theo dõi log lỗi của `RepairAIService` và chatbot để tối ưu hóa phản hồi của AI.
 
 - **Merge Master vào xuanhoa/CRUD_NhanVien & Giải quyết Xung đột:**
   - **AppServiceProvider.php:** Giải quyết xung đột bằng cách gộp thành công định nghĩa `Gate::policy` cho `EmployeePolicy` (từ nhánh CRUD_NhanVien) vào trong hàm `boot()` chung với các hàm hạ tầng khác của `master` (`bootInfrastructure`, `bootLoginHistory`, và `bootObservers`).

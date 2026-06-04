@@ -986,9 +986,6 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
   - Thay thế toàn bộ `alert()` trong hàm `submitRepairCard()` bằng `Swal.fire` với icon `error` và nút xác nhận thương hiệu.
   - Giữ fallback `alert()` trong trường hợp SweetAlert2 chưa được tải.
 - **File thay đổi:** `resources/views/partials/chatbot.blade.php`
->>>>>>> origin/master
-=======
-
 ### 54. Triển khai Hệ thống Nhật ký hoạt động nâng cao (Advanced Audit Log)
 - **Hạ tầng & Model & Migrations:**
   - Hoàn thiện cấu trúc bảng `activity_logs` có tính chất đa hình (`causer`, `subject`), lưu trữ JSON (`old_values`, `new_values`), và bảo vệ chuỗi log bằng mật mã băm progressive `hash_chain`.
@@ -1009,4 +1006,15 @@ Dự án e-commerce xây dựng trên Laravel, tập trung vào cấu trúc ERP/
 - **Kiểm thử:**
   - Viết unit test hoàn chỉnh [AuditLogTest.php](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/tests/Feature/AuditLogTest.php) bao phủ: data masking, deterministic sorting, Eloquent hooks, and cryptographic hash chain verification / tamper detection.
 
->>>>>>> xuanhoa/Nhat_ky_hoat_dong
+### 60. Nâng cấp hộp thoại xóa Reward từ confirm() sang SweetAlert2 Premium
+- **Thay thế hộp thoại xóa mặc định:**
+  - Loại bỏ `onsubmit="return confirm(...)"` thô sơ của trình duyệt trên form xóa reward trong `resources/views/admin/rewards/index.blade.php`.
+  - Chuyển button submit thành `type="button"` gọi hàm JS `confirmDeleteReward(rewardId, rewardName)`.
+  - Gán `id="delete-reward-{{ $item->reward_id }}"` cho mỗi form xóa để JS submit chính xác form tương ứng.
+- **Hộp thoại SweetAlert2 đẹp mắt:**
+  - Icon cảnh báo (`warning`), hiển thị tên reward in đậm màu đỏ trong nội dung HTML.
+  - Nút xác nhận đỏ (`#e11d48`) kèm icon thùng rác, nút hủy xám (`#64748b`).
+  - Hỗ trợ đa ngôn ngữ (VI/EN), `focusCancel: true` và `reverseButtons: true` để tránh xóa nhầm.
+  - Bo tròn góc popup `rounded-2xl` và nút `rounded-xl` cho giao diện premium.
+- **Merge:** Đã merge nhánh `AnhQuy/ToiUu` vào `master` và push lên remote thành công.
+- **File thay đổi:** `resources/views/admin/rewards/index.blade.php`
