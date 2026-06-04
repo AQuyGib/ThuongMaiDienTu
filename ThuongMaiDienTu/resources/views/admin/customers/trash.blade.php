@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends('admin.layouts.master')
 
 @section('title', 'Thùng rác Khách hàng')
 
 @section('content')
-<div class="container py-6">
+<div class="space-y-6">
     <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-4">
             <a href="{{ route('admin.customers.index') }}" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-500 shadow-sm border border-gray-100 hover:bg-gray-50 transition">
@@ -74,10 +74,10 @@
                                     </button>
                                 </form>
                                 @if(Auth::user()->role_id == 1)
-                                    <form action="{{ route('admin.customers.force-delete', $customer->user_id) }}" method="POST" onsubmit="return confirm('HÀNH ĐỘNG NÀY KHÔNG THỂ HOÀN TÁC! Bạn có chắc muốn xóa vĩnh viễn?')">
+                                    <form id="force-delete-form-{{ $customer->user_id }}" action="{{ route('admin.customers.force-delete', $customer->user_id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Xóa vĩnh viễn">
+                                        <button type="button" onclick="confirmForceDelete('{{ $customer->user_id }}', '{{ e($customer->full_name) }}')" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition" title="Xóa vĩnh viễn">
                                             <i class="fa-solid fa-trash-can"></i>
                                         </button>
                                     </form>
@@ -129,24 +129,89 @@
         updateBulkBar();
     }
 
+    function confirmForceDelete(id, name) {
+        Swal.fire({
+            title: 'Xóa vĩnh viễn',
+            html: `Hành động này <strong>KHÔNG THỂ KHÔI PHỤC</strong>!<br>Bạn có chắc muốn xóa vĩnh viễn khách hàng <strong>${name}</strong> không?`,
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonText: 'Xóa vĩnh viễn',
+            cancelButtonText: 'Hủy',
+            reverseButtons: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            background: '#fff',
+            customClass: {
+                popup: 'rounded-2xl shadow-lg',
+                confirmButton: 'px-4 py-2 text-sm font-semibold rounded-lg',
+                cancelButton: 'px-4 py-2 text-sm font-semibold rounded-lg'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById(`force-delete-form-${id}`).submit();
+            }
+        });
+    }
+
     function handleBulkAction(action) {
         const ids = Array.from(document.querySelectorAll('.customer-checkbox:checked')).map(cb => cb.value);
         if (ids.length === 0) return;
 
-        let confirmMsg = `Khôi phục ${ids.length} khách hàng?`;
-        if (action === 'force-delete') confirmMsg = `CẢNH BÁO: XÓA VĨNH VIỄN ${ids.length} khách hàng? Thao tác này không thể hoàn tác!`;
-        
-        if (!confirm(confirmMsg)) return;
+        let title = 'Xác nhận';
+        let htmlMsg = `Bạn có chắc muốn thực hiện thao tác này cho <strong>${ids.length}</strong> khách hàng?`;
+        let confirmBtnText = 'Xác nhận';
+        let confirmBtnColor = '#1e293b';
+        let icon = 'warning';
 
-        fetch("{{ route('admin.customers.bulk-action') }}", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-            body: JSON.stringify({ ids, action })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) location.reload();
-            else alert(data.message);
+        if (action === 'force-delete') {
+            title = 'Xóa vĩnh viễn hàng loạt';
+            htmlMsg = `CẢNH BÁO: Bạn có chắc muốn <strong>XÓA VĨNH VIỄN</strong> <strong>${ids.length}</strong> khách hàng đã chọn?<br>Thao tác này không thể hoàn tác!`;
+            confirmBtnText = 'Xóa vĩnh viễn';
+            confirmBtnColor = '#dc2626';
+            icon = 'error';
+        } else if (action === 'restore') {
+            title = 'Khôi phục tài khoản';
+            htmlMsg = `Khôi phục hoạt động cho <strong>${ids.length}</strong> khách hàng đã chọn?`;
+            confirmBtnText = 'Khôi phục';
+            confirmBtnColor = '#16a34a';
+        }
+
+        Swal.fire({
+            title: title,
+            html: htmlMsg,
+            icon: icon,
+            showCancelButton: true,
+            confirmButtonText: confirmBtnText,
+            cancelButtonText: 'Hủy',
+            reverseButtons: true,
+            confirmButtonColor: confirmBtnColor,
+            cancelButtonColor: '#64748b',
+            background: '#fff',
+            customClass: {
+                popup: 'rounded-2xl shadow-lg',
+                confirmButton: 'px-4 py-2 text-sm font-semibold rounded-lg',
+                cancelButton: 'px-4 py-2 text-sm font-semibold rounded-lg'
+            }
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            fetch("{{ route('admin.customers.bulk-action') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ ids, action })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi!',
+                        text: data.message || 'Có lỗi xảy ra!'
+                    });
+                }
+            });
         });
     }
 </script>

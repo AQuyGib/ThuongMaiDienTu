@@ -1,0 +1,169 @@
+TÀI LIỆU ĐỐI CHIẾU CHỨC NĂNG VÀ MÃ NGUỒN THEO THÀNH VIÊN (CHI TIẾT PHẦN MỀM)
+Dự án: Website Thương Mại Điện Tử (ThuongMaiDienTu)
+Tài liệu này ánh xạ chi tiết và đầy đủ các nhánh tính năng (Git Branches) tương ứng với toàn bộ các tệp tin mã nguồn (Model, Controller, View, Service, Migration, Route) trong dự án và phân chia trách nhiệm phát triển cho 5 thành viên của nhóm dự án hiện tại: Anh Quý, Vinh Em, Thanh Hiền, Xuân Hòa, và Đăng Nguyên.
+I. ANH QUÝ - PHÂN HỆ TRẢI NGHIỆM KHÁCH HÀNG, AI CHATBOT & MARKETING
+Nhóm chức năng
+Đường dẫn File (Source Code)
+Mô tả chi tiết
+AI Chatbot hỗ trợ khách hàng nâng cao (Gemini RAG & Booking)[AnhQuy/Chatbot] & [AnhQuy/TichHopAI]
+app/Http/Controllers/ChatbotController.php
+app/Models/AiChatbotHistory.php
+app/Models/RepairTicket.php
+resources/views/partials/chatbot.blade.php
+database/migrations/2026_05_10_000001_create_ai_chatbot_histories_table.php
+Tích hợp API Google Gemini (RAG) tư vấn tồn kho theo biến thể thực tế, tự động phát mã giảm giá (dynamic coupon) khi tương tác sâu, và tự động trích xuất JSON để tạo phiếu sửa chữa nháp ngầm khi khách hàng đặt lịch qua chat.
+Khuyến mãi giờ vàng Flash Sale[AnhQuy/FLASHSALE]
+app/Models/FlashSale.phpapp/Models/FlashSaleProduct.phpapp/Services/FlashSaleService.phpapp/Http/Controllers/Admin/FlashSaleController.phpapp/Http/Controllers/Admin/FlashSaleProductController.phpdatabase/migrations/2026_05_05_000001_create_flash_sales_table.phpdatabase/migrations/2026_05_05_000002_create_flash_sale_products_table.phpresources/views/admin/flash_sales/index.blade.phpresources/views/admin/flash_sales/create.blade.phpresources/views/admin/flash_sales/edit.blade.phpresources/views/frontend/flash_sales/index.blade.phpresources/views/frontend/products/flash_sales.blade.phproutes/admin.phproutes/web.php
+Thiết lập chương trình giảm giá chớp nhoáng theo khung giờ có đếm ngược thời gian thực, quản lý giữ chỗ số lượng mua tạm thời trong giỏ hàng (lock/release) và đồng bộ tồn kho Flash Sale.
+Lọc nâng cao sản phẩm (Product Advanced Filter)[AnhQuy/LocNangCao]
+app/Http/Controllers/ProductController.phppublic/js/product-filter.jsresources/views/frontend/products/index.blade.phpresources/views/frontend/products/_filter_sidebar.blade.phproutes/web.php (nhóm product filter)
+Bộ lọc sản phẩm thông minh theo thương hiệu, khoảng giá, thuộc tính kỹ thuật và nhu cầu sử dụng thực tế bằng Ajax không tải lại trang.
+Gợi ý bán chéo & Combo giá động (AI Recommendation & Combo Pricing)[AnhQuy/Goiybancheo] & [AnhQuy/TichHopAI]
+app/Services/CrossSellService.php
+app/Http/Controllers/ProductController.php
+app/Http/Controllers/Admin/CartController.php
+resources/views/frontend/products/_combo_bundle.blade.php
+Gợi ý bán chéo phụ kiện cá nhân hóa theo hạng VIP và lịch sử xem sản phẩm của người dùng bằng AI, định giá combo động và có cơ chế validate chống sửa đổi giá phía client-side.
+Hệ thống Tích điểm & Đổi thưởng (Loyalty & Rewards)[AnhQuy/TichDiem]
+app/Models/UserPoint.phpapp/Models/PointTransaction.phpapp/Models/RewardCatalog.phpapp/Models/RewardRedemption.phpapp/Models/LuckyWheelSpin.phpapp/Services/PointsService.phpapp/Services/RewardsService.phpapp/Http/Controllers/RewardsController.phpapp/Http/Controllers/Admin/RewardsController.phpresources/views/frontend/rewards/index.blade.phpresources/views/frontend/rewards/history.blade.phpresources/views/admin/rewards/index.blade.phproutes/web.phproutes/admin.php
+Tích điểm từ đơn hàng (10k = 1đ), xếp hạng thành viên VIP. Đổi điểm lấy voucher quà tặng và quay vòng quay may mắn có hiệu ứng Canvas 3D trúng thưởng ngẫu nhiên theo trọng số (Weighted Random).
+Hệ thống Thông báo (Notification Campaign)[AnhQuy/ThongBao]
+app/Services/NotificationService.phpapp/Models/Notification.phpapp/Http/Controllers/Admin/NotificationCampaignController.phpresources/views/admin/notifications/create.blade.phpresources/views/admin/notifications/index.blade.phpresources/views/frontend/partials/notification_dropdown.blade.php
+Tạo và phân phối chiến dịch thông báo hàng loạt đến tài khoản khách hàng, xử lý hàng đợi (Queue Job) chạy ngầm tối ưu.
+CRUD Quản lý bài viết & Tin tức[AnhQuy/Crud-baiviet]
+app/Http/Controllers/Admin/PostController.phpapp/Models/Post.phpdatabase/migrations/2026_05_01_000001_create_posts_table.phpresources/views/admin/posts/index.blade.phpresources/views/admin/posts/create.blade.phpresources/views/admin/posts/edit.blade.phpresources/views/frontend/posts/show.blade.php
+Xây dựng tính năng đăng tải, chỉnh sửa bài viết tin tức, giới thiệu sản phẩm và quản lý danh mục bài viết.
+CRUD Quản lý Khách hàng[AnhQuy/Crud-khachhang]
+app/Http/Controllers/Admin/CustomerController.phpresources/views/admin/customers/index.blade.phpresources/views/admin/customers/edit.blade.phpapp/Models/Customer.php
+Quản lý danh sách tài khoản khách hàng ở trang quản trị, theo dõi thông tin liên hệ và trạng thái kích hoạt tài khoản.
+So sánh sản phẩm (Product Comparison)[AnhQuy/SoSanhSanPham]
+app/Http/Controllers/ProductCompareController.phpresources/views/frontend/products/compare.blade.phppublic/js/product-compare.js
+Cho phép người dùng thêm tối đa 3 sản phẩm vào bảng so sánh chi tiết các thông số kỹ thuật cuộn ngang.
+Thiết kế & Tối ưu Trang chủ[AnhQuy/TrangChu]
+app/Http/Controllers/HomeController.phpresources/views/frontend/index.blade.phpresources/views/layouts/app.blade.php
+Tối ưu hóa bố cục trang chủ hiển thị banner, danh mục nổi bật, sản phẩm bán chạy và Flash Sale.
+Khởi tạo kết nối & Cấu hình Core (Database Setup)[AnhQuy/TaoKetNoi]
+config/database.phpapp/Providers/RouteServiceProvider.php.env.example
+Setup kết nối CSDL MySQL qua PDO, cấu hình Service Provider và thiết lập các biến môi trường nền tảng ban đầu.
+Tối ưu hóa mã nguồn & Tải trang[AnhQuy/ToiUu]
+app/Console/Kernel.phpconfig/cache.phpvite.config.js
+Tích hợp nén HTML, quản lý cấu hình cache Redis/File và tối ưu hóa tài nguyên tĩnh (CSS/JS) bằng Vite.
+Kiểm duyệt UGC & Trợ lý SEO bằng AI[AnhQuy/Crud-baiviet] & [AnhQuy/TichHopAI]
+app/Services/ArticleAIService.php
+app/Http/Controllers/Frontend/ArticleController.php
+app/Http/Controllers/Admin/ArticleController.php
+app/Models/Article.php
+database/migrations/2026_05_31_130000_add_ai_and_seo_fields_to_articles_table.php
+resources/views/admin/articles/index.blade.php
+resources/views/admin/articles/form.blade.php
+resources/views/articles/create.blade.php
+Tự động kiểm duyệt bài viết UGC tránh spam/vi phạm tiêu chuẩn, tự động sinh thẻ meta/keywords SEO và tự động duyệt tặng điểm Loyalty cho bài viết chất lượng cao.
+AI chẩn đoán lỗi & Phân công kỹ thuật viên[AnhQuy/TichHopAI]
+app/Services/RepairAIService.php
+app/Http/Controllers/ProfileController.php
+app/Models/RepairTicket.php
+database/migrations/2026_05_31_140000_add_ai_fields_to_repair_tickets_table.php
+resources/views/frontend/profile.blade.php
+resources/views/admin/repair-tickets/edit.blade.php
+Sử dụng Gemini Vision phân tích mô tả lỗi kèm ảnh chụp thiết bị, chẩn đoán nguyên nhân, đưa ra cảnh báo an toàn cùng khoảng giá sửa chữa, và gợi ý phân công kỹ thuật viên có tay nghề phù hợp.
+AI tự động phân tích & Duyệt đơn hàng[AnhQuy/TichHopAI]
+app/Services/AIOrderService.php
+app/Http/Controllers/Admin/OrderController.php
+app/Jobs/ProcessOrderWithAI.php
+app/Models/AIOrderLog.php
+database/migrations/2026_05_30_233351_add_ai_fields_to_orders_table.php
+database/migrations/2026_05_30_235500_create_ai_order_logs_table.php
+resources/views/admin/orders/index.blade.php
+resources/views/admin/orders/ai_logs.blade.php
+Đánh giá rủi ro đơn hàng (Risk Score) bằng AI, tự động duyệt đơn an toàn (Processing) hoặc hủy đơn rác (Cancelled), ghi log kiểm quét và tích hợp màn hình chạy quét hàng loạt AJAX.
+II. VINH EM - PHÂN HỆ GIỎ HÀNG, THANH TOÁN & VẬN CHUYỂN
+Nhóm chức năng
+Đường dẫn File (Source Code)
+Mô tả chi tiết
+Quản lý Giỏ hàng (Shopping Cart)[Vinhem/QuanLyGioHang]
+app/Http/Controllers/CartController.phpapp/Services/CartService.phpresources/views/frontend/cart/index.blade.php
+Thêm, sửa số lượng, xóa sản phẩm trong giỏ hàng. Áp dụng giới hạn số lượng mua tối đa chống đầu cơ.
+Trang Đặt hàng (Checkout Page)[Vinhem/ThanhToan]
+app/Http/Controllers/CheckoutController.phpapp/Services/CheckoutService.phpresources/views/frontend/checkout/index.blade.php
+Điền thông tin giao hàng, chọn địa chỉ lưu sẵn, áp dụng mã giảm giá và tính toán tổng tiền thanh toán.
+Thanh toán QR Động (VietQR & PayOS)[Vinhem/QuetMaQR]
+app/Http/Controllers/PaymentController.phpconfig/payos.phpapp/Http/Controllers/WebhookController.phpapp/Services/PayOSService.php
+Sinh mã VietQR động theo đơn hàng qua PayOS. Xử lý Webhook tự động cập nhật trạng thái đơn hàng khi nhận được tiền.
+Tính phí vận chuyển (Shipping Fee)[Vinhem/Tinhphivanchuyen]
+app/Services/ShippingService.phpresources/views/frontend/checkout/_shipping_methods.blade.php
+Tính toán chi phí giao hàng tự động dựa trên khoảng cách địa lý và địa chỉ nhận hàng của khách.
+Hệ thống Mã giảm giá (Coupon/Voucher)[Vinhem/MaGiamGia]
+app/Models/Coupon.phpapp/Http/Controllers/CouponController.phpapp/Services/CouponService.php
+Quản lý mã giảm giá, áp dụng điều kiện giá trị đơn hàng tối thiểu và chống tấn công Brute-force nhập thử mã.
+Tra cứu & Theo dõi đơn hàng (Order Tracking)[Vinhem/CN_tracudonhang]
+app/Http/Controllers/OrderController.phpapp/Models/Order.phpresources/views/frontend/orders/track.blade.php
+Hiển thị chi tiết đơn hàng, lịch sử trạng thái đơn hàng (Timeline Stepper) và tích hợp nút gửi yêu cầu bảo hành/đổi trả.
+III. THANH HIỀN - PHÂN HỆ CHI TIẾT SẢN PHẨM & DASHBOARD QUẢN TRỊ
+Nhóm chức năng
+Đường dẫn File (Source Code)
+Mô tả chi tiết
+Chi tiết sản phẩm (Product Detail)[Hien/chitietsanpham]
+app/Http/Controllers/ProductController.php (show)resources/views/frontend/products/show.blade.phpresources/views/frontend/products/_gallery.blade.php
+Trang thông tin chi tiết sản phẩm, album ảnh tự động trượt (Gallery Auto Slide) và hiển thị thông số kỹ thuật.
+Đánh giá bình luận đệ quy (Recursive Reviews)[Hien/danhgia]
+app/Models/Review.phpapp/Http/Controllers/ReviewController.phpresources/views/frontend/products/_reviews.blade.php
+Đánh giá số sao, bình luận đính kèm ảnh và hỗ trợ trả lời (Reply) đệ quy nhiều cấp bằng AJAX.
+Danh sách yêu thích (Wishlist)[Hien/danhsachyeuthich]
+app/Models/Wishlist.phpapp/Http/Controllers/WishlistController.phpresources/views/frontend/profile/wishlist.blade.php
+Lưu các sản phẩm khách hàng quan tâm và đồng bộ trạng thái biểu tượng trái tim trên giao diện.
+Quản lý trang cá nhân (User Profile)[Hien/Profile]
+app/Http/Controllers/ProfileController.phpresources/views/frontend/profile/index.blade.php
+Xem lịch sử mua hàng, quản lý số dư tài khoản, tích điểm và thông tin cá nhân của khách hàng.
+Dashboard quản trị & Sổ quỹ (Finance Dashboard)[Hien/Dashboard] & [Hien/SoQuy]
+app/Http/Controllers/Admin/DashboardController.phpapp/Http/Controllers/Admin/FinanceController.phpapp/Models/FinanceLog.phpresources/views/admin/dashboard.blade.php
+Biểu đồ thống kê doanh thu trực quan theo tháng, quản lý dòng tiền Thu/Chi tài chính trong sổ quỹ của cửa hàng.
+Chính sách Bảo hành & Đổi trả (Policies)[Hien/chinhsachbh&doitra]
+resources/views/frontend/pages/warranty_policy.blade.phpapp/Http/Controllers/PolicyController.php
+Quản lý các trang thông tin điều khoản bảo hành, quy định đổi trả hàng và dịch vụ sửa chữa thiết bị.
+IV. XUÂN HÒA - PHÂN HỆ XÁC THỰC, PHÂN QUYỀN & BẢO MẬT
+Nhóm chức năng
+Đường dẫn File (Source Code)
+Mô tả chi tiết
+Đăng nhập & Xác thực 2 lớp (2FA OTP)[xuanhoa/2FA]
+app/Http/Controllers/Auth/LoginController.phpapp/Services/OTPService.phpresources/views/auth/two-factor.blade.php
+Hệ thống đăng nhập thông thường kết hợp xác thực mã OTP gửi qua Email để nâng cao bảo mật tài khoản.
+Đăng nhập bằng Google (Google SSO)[xuanhoa/Login]
+app/Services/GoogleOAuthService.phpapp/Http/Controllers/Auth/GoogleController.php
+Tích hợp đăng nhập nhanh thông qua tài khoản Google OAuth 2.0 Client SDK.
+Phân quyền nhân viên (Roles & Permissions)[xuanhoa/Phanquyen]
+app/Models/Role.phpapp/Models/Permission.phpapp/Http/Middleware/CheckPermission.php
+Tạo các vai trò (Admin, Kho, Bán hàng) và gán quyền thao tác cụ thể lên từng endpoint chức năng hệ thống.
+Khôi phục mật khẩu (Reset Password)[xuanhoa/Reset_Password]
+app/Http/Controllers/Auth/ForgotPasswordController.phpresources/views/auth/passwords/reset.blade.php
+Tính năng gửi link đổi mật khẩu bảo mật qua Email khi người dùng quên mật khẩu.
+Lịch sử đăng nhập (Login History Log)[xuanhoa/QL_Login]
+app/Models/LoginLog.phpapp/Http/Controllers/Admin/LoginLogController.phpresources/views/admin/login_logs/index.blade.php
+Ghi nhật ký đăng nhập chi tiết bao gồm địa chỉ IP, hệ điều hành, trình duyệt và cảnh báo đăng nhập lạ.
+Quản lý Nhân viên & KPI (Employees CRUD)[xuanhoa/CRUD_NhanVien] & [xuanhoa/KPI]
+app/Http/Controllers/Admin/EmployeeController.phpapp/Models/Employee.phpapp/Models/Kpi.phpresources/views/admin/kpi/index.blade.php
+Quản lý hồ sơ nhân sự và thiết lập, theo dõi chỉ số hiệu suất công việc (KPI) của nhân viên.
+V. ĐĂNG NGUYỄN - PHÂN HỆ QUẢN LÝ KHO HÀNG & NGHIỆP VỤ HÀNG HÓA
+Nhóm chức năng
+Đường dẫn File (Source Code)
+Mô tả chi tiết
+Quản lý Sản phẩm (Products CRUD)[DangNguyen/Crud_san_pham]
+app/Http/Controllers/Admin/ProductController.phpapp/Models/Product.phpresources/views/admin/products/index.blade.php
+Thêm, sửa, xóa sản phẩm, upload album ảnh sản phẩm kèm kiểm tra định dạng và dung lượng file.
+Quản lý Danh mục (Categories CRUD)[DangNguyen/Crud_danh_muc]
+app/Http/Controllers/Admin/CategoryController.phpapp/Models/Category.php
+Quản lý cây danh mục sản phẩm đa cấp và các thuộc tính lọc đi kèm.
+Quản lý Nhà cung cấp (Supplier CRUD)[DangNguyen/Crud_nha_cung_cap]
+app/Http/Controllers/Admin/SupplierController.phpapp/Models/Supplier.php
+Quản lý thông tin liên hệ, hợp đồng và lịch sử nhập hàng từ các nhà cung cấp.
+Cảnh báo tồn kho & Điều chuyển (Inventory Alert)[DangNguyen/Canh_bao_ton_kho_va_Dieu_chuyen]
+app/Services/InventoryService.phpapp/Jobs/CheckLowStockJob.phpapp/Models/WarehouseTransfer.php
+Tự động gửi email cảnh báo khi sản phẩm sắp hết hàng và quản lý phiếu chuyển kho nội bộ giữa các chi nhánh.
+Nhập kho & Định danh IMEI[DangNguyen/Phieu_nhap_kho_va_QL_dinh_danh_IMEI]
+app/Models/GoodsReceipt.phpapp/Models/ProductImei.phpapp/Http/Controllers/Admin/GoodsReceiptController.php
+Quản lý phiếu nhập kho hàng loạt và gán mã IMEI định danh duy nhất cho từng mặt hàng công nghệ.
+Kiểm kê & Cân bằng kho (Inventory Audit)[DangNguyen/Kiem_ke_va_Canh_bang_kho]
+app/Models/InventoryAudit.phpapp/Models/InventoryAuditDetail.phpapp/Http/Controllers/Admin/InventoryAuditController.php
+Tạo phiếu kiểm kho thực tế định kỳ, tính toán chênh lệch và tự động điều chỉnh cân bằng số liệu tồn kho.
+Lịch sử biến động kho (Inventory Logs)[DangNguyen/Lich_su_bien_dong_kho]
+app/Models/InventoryLog.phpresources/views/admin/inventory/logs.blade.php
+Ghi log tự động mỗi khi có sự thay đổi tồn kho (nhập hàng, bán hàng, hoàn trả, kiểm kê).
