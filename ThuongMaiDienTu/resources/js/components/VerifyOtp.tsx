@@ -10,9 +10,11 @@ interface VerifyOtpProps {
     successMsg?: string;
     resendUrl: string;
     resendMethod?: 'GET' | 'POST';
+    type?: 'forgot_password' | '2fa';
 }
 
-const VerifyOtp: React.FC<VerifyOtpProps> = ({ email, actionUrl, csrfToken, errorMsg, successMsg, resendUrl, resendMethod = 'GET' }) => {
+const VerifyOtp: React.FC<VerifyOtpProps> = ({ email, actionUrl, csrfToken, errorMsg, successMsg, resendUrl, resendMethod = 'GET', type }) => {
+    const is2Fa = type === '2fa' || actionUrl.includes('2fa') || actionUrl.includes('two_factor') || actionUrl.includes('2fa/verify');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [cooldown, setCooldown] = useState(60);
@@ -146,17 +148,31 @@ const VerifyOtp: React.FC<VerifyOtpProps> = ({ email, actionUrl, csrfToken, erro
                     <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/20 rounded-full blur-[60px]" />
                     <div className="absolute bottom-0 left-0 w-48 h-48 bg-red-500/20 rounded-full blur-[40px]" />
 
-                    <a href="/login" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-bold w-fit z-10">
+                    <a href={is2Fa ? "/login" : "/forgot-password"} className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-bold w-fit z-10">
                         <ArrowLeft className="w-4 h-4" /> Quay lại
                     </a>
 
                     <div className="flex-1 flex flex-col justify-center relative z-10 mt-12">
                         <div className="w-20 h-20 bg-white/10 border border-white/20 rounded-2xl flex items-center justify-center mb-8 backdrop-blur-md shadow-lg">
-                            <ShieldCheck className="w-10 h-10 text-blue-400" />
+                            {is2Fa ? (
+                                <ShieldCheck className="w-10 h-10 text-blue-400" />
+                            ) : (
+                                <MailOpen className="w-10 h-10 text-blue-400" />
+                            )}
                         </div>
-                        <h2 className="text-3xl font-black text-white mb-4 leading-tight tracking-tight drop-shadow-md">Xác thực<br />Bảo mật Hai Lớp</h2>
+                        <h2 className="text-3xl font-black text-white mb-4 leading-tight tracking-tight drop-shadow-md">
+                            {is2Fa ? (
+                                <>Xác thực<br />Bảo mật Hai Lớp</>
+                            ) : (
+                                <>Khôi phục<br />Mật khẩu tài khoản</>
+                            )}
+                        </h2>
                         <p className="text-slate-300 text-sm leading-relaxed max-w-sm">
-                            Để bảo vệ tài khoản của bạn khỏi truy cập trái phép, chúng tôi yêu cầu mã xác thực một lần (OTP) mỗi khi bạn thực hiện các thao tác quan trọng.
+                            {is2Fa ? (
+                                "Để bảo vệ tài khoản của bạn khỏi truy cập trái phép, chúng tôi yêu cầu mã xác thực một lần (OTP) mỗi khi bạn thực hiện các thao tác quan trọng."
+                            ) : (
+                                "Vui lòng nhập mã xác minh (OTP) đã được gửi tới hòm thư của bạn để xác thực và tiến hành đặt lại mật khẩu mới."
+                            )}
                         </p>
                     </div>
 

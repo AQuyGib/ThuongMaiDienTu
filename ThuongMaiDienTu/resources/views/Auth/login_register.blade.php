@@ -730,6 +730,123 @@
             background: #22c55e;
         }
 
+        /* --- PREMIUM MODAL OVERLAY --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            overflow: hidden;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .modal-overlay.show .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--tech-dark);
+            font-family: 'Space Grotesk', sans-serif;
+            margin: 0;
+        }
+
+        .modal-close-icon {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close-icon:hover {
+            color: var(--tech-red);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #475569;
+        }
+
+        .modal-body h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--tech-dark);
+            margin-top: 18px;
+            margin-bottom: 8px;
+        }
+
+        .modal-body p {
+            margin-bottom: 12px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: flex-end;
+            background: #f8fafc;
+        }
+
+        .modal-btn-close {
+            padding: 10px 20px;
+            background: var(--tech-dark);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .modal-btn-close:hover {
+            opacity: 0.9;
+        }
+
     </style>
 </head>
 <body>
@@ -824,21 +941,7 @@
                 <p class="brand-slogan">{{ __('ui.welcome_back_slogan') }}</p>
             </div>
 
-            <!-- HIỂN THỊ LỖI HỆ THỐNG -->
-            @if(session('error'))
-                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #b91c1c; display: flex; align-items: center; gap: 10px; animation: shake 0.5s ease;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: #b91c1c; animation: shake 0.5s ease;">
-                    @foreach ($errors->all() as $error)
-                        <p>• {{ $error }}</p>
-                    @endforeach
-                </div>
-            @endif
+            <!-- Hiển thị lỗi hệ thống được chuyển sang dạng Toast nổi ở góc màn hình qua JS phía dưới -->
 
             <style>
                 @keyframes shake {
@@ -852,9 +955,6 @@
                 <div class="tab" id="tabRegister">{{ __('ui.register_tab') }}</div>
             </div>
 
-            @if($error_message)
-                <div class="alert alert-danger">{{ $error_message }}</div>
-            @endif
             @if($success_message)
                 <div class="alert alert-success">{{ $success_message }}</div>
             @endif
@@ -954,6 +1054,22 @@
                 </form>
             </div>
 
+        </div>
+    </div>
+
+    <!-- MODAL ĐIỀU KHOẢN VÀ CHÍNH SÁCH -->
+    <div id="termsModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modalTitle" class="modal-title"></h3>
+                <button id="modalCloseBtn" class="modal-close-icon">&times;</button>
+            </div>
+            <div id="modalContent" class="modal-body">
+                <!-- Content injected dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button id="modalOkBtn" class="modal-btn-close">{{ app()->getLocale() === 'en' ? 'Close' : 'Đóng lại' }}</button>
+            </div>
         </div>
     </div>
 
@@ -1210,6 +1326,22 @@
                     e.preventDefault();
                     return;
                 }
+
+                // Kiểm tra định dạng Gmail
+                if (emailInput) {
+                    const emailValue = emailInput.value.trim();
+                    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+                    if (!gmailRegex.test(emailValue)) {
+                        e.preventDefault();
+                        showToast(
+                            "{{ app()->getLocale() === 'en' ? 'Validation Error' : 'Lỗi kiểm định' }}",
+                            "{{ __('ui.error_email_gmail_only') }}",
+                            'error'
+                        );
+                        emailInput.focus();
+                        return;
+                    }
+                }
                 
                 // Kiểm tra chấp nhận điều khoản dịch vụ
                 if (acceptTerms && !acceptTerms.checked) {
@@ -1305,6 +1437,133 @@
                 strengthText.style.color = color;
             });
         }
+
+        // Tự động kích hoạt Toast nổi hiển thị lỗi từ Backend (Laravel errors bag & session error)
+        @if($errors->any())
+            @foreach ($errors->all() as $error)
+                showToast(
+                    "{{ app()->getLocale() === 'en' ? 'System Error' : 'Lỗi hệ thống' }}",
+                    "{{ $error }}",
+                    'error'
+                );
+            @endforeach
+        @endif
+        @if(session('error'))
+            showToast(
+                "{{ app()->getLocale() === 'en' ? 'System Error' : 'Lỗi hệ thống' }}",
+                "{{ session('error') }}",
+                'error'
+            );
+        @endif
+
+        /* ===== MODAL TERMINOLOGY & PRIVACY POPUP ===== */
+        const termsModal = document.getElementById('termsModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContent = document.getElementById('modalContent');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+        const modalOkBtn = document.getElementById('modalOkBtn');
+
+        const locale = "{{ app()->getLocale() }}";
+
+        const documentTexts = {
+            vi: {
+                terms: {
+                    title: "Điều Khoản Dịch Vụ - DienMayPro",
+                    html: `
+                        <p>Chào mừng bạn đến với <strong>Điện Máy Pro</strong>. Khi bạn đăng ký và sử dụng dịch vụ của chúng tôi, bạn đồng ý tuân thủ các điều khoản sau:</p>
+                        <h4>1. Tài khoản & Bảo mật</h4>
+                        <p>Bạn có trách nhiệm cung cấp thông tin cá nhân chính xác (Họ tên, Email, Số điện thoại) và tự bảo mật thông tin đăng nhập cá nhân của mình.</p>
+                        <h4>2. Quy định Mua bán & Thanh toán</h4>
+                        <p>Chúng tôi cam kết cung cấp các sản phẩm điện máy chính hãng. Các giao dịch mua hàng, hoàn tiền, thanh toán bằng ví, hoặc thẻ tín dụng phải tuân thủ đúng quy trình kiểm duyệt bảo mật.</p>
+                        <h4>3. Chính sách Trả góp AI</h4>
+                        <p>Khách hàng tham gia mua trả góp sẽ được hệ thống AI tự động đánh giá hồ sơ tín dụng dựa trên thứ hạng thành viên (Bronze, Silver, Gold, Diamond) và lịch sử giao dịch sạch.</p>
+                        <h4>4. Quyền sở hữu trí tuệ</h4>
+                        <p>Toàn bộ tài nguyên mã nguồn, hình ảnh, văn bản và logo đăng tải trên website thuộc quyền sở hữu trí tuệ của Điện Máy Pro. Nghiêm cấm mọi hành vi sao chép trái phép.</p>
+                    `
+                },
+                privacy: {
+                    title: "Chính Sách Bảo Mật - DienMayPro",
+                    html: `
+                        <p><strong>Điện Máy Pro</strong> cam kết bảo vệ tuyệt đối quyền riêng tư và thông tin cá nhân của khách hàng:</p>
+                        <h4>1. Thu thập dữ liệu cá nhân</h4>
+                        <p>Chúng tôi chỉ thu thập thông tin cần thiết phục vụ cho việc tạo tài khoản, xác thực mã OTP, đặt lịch hẹn sửa chữa thiết bị (IMEI/Serial), bảo hành sản phẩm và giao nhận đơn hàng.</p>
+                        <h4>2. Sử dụng thông tin của bạn</h4>
+                        <p>Thông tin cá nhân được sử dụng để liên hệ trực tiếp thông báo tiến độ hóa đơn, xử lý yêu cầu đổi điểm thưởng thành voucher, hoặc hỗ trợ định mức duyệt tín dụng trả góp AI.</p>
+                        <h4>3. Lưu trữ & Mã hóa bảo mật</h4>
+                        <p>Mật khẩu của bạn được mã hóa một chiều (Bcrypt/Hash) trên cơ sở dữ liệu. Mọi kết nối API được bảo vệ bằng hệ thống token Laravel Sanctum để ngăn chặn các cuộc tấn công đánh cắp phiên.</p>
+                        <h4>4. Chia sẻ dữ liệu cho bên thứ ba</h4>
+                        <p>Chúng tôi cam kết không bán, không chuyển nhượng dữ liệu cá nhân của bạn cho bất kỳ doanh nghiệp nào khác, ngoại trừ trường hợp được yêu cầu chính thức từ cơ quan pháp luật có thẩm quyền.</p>
+                    `
+                }
+            },
+            en: {
+                terms: {
+                    title: "Terms of Service - DienMayPro",
+                    html: `
+                        <p>Welcome to <strong>DienMayPro</strong>. By registering and utilizing our platform, you agree to the following terms and regulations:</p>
+                        <h4>1. Account & Security</h4>
+                        <p>You must provide accurate personal details and are fully responsible for maintaining the confidentiality of your login credentials.</p>
+                        <h4>2. Purchase & Payment Regulations</h4>
+                        <p>We pledge to deliver genuine electronic products. All online purchases and refund processes must comply with our strict verification standards.</p>
+                        <h4>3. AI Installment Evaluation</h4>
+                        <p>Credit limits and installment approval plans are dynamically evaluated by our heuristic AI algorithms based on your purchase history and membership tier.</p>
+                        <h4>4. Intellectual Property Rights</h4>
+                        <p>All graphical assets, logo designs, core scripts, and layouts are the exclusive property of DienMayPro. Unauthorized duplication is strictly prohibited.</p>
+                    `
+                },
+                privacy: {
+                    title: "Privacy Policy - DienMayPro",
+                    html: `
+                        <p>At <strong>DienMayPro</strong>, we are committed to safeguarding your personal data and privacy:</p>
+                        <h4>1. Information Collection</h4>
+                        <p>We collect essential information required to create accounts, verify 2FA OTP codes, record repair bookings (IMEI/Serial), and process payments.</p>
+                        <h4>2. Utilization of Data</h4>
+                        <p>Your details are used strictly for order tracking, repair progress emails, loyalty tier points logging, and personalized AI credit assessment.</p>
+                        <h4>3. Encryption and Security</h4>
+                        <p>All user passwords are securely hashed before database entry. Server requests are authenticated using Laravel Sanctum to block session hijacking.</p>
+                        <h4>4. Third-Party Disclosures</h4>
+                        <p>We do not sell, trade, or distribute your personal identity records to outer organizations, except when required under legal compliance orders.</p>
+                    `
+                }
+            }
+        };
+
+        function openModal(docType) {
+            const docData = documentTexts[locale] || documentTexts['vi'];
+            const doc = docData[docType];
+            if (doc) {
+                modalTitle.innerText = doc.title;
+                modalContent.innerHTML = doc.html;
+                termsModal.classList.add('show');
+            }
+        }
+
+        function closeModal() {
+            termsModal.classList.remove('show');
+        }
+
+        termsModal.addEventListener('click', function(e) {
+            if (e.target === termsModal) {
+                closeModal();
+            }
+        });
+
+        if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+        if (modalOkBtn) modalOkBtn.addEventListener('click', closeModal);
+
+        // Đăng ký sự kiện click trực tiếp cho các liên kết Điều khoản và Chính sách
+        const termsLinks = document.querySelectorAll('.terms-label a');
+        termsLinks.forEach((link, idx) => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (idx === 0) {
+                    openModal('terms');
+                } else {
+                    openModal('privacy');
+                }
+            });
+        });
     </script>
 </body>
 </html>

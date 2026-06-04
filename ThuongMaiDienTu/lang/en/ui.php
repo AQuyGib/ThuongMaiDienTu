@@ -142,6 +142,7 @@ return [
     'error_password_confirmed'      => 'The password confirmation does not match.',
     'error_fullname_required'       => 'Full name is required.',
     'error_email_required'          => 'Email is required and must be a valid email.',
+    'error_email_gmail_only'        => 'Registration requires a valid Gmail address (@gmail.com).',
     'error_password_min'            => 'Password must be at least 8 characters.',
 
     // ===== REMEMBER & TERMS =====

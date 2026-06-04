@@ -142,6 +142,7 @@ return [
     'error_password_confirmed' => 'Mật khẩu xác nhận không khớp.',
     'error_fullname_required' => 'Họ và tên là bắt buộc.',
     'error_email_required' => 'Email là bắt buộc và phải đúng định dạng.',
+    'error_email_gmail_only' => 'Email đăng ký bắt buộc phải sử dụng Gmail (@gmail.com).',
     'error_password_min' => 'Mật khẩu phải từ 8 ký tự trở lên.',
 
     // ===== REMEMBER & TERMS =====
