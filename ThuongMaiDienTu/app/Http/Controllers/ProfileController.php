@@ -19,7 +19,7 @@ class ProfileController extends Controller
         $user = Auth::user();
         
         // Lấy tất cả đơn hàng
-        $orders = $user->orders()->orderBy('order_id', 'desc')->get();
+        $orders = $user->orders()->with('details.inventoryItem.variant.product')->orderBy('order_id', 'desc')->get();
         
         // Thống kê thành viên
         $totalOrders = $orders->count();
@@ -719,7 +719,9 @@ class ProfileController extends Controller
             'ai_diagnosed_at' => $aiData['ai_diagnosed_at'] ?? null,
         ]);
 
+
+
         // Bước 4: Điều hướng phản hồi về trang cá nhân của khách hàng
-        return redirect()->route('profile.index', ['tab' => 'repair-tab'])->with('repair_success', 'Đã đăng ký lịch hẹn sửa chữa trực tuyến thành công!');
+        return redirect()->route('profile.index')->with('repair_success', 'Đã đăng ký lịch hẹn sửa chữa trực tuyến thành công!');
     }
 }

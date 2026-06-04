@@ -506,7 +506,7 @@ class RepairTicketInvoiceController extends Controller
             ]);
         }
 
-        $user = User::where('phone', $phone)->first();
+        $user = User::where('phone_number', $phone)->first();
         if ($user) {
             return response()->json([
                 'customer_name' => $user->full_name,

@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             ProductComboSeeder::class,
             HomeSectionSeeder::class,
             OrderSeeder::class,
+            WarrantySeeder::class,
+            WarrantyClaimSeeder::class,
             InventoryMovementSeeder::class,
             InventoryAuditSeeder::class,
             CommentSeeder::class,
