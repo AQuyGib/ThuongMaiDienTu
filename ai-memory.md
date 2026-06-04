@@ -1,6 +1,13 @@
 # Project Memory
 
 ## Current State & Focus
+- **Sửa lỗi hiển thị di động & Việt hóa chú thích CommunicationHub:**
+  - Khắc phục triệt để lỗi hiển thị đồng thời cả danh sách phòng (Cột 1) và khung chat bị bóp méo (Cột 2) trên các thiết bị di động bằng cách sử dụng React conditional rendering: chỉ render duy nhất Cột 1 hoặc Cột 2 vào DOM tùy thuộc vào trạng thái `mobileView` (`'rooms'` hoặc `'chat'`) khi ở màn hình điện thoại, giải quyết triệt để vấn đề xung đột CSS.
+  - Sử dụng hook lắng nghe sự kiện window resize để xác định trạng thái `isDesktop` (width >= 768px) nhằm tự động hiển thị side-by-side đầy đủ cả hai cột trên máy tính mà không cần tải lại trang.
+  - Dịch toàn bộ chú thích (comments) trong file `CommunicationHub.tsx` (Trung tâm giao tiếp) từ tiếng Anh sang tiếng Việt rõ ràng, dễ hiểu (giữ nguyên chú thích tiếng Anh cho các file khác theo đúng yêu cầu).
+  - **Khắc phục lỗi vị trí hiển thị (CSS Position drawer):** Loại bỏ class `relative` bị trùng lặp với `fixed` tại thẻ container ngoài cùng của component `CommunicationHub.tsx` (dòng 644). Lỗi này làm drawer bị ghi đè thuộc tính CSS position sang relative, dẫn đến hiện tượng trôi lơ lửng và đè bẹp lên giao diện Admin Dashboard thay vì bám cố định vào mép phải của viewport.
+  - **Giải quyết xung đột Git trong app.tsx:** Loại bỏ triệt để các marker xung đột Git (`<<<<<<< HEAD`, `=======`, `>>>>>>> origin/master`) ở hàm chặn chuyển trang admin (dòng 206) trong file `resources/js/app.tsx`. Đã giữ lại cấu trúc kiểm tra thông minh để chỉ force-reload các module phức tạp (sản phẩm, nhân viên, phiếu sửa chữa, activity-logs, bình luận) và duy trì SPA soft-navigation cho các trang admin đơn giản còn lại.
+  - **Việt hóa chú thích trong app.tsx:** Dịch toàn bộ chú thích (comments) trong file `app.tsx` sang tiếng Việt rõ ràng, chi tiết, giải thích rõ cơ chế điều hướng mềm (soft-navigation), gắn component React động, xử lý unmount/re-mount sạch sẽ để hỗ trợ lập trình viên.
 - **Nâng cấp Nhật ký hoạt động chi tiết (Security Audit Logs Upgrade):**
   - Mở rộng trait `\App\Traits\HasAuditLog` lên **22 model nghiệp vụ chính** (thêm 5 model: `PurchaseOrder`, `Setting`, `Warranty`, `Installment`, `RewardCatalog`).
   - Chuyển đổi kiểu dữ liệu cột `subject_id` trong database sang kiểu chuỗi (`string`) để hỗ trợ đồng thời khóa chính dạng số (như sản phẩm) và dạng chữ (như `'theme_color'` của Setting) không bị lỗi trong MySQL strict mode, đồng thời cập nhật cơ chế băm của `AuditHasher` tương thích với khóa dạng chuỗi.
@@ -118,7 +125,10 @@
   - **Ẩn Tỉnh/Thành phố ở trang thanh toán:** Ẩn menu thả xuống chọn Tỉnh/Thành phố ở form trang `/pay` (`pay.blade.php`) theo yêu cầu. Bỏ qua validate trường `province` phía frontend, thiết lập thành `nullable` trong `CartController` (mặc định 'other' nếu khách hàng không chọn từ địa chỉ đã lưu).
 
 ## Files Changed
+- **Comments & Responsive Optimization (Tối ưu hóa phản hồi & Chú thích Việt hóa):**
+  - `ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx`
 - **Testing & Bug Fixes:**
+  - `ThuongMaiDienTu/resources/js/app.tsx`
   - `ThuongMaiDienTu/app/Http/Controllers/Admin/ServiceInvoiceController.php`
   - `ThuongMaiDienTu/tests/Feature/FlashSaleCheckoutTest.php`
   - `ThuongMaiDienTu/tests/Feature/FlashSaleEndToEndTest.php`
@@ -604,3 +614,9 @@
   - Đã bổ sung chú thích Tiếng Việt chi tiết cho luồng reset mã lỗi thoát an toàn `:EXIT_CLEAN` tại [start.bat](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/start.bat).
   - **Xử lý dọn dẹp file `[OK]`:** Đã thực hiện quét toàn diện và xác nhận xóa sạch hoàn toàn file rác `[OK]` do lệnh echo redirection cũ trong `start.bat` tạo ra, đảm bảo thư mục workspace sạch sẽ 100%.
   - **Viết tiếng Việt cho comment Nhật ký hoạt động:** Đã dịch hóa toàn bộ comment tiếng Anh còn lại sang tiếng Việt dễ hiểu trong các tệp liên quan đến Nhật ký hoạt động bao gồm Job xử lý (`LogAuditEventJob.php`), tệp cơ sở dữ liệu (`2026_01_01_000010_create_activity_logs_table.php`) và giao diện hiển thị (`index.blade.php`).
+
+## Update: June 04, 2026 (Night)
+- **Khắc phục lỗi cú pháp biên dịch (esbuild syntax compilation errors):**
+  - Sửa lỗi cú pháp `The character "}" is not valid inside a JSX element` và `Unterminated regular expression` trong [CommunicationHub.tsx](file:///g:/ThuongMaiDienTu/ThuongMaiDienTu/resources/js/components/CommunicationHub.tsx) bằng cách chuyển đổi toàn bộ cấu trúc render điều kiện dạng `condition && (` sang cấu trúc toán tử ba ngôi tiêu chuẩn `condition ? (` ... `) : null`.
+  - Khắc phục hoàn toàn lỗi biên dịch thứ hai `Expected ":" but found "}"` tại dòng `1047:7` bằng việc sửa đổi phần đóng khối Column 2 thành `) : null}` tương ứng với toán tử ba ngôi của cột 2.
+  - Cơ chế này loại bỏ hoàn toàn các lỗi phân tích cú pháp (parse mismatches) của esbuild khi biên dịch các khối JSX lồng nhau, giúp mã nguồn trở nên rõ ràng và ổn định 100% khi chạy qua trình biên dịch Vite/esbuild.
